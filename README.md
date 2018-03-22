@@ -13,7 +13,7 @@ pip3 install -r requirements
 
 To create certs from the scripts in  `certs` directory you will need openssl and keytool
 
-Finally to launch integration_tests you will need `nmap` 
+Finally to launch integration\_tests you will need `nmap` 
 
 # Get started
 
@@ -21,3 +21,15 @@ Finally to launch integration_tests you will need `nmap`
 2. Move into `certs` dir and generate all necessary certificates
 3. Move to `docker/environments/development` directory and launch `make build` and `make init_db_run` to run a 
    developement environment
+
+## File host
+
+To make the development environment work you need to add the following entries to your file host:
+
+127.0.0.1 consentmanager
+127.0.0.1 destinationmockup
+127.0.0.1 spid-testenv-identityserver
+127.0.0.1 spid-testenv-backoffice
+127.0.0.1 hgwbackend
+127.0.0.1 hgwfrontend
+127.0.0.1 kafka
