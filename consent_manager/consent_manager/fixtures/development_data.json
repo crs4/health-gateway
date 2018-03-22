@@ -1,0 +1,34 @@
+[
+  {
+    "model": "consent_manager.restclient",
+    "pk": 3,
+    "fields": {
+      "client_id": "gOJuJRdrQEz2CN4XuVeRylN8YSlxOCW74YLhhR11",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "3aCazdyuPANmqkr400sCLyalhyDA9vOM7IlxnBQPRw3F8rsgBIufHPo2aDqEUevKvhaRfuGdDcFxetABRHsbydGoVSkNxD18GEd0Xyuoug7UiVxpElsRvEypwGCXhBgV",
+      "name": "SOURCE_ENDPOINT_1",
+      "skip_authorization": true,
+      "scopes": "consent:read",
+      "client_role": "ST"
+    }
+  },
+  {
+    "model": "consent_manager.restclient",
+    "pk": 4,
+    "fields": {
+      "client_id": "NDtzemdFFmGVfnI0ufyWLlfPHheOhjKBYlZMBw2W",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "KoTC7s7iWPCe1d2DbFQSPZO5y1o9Q6zMGEm31EShFacwBLKTLEmWXoKAK6BluFs3mXvLAOnz2VAA9hbcOTJ2n1cVKCS6qs3W2GSHJ64FyI8NDqfYU04dwAiOyyADv7sx",
+      "name": "SOURCE_ENPOINT_2",
+      "skip_authorization": true,
+      "scopes": "consent:read",
+      "client_role": "ST"
+    }
+  }
+]

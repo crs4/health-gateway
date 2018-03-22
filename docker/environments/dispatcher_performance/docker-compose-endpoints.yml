@@ -1,0 +1,42 @@
+version: '3.0'
+services:
+  destination_mock:
+    build:
+      context: ../../images/development/performance_test_endpoint
+    image: crs4/performance_test_endpoint
+    extra_hosts:
+      - "kafka:${KAFKA_ADDRESS:-127.0.0.1}"
+      - "zookeeper:${KAFKA_ADDRESS:-127.0.0.1}"
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../tests/performance_tests/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../certs/:/container/certs/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}:/data
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "python3", "mock_consumer.py", "-c", "${CLIENT}"]
+
+
+  source_mock:
+    build:
+      context: ../../images/development/performance_test_endpoint
+    image: crs4/performance_test_endpoint
+    environment:
+      - MEAN_DOC_SIZE=${MEAN_DOC_SIZE:-100000}
+      - SIGMA_DOC_SIZE=${SIGMA_DOC_SIZE:-2000}
+      - CHANNELS_PER_SRC=${CHANNELS_PER_SRC}
+    extra_hosts:
+      - "kafka:${KAFKA_ADDRESS:-127.0.0.1}"
+      - "zookeeper:${KAFKA_ADDRESS:-127.0.0.1}"
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../certs/:/container/certs/
+      - ../../../tests/performance_tests/:/container/service/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}:/data
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--",
+      "python3", "producer_launch.py", "--avg_events", "${AVG_EVENTS:-13}", "--time_unit", "${TIME_UNIT:-y}", "-p", "${PRODUCERS:-1}"]

@@ -1,0 +1,5 @@
+CA structure created following the tutorial at
+https://jamielinux.com/docs/openssl-certificate-authority/create-the-root-pair.html
+
+To generate all needed certs for the project, run ./generate_all.sh script. When prompted for
+key password type hgwpwd

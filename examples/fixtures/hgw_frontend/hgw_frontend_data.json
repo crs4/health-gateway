@@ -1,0 +1,26 @@
+[
+  {
+    "model": "hgw_frontend.destination",
+    "pk": 100,
+    "fields": {
+      "destination_id": "xi5lxbtFDNwOLzLnpjidfteZE8WmwCuM",
+      "name": "i2b2",
+      "kafka_public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----"
+    }
+  },
+  {
+    "model": "hgw_frontend.restclient",
+    "fields": {
+      "client_id": "knudgyIh8JLtcClD7Qs3D5BSjILGvH6wvCW6VOzg",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "8K7Y4EJh1tWsL0n4zMQbQElOx0wVcDab0Dsdm06Ge9Bx8kbynp9mtrHEqJQsNnjx1kCMi3H2eI5bcpcm4oE64Xo7EEAdt2wXbchRgBJSSXkEmcQMUZ5Z4cRxZERHVsIZ",
+      "name": "i2b2",
+      "skip_authorization": false,
+      "destination_id": 100,
+      "scopes": "flow_request:read flow_request:write"
+    }
+  }
+]

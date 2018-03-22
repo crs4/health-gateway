@@ -1,0 +1,12 @@
+Django==1.11.7
+djangorestframework==3.7.7
+django-oauth-toolkit==0.12.0
+django-cors-middleware
+django-sslserver
+djangosaml2==0.16.10
+mock
+requests
+requests_oauthlib
+kafka-python==1.3.5
+coreapi
+drf-yasg

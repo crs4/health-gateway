@@ -1,0 +1,204 @@
+[
+  {
+    "model": "hgw_frontend.hgwfrontenduser",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$TVusveN6piW0$9UjyDyTZUVkf32I5y3kdoqLGu2Bvgt5ybnOTLn43dQE=",
+      "last_login": "2017-08-01T14:56:13.019Z",
+      "is_superuser": false,
+      "username": "duck",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2017-08-01T14:56:12.915Z",
+      "fiscalNumber": "100001",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "hgw_frontend.hgwfrontenduser",
+    "pk": 2,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$xQh4BaoMLy8i$WLlErGChzsMR8KpOlWqbpPy750V+fRlKnbpUO9jTbyU=",
+      "last_login": "2017-05-22T15:10:25.916Z",
+      "is_superuser": true,
+      "username": "admin",
+      "first_name": "",
+      "last_name": "",
+      "email": "admin@ad.it",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2017-05-19T15:03:42.962Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "hgw_frontend.hgwfrontenduser",
+    "pk": 3,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$TVusveN6piW0$9UjyDyTZUVkf32I5y3kdoqLGu2Bvgt5ybnOTLn43dQE=",
+      "last_login": "2017-08-01T14:56:13.019Z",
+      "is_superuser": false,
+      "username": "mouse",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": false,
+      "is_active": true,
+      "date_joined": "2017-08-01T14:56:12.915Z",
+      "fiscalNumber": "100002",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "hgw_frontend.destination",
+    "pk": 1,
+    "fields": {
+      "destination_id": "vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj",
+      "rest_or_kafka": "R",
+      "name": "Destination 1",
+      "kafka_public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----"
+    }
+  },
+  {
+    "model": "hgw_frontend.destination",
+    "pk": 2,
+    "fields": {
+      "destination_id": "6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3",
+      "rest_or_kafka": "K",
+      "name": "Destination 2",
+      "kafka_public_key": "-----BEGIN PUBLIC KEY-----\nDAp7yAEf1GzP9tJwPqdQECAf4ClFTuoDoTz6GLpDyUykmNI4lnAiz6rpah20sytX\nMImhrn9bJPlMuUInFlOQj8nqLKh8USwz301XuZwsiIDbS5PyOVTU1O5xXzFhvO14\nIGVWBF1qVlUyuQnE577e0a6DSHNPV3JFVRYhJsLU7ZZccGt2HcXAUTo6HgBFDnKL\nrUzZbVgnA8iQxmSdTkyiw8LYGVtKhwTL6JlGk26md9cceCbpFkqUYhNrZasJmfN5\n-----END PUBLIC KEY-----"
+    }
+  },
+  {
+    "model": "hgw_frontend.restclient",
+    "pk": 1,
+    "fields": {
+      "client_id": "xFfLPuIh2n8Kqj6RMUroYLUbVai1K7qeB1R2gExP",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "RjKAdqZqCkRA3eq7pjkwEVuku1BRVRBWiAg5VooBl3YcXnu26TpQGclL43X3WrP47DsbHIyIVXHTX8vdd6KZqr4kQMUpuWUlMvC3qPiDgt9j2jwmasRvdsF9R48um1LJ",
+      "name": "Destination 1",
+      "skip_authorization": true,
+      "destination": 1,
+      "scopes": "flow_request:read flow_request:write messages:read",
+      "client_role": "ST"
+    }
+  },
+  {
+    "model": "hgw_frontend.restclient",
+    "pk": 2,
+    "fields": {
+      "client_id": "0Kkd5G5zhdbvHSnWnJpi0MMy9b17jG76omMkYFmV",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "TQvHWfAYC39Zxp9UJxxt9ynz1qGHrh62WnrOFMlcRzhQ04hvWxb3RAK61Vd9RtsGlkLHEE52DOCp2skshxGe1fxsXItnAycatrWcIdAScz62PsXXZXE5B4AjQoa16kbr",
+      "name": "Destination 2",
+      "skip_authorization": true,
+      "destination": 2,
+      "scopes": "flow_request:read flow_request:write messages:read",
+      "client_role": "ST"
+    }
+  },
+  {
+    "model": "hgw_frontend.restclient",
+    "pk": 3,
+    "fields": {
+      "client_id": "VCDkhstCfeJUP3uJMWusiOrA0LkVe4rJWy7WQDHO",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "H4ZsGYIPx9jo0B6C2Wgfa4Y8kI5sGQTPDHDwTmfBUiAgjJJTL4GO5gVsh6DCNs8yFjgb5m4tnTUEyx6rBLb3Vv7A3NAZZDvnVPbsKLa1fPMWShnGcILZhpEOdwCGA856",
+      "name": "Health Gateway Dispatcher",
+      "skip_authorization": true,
+      "destination": null,
+      "scopes": "flow_request:read flow_request:query",
+      "client_role": "SU"
+    }
+  },
+  {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+      "code": "PROF002",
+      "version": "hgw.document.profile.v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\", \"filters\": [{\"excludes\": \"HDL\", \"includes\": \"immunochemistry\"}]}, {\"clinical_domain\": \"Radiology\", \"filters\": [{\"excludes\": \"Radiology\", \"includes\": \"Tomography\"}]}, {\"clinical_domain\": \"Emergency\", \"filters\": [{\"excludes\": \"\", \"includes\": \"\"}]}, {\"clinical_domain\": \"Prescription\", \"filters\": [{\"excludes\": \"\", \"includes\": \"\"}]}]"
+    }
+  },
+  {
+    "model": "hgw_frontend.flowrequest",
+    "pk": 1,
+    "fields": {
+      "flow_id": "12345",
+      "process_id": "54321",
+      "status": "PE",
+      "profile": 1,
+      "destination": 1,
+      "start_validity" : "2017-10-23T10:00:00.000Z",
+      "expire_validity" : "2018-10-23T10:00:00.000Z"
+    }
+  },
+  {
+    "model": "hgw_frontend.flowrequest",
+    "pk": 2,
+    "fields": {
+      "flow_id": "67890",
+      "process_id": "09876",
+      "status": "AC",
+      "profile": 1,
+      "destination": 2,
+      "start_validity": "2017-10-23T10:00:00.000Z",
+      "expire_validity": "2018-10-23T10:00:00.000Z"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 1,
+    "fields": {
+      "flow_request": 1,
+      "consent_id": "consent",
+      "confirmation_id": "confirmed",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 2,
+    "fields": {
+      "flow_request": 1,
+      "consent_id": "wrong_consent",
+      "confirmation_id": "wrong_confirmed",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 3,
+    "fields": {
+      "flow_request": 1,
+      "consent_id": "wrong_consent2",
+      "confirmation_id": "wrong_confirmed2",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 4,
+    "fields": {
+      "flow_request": 1,
+      "consent_id": "consent2",
+      "confirmation_id": "confirmed2",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  }
+]

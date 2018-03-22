@@ -1,0 +1,29 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$rYtn7oIfvpA1$F/qxs3keXBxQsengHEzupItqxKoWRTtMCjDvLW4MOBI=",
+      "last_login": null,
+      "is_superuser": true,
+      "username": "admin",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2017-07-25T15:26:35.424Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "hgw_backend.source",
+    "pk": 1,
+    "fields": {
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "name": "SOURCE_1",
+      "url": "https://source1:8444/v1/connectors/"
+    }
+  }
+]

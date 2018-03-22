@@ -1,0 +1,178 @@
+version: '3.0'
+services:
+  destination_mock:
+    build:
+      context: ../../images/development/performance_test_endpoint
+    image: crs4/performance_test_endpoint
+    depends_on:
+      - kafka
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../tests/performance_tests/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../certs/:/container/certs/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}:/data
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "python3", "mock_consumer.py", "-c", "${CLIENT}"]
+
+  source_mock:
+    build:
+      context: ../../images/development/performance_test_endpoint
+    image: crs4/performance_test_endpoint
+    environment:
+      - MEAN_DOC_SIZE=${MEAN_DOC_SIZE:-100000}
+      - SIGMA_DOC_SIZE=${SIGMA_DOC_SIZE:-2000}
+      - CHANNELS_PER_SRC=${CHANNELS_PER_SRC}
+    depends_on:
+      - kafka
+      - consent_manager
+    links:
+      - kafka
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../certs/:/container/certs/
+      - ../../../tests/performance_tests/:/container/service/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}:/data
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+      "python3", "producer_launch.py", "--avg_events", "${AVG_EVENTS:-13}", "--time_unit", "${TIME_UNIT:-y}", "-p", "${PRODUCERS:-1}"]
+
+  hgw_frontend:
+    build:
+      context: ../../images/development/hgw_frontend
+      args:
+        HTTP_PORT: 8000
+    image: crs4/hgw_frontend:development
+    environment:
+      - HTTP_PORT=8000
+      - DJANGO_APP_NAME=hgw_frontend
+      - DEFAULT_DB_NAME=${FRONTEND_DB}
+    ports:
+      - 8000:8000
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../hgw_frontend/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../examples/fixtures/hgw_frontend:/container/fixtures
+      - ../../../certs/ca/web/certs/hgwfrontend:/container/web_certs/
+      - ../../../certs/:/container/certs/
+      - ${DATA_DIR}:/data
+    networks:
+      default:
+        aliases:
+          - hgwfrontend
+
+  hgw_backend:
+    build:
+      context: ../../images/development/hgw_backend
+      args:
+        HTTP_PORT: 8003
+    image: crs4/hgw_backend:development
+    depends_on:
+      - kafka
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
+    environment:
+      - HTTP_PORT=8003
+      - DJANGO_APP_NAME=hgw_backend
+      - TZ=CET
+      - DEFAULT_DB_NAME=${BACKEND_DB}
+    ports:
+      - 8003:8003
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../hgw_backend/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../certs/ca/web/certs/hgwbackend/:/container/web_certs/
+      - ../../../certs/:/container/certs/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}:/data
+    networks:
+      default:
+        aliases:
+          - hgwbackend
+
+  consent_manager:
+    build:
+      context: ../../images/development/consent_manager
+      args:
+        HTTP_PORT: 8002
+    image: crs4/consent_manager:development
+    environment:
+      - HTTP_PORT=8002
+      - DJANGO_APP_NAME=consent_manager
+      - TZ=CET
+      - DEFAULT_DB_NAME=${CONSENT_MANAGER_DB}
+    ports:
+      - 8002:8002
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../consent_manager/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../certs/ca/web/certs/consentmanager/:/container/web_certs/
+      - ${DATA_DIR}:/data
+    networks:
+      default:
+        aliases:
+          - consentmanager
+
+  kafka:
+    build: ../../images/common/kafka
+    image: crs4/kafka
+    environment:
+      - KAFKA_PORT=9092
+      - KAFKA_SSL_PORT=9093
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_JMX=enabled
+      - TZ=CET
+    ports:
+      - 9092:9092
+      - 9093:9093
+      - 9999:9999
+    volumes:
+      - ../../../certs/ca/kafka/certs/kafka-server/:/container/certs/
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      default:
+        aliases:
+          - kafka
+    depends_on:
+      - zookeeper
+    links:
+     - zookeeper
+    entrypoint: /wait-for-it.sh zookeeper:2181 -s --timeout=120 -- /kafka-entrypoint.sh
+    command: kafka-server-start.sh config/server.properties
+
+  hgw_dispatcher:
+    build: ../../images/development/hgw_dispatcher
+    image: crs4/hgw_dispatcher:development
+    depends_on:
+      - kafka
+      - consent_manager
+      - hgw_backend
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../hgw_dispatcher/:/container/service
+      - ../../../certs/:/container/certs/
+      - ${DATA_DIR}:/data
+
+  zookeeper:
+    build: ../../images/common/kafka
+    image: crs4/kafka
+    command: zookeeper-server-start.sh config/zookeeper.properties
+    ports:
+      - 2181:2181

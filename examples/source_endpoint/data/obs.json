@@ -1,0 +1,30 @@
+{
+  "resourceType": "Observation",
+  "subject": {
+    "reference": "http://fake_fse.it/Patient/SLSMLR56M13C354H"
+    }
+  ,
+  "status": "final",
+  "valueQuantity": {
+    "value": 10,
+    "unit": "lbs"
+  },
+  "meta": {
+
+  },
+  "encounter": {
+    "reference": "Encounter/2"
+  },
+  "performer": {
+    "reference": "Practitioner/2"
+  },
+  "code": {
+    "coding": [
+      {
+        "code": "3141-9",
+        "system": "http://loinc.org"
+      }
+    ]
+  }
+}
+
