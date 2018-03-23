@@ -20,6 +20,8 @@ import os
 from enum import Enum
 import requests
 
+from hgw_backend.settings import SOURCE_ENDPOINT_CLIENT_KEY, SOURCE_ENDPOINT_CLIENT_CERT
+
 
 class AuthType(Enum):
     CERTIFICATES_BASED = 'CERTIFICATES_BASED'
@@ -35,7 +37,6 @@ class AbstractAuthProxy(object):
 
 
 class CertificateBasedAuthProxy(AbstractAuthProxy):
-    CERTS_RELATIVE_DIR = '../../certs/ca/web/certs/hgwbackend'  # works on docker
 
     @staticmethod
     def _get_absolute_path(cert_path):
@@ -46,8 +47,8 @@ class CertificateBasedAuthProxy(AbstractAuthProxy):
         )
 
     def create_connector(self, source, connector):
-        client_cert_path = CertificateBasedAuthProxy._get_absolute_path('{}_client.cert.pem'.format(source.name.lower()))
-        client_key_path = CertificateBasedAuthProxy._get_absolute_path('{}_client.key.pem'.format(source.name.lower()))
+        client_cert_path = SOURCE_ENDPOINT_CLIENT_CERT
+        client_key_path = SOURCE_ENDPOINT_CLIENT_KEY
 
         return requests.post(source.url,
                              json=connector,

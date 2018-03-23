@@ -45,12 +45,24 @@ def get_path(base_path, file_path):
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-_CONF_FILE = get_path(BASE_DIR, './config.yml')
+# The order of the paths is important. We will give priority to the one in etc
+_CONF_FILES_PATH = ['/etc/hgw_service/hgw_dispatcher_config.yml', get_path(BASE_DIR, './config.yml')]
 
-BASE_CONF_DIR = os.path.dirname(os.path.abspath(_CONF_FILE))
+cfg = None
+_conf_file = None
+for cf in _CONF_FILES_PATH:
+    try:
+        with open(cf, 'r') as f:
+            cfg = yaml.load(f)
+    except FileNotFoundError:
+        continue
+    else:
+        _conf_file = cf
+        break
+if cfg is None:
+    sys.exit("Config file not found")
 
-with open(_CONF_FILE) as f:
-    cfg = yaml.load(f)
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
 CONSENT_MANAGER_OAUTH_CLIENT_ID = cfg['consent_manager']['client_id']

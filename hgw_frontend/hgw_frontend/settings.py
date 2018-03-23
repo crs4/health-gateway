@@ -18,6 +18,7 @@
 
 import os
 
+import sys
 import yaml
 
 from hgw_common.saml_config import get_saml_config
@@ -29,13 +30,27 @@ def get_path(base_path, file_path):
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-_CONF_FILE = get_path(BASE_DIR, './config.yml')
-with open(_CONF_FILE) as f:
-    cfg = yaml.load(f)
+# The order of the paths is important. We will give priority to the one in etc
+_CONF_FILES_PATH = ['/etc/hgw_service/hgw_frontend_config.yml', get_path(BASE_DIR, './config.yml')]
+
+cfg = None
+_conf_file = None
+for cf in _CONF_FILES_PATH:
+    try:
+        with open(cf, 'r') as f:
+            cfg = yaml.load(f)
+    except FileNotFoundError:
+        continue
+    else:
+        _conf_file = cf
+        break
+
+if cfg is None:
+    sys.exit("Config file not found")
 
 SECRET_KEY = cfg['django']['secret_key']
 
-BASE_CONF_DIR = os.path.dirname(os.path.abspath(_CONF_FILE))
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
 

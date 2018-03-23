@@ -39,14 +39,16 @@ services:
     ports:
       - 8000:8000
     volumes:
+      - ../../../hgw_frontend/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ./config_files/hgw_frontend_config.yml:/container/service/hgw_frontend/config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../hgw_frontend/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ../../../examples/fixtures/hgw_frontend:/container/fixtures
       - ../../../certs/ca/web/certs/hgwfrontend:/container/web_certs/
-      - ../../../certs/:/container/certs/
+      - ../../../certs/ca/kafka/certs/hgwfrontend/cert.pem:/container/client_certs/cert.pem
+      - ../../../certs/ca/kafka/certs/hgwfrontend/key.pem:/container/client_certs/key.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
     networks:
       default:
         aliases:
