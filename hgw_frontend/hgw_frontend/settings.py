@@ -43,7 +43,7 @@ HOSTNAME = cfg['django']['hostname']
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [HOSTNAME]
 
 MAX_API_VERSION = 1
 

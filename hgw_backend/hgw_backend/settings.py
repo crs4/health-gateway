@@ -18,19 +18,30 @@
 
 import os
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or os.path.join(BASE_DIR, 'hgw_backend_db.sqlite3')
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+import yaml
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '5ed9#sef91*#bn+etd6ug*ty6)iysxmcnl%qv3c+i&-1ec1644'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+def get_path(base_path, file_path):
+    return file_path if os.path.isabs(file_path) else os.path.join(base_path, file_path)
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+_CONF_FILE = get_path(BASE_DIR, './config.yml')
+with open(_CONF_FILE) as f:
+    cfg = yaml.load(f)
+
+SECRET_KEY = cfg['django']['secret_key']
+
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_CONF_FILE))
+
+DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
+
+HOSTNAME = cfg['django']['hostname']
+
 DEBUG = True
 
-ALLOWED_HOSTS = ['hgwbackend']
+ALLOWED_HOSTS = [HOSTNAME]
 
 MAX_API_VERSION = 1
 
@@ -86,20 +97,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hgw_backend.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DEFAULT_DB_NAME,
     }
 }
-
-
-# Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
 if DEBUG is False:
     AUTH_PASSWORD_VALIDATORS = [
@@ -119,9 +122,6 @@ if DEBUG is False:
 else:
     AUTH_PASSWORD_VALIDATORS = []
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
@@ -134,9 +134,8 @@ STATIC_URL = '/static/'
 SESSION_COOKIE_NAME = 'hgw_backend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-KAFKA_BROKER = 'kafka:9093'
+KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'
-
-KAFKA_CA_CERT = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem')
-KAFKA_CLIENT_CERT = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/hgwbackend/cert.pem')
-KAFKA_CLIENT_KEY = os.path.join(os.path.dirname(__file__),  '../../certs/ca/kafka/certs/hgwbackend/key.pem')
+KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
+KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
+KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])

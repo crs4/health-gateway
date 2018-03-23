@@ -1,0 +1,12 @@
+django:
+  secret_key: 5ed9#sef91*#bn+etd6ug*ty6)iysxmcnl%qv3c+i&-1ec1644
+  hostname: hgwbackend
+  port: 8003
+  database:
+    name: ../hgw_backend_db.sqlite3
+
+kafka:
+  uri: kafka:9093
+  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
+  client_cert: ../../certs/ca/kafka/certs/hgwbackend/cert.pem
+  client_key: ../../certs/ca/kafka/certs/hgwbackend/key.pem
