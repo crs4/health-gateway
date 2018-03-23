@@ -22,7 +22,7 @@ MAINTAINER Vittorio Meloni <vittorio.meloni@crs4.it>
 ENV CERTS_DIR=/container/certs
 
 RUN apk update && apk add python3 python3-dev py3-pip
-RUN pip3 install kafka-python requests requests-oauthlib oauthlib
+RUN pip3 install kafka-python requests requests-oauthlib oauthlib PyYAML
 
 ADD resources/wait-for-it.sh /custom_entrypoint/
 ADD resources/docker-entrypoint.sh /custom_entrypoint/

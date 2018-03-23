@@ -16,6 +16,7 @@ consent_manager:
   client_secret: NrRetjwS3n9By6FhqWKbkuGLTvuQWtbQq3QwnKc8CgHoJg02MeQI4Mitj2fISJXv4DQieaIhdyWLy5Klf30i37mP7P0Vh3acOGJZFaHhKuBI3QYlRJBGipm50bBR3zfD
 
 kafka:
+  uri: kafka:9093
   ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
   client_cert: ../../certs/ca/kafka/certs/hgwfrontend/cert.pem
   client_key: ../../certs/ca/kafka/certs/hgwfrontend/key.pem

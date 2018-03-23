@@ -223,7 +223,7 @@ CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
 CONSENT_MANAGER_CLIENT_ID = cfg['consent_manager']['client_id']
 CONSENT_MANAGER_CLIENT_SECRET = cfg['consent_manager']['client_secret']
 
-KAFKA_BROKER = 'kafka:9093'
+KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CRT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])

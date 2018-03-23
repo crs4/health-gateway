@@ -24,6 +24,8 @@ import requests
 import sys
 
 import time
+
+import yaml
 from kafka import KafkaConsumer, TopicPartition, KafkaProducer
 from kafka.errors import KafkaError
 from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError, TokenExpiredError
@@ -36,22 +38,34 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
+
+def get_path(base_path, file_path):
+    return file_path if os.path.isabs(file_path) else os.path.join(base_path, file_path)
+
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-CONSENT_MANAGER_URI = 'https://consentmanager:8002'
-CONSENT_MANAGER_OAUTH_CLIENT_ID = 'qe5HzZoKocWjGDYyfZsUBC5jpvZ3C7BWbgbKGsnW'
-CONSENT_MANAGER_OAUTH_CLIENT_SECRET = 'lbfIiCIZOG8tN6L5LKdCjxPN4tHimmZZ4W1d9eMX2sKMrPdNea8MY5rVyWmeLGvj1QNpn1Tlj2fifpGFRj0TV0W8UiKXW0GA9LPD7IOyF3zMEtXCBq8UORvprKdQk7RU'
+_CONF_FILE = get_path(BASE_DIR, './config.yml')
 
-HGW_FRONTEND_URI = 'https://hgwfrontend:8000'
-HGW_FRONTEND_OAUTH_CLIENT_ID = 'VCDkhstCfeJUP3uJMWusiOrA0LkVe4rJWy7WQDHO'
-HGW_FRONTEND_OAUTH_CLIENT_SECRET = 'H4ZsGYIPx9jo0B6C2Wgfa4Y8kI5sGQTPDHDwTmfBUiAgjJJTL4GO5gVsh6DCNs8yFjgb5m4tnTUEyx6rBLb3Vv7A3NAZZDvnVPbsKLa1fPMWShnGcILZhpEOdwCGA856'
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_CONF_FILE))
 
-HGW_BACKEND_URI = 'https://hgwbackend:8003'
+with open(_CONF_FILE) as f:
+    cfg = yaml.load(f)
 
-KAFKA_SERVER = 'kafka:9093'
-KAFKA_CA_CERT = os.path.join(BASE_DIR, '../certs/ca/kafka/certs/ca/kafka.chain.cert.pem')
-KAFKA_CLIENT_CERT = os.path.join(BASE_DIR, '../certs/ca/kafka/certs/hgwdispatcher/cert.pem')
-KAFKA_CLIENT_KEY = os.path.join(BASE_DIR, '../certs/ca/kafka/certs/hgwdispatcher/key.pem')
+CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
+CONSENT_MANAGER_OAUTH_CLIENT_ID = cfg['consent_manager']['client_id']
+CONSENT_MANAGER_OAUTH_CLIENT_SECRET = cfg['consent_manager']['client_secret']
+
+HGW_FRONTEND_URI = cfg['hgw_frontend']['uri']
+HGW_FRONTEND_OAUTH_CLIENT_ID = cfg['hgw_frontend']['client_id']
+HGW_FRONTEND_OAUTH_CLIENT_SECRET = cfg['hgw_frontend']['client_secret']
+
+HGW_BACKEND_URI = cfg['hgw_backend']['uri']
+
+KAFKA_BROKER = cfg['kafka']['uri']
+KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
+KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
+KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
 
 class Dispatcher(object):
@@ -222,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('--kafka-client-key', dest='kafka_client_key', type=str, help='the kafka client key')
 
     args = parser.parse_args()
-    kafka_server = args.kafka_server or KAFKA_SERVER
+    kafka_server = args.kafka_server or KAFKA_BROKER
     kafka_ca_cert = args.kafka_server or KAFKA_CA_CERT
     kafka_client_cert = args.kafka_server or KAFKA_CLIENT_CERT
     kafka_client_key = args.kafka_server or KAFKA_CLIENT_KEY
