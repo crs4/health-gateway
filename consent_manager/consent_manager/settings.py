@@ -19,20 +19,33 @@
 import logging
 import os
 
-# from oauth2_provider.scopes import BaseScopes
+import yaml
 
 from hgw_common.saml_config import get_saml_config
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or os.path.join(BASE_DIR, 'consent_manager_db.sqlite3')
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'i*w3i*-y589ynfl_sar!h9r1mpra8mkjpwobeage5h5a(0x!d$'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+def get_path(base_path, file_path):
+    return file_path if os.path.isabs(file_path) else os.path.join(base_path, file_path)
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+_CONF_FILE = get_path(BASE_DIR, './config.yml')
+with open(_CONF_FILE) as f:
+    cfg = yaml.load(f)
+
+SECRET_KEY = cfg['django']['secret_key']
+
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_CONF_FILE))
+
+DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
+
+HOSTNAME = cfg['django']['hostname']
+
 DEBUG = True
 
-HOSTNAME = 'consentmanager'
 ALLOWED_HOSTS = ['*']
+
 MAX_API_VERSION = 1
 
 # Application definition
@@ -54,23 +67,10 @@ INSTALLED_APPS = [
 
 if DEBUG is True:
     INSTALLED_APPS.append('sslserver')
-    ROOT_URL = 'https://' + HOSTNAME + ':8002'
-else:
-    ROOT_URL = 'https://' + HOSTNAME
+
+ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 
 ROOT_URLCONF = 'consent_manager.urls'
-
-SAML_SP_NAME = 'Consent Manager Service Provider'
-SAML_SP_KEY_PATH = os.path.join(os.path.dirname(__file__), '../certs/spid.key.pem')
-SAML_SP_CRT_PATH = os.path.join(os.path.dirname(__file__), '../certs/spid.cert.pem')
-SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
-SAML_ATTRIBUTE_MAPPING = {
-    'spidCode': ('username',),
-    'fiscalNumber': ('fiscalNumber',)
-}
-SAML_AUTHN_CUSTOM_ARGS = {
-    'attribute_consuming_service_index': '1'
-}
 
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',
@@ -100,8 +100,7 @@ REST_FRAMEWORK = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, '../templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -139,26 +138,28 @@ STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
 
 SESSION_COOKIE_NAME = 'consent_manager'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+# SAML CONFIGURATIONS
+SAML_SP_NAME = cfg['saml']['sp_name']
+SAML_SP_KEY_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_key'])
+SAML_SP_CRT_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_cert'])
+SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
+SAML_ATTRIBUTE_MAPPING = {
+    'spidCode': ('username',),
+    'fiscalNumber': ('fiscalNumber',)
+}
+SAML_AUTHN_CUSTOM_ARGS = {
+    'attribute_consuming_service_index': '1'
+}
 
-OAUTH2_PROVIDER_APPLICATION_MODEL = 'consent_manager.RESTClient'
-
+# OAUTH2 CONFIGURATIONS
 SCOPES = {
     'consent:read': 'Read scope',
     'consent:write': 'Write scope'
 }
 DEFAULT_SCOPES = ['consent:read', 'consent:write']
 
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'consent': {
-            'type': 'oauth2',
-            'tokenUrl': '{}/oauth2/token/'.format(ROOT_URL),
-            'flow': 'application',
-            'scopes': DEFAULT_SCOPES
-        }
-    }
-}
 
 class ApplicationBasedScope(object):
     def get_all_scopes(self):
@@ -175,6 +176,8 @@ class ApplicationBasedScope(object):
         return DEFAULT_SCOPES
 
 
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'consent_manager.RESTClient'
+
 OAUTH2_PROVIDER = {
     'SCOPES': SCOPES,
     'SCOPES_BACKEND_CLASS': ApplicationBasedScope,
@@ -182,3 +185,14 @@ OAUTH2_PROVIDER = {
 }
 
 REQUEST_VALIDITY_SECONDS = 60
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'consent': {
+            'type': 'oauth2',
+            'tokenUrl': '{}/oauth2/token/'.format(ROOT_URL),
+            'flow': 'application',
+            'scopes': DEFAULT_SCOPES
+        }
+    }
+}

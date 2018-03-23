@@ -41,8 +41,6 @@ DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, c
 
 HOSTNAME = cfg['django']['hostname']
 
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
@@ -71,6 +69,8 @@ if DEBUG is True:
 
 ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 
+ROOT_URLCONF = 'hgw_frontend.urls'
+
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',
     'django.contrib.auth.backends.ModelBackend',
@@ -95,10 +95,9 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_PARSER_CLASSES': ('rest_framework.parsers.JSONParser',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-    'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION+1)]
+    'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION + 1)]
 }
 
-ROOT_URLCONF = 'hgw_frontend.urls'
 
 TEMPLATES = [
     {
@@ -155,7 +154,6 @@ SAML_ATTRIBUTE_MAPPING = {
 SAML_AUTHN_CUSTOM_ARGS = {
     'attribute_consuming_service_index': '1'
 }
-
 
 # OAUTH2 CONFIGURATIONS
 FLOW_REQUESTS_SCOPES = {

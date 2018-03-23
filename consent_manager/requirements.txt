@@ -5,3 +5,4 @@ django-cors-middleware
 django-sslserver
 djangosaml2==0.16.10
 coreapi
+PyYAML

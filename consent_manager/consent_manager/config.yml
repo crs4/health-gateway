@@ -1,0 +1,11 @@
+django:
+  secret_key: i*w3i*-y589ynfl_sar!h9r1mpra8mkjpwobeage5h5a(0x!d$
+  hostname: consentmanager
+  port: 8002
+  database:
+    name: ../consent_manager_db.sqlite3
+
+saml:
+  sp_name: Consent Manager Service Provider
+  sp_cert: ../certs/spid.cert.pem
+  sp_key: ../certs/spid.key.pem
