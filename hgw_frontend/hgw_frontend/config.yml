@@ -1,0 +1,24 @@
+django:
+  secret_key: 8m#4t%c_z1l7=gsfpf=han8ibdmd-+w1-05^&-+e4%)vwn2*7@
+  hostname: hgwfrontend
+  port: 8000
+  database:
+    name: ../hgw_frontend_db.sqlite3
+
+saml:
+  sp_name: HGW Frontend Service Provider
+  sp_cert: ../certs/spid.cert.pem
+  sp_key: ../certs/spid.key.pem
+
+consent_manager:
+  uri: https://consentmanager:8002
+  client_id: 04hpKQ1RPdbQAI0TYZ4A162r0IBlPH8WS6cZ5BMR
+  client_secret: NrRetjwS3n9By6FhqWKbkuGLTvuQWtbQq3QwnKc8CgHoJg02MeQI4Mitj2fISJXv4DQieaIhdyWLy5Klf30i37mP7P0Vh3acOGJZFaHhKuBI3QYlRJBGipm50bBR3zfD
+
+kafka:
+  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
+  client_cert: ../../certs/ca/kafka/certs/hgwfrontend/cert.pem
+  client_key: ../../certs/ca/kafka/certs/hgwfrontend/key.pem
+
+hgw_backend:
+  uri: https://hgwbackend:8003

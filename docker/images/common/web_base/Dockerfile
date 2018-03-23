@@ -143,7 +143,8 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	pycrypto \
 	pycryptodomex \
 	coreapi \
-	drf_yasg
+	drf_yasg \
+	PyYAML
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 

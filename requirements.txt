@@ -11,3 +11,4 @@ kafka-python==1.3.5
 coreapi
 drf-yasg
 selenium
+PyYAML

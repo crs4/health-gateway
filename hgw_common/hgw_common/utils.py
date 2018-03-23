@@ -19,13 +19,13 @@
 import json
 import re
 import socket
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from itertools import product
 from threading import Thread
 
 import requests
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.crypto import get_random_string
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from oauth2_provider.ext.rest_framework import TokenHasScope
 from oauth2_provider.ext.rest_framework.permissions import SAFE_HTTP_METHODS
 from oauth2_provider.settings import oauth2_settings
@@ -47,20 +47,6 @@ class TokenHasResourceDetailedScope(TokenHasScope):
     `view_custom_instance = {'myaction': {'read': ['custom']}}`
     the token must have ['myscope:read', 'myscope:custom'] to access the view
     """
-    #
-    # def has_permission(self, request, view):
-    #     token = request.auth
-    #
-    #     if not token:
-    #         return False
-    #
-    #     if hasattr(token, 'scope'):  # OAuth 2
-    #         required_scopes = self.get_scopes(request, view)
-    #         return token.is_valid(required_scopes)
-    #
-    #     assert False, ('TokenHasScope requires the'
-    #                    '`oauth2_provider.rest_framework.OAuth2Authentication` authentication '
-    #                    'class to be used.')
 
     def get_scopes(self, request, view):
         try:

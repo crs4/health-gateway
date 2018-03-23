@@ -18,17 +18,33 @@
 
 import os
 
+import yaml
+
 from hgw_common.saml_config import get_saml_config
 
+
+def get_path(base_path, file_path):
+    return file_path if os.path.isabs(file_path) else os.path.join(base_path, file_path)
+
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or os.path.join(BASE_DIR, '../hgw_frontend_db.sqlite3')
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '8m#4t%c_z1l7=gsfpf=han8ibdmd-+w1-05^&-+e4%)vwn2*7@'
+
+_CONF_FILE = get_path(BASE_DIR, './config.yml')
+with open(_CONF_FILE) as f:
+    cfg = yaml.load(f)
+
+SECRET_KEY = cfg['django']['secret_key']
+
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_CONF_FILE))
+
+DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
+
+HOSTNAME = cfg['django']['hostname']
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-HOSTNAME = 'hgwfrontend'
 ALLOWED_HOSTS = ['*']
 
 MAX_API_VERSION = 1
@@ -52,75 +68,8 @@ INSTALLED_APPS = [
 
 if DEBUG is True:
     INSTALLED_APPS.append('sslserver')
-    ROOT_URL = 'https://' + HOSTNAME + ':8000'
-else:
-    ROOT_URL = 'https://' + HOSTNAME
 
-SAML_SP_NAME = 'HGW Frontend Service Provider'
-SAML_SP_KEY_PATH = os.path.join(os.path.dirname(__file__), '../certs/spid.key.pem')
-SAML_SP_CRT_PATH = os.path.join(os.path.dirname(__file__), '../certs/spid.cert.pem')
-SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
-SAML_ATTRIBUTE_MAPPING = {
-    'spidCode': ('username',),
-    'fiscalNumber': ('fiscalNumber',)
-}
-SAML_AUTHN_CUSTOM_ARGS = {
-    'attribute_consuming_service_index': '1'
-}
-
-OAUTH2_PROVIDER_APPLICATION_MODEL = 'hgw_frontend.RESTClient'
-QUERY_SCOPE = 'query'
-CUSTOM_READ_SCOPES = [QUERY_SCOPE]
-FLOW_REQUESTS_SCOPES = {
-    'flow_request:read': 'Read flow request belonging to the corrispondent destination',
-    'flow_request:write': 'Write scope. You can add, update or delete a flow_request',
-    'flow_request:{}'.format(QUERY_SCOPE): 'Perform flow request query',
-}
-MESSAGES_SCOPES = {
-    'messages:read': 'Read messages for a Destination'
-}
-SCOPES = {**FLOW_REQUESTS_SCOPES, **MESSAGES_SCOPES}
-
-DEFAULT_SCOPES = ['flow_request:read', 'flow_request:write']
-
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'flow_request': {
-            'type': 'oauth2',
-            'tokenUrl': '{}/oauth2/token/'.format(ROOT_URL),
-            'flow': 'application',
-            'scopes': FLOW_REQUESTS_SCOPES
-        },
-        'messages': {
-            'type': 'oauth2',
-            'tokenUrl': '{}/oauth2/token/'.format(ROOT_URL),
-            'flow': 'application',
-            'scopes': MESSAGES_SCOPES
-        }
-    }
-}
-
-
-class ApplicationBasedScope(object):
-    def get_all_scopes(self):
-        return SCOPES
-
-    def get_available_scopes(self, application=None, request=None, *args, **kwargs):
-        if application.scopes:
-            return application.scopes.split(" ")
-        return SCOPES.keys()
-
-    def get_default_scopes(self, application=None, request=None, *args, **kwargs):
-        if application.scopes:
-            return application.scopes.split(" ")
-        return DEFAULT_SCOPES
-
-
-OAUTH2_PROVIDER = {
-    'SCOPES': SCOPES,
-    'SCOPES_BACKEND_CLASS': ApplicationBasedScope,
-    'DEFAULT_SCOPES': DEFAULT_SCOPES
-}
+ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',
@@ -194,17 +143,92 @@ LOGIN_URL = '/saml2/login/'
 SESSION_COOKIE_NAME = 'hgw_frontend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+# SAML CONFIGURATIONS
+SAML_SP_NAME = cfg['saml']['sp_name']
+SAML_SP_KEY_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_key'])
+SAML_SP_CRT_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_cert'])
+SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
+SAML_ATTRIBUTE_MAPPING = {
+    'spidCode': ('username',),
+    'fiscalNumber': ('fiscalNumber',)
+}
+SAML_AUTHN_CUSTOM_ARGS = {
+    'attribute_consuming_service_index': '1'
+}
+
+
+# OAUTH2 CONFIGURATIONS
+FLOW_REQUESTS_SCOPES = {
+    'flow_request:read': 'Read flow request belonging to the corrispondent destination',
+    'flow_request:write': 'Write scope. You can add, update or delete a flow_request',
+    'flow_request:query': 'Perform flow request query',
+}
+MESSAGES_SCOPES = {
+    'messages:read': 'Read messages for a Destination'
+}
+SCOPES = {**FLOW_REQUESTS_SCOPES, **MESSAGES_SCOPES}
+
+DEFAULT_SCOPES = ['flow_request:read', 'flow_request:write']
+
+
+class ApplicationBasedScope(object):
+    """
+    Oauth2 custom class to handle scopes assignments to rest clients
+    """
+
+    @staticmethod
+    def get_all_scopes():
+        return SCOPES
+
+    @staticmethod
+    def get_available_scopes(application=None, request=None, *args, **kwargs):
+        if application.scopes:
+            return application.scopes.split(" ")
+        return SCOPES.keys()
+
+    @staticmethod
+    def get_default_scopes(application=None, request=None, *args, **kwargs):
+        if application.scopes:
+            return application.scopes.split(" ")
+        return DEFAULT_SCOPES
+
+
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'hgw_frontend.RESTClient'
+
+OAUTH2_PROVIDER = {
+    'SCOPES': SCOPES,
+    'SCOPES_BACKEND_CLASS': ApplicationBasedScope,
+    'DEFAULT_SCOPES': DEFAULT_SCOPES
+}
+
 REQUEST_VALIDITY_SECONDS = 60
 
-CONSENT_MANAGER_URI = 'https://consentmanager:8002'
-CONSENT_MANAGER_CLIENT_ID = '04hpKQ1RPdbQAI0TYZ4A162r0IBlPH8WS6cZ5BMR'
-CONSENT_MANAGER_CLIENT_SECRET = 'NrRetjwS3n9By6FhqWKbkuGLTvuQWtbQq3QwnKc8CgHoJg02MeQI4Mitj2fISJXv4DQieaIhdyWLy5Klf30i37mP7P0Vh3acOGJZFaHhKuBI3QYlRJBGipm50bBR3zfD'
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'flow_request': {
+            'type': 'oauth2',
+            'tokenUrl': '{}/oauth2/token/'.format(ROOT_URL),
+            'flow': 'application',
+            'scopes': FLOW_REQUESTS_SCOPES
+        },
+        'messages': {
+            'type': 'oauth2',
+            'tokenUrl': '{}/oauth2/token/'.format(ROOT_URL),
+            'flow': 'application',
+            'scopes': MESSAGES_SCOPES
+        }
+    }
+}
+
+# SERVICES CONFIGURATION
+CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
+CONSENT_MANAGER_CLIENT_ID = cfg['consent_manager']['client_id']
+CONSENT_MANAGER_CLIENT_SECRET = cfg['consent_manager']['client_secret']
 
 KAFKA_BROKER = 'kafka:9093'
 KAFKA_TOPIC = 'control'
-KAFKA_CA_CERT = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem')
-KAFKA_CLIENT_CRT = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/hgwfrontend/cert.pem')
-KAFKA_CLIENT_KEY = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/hgwfrontend/key.pem')
+KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
+KAFKA_CLIENT_CRT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
+KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
-HGW_BACKEND_URI = 'https://hgwbackend:8003'
-HGW_BACKEND_CERT_FILE = os.path.join(BASE_DIR, 'certs/hgw_backend_cert.pem')
+HGW_BACKEND_URI = cfg['hgw_backend']['uri']
