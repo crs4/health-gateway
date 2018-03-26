@@ -74,9 +74,9 @@ prepare_docker(){
     cd ${INTEGRATION_DOCKER_DIR}
     docker-compose down
     if [ "$NO_SPID" == "true" ]; then
-        make build_init_db_rund_no_spid
-    else
         make build_init_db_rund
+    else
+        make build_init_db_rund_with_spid
     fi
 }
 

@@ -50,6 +50,10 @@ services:
         aliases:
           - source-endpoint-mockup
 
+  hgw_frontend:
+    volumes:
+      - ../../../examples/fixtures/hgw_frontend/:/container/fixtures/
+
   kafka:
     environment:
       - KAFKA_CREATE_TOPICS=control:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,xi5lxbtFDNwOLzLnpjidfteZE8WmwCuM:1:1:hgwdispatcher:i2b2-destination
