@@ -56,23 +56,27 @@ DIR=$(pwd)
 INTEGRATION_DOCKER_DIR=${DIR}/../docker/environments/integration/
 
 finish(){
-ret=$?
-cd ${INTEGRATION_DOCKER_DIR}
-docker-compose down
+    ret=$?
+    cd ${INTEGRATION_DOCKER_DIR}
+    if [ "$NO_SPID" == "true" ]; then
+        make down
+    else
+        make down_with_spid
+    fi
 
-if [ "$message_received" -eq 0 ]; then
-    echo "TESTS FAILED"
-else
-    echo "TESTS OK"
-fi
-cd ${DIR}
+    if [ "$message_received" -eq 0 ]; then
+        echo "TESTS FAILED"
+    else
+        echo "TESTS OK"
+    fi
+    cd ${DIR}
 
 }
 trap finish EXIT
 
 prepare_docker(){
     cd ${INTEGRATION_DOCKER_DIR}
-    docker-compose down
+    make down_with_spid  # This will work if the previous run was with or without spid
     if [ "$NO_SPID" == "true" ]; then
         make build_init_db_rund
     else
@@ -82,7 +86,7 @@ prepare_docker(){
 
 check_identity_server_up(){
     echo "Waiting identity server. This can take a while"
-    IP_ADDRESS=$(docker-compose ps | grep spid-testenv-identityserver_1 | awk '{print $1}' |
+    IP_ADDRESS=$(docker ps | grep spid-testenv-identityserver_1 | awk '{print $1}' |
         xargs docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
     PORT_OPENED=1
     while [ "$PORT_OPENED" != "0" ]
@@ -137,9 +141,7 @@ check_message_received(){
 }
 
 prepare_docker
-if [ "$NO_SPID" == "false" ]; then
-    check_identity_server_up
-fi
+check_identity_server_up
 #check_containers_up # does not seem to work well (especially on mac), anyway it is someway redundant
 run_unittest
 publish_data
