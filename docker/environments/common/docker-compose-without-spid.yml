@@ -14,6 +14,7 @@ services:
     volumes:
       - ../../../hgw_frontend/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../examples/fixtures/hgw_frontend/:/container/fixtures/
       - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

@@ -43,7 +43,7 @@ SECRET_KEY = 'b^t+=v^n$wqn$pu35g&$tl6f@dcaz6)((0=yv1jxmgn59grj8^'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['i2b2-destination']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
