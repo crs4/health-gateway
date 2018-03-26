@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('channel_id', models.CharField(default=hgw_common.models.generate_id, max_length=32)),
                 ('source_id', models.CharField(max_length=32)),
                 ('destination_id', models.CharField(max_length=32)),
-                ('patient_id', models.CharField(max_length=100)),
+                ('person_id', models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(

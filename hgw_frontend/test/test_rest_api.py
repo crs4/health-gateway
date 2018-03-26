@@ -463,15 +463,15 @@ class TestAPI(TestCase):
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
-    def test_confirm_missing_patient_id(self, mocked_kafka_producer):
+    def test_confirm_missing_person_id(self, mocked_kafka_producer):
         """
-        Tests that if the patient logged does not have a correct ID (i.e., fiscalNumber), the confirmation fails
+        Tests that if the person logged does not have a correct ID (i.e., fiscalNumber), the confirmation fails
         :return:
         """
         self.client.login(username='admin', password='admin')
         res = self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
         self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PATIENT_ID'])
+        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PERSON_ID'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -525,7 +525,7 @@ class TestAPI(TestCase):
                 'kafka_public_key': destination.kafka_public_key
             },
             'profile': self.profile,
-            'patient_id': TEST_PERSON1_ID
+            'person_id': TEST_PERSON1_ID
         }
         self.assertEquals(mocked_kafka_producer().send.call_args_list[0][0][0], 'control')
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode()), kafka_data)

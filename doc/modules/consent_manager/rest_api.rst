@@ -30,7 +30,7 @@ API Methods
     :param source_id: the id of the Source that will send data
     :param destination_id: the id of the Destination that will receive the data
     :param profile: the Profile object
-    :param patient_id: the patient id
+    :param person_id: the person id
 
     :reqheader Authorization: Bearer <oauth2_authorization_token> The authorization token obtained before
     :resheader Content-Type: application/json

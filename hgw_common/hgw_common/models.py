@@ -38,4 +38,4 @@ class Channel(models.Model):
     source_id = models.CharField(max_length=32, blank=False, null=False)
     destination_id = models.CharField(max_length=32, blank=False, null=False)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    patient_id = models.CharField(max_length=100, blank=False, null=False)
+    person_id = models.CharField(max_length=100, blank=False, null=False)

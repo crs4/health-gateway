@@ -42,10 +42,10 @@ class Command(BaseCommand):
 
     def _handle_payload(self, data, *args, **options):
         docs = json.loads(data.decode('utf-8'))
-        print('\nFound documents for {} patient(s)'.format(len(docs)))
+        print('\nFound documents for {} person(s)'.format(len(docs)))
 
-        # for pat_id, doc_list in six.iteritems(docs):
-        #     print('Patient {} has {} documents'.format(pat_id, len(doc_list)))
+        # for person_id, doc_list in six.iteritems(docs):
+        #     print('Person {} has {} documents'.format(person_id, len(doc_list)))
         #     for index, doc in enumerate(doc_list):
         #         doc_list[index] = ''.join(chr(abs(c)) for c in doc).decode('utf-8')
         # with open('/tmp/doc', 'w') as f:

@@ -30,5 +30,5 @@ ERRORS_MESSAGE = {
     'INVALID_CONSENT_STATUS': 'Invalid consent status',
     'UNKNOWN_CONSENT': 'Unknown consent',
     'INVALID_DATA': 'Invalid parameters',
-    'MISSING_PATIENT_ID': 'Missing patient id'
+    'MISSING_PERSON_ID': 'Missing person id'
 }

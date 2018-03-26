@@ -57,8 +57,8 @@ class ConsentView(ViewSet):
                     properties={
                         'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
                                                      description='The id of the consent'),
-                        'patient_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id of the patient'),
+                        'person_id': openapi.Schema(type=openapi.TYPE_STRING,
+                                                     description='The id of the person'),
                         'status': openapi.Schema(type=openapi.TYPE_STRING,
                                                  description='The status of the consent',
                                                  enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
@@ -152,8 +152,8 @@ class ConsentView(ViewSet):
                 properties={
                     'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
                                                  description='The id of the consent'),
-                    'patient_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id of the patient'),
+                    'person_id': openapi.Schema(type=openapi.TYPE_STRING,
+                                                 description='The id of the person'),
                     'status': openapi.Schema(type=openapi.TYPE_STRING,
                                              description='The status of the consent',
                                              enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
@@ -276,7 +276,7 @@ def revoke_consents(request):
         'REVOKED': 1
     }
     if request.method == 'GET':
-        consents = Consent.objects.filter(patient_id=request.user.fiscalNumber)
+        consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
         consent_list = []
         for c in consents:
             if c.status == 'AC':
@@ -293,7 +293,7 @@ def revoke_consents(request):
         revoked = []
         for consent in revoke_list:
             try:
-                c = Consent.objects.get(id=consent, status=Consent.ACTIVE, patient_id=request.user.fiscalNumber)
+                c = Consent.objects.get(id=consent, status=Consent.ACTIVE, person_id=request.user.fiscalNumber)
             except Consent.DoesNotExist:
                 pass
             else:

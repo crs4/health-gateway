@@ -12,6 +12,9 @@ run_with_spid:
 down:
 	docker-compose down
 
+down_with_spid:
+	docker-compose -f docker-compose-with-spid.yml -f docker-compose.override.yml down
+
 rund:
 	docker-compose up -d
 

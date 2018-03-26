@@ -369,7 +369,7 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
                 'name': destination.name
             },
             'profile': profile_data,
-            'patient_id': user.fiscalNumber,
+            'person_id': user.fiscalNumber,
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
@@ -452,7 +452,7 @@ def _confirm(request, consent_confirm_id):
                 'kafka_public_key': destination.kafka_public_key
             },
             'profile': profile_ser.data,
-            'patient_id': request.user.fiscalNumber
+            'person_id': request.user.fiscalNumber
         }
 
         kp.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
@@ -490,7 +490,7 @@ def consents_confirmed(request):
 @login_required
 def confirm_request(request):
     if not request.user.fiscalNumber:
-        return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PATIENT_ID'])
+        return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PERSON_ID'])
 
     try:
         logger.debug('request.GET.keys() %s', request.GET.keys())

@@ -24,7 +24,7 @@ from threading import Thread
 
 import requests
 
-from test_data import SOURCES, ACTIVE_CHANNEL_ID, PATIENT_ID, FLOW_ID, PROCESS_ID, UNKNOWN_OAUTH_CLIENT, DESTINATION, \
+from test_data import SOURCES, ACTIVE_CHANNEL_ID, PERSON_ID, FLOW_ID, PROCESS_ID, UNKNOWN_OAUTH_CLIENT, DESTINATION, \
     PENDING_CHANNEL_ID, CHANNEL_WITH_NO_PROCESS_ID
 
 
@@ -130,7 +130,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                     },
                     'destination': DESTINATION,
                     'profile': profile_data,
-                    'patient_id': PATIENT_ID,
+                    'person_id': PERSON_ID,
                     'status': 'AC',
                     'consent_id': consent_id,
                     'confirm_id': 'confirm_id'
@@ -143,7 +143,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                     },
                     'destination': DESTINATION,
                     'profile': profile_data,
-                    'patient_id': PATIENT_ID,
+                    'person_id': PERSON_ID,
                     'status': 'PE',
                     'consent_id': consent_id,
                     'confirm_id': 'confirm_id'

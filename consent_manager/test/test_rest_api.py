@@ -10,8 +10,8 @@ from hgw_common.utils import get_free_port
 PORT = get_free_port()
 
 BASE_DIR = os.path.dirname(__file__)
-PATIENT1_ID = 'SLSMLR56M13C354H'
-PATIENT2_ID = 'GVNFSL43S21H457H'
+PERSON1_ID = 'SLSMLR56M13C354H'
+PERSON2_ID = 'GVNFSL43S21H457H'
 
 
 class TestAPI(TestCase):
@@ -44,7 +44,7 @@ class TestAPI(TestCase):
                 'name': 'DEST_MOCKUP'
             },
             'profile': self.profile,
-            'patient_id': PATIENT1_ID,
+            'person_id': PERSON1_ID,
             'start_validity': '2017-10-23T10:00:00.000Z',
             'expire_validity': '2018-10-23T10:00:00.000Z'
         }
@@ -127,7 +127,7 @@ class TestAPI(TestCase):
                 'name': 'DEST_MOCKUP'
             },
             'consent_id': 'q18r2rpd1wUqQjAZPhh24zcN9KCePRyr',
-            'patient_id': PATIENT1_ID,
+            'person_id': PERSON1_ID,
             'source': {
                 'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
                 'name': 'SOURCE_1'
@@ -264,7 +264,7 @@ class TestAPI(TestCase):
         self.assertEquals(res.status_code, 400)
         expected = {'source': ['This field is required.'],
                     'profile': ['This field is required.'],
-                    'patient_id': ['This field is required.'],
+                    'person_id': ['This field is required.'],
                     'destination': ['This field is required.'],
                     'start_validity': ['This field is required.'],
                     'expire_validity': ['This field is required.']
@@ -308,7 +308,7 @@ class TestAPI(TestCase):
             'profile': None,
             'source': None,
             'destination': None,
-            'patient_id': None,
+            'person_id': None,
             'start_validity': None,
             'expire_validity': None
         }
@@ -318,7 +318,7 @@ class TestAPI(TestCase):
         expected = {'profile': ['This field may not be null.'],
                     'source': ['This field may not be null.'],
                     'destination': ['This field may not be null.'],
-                    'patient_id': ['This field may not be null.'],
+                    'person_id': ['This field may not be null.'],
                     'start_validity': ['This field may not be null.'],
                     'expire_validity': ['This field may not be null.']
                     }
@@ -536,7 +536,7 @@ class TestAPI(TestCase):
                     'name': 'DEST_MOCKUP'
                 },
                 'profile': self.profile,
-                'patient_id': PATIENT1_ID,
+                'person_id': PERSON1_ID,
                 'start_validity': '2017-10-23T10:00:00.000Z',
                 'expire_validity': '2018-04-23T10:00:00.000Z'
             }

@@ -88,7 +88,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                     'name': 'Destination 1'
                 },
                 'profile': profile_data,
-                'patient_id': TEST_PERSON1_ID,
+                'person_id': TEST_PERSON1_ID,
                 'status': FlowRequest.ACTIVE,
                 'consent_id': consent_id,
                 'confirm_id': confirm_id

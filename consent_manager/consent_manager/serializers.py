@@ -62,7 +62,7 @@ class ConsentSerializerDuplicateValidator(object):
             s = Endpoint.objects.get(**attrs['source'])
             d = Endpoint.objects.get(**attrs['destination'])
             p = Profile.objects.get(**attrs['profile'])
-            consents = Consent.objects.filter(source=s, destination=d, profile=p, patient_id=attrs['patient_id'])
+            consents = Consent.objects.filter(source=s, destination=d, profile=p, person_id=attrs['person_id'])
         except (Consent.DoesNotExist, Endpoint.DoesNotExist, Profile.DoesNotExist) as ex:
             # If one among source, destination and profile doesn't exist it means that neither the consent exists
             return attrs
@@ -96,5 +96,5 @@ class ConsentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Consent
-        fields = ('consent_id', 'status', 'source', 'destination', 'patient_id', 'profile', 'start_validity',
+        fields = ('consent_id', 'status', 'source', 'destination', 'person_id', 'profile', 'start_validity',
                   'expire_validity')

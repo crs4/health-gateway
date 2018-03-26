@@ -51,7 +51,7 @@ Main Components
 
     * **Identity Provider**:
         the Identity Provider identifies the person and provides her/his data to permit the Source
-        to match its patients data to the person the data flow is related to.
+        to match its persons data to the person the data flow is related to.
 
 Main Concepts
 *************
@@ -177,7 +177,7 @@ Sources will have:
 Channels Creation
 #################
 
-The following diagram describes the operation to create channels for a Destination for a patient (i.e. it describes
+The following diagram describes the operation to create channels for a Destination for a person (i.e. it describes
 the Control Layer)
 
 .. image:: _static/channel_instantiation.svg

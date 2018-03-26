@@ -65,7 +65,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('consent_id', models.CharField(db_index=True, default=hgw_common.utils.generate_id, max_length=32)),
                 ('status', models.CharField(choices=[('RE', 'REVOKED'), ('PE', 'PENDING'), ('AC', 'ACTIVE'), ('NV', 'NOT_VALID')], default='PE', max_length=2)),
-                ('patient_id', models.CharField(max_length=20)),
+                ('person_id', models.CharField(max_length=20)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
                 ('confirmed', models.DateTimeField(null=True)),
                 ('start_validity', models.DateTimeField()),

@@ -27,7 +27,7 @@ from oauthlib.oauth2 import TokenExpiredError
 from dispatcher import Dispatcher, OAuth2Session, CONSENT_MANAGER_OAUTH_CLIENT_ID, CONSENT_MANAGER_OAUTH_CLIENT_SECRET, \
     HGW_FRONTEND_OAUTH_CLIENT_SECRET, HGW_FRONTEND_OAUTH_CLIENT_ID
 from test_data import SOURCES, UNKNOWN_OAUTH_CLIENT, ACTIVE_CHANNEL_ID, DESTINATION, PROCESS_ID, PENDING_CHANNEL_ID, \
-    CHANNEL_WITH_NO_PROCESS_ID, PATIENT_ID
+    CHANNEL_WITH_NO_PROCESS_ID, PERSON_ID
 from test_utils import get_free_port, start_mock_server, MockBackendRequestHandler, MockConsentManagerRequestHandler, \
     MockFrontendRequestHandler
 

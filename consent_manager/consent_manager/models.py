@@ -44,7 +44,7 @@ class Consent(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False, default=PENDING)
     source = models.ForeignKey('Endpoint', on_delete=models.CASCADE, related_name='source')
     destination = models.ForeignKey('Endpoint', on_delete=models.CASCADE, related_name='destination')
-    patient_id = models.CharField(max_length=20, blank=False, null=False)
+    person_id = models.CharField(max_length=20, blank=False, null=False)
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     confirmed = models.DateTimeField(null=True)
@@ -55,7 +55,7 @@ class Consent(models.Model):
         super(Consent, self).save(*args, **kwargs)
 
     # class Meta:
-    #     unique_together = ('source', 'destination', 'patient_id', 'profile', 'status')
+    #     unique_together = ('source', 'destination', 'person_id', 'profile', 'status')
 
 
 def get_validity():

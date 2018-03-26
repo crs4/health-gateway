@@ -67,14 +67,14 @@ class FHIRBasePublisher(BasePublisher):
         if resource_type != 'Observation':
             raise UnsupportedResource('{} is not supported'.format(resource_type))
 
-        patient_id = data['subject']['reference'].split('/')[-1]
-        connectors = Connector.objects.filter(person_identifier=patient_id)
+        person_id = data['subject']['reference'].split('/')[-1]
+        connectors = Connector.objects.filter(person_identifier=person_id)
         print("Connector.objects.all().count()", Connector.objects.all().count())
         if connectors.count() < 1:
-            raise NoConnectorAvailable('No connector for patient_id = {}'.format(patient_id))
+            raise NoConnectorAvailable('No connector for person_id = {}'.format(person_id))
 
         for connector in connectors:
-            if patient_id == connector.person_identifier:
+            if person_id == connector.person_identifier:
                 value = json.dumps(data)
                 if cipher:
                     if connector.channel_id not in self.ciphers:

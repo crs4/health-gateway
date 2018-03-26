@@ -1,7 +1,7 @@
 {
   "resourceType": "Observation",
   "subject": {
-    "reference": "http://fake_fse.it/Patient/SLSMLR56M13C354H"
+    "reference": "http://fake_fse.it/Person/SLSMLR56M13C354H"
     }
   ,
   "status": "final",

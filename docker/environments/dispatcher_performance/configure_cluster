@@ -73,7 +73,7 @@ def _create_flow_request(flow_request_pk, flow_id, process_id, dest_pk, person_i
             "status": "AC",
             "profile": 1,
             "destination": dest_pk,
-            "patient_id": person_id,
+            "person_id": person_id,
             "start_validity": "2017-10-23T10:00:00.000Z",
             "expire_validity": "2018-10-23T10:00:00.000Z"
         }
@@ -102,7 +102,7 @@ def _create_endpoint(_id, name):
     }
 
 
-def _create_channel(pk, consent_id, source, destination, patient_id):
+def _create_channel(pk, consent_id, source, destination, person_id):
     return {
         "model": "consent_manager.consent",
         "pk": pk,
@@ -111,7 +111,7 @@ def _create_channel(pk, consent_id, source, destination, patient_id):
             "source": source,
             "destination": destination,
             "profile": 1,
-            "patient_id": patient_id,
+            "person_id": person_id,
             "status": "AC",
             "timestamp": "2018-10-10T10:00:00.000Z",
             "confirmed": "2018-10-10T10:00:00.000Z",
