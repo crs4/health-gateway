@@ -100,8 +100,8 @@ class RESTClient(AbstractApplication):
     SUPER = 'SU'
 
     ROLE_CHOICES = (
-        ('STANDARD', STANDARD),
-        ('SUPER', SUPER)
+        ('ST', STANDARD),
+        ('SU', SUPER)
     )
 
     destination = models.OneToOneField('Destination', null=True, blank=True)

@@ -1,32 +1,5 @@
 version: '3.0'
 services:
-  spid-testenv-identityserver:
-    build: ../../images/common/spid_testenv_identityserver/
-    image: crs4/spid-testenv-identityserver
-    ports:
-      - "9443:9443"
-    extra_hosts:
-      - "spid-testenv-identityserver:127.0.1.1"
-    networks:
-      default:
-        aliases:
-          - spid-testenv-identityserver
-
-  spid-testenv-backoffice:
-    build: ../../images/common/spid_testenv_backoffice/
-    image: crs4/spid-testenv-backoffice
-    ports:
-      - "8080:8080"
-    environment:
-      - NODE_ENV=development
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-    depends_on:
-      - spid-testenv-identityserver
-    networks:
-      default:
-        aliases:
-          - spid-testenv-backoffice
-
   hgw_frontend:
     build:
       context: ../../images/production/hgw_frontend
@@ -35,6 +8,12 @@ services:
     image: crs4/hgw_frontend:production
     ports:
       - 8000:8000
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../certs/ca/web/certs/hgwfrontend:/container/web_certs/
+      - ../../../certs/:/container/certs/
     networks:
       default:
         aliases:
@@ -46,11 +25,17 @@ services:
     image: crs4/hgw_backend:production
     depends_on:
       - kafka
-    entrypoint: ["/container/wait-for-it.sh", "kafka:9093", "--", "/container/custom-docker-entrypoint.sh"]
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
     environment:
       - TZ=CET
     ports:
       - 8003:8003
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../certs/ca/web/certs/hgwbackend/:/container/web_certs/
+      - ../../../certs/:/container/certs/
     networks:
       default:
         aliases:
@@ -64,14 +49,19 @@ services:
       - TZ=CET
     ports:
       - 8002:8002
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../certs/ca/web/certs/consentmanager/:/container/web_certs/
     networks:
       default:
         aliases:
           - consentmanager
 
   kafka:
-    build: ../../images/production/kafka
-    image: crs4/kafka:production
+    build: ../../images/common/kafka
+    image: crs4/kafka
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_PORT=9092
@@ -83,6 +73,8 @@ services:
     ports:
       - 9092:9092
       - 9093:9093
+    volumes:
+      - ../../../certs/ca/kafka/certs/kafka-server/:/container/certs/
     networks:
       default:
         aliases:
@@ -94,5 +86,11 @@ services:
     depends_on:
       - kafka
       - consent_manager
-    entrypoint: ["/wait-for-it.sh", "kafka:9093", "--", "/wait-for-it.sh", "consent_manager:8002", "--",
-      "/wait-for-it.sh", "hgw_backend:8003", "--", "/launch-dispatcher.sh"]
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../certs/:/container/certs/
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--",
+      "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]

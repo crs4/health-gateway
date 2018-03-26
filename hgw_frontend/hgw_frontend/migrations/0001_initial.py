@@ -121,7 +121,7 @@ class Migration(migrations.Migration):
                 ('client_secret', models.CharField(blank=True, db_index=True, default=oauth2_provider.generators.generate_client_secret, max_length=255)),
                 ('name', models.CharField(blank=True, max_length=255)),
                 ('skip_authorization', models.BooleanField(default=False)),
-                ('client_role', models.CharField(choices=[('STANDARD', 'ST'), ('SUPER', 'SU')], default='ST', max_length=2)),
+                ('client_role', models.CharField(choices=[('ST', 'ST'), ('SU', 'SU')], default='ST', max_length=2)),
                 ('scopes', models.CharField(default='flow_request:read flow_request:write', help_text='Space separated scopes to assign to the REST client', max_length=100)),
                 ('destination', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='hgw_frontend.Destination')),
                 ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='hgw_frontend_restclient', to=settings.AUTH_USER_MODEL)),
