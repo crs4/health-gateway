@@ -14,12 +14,11 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
+import requests
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.crypto import get_random_string
-
-import hgw_backend.auth as auth
 
 
 def get_source_id():
@@ -27,16 +26,29 @@ def get_source_id():
 
 
 class Source(models.Model):
+    CERTIFICATES = 'C'
+    OAUTH2 = 'O'
+
+    AUTH_TYPES = {
+        CERTIFICATES: 'Certificates',
+        OAUTH2: 'OAuth2'
+    }
+
     source_id = models.CharField(max_length=32, blank=False, null=False, default=get_source_id, unique=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
     url = models.URLField(blank=False, null=False)
     auth_type = models.CharField(
-        max_length=128,
+        max_length=3,
         blank=False,
         null=False,
-        choices=auth.AuthType.get_values().items(),
-        default=auth.AuthType.CERTIFICATES_BASED.value
+        choices=tuple(AUTH_TYPES.items()),
+        default=(CERTIFICATES, AUTH_TYPES[CERTIFICATES])
     )
+
+    # Below the mandatory fields for generic relation
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey()
 
     def __str__(self):
         return self.name
@@ -46,17 +58,21 @@ class Source(models.Model):
         self._auth_type = None
 
     def create_connector(self, connector):
-        return auth.AuthProxy().create_connector(self, connector)
-
-    def get_auth_param(self, key):
-        return SourceAuthenticationParam.objects.get(source=self, key=key).value
+        return self.content_object.create_connector(self, connector)
 
 
-class SourceAuthenticationParam(models.Model):
-    source = models.ForeignKey(Source)
-    key = models.CharField(max_length=128, blank=False, null=False)
-    value = models.TextField(blank=False, null=False)
+class CertificatesAuthentication(models.Model):
+    source = GenericRelation(Source)
+    cert = models.FileField(blank=False, null=False)
+    key = models.FileField(blank=False, null=False)
 
-    class Meta:
-        unique_together = ('source', 'key')
+    def create_connector(self, source, connector):
+        return requests.post(source.url,
+                             json=connector,
+                             verify=True,
+                             cert=(self.cert.file.name, self.key.file.name)
+                             )
+
+
+
 

@@ -141,8 +141,10 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_ROOT = os.path.join(BASE_DIR, './static/')
+STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static/'))
 STATIC_URL = '/static/'
+
+MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../media/'))
 
 SESSION_COOKIE_NAME = 'hgw_backend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

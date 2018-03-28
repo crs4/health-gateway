@@ -1,10 +1,22 @@
 [
   {
     "model": "hgw_backend.source",
+    "pk": 1,
     "fields": {
       "source_id": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
       "name": "SOURCE_ENDPOINT_MOCKUP",
-      "url": "https://source-endpoint-mockup:8004/v1/connectors/"
+      "url": "https://source-endpoint-mockup:8004/v1/connectors/",
+      "auth_type": "C",
+      "content_type": 9,
+      "object_id": 1
+    }
+  },
+  {
+    "model": "hgw_backend.certificatesauthentication",
+    "pk": 1,
+    "fields": {
+      "cert": "source_endpoint_mockup_client.cert.pem",
+      "key": "source_endpoint_mockup_client.key.pem"
     }
   }
 ]

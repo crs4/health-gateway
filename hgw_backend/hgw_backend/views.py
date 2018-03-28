@@ -25,6 +25,7 @@ from django.http import Http404
 
 
 class SourcesList(APIView):
+
     def get_object(self, source_id):
         try:
             return Source.objects.get(source_id=source_id)
