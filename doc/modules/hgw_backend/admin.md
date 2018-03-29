@@ -39,19 +39,25 @@ Now create a Source object. The fields you must insert are:
  * **Content type:** Select the contenttype that corresponds to the authentication object created before
  * **Object id:**  Insert the ID of the object noted before
 
+## Creation of Kafka client certificates
+
+The source will need a certificate with its associated private key to access to Kafka. So it is necessary to create them.
+To do that use the script `generate_kafka_client_certificates.sh` in hgw/certs/ directory. The script will generate
+PEM files and also the JKS keystore and truststore in case the Source needs them
+
 ## Creation of Kafka topic and relative ACL for the destination
 
 In the Kafka server it is necessary adding a new topic for the destination and the relative ACL. The topic has to be
 accessed only by the Source endpoint in Write mode and by the HGW Dispatcher in Read mode.
 If using docker just set the environment variable KAFKA_CREATE_TOPICS when running the container to the value:
 
-<source_id>:1:1:<publisher>:<consumer>
+`<source_id>:1:1:<publisher>:<consumer>`
 
 Alternatively you can execute the command `create_topics.sh` in a running kafka container 
 
 ```bash
-docker exec -e KAFKA_CREATE_TOPICS=<destination_id>:1:1:<publisher>:<consumer> <kafka_container> /create_topics.sh 
+docker exec -e KAFKA_CREATE_TOPICS=<source_id>:1:1:<publisher>:<consumer> <kafka_container> /create_topics.sh 
 ```
 
-The <source_id> is the one configured in the web application. The <publisher> is hgw_dipatcher and the <consumer>
-is the service name used in the `generate_kafka_client_certificates.sh`.
+The \<source_id\> is the one configured in the web application. The \<publisher\> is the name used when generating
+ the Kafka client certs and the <consumer> is hgw_dispatcher
