@@ -10,8 +10,8 @@ First of all you will need to create an RSA Private/Public Key pair that will be
 private key has to be kept secret by the destination while the public has to be registered in the HGW Frontend
 application. To generates the key you can use the `create_rsa_key_pair.sh` script in hgw/utils directory.
 
-Registration to Web
--------------------
+Registration in the admin page
+------------------------------
 
 Now you will need to create a new Destination in the HGW Frontend web page. Access to the /admin/ url of the frontend
 and click Destination->Add Destination.

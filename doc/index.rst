@@ -45,6 +45,7 @@ consent model and the reference implementation of the platform, including the pr
 
     architecture.rst
     modules/hgw_frontend/home.rst
+    modules/hgw_backend/home.md
     modules/consent_manager/home.rst
 
 Indices and tables
@@ -53,9 +54,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-License
-=======
 
 License
 =======

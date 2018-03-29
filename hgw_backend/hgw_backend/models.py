@@ -73,6 +73,13 @@ class CertificatesAuthentication(models.Model):
                              cert=(self.cert.file.name, self.key.file.name)
                              )
 
+    def __str__(self):
+        try:
+            return "ID: {id}. SOURCE: {source}".format(id=self.id, source=self.source.get())
+        except Source.DoesNotExist:
+            return "ID: {id}".format(id=self.id)
+
+
 
 
 

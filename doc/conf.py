@@ -19,7 +19,7 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
+from recommonmark.parser import CommonMarkParser
 
 # -- General configuration ------------------------------------------------
 
@@ -30,24 +30,23 @@
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.doctest',
               'sphinx.ext.todo',
               'sphinxcontrib.httpdomain',
               'rst2pdf.pdfbuilder',
-              'sphinxmark']
+              'sphinxmark',
+              'm2r']
 
 sphinxmark_enable = True
 sphinxmark_div = 'document'
 
-pdf_documents = [('index', u'rst2pdf', u'Health Gateway Frontend', u'CRS4'), ]
+pdf_documents = [('index', u'rst2pdf', u'Health Gateway', u'CRS4'), ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-source_parsers = {
-    '.md': 'recommonmark.parser.CommonMarkParser'
-}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -59,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Health Gateway'
-copyright = u'2017, Mauro Del Rio, Vittorio Meloni, Alessandro Sulis'
+copyright = u'2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia'
 author = u'Mauro Del Rio, Vittorio Meloni, Alessandro Sulis'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -88,7 +87,6 @@ pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -123,12 +121,10 @@ html_sidebars = {
     ]
 }
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'HealthGatewaydoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -158,7 +154,6 @@ latex_documents = [
      u'Mauro Del Rio, Vittorio Meloni, Alessandro Sulis', 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -167,7 +162,6 @@ man_pages = [
     (master_doc, 'healthgateway', u'Health Gateway Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -179,9 +173,6 @@ texinfo_documents = [
      author, 'HealthGateway', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
