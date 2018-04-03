@@ -20,7 +20,7 @@ from django.conf.urls import url
 from django.contrib import admin
 from rest_framework import routers
 from django.conf.urls import url, include
-from main import views
+from source_endpoint import views
 from hgw_common.settings import VERSION_REGEX
 
 

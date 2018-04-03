@@ -34,15 +34,13 @@ parent_dir="$(dirname -- "$(realpath -- "$0")")"
 export PYTHONPATH=${parent_dir}/../hgw_common/
 for d in consent_manager destination_mockup hgw_backend hgw_frontend examples/source_endpoint; do
     echo "Recreating db for service ${d}"
-    echo $(pwd)
     cd ../${d}
-    echo $(pwd)
     rm -f *.sqlite3
     python3 manage.py migrate
-    if [ -f ${d}/fixtures/initial_data.json ]; then
+    if [ -f $(basename ${d})/fixtures/initial_data.json ]; then
         python3 manage.py loaddata initial_data
     fi
-    if [ ${LOAD_DEV_DATA} = "true" ] &&  [ -f ${d}/fixtures/initial_data.json ]; then
+    if [ ${LOAD_DEV_DATA} = "true" ] &&  [ -f ${d}/fixtures/development_data.json ]; then
         python3 manage.py loaddata development_data
     fi
 done

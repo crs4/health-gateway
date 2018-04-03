@@ -61,13 +61,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'oauth2_provider',
     'rest_framework',
-    'main.apps.MainConfig',
-    'hgw_common'
+    'hgw_common',
+    'source_endpoint',
 ]
 
 if DEBUG is True:
     INSTALLED_APPS.append('sslserver')
+
+AUTHENTICATION_BACKENDS = [
+    'oauth2_provider.backends.OAuth2Backend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
