@@ -21,12 +21,12 @@
     "model": "oauth2_provider.application",
     "pk": 1,
     "fields": {
-      "client_id": "uHP3zkRrEYnXmLvdlxx1iD6C85kpNpFsaSiD9wmy",
+      "client_id": "UzPDCW6MAPJHoXy6jUVzBks0z3s3yCKgX17UWmzk",
       "user": null,
       "redirect_uris": "",
       "client_type": "confidential",
       "authorization_grant_type": "client-credentials",
-      "client_secret": "oaPLxNHozPQ6ZCpNLgxuZLi6f0BQy5EiaNYvAncESu7rVQEksSeW0SCNK7A2SkbF2VksPZwVcm4QFiJFNifnCM2a4pqNOXCzklRVLGPdxEtjsOGqugUDx8EymrVEJNk4",
+      "client_secret": "J2jwYTfnaCnU9efTnvFhptnxdzhXHfGemzePHOLa8AIg0lKHE7mfebr3xgcun9za3HzH08ySj5wBLggZbJPRkQlkrIWaKflrzs2HU19zG3Nop7aymSMtstlBC4xXtsi3",
       "name": "HGW BACKEND",
       "skip_authorization": false
     }

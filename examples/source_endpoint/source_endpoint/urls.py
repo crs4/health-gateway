@@ -29,6 +29,7 @@ router.register(r'{}/connectors'.format(VERSION_REGEX), views.ConnectorViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),

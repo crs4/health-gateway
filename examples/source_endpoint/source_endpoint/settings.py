@@ -28,7 +28,7 @@ def get_path(base_path, file_path):
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-_CONF_FILES_PATH = ['/etc/hgw_service/consent_manager_config.yml', get_path(BASE_DIR, './config.yml')]
+_CONF_FILES_PATH = ['/etc/hgw_service/source_endpoint_config.yml', get_path(BASE_DIR, './config.yml')]
 
 cfg = None
 _conf_file = None
@@ -78,6 +78,7 @@ AUTHENTICATION_BACKENDS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -110,35 +111,39 @@ WSGI_APPLICATION = 'source_endpoint.wsgi.application'
 CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
 CLIENT_ID = cfg['consent_manager']['client_id']
 CLIENT_SECRET = cfg['consent_manager']['client_secret']
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': cfg['django']['database']['name'],
+        'NAME': get_path(BASE_CONF_DIR, cfg['django']['database']['name']),
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = []
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',),
+    'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
 STATIC_URL = '/static/'
 MAX_API_VERSION = 1
 SOURCE_ID = cfg['source']['id']
+
+# OAUTH2 CONFIG
+SCOPES = {'read': 'Read scope', 'write': 'Write scope'}
+OAUTH2_PROVIDER = {
+    'SCOPES': SCOPES,
+    'DEFAULT_SCOPES': SCOPES.keys()
+}
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])

@@ -20,12 +20,15 @@
 
 from __future__ import unicode_literals
 
-from django.shortcuts import render
+from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 from rest_framework import viewsets
-from .serializers import ConnectorSerializer
+
 from .models import Connector
+from .serializers import ConnectorSerializer
 
 
 class ConnectorViewSet(viewsets.ModelViewSet):
+    permission_classes = (TokenHasReadWriteScope,)
+
     queryset = Connector.objects.all()
     serializer_class = ConnectorSerializer
