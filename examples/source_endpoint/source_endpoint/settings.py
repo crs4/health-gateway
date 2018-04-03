@@ -18,23 +18,41 @@
 
 import os
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import sys
+import yaml
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+def get_path(base_path, file_path):
+    return file_path if os.path.isabs(file_path) else os.path.join(base_path, file_path)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '2l*pdnd)r!je2*#blenx17ivei9^50qom)eh8&h%o-lkibinle'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+_CONF_FILES_PATH = ['/etc/hgw_service/consent_manager_config.yml', get_path(BASE_DIR, './config.yml')]
+
+cfg = None
+_conf_file = None
+for cf in _CONF_FILES_PATH:
+    try:
+        with open(cf, 'r') as f:
+            cfg = yaml.load(f)
+    except FileNotFoundError:
+        continue
+    else:
+        _conf_file = cf
+        break
+if cfg is None:
+    sys.exit("Config file not found")
+
+SECRET_KEY = cfg['django']['secret_key']
+
+BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
+
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+HOSTNAME = cfg['django']['hostname']
 
-
-# Application definition
+ALLOWED_HOSTS = [HOSTNAME]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -50,7 +68,6 @@ INSTALLED_APPS = [
 
 if DEBUG is True:
     INSTALLED_APPS.append('sslserver')
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -82,50 +99,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'source_endpoint.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-CONSENT_MANAGER_URI = 'https://consentmanager:8002'
-CLIENT_ID =  "NDtzemdFFmGVfnI0ufyWLlfPHheOhjKBYlZMBw2W"
-CLIENT_SECRET = "KoTC7s7iWPCe1d2DbFQSPZO5y1o9Q6zMGEm31EShFacwBLKTLEmWXoKAK6BluFs3mXvLAOnz2VAA9hbcOTJ2n1cVKCS6qs3W2GSHJ64FyI8NDqfYU04dwAiOyyADv7sx"
+CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
+CLIENT_ID = cfg['consent_manager']['client_id']
+CLIENT_SECRET = cfg['consent_manager']['client_secret']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': cfg['django']['database']['name'],
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
+AUTH_PASSWORD_VALIDATORS = []
 
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
     ],
     'PAGE_SIZE': 10
 }
-
-# Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -137,15 +130,11 @@ USE_L10N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
-
 STATIC_URL = '/static/'
 MAX_API_VERSION = 1
-SOURCE_ID = 'xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7'
+SOURCE_ID = cfg['source']['id']
 
-KAFKA_CA_CERT = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem')
-KAFKA_CLIENT_CERT = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/source-endpoint-mockup/cert.pem')
-KAFKA_CLIENT_KEY = os.path.join(os.path.dirname(__file__), '../../certs/ca/kafka/certs/source-endpoint-mockup/key.pem')
-
+KAFKA_BROKER = cfg['kafka']['uri']
+KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
+KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
+KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])

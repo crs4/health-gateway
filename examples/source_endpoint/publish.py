@@ -37,7 +37,7 @@ class UnsupportedResource(Exception):
 
 class BasePublisher(object):
     def __init__(self,
-                 bootstrap_servers='kafka:9093',
+                 bootstrap_servers=settings.KAFKA_BROKER,
                  security_protocol='SSL',
                  ssl_check_hostname=True,
                  ssl_cafile=settings.KAFKA_CA_CERT,

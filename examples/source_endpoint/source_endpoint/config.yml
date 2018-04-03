@@ -1,0 +1,20 @@
+django:
+  secret_key: 2l*pdnd)r!je2*#blenx17ivei9^50qom)eh8&h%o-lkibinle
+  hostname: source-endpoint-mockup
+  port: 8004
+  database:
+    name: ../source-endpoint-mockup.sqlite3
+
+source:
+  id: xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7
+
+consent_manager:
+  uri: https://consentmanager:8002
+  client_id: NDtzemdFFmGVfnI0ufyWLlfPHheOhjKBYlZMBw2W
+  client_secret: KoTC7s7iWPCe1d2DbFQSPZO5y1o9Q6zMGEm31EShFacwBLKTLEmWXoKAK6BluFs3mXvLAOnz2VAA9hbcOTJ2n1cVKCS6qs3W2GSHJ64FyI8NDqfYU04dwAiOyyADv7sx
+
+kafka:
+  uri: kafka:9093
+  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
+  client_cert: ../../certs/ca/kafka/certs/source-endpoint-mockup/cert.pem
+  client_key: ../../certs/ca/kafka/certs/source-endpoint-mockup/key.pem
