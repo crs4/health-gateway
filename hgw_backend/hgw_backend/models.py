@@ -14,15 +14,63 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+import re
+
 import requests
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import URLValidator, _lazy_re_compile
 from django.db import models
+from django.forms import URLField as URLFormField
 from django.utils.crypto import get_random_string
 
 
 def get_source_id():
     return get_random_string(32)
+
+
+class CustomURLValidator(URLValidator):
+    """
+    Custom URL Validator that support the presence of only the hostname (e.g.: "https://hostname/" is a valid value)
+    """
+    tld_re = (
+        r'(\.'                                # dot
+        r'(?!-)'                             # can't start with a dash
+        r'(?:[a-z' + URLValidator.ul + '-]{2,63}'         # domain label
+        r'|xn--[a-z0-9]{1,59})'              # or punycode label
+        r'(?<!-)'                            # can't end with a dash
+        r'\.?)*'                               # may have a trailing dot
+    )
+    host_re = '(' + URLValidator.hostname_re + URLValidator.domain_re + tld_re + '|localhost)'
+
+    regex = _lazy_re_compile(
+        r'^(?:[a-z0-9\.\-\+]*)://'  # scheme is validated separately
+        r'(?:\S+(?::\S*)?@)?'  # user:pass authentication
+        r'(?:' + URLValidator.ipv4_re + '|' + URLValidator.ipv6_re + '|' + host_re + ')'
+        r'(?::\d{2,5})?'  # port
+        r'(?:[/?#][^\s]*)?'  # resource path
+        r'\Z', re.IGNORECASE)
+
+
+class CustomURLFormField(URLFormField):
+    """
+    Form field that uses CustomURLValidator
+    """
+    default_validators = [CustomURLValidator]
+
+
+class CustomURLField(models.URLField):
+    """
+    Model field that uses CustomURLValidator and CustomURLFormField
+    """
+    default_validators = [CustomURLValidator]
+
+    def formfield(self, **kwargs):
+        defaults = {
+            'form_class': CustomURLFormField,
+        }
+        defaults.update(kwargs)
+        return super(CustomURLField, self).formfield(**defaults)
 
 
 class Source(models.Model):
@@ -36,7 +84,7 @@ class Source(models.Model):
 
     source_id = models.CharField(max_length=32, blank=False, null=False, default=get_source_id, unique=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
-    url = models.URLField(blank=False, null=False)
+    url = CustomURLField(blank=False, null=False)
     auth_type = models.CharField(
         max_length=3,
         blank=False,
