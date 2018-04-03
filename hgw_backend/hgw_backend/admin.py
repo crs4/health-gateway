@@ -18,7 +18,8 @@
 
 from django.contrib import admin
 
-from hgw_backend.models import Source, CertificatesAuthentication
+from hgw_backend.models import Source, CertificatesAuthentication, OAuth2Authentication
 
 admin.site.register(Source)
 admin.site.register(CertificatesAuthentication)
+admin.site.register(OAuth2Authentication)

@@ -40,12 +40,12 @@ HGW_BACKEND_PORT = get_free_port()
 HGW_BACKEND_URI = 'http://localhost:{}'.format(HGW_BACKEND_PORT)
 
 
-class TestAPI(TestCase):
+class TestHGWFrontendAPI(TestCase):
     fixtures = ['test_data.json']
 
     @classmethod
     def setUpClass(cls):
-        super(TestAPI, cls).setUpClass()
+        super(TestHGWFrontendAPI, cls).setUpClass()
         logger = logging.getLogger('hgw_frontend')
         logger.setLevel(logging.ERROR)
         start_mock_server('certs', MockConsentManagerRequestHandler, CONSENT_MANAGER_PORT)

@@ -6,7 +6,7 @@ from django.test import TestCase, client
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-class TestAPI(TestCase):
+class TestHGWBackendAPI(TestCase):
 
     fixtures = ['test_data.json']
 

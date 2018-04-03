@@ -6,8 +6,7 @@
       "source_id": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
       "name": "SOURCE_ENDPOINT_MOCKUP",
       "url": "https://source-endpoint-mockup:8004/v1/connectors/",
-      "auth_type": "C",
-      "content_type": 9,
+      "content_type": 10,
       "object_id": 1
     }
   },
@@ -17,6 +16,15 @@
     "fields": {
       "cert": "source_endpoint_mockup_client.cert.pem",
       "key": "source_endpoint_mockup_client.key.pem"
+    }
+  },
+  {
+    "model": "hgw_backend.oauth2authentication",
+    "pk": 1,
+    "fields": {
+      "token_url": "https://source-endpoint-mockup:8004/oauth2/token/",
+      "client_id": "uHP3zkRrEYnXmLvdlxx1iD6C85kpNpFsaSiD9wmy",
+      "client_secret": "oaPLxNHozPQ6ZCpNLgxuZLi6f0BQy5EiaNYvAncESu7rVQEksSeW0SCNK7A2SkbF2VksPZwVcm4QFiJFNifnCM2a4pqNOXCzklRVLGPdxEtjsOGqugUDx8EymrVEJNk4"
     }
   }
 ]

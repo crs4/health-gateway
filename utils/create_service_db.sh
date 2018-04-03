@@ -38,9 +38,11 @@ for d in consent_manager destination_mockup hgw_backend hgw_frontend examples/so
     rm -f *.sqlite3
     python3 manage.py migrate
     if [ -f $(basename ${d})/fixtures/initial_data.json ]; then
+        echo "loading initial data"
         python3 manage.py loaddata initial_data
     fi
-    if [ ${LOAD_DEV_DATA} = "true" ] &&  [ -f ${d}/fixtures/development_data.json ]; then
+    if [ ${LOAD_DEV_DATA} = "true" ] &&  [ -f $(basename ${d})/fixtures/development_data.json ]; then
+        echo "Loading development data"
         python3 manage.py loaddata development_data
     fi
 done

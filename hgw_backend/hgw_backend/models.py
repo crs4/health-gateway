@@ -23,6 +23,8 @@ from django.core.validators import URLValidator, _lazy_re_compile
 from django.db import models
 from django.forms import URLField as URLFormField
 from django.utils.crypto import get_random_string
+from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
+from requests_oauthlib import OAuth2Session
 
 
 def get_source_id():
@@ -74,24 +76,9 @@ class CustomURLField(models.URLField):
 
 
 class Source(models.Model):
-    CERTIFICATES = 'C'
-    OAUTH2 = 'O'
-
-    AUTH_TYPES = {
-        CERTIFICATES: 'Certificates',
-        OAUTH2: 'OAuth2'
-    }
-
     source_id = models.CharField(max_length=32, blank=False, null=False, default=get_source_id, unique=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
     url = CustomURLField(blank=False, null=False)
-    auth_type = models.CharField(
-        max_length=3,
-        blank=False,
-        null=False,
-        choices=tuple(AUTH_TYPES.items()),
-        default=(CERTIFICATES, AUTH_TYPES[CERTIFICATES])
-    )
 
     # Below the mandatory fields for generic relation
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -100,10 +87,6 @@ class Source(models.Model):
 
     def __str__(self):
         return self.name
-
-    def __init__(self, *args, **kwargs):
-        super(Source, self).__init__(*args, **kwargs)
-        self._auth_type = None
 
     def create_connector(self, connector):
         return self.content_object.create_connector(self, connector)
@@ -128,6 +111,47 @@ class CertificatesAuthentication(models.Model):
             return "ID: {id}".format(id=self.id)
 
 
+class OAuth2Authentication(models.Model):
+    source = GenericRelation(Source)
+    token_url = models.CharField(max_length=100, blank=False, null=False)
+    client_id = models.CharField(max_length=40, blank=False, null=False)
+    client_secret = models.CharField(max_length=128, blank=False, null=False)
+    token = models.CharField(max_length=1024, blank=True, null=True)
 
+    def _get_new_token(self, oauth_session):
+        res = oauth_session.fetch_token(token_url=self.token_url,
+                                        client_id=self.client_id,
+                                        client_secret=self.client_secret)
+        self.token = res['access_token']
+        self.save()
+        return res
 
+    def _get_oauth2_token(self, force_new=False):
+        client = BackendApplicationClient(self.client_id)
+        if self.token is None or force_new is True:
+            oauth_session = OAuth2Session(client=client)
+            token = self._get_new_token(oauth_session)
+        else:
+            token = {'access_token': self.token, 'token_type': 'Bearer'}
+            oauth_session = OAuth2Session(client=client, token=token)
 
+        access_token_header = {'Authorization': 'Bearer {}'.format(token['access_token'])}
+        return oauth_session, access_token_header
+
+    def create_connector(self, source, connector):
+        session, header = self._get_oauth2_token()
+        try:
+            res = session.post(source.url, json=connector)
+        except TokenExpiredError:
+            session, header = self._get_oauth2_token(force_new=True)
+            res = session.post(source.url, json=connector)
+        return res
+
+    def __str__(self):
+        try:
+            return "ID: {id}. SOURCE: {source}".format(id=self.id, source=self.source.get())
+        except Source.DoesNotExist:
+            return "ID: {id}".format(id=self.id)
+
+    class Meta:
+        verbose_name = 'OAuth2 Authentication'

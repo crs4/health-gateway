@@ -24,7 +24,6 @@
       "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
       "name": "SOURCE_1",
       "url": "https://source1:8444/v1/connectors/",
-      "auth_type": "C",
       "content_type": 9,
       "object_id": 1
     }
