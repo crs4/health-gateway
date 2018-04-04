@@ -1,53 +1,23 @@
-import json
+# Copyright (c) 2017-2018 CRS4
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to use,
+# copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
+# AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 import re
 
-from mock import MagicMock
-
-from hgw_common.utils.test import MockMessage, MockRequestHandler
-
-
-class MockKafkaConsumer(object):
-    """
-    Simulates a KafkaConsumer
-    """
-
-    MESSAGES = []
-
-    def __init__(self, *args, **kwargs):
-        super(MockKafkaConsumer, self).__init__()
-        self.first = 0
-        self.end = 33
-        self.counter = 0
-        self.messages = {i: MockMessage(key=''.encode('utf-8'), offset=i,
-                                        topic='control'.encode('utf-8'),
-                                        value=json.dumps(v).encode('utf-8')) for i, v in enumerate(self.MESSAGES)}
-
-    def beginning_offsets(self, topics_partition):
-        return {topics_partition[0]: self.first}
-
-    def end_offsets(self, topics_partition):
-        return {topics_partition[0]: self.end}
-
-    def seek(self, topics_partition, index):
-        self.counter = index
-
-    def __getattr__(self, item):
-        return MagicMock()
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        return self.__next__()
-
-    def __next__(self):
-        try:
-            m = self.messages[self.counter]
-        except KeyError:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return m
+from hgw_common.utils.test import MockRequestHandler
 
 
 class MockSourceEnpointHandler(MockRequestHandler):

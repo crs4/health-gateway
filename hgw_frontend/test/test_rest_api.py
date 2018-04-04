@@ -24,12 +24,12 @@ from django.test import TestCase, client
 from mock import patch
 
 from hgw_common.models import Profile
-from hgw_common.utils.test import get_free_port, start_mock_server
+from hgw_common.utils.test import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient
 from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \
     TEST_PERSON1_ID
-from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler, MockKafkaConsumer
+from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -77,6 +77,14 @@ class TestHGWFrontendAPI(TestCase):
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
 
+    @staticmethod
+    def set_mock_kafka_consumer(mock_kc_klass):
+        mock_kc_klass.FIRST = 3
+        mock_kc_klass.END = 33
+        mock_kc_klass.MESSAGES = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
+                                                 topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
+                                                 value=b'first_message') for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
+
     def _create_flow_request_data(self):
         payload = '[{"clinical_domain": "Laboratory", ' \
                   '"filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, ' \
@@ -102,7 +110,8 @@ class TestHGWFrontendAPI(TestCase):
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
 
-    def _get_client_data(self, client_index=0):
+    @staticmethod
+    def _get_client_data(client_index=0):
         app = RESTClient.objects.all()[client_index]
         return app.client_id, app.client_secret
 
@@ -656,96 +665,100 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {})
 
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_get_message(self):
-        headers = self._get_oauth_header(client_index=0)
-        res = self.client.get('/v1/messages/3/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['message_id'], 3)
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=0)
+            res = self.client.get('/v1/messages/3/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json()['message_id'], 3)
+            res = self.client.get('/v1/messages/15/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json()['message_id'], 15)
+            res = self.client.get('/v1/messages/32/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json()['message_id'], 32)
 
-        res = self.client.get('/v1/messages/15/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['message_id'], 15)
-
-        res = self.client.get('/v1/messages/32/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['message_id'], 32)
-
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_get_messages(self):
-        headers = self._get_oauth_header(client_index=0)
-        res = self.client.get('/v1/messages/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res['X-Total-Count'], '30')
-        self.assertEqual(res['X-Skipped'], '0')
-        self.assertEqual(len(res.json()), 5)
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=0)
+            res = self.client.get('/v1/messages/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res['X-Total-Count'], '30')
+            self.assertEqual(res['X-Skipped'], '0')
+            self.assertEqual(len(res.json()), 5)
 
-        res = self.client.get('/v1/messages/?start=6&limit=3', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 3)
-        self.assertEqual(res['X-Total-Count'], '30')
-        self.assertEqual(res['X-Skipped'], '3')
-        self.assertEqual(res.json()[0]['message_id'], 6)
-        self.assertEqual(res.json()[1]['message_id'], 7)
-        self.assertEqual(res.json()[2]['message_id'], 8)
+            res = self.client.get('/v1/messages/?start=6&limit=3', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(len(res.json()), 3)
+            self.assertEqual(res['X-Total-Count'], '30')
+            self.assertEqual(res['X-Skipped'], '3')
+            self.assertEqual(res.json()[0]['message_id'], 6)
+            self.assertEqual(res.json()[1]['message_id'], 7)
+            self.assertEqual(res.json()[2]['message_id'], 8)
 
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_get_messages_max_limit(self):
-        headers = self._get_oauth_header(client_index=0)
-        res = self.client.get('/v1/messages/?start=3&limit=11', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 10)
-        self.assertEqual(res['X-Total-Count'], '30')
-        self.assertEqual(res['X-Skipped'], '0')
-        for i in range(3, 13):
-            self.assertEqual(res.json()[i - 3]['message_id'], i)
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=0)
+            res = self.client.get('/v1/messages/?start=3&limit=11', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(len(res.json()), 10)
+            self.assertEqual(res['X-Total-Count'], '30')
+            self.assertEqual(res['X-Skipped'], '0')
+            for i in range(3, 13):
+                self.assertEqual(res.json()[i - 3]['message_id'], i)
 
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_get_message_not_found(self):
-        headers = self._get_oauth_header(client_index=0)
-        res = self.client.get('/v1/messages/33/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=0)
+            res = self.client.get('/v1/messages/33/', **headers)
+            self.assertEqual(res.status_code, 404)
+            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
 
-        res = self.client.get('/v1/messages/0/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
+            res = self.client.get('/v1/messages/0/', **headers)
+            self.assertEqual(res.status_code, 404)
+            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
 
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_get_messages_not_found(self):
-        headers = self._get_oauth_header(client_index=0)
-        res = self.client.get('/v1/messages/?start=30&limit=5', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 3)
-        self.assertEqual(res['X-Skipped'], '27')
-        self.assertEqual(res['X-Total-Count'], '30')
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=0)
+            res = self.client.get('/v1/messages/?start=30&limit=5', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(len(res.json()), 3)
+            self.assertEqual(res['X-Skipped'], '27')
+            self.assertEqual(res['X-Total-Count'], '30')
 
-        res = self.client.get('/v1/messages/?start=0&limit=5', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
+            res = self.client.get('/v1/messages/?start=0&limit=5', **headers)
+            self.assertEqual(res.status_code, 404)
+            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
 
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_get_messages_info(self):
-        headers = self._get_oauth_header(client_index=0)
-        res = self.client.get('/v1/messages/info/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), {
-            'start_id': 3,
-            'last_id': 32,
-            'count': 30
-        })
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=0)
+            res = self.client.get('/v1/messages/info/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json(), {
+                'start_id': 3,
+                'last_id': 32,
+                'count': 30
+            })
 
-    @patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer)
     def test_rest_forbidden(self):
         """
         Tests that accessing via REST is forbidden for a client configured using kafka
         :return:
         """
-        headers = self._get_oauth_header(client_index=1)
-        res = self.client.get('/v1/messages/3/', **headers)
-        self.assertEqual(res.status_code, 403)
-        res = self.client.get('/v1/messages/', **headers)
-        self.assertEqual(res.status_code, 403)
-        res = self.client.get('/v1/messages/info/', **headers)
-        self.assertEqual(res.status_code, 403)
-
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_index=1)
+            res = self.client.get('/v1/messages/3/', **headers)
+            self.assertEqual(res.status_code, 403)
+            res = self.client.get('/v1/messages/', **headers)
+            self.assertEqual(res.status_code, 403)
+            res = self.client.get('/v1/messages/info/', **headers)
+            self.assertEqual(res.status_code, 403)

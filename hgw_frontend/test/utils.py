@@ -20,9 +20,8 @@ import json
 import re
 
 from django.utils.crypto import get_random_string
-from mock import MagicMock
 
-from hgw_common.utils.test import MockRequestHandler, MockMessage
+from hgw_common.utils.test import MockRequestHandler
 from hgw_frontend.models import FlowRequest
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
     TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2
@@ -127,46 +126,3 @@ class MockBackendRequestHandler(MockRequestHandler):
         else:
             payload = {}
         return self._send_response(payload)
-
-
-class MockKafkaConsumer(object):
-    """
-    Simulates a KafkaConsumer
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(MockKafkaConsumer, self).__init__()
-        self.first = 3
-        self.end = 33
-        self.messages = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
-                                        topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
-                                        value=b'first_message') for i in range(self.first, self.end)}
-        self.counter = 0
-
-    def beginning_offsets(self, topics_partition):
-        return {topics_partition[0]: self.first}
-
-    def end_offsets(self, topics_partition):
-        return {topics_partition[0]: self.end}
-
-    def seek(self, topics_partition, index):
-        self.counter = index
-
-    def __getattr__(self, item):
-        return MagicMock()
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        return self.__next__()
-
-    def __next__(self):
-        try:
-            m = self.messages[self.counter]
-        except KeyError:
-            raise StopIteration
-        else:
-            self.counter += 1
-            return m
-
