@@ -104,7 +104,9 @@ class MockRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if re.search(self.OAUTH2_PATTERN, self.path):
             payload, status_code = self._handle_oauth()
-            return self._send_response(payload, status_code)
+            self._send_response(payload, status_code)
+            return True
+        return False
 
     def _path_match(self, path):
         return re.search(path, self.path)

@@ -21,10 +21,21 @@
     "model": "hgw_backend.source",
     "pk": 1,
     "fields": {
-      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-      "name": "SOURCE_1",
-      "url": "https://source1:8444/v1/connectors/",
+      "source_id": "6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC",
+      "name": "cert_source",
+      "url": "http://localhost:40000/v1/connectors/",
       "content_type": 9,
+      "object_id": 1
+    }
+  },
+  {
+    "model": "hgw_backend.source",
+    "pk": 2,
+    "fields": {
+      "source_id": "LD2j7v35BvUlzWDe8G89JGzz4SOincB7",
+      "name": "oauth2_source",
+      "url": "http://localhost:40001/v1/connectors/",
+      "content_type": 10,
       "object_id": 1
     }
   },
@@ -32,8 +43,17 @@
     "model": "hgw_backend.certificatesauthentication",
     "pk": 1,
     "fields": {
-      "cert": "source_endpoint_mockup_client.cert.pem",
-      "key": "source_endpoint_mockup_client.key.pem"
+      "cert": "cert_source.cert.pem",
+      "key": "cert_source.key.pem"
+    }
+  },
+  {
+    "model": "hgw_backend.oauth2authentication",
+    "pk": 1,
+    "fields": {
+      "token_url": "http://localhost:40000/oauth2/token/",
+      "client_id": "LyuxrjPfkjAQ6773cvyw0S7S50AUf4JmTF0ND8hL",
+      "client_secret": "y5HnAbJEl8KuRtmwIIo4STHhS8g1DBXiou3Evt0cejtHxPb7t1CQLCDIONsRjNbo1PIXavWTcDVFOjJMtlXo5qKNpZn6K7MuRrmkWA7ZEThUH3TdNjNIuya0"
     }
   }
 ]

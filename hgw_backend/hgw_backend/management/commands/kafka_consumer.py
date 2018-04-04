@@ -55,6 +55,7 @@ class Command(BaseCommand):
                 }
 
                 res = source.create_connector(connector)
+                print(res)
             except Exception as ex:
                 logging.error('error processing msg %s', msg)
                 logging.exception(ex)
