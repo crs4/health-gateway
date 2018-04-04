@@ -6,8 +6,8 @@ from django.test import TestCase, client
 from mock import patch
 
 from hgw_backend.models import OAuth2Authentication
-from hgw_common.utils import start_mock_server
-from test.utils import MockKafkaConsumer, MockKafkaConsumerOAuth2Messages, MockSourceEnpointHandler
+from hgw_common.utils.test import start_mock_server
+from test.utils import MockKafkaConsumer, MockSourceEnpointHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 

@@ -22,7 +22,7 @@ import re
 from django.utils.crypto import get_random_string
 from mock import MagicMock
 
-from hgw_common.utils import MockRequestHandler, MockMessage
+from hgw_common.utils.test import MockRequestHandler, MockMessage
 from hgw_frontend.models import FlowRequest
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
     TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2

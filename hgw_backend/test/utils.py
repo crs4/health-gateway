@@ -1,10 +1,9 @@
 import json
-import os
 import re
 
-from mock import MagicMock, Mock
+from mock import MagicMock
 
-from hgw_common.utils import MockMessage, MockRequestHandler
+from hgw_common.utils.test import MockMessage, MockRequestHandler
 
 
 class MockKafkaConsumer(object):

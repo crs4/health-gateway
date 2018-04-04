@@ -49,7 +49,7 @@ cd ${DIR}
 cd ../examples/source_endpoint
 echo $'\n*********************'
 echo "Testing source_endpoint"
-${PYTHON} manage.py test main.tests
+${PYTHON} manage.py test source_endpoint.tests
 
 cd $DIR
 

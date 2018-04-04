@@ -5,7 +5,7 @@ from django.test import TestCase, client
 
 from consent_manager import ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode, RESTClient
-from hgw_common.utils import get_free_port
+from hgw_common.utils.test import get_free_port
 
 PORT = get_free_port()
 

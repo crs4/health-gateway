@@ -81,65 +81,6 @@ def generate_id():
     return get_random_string(32)
 
 
-class MockMessage(object):
-    def __init__(self, key, topic, value, offset=0):
-        self.key = key
-        self.topic = topic
-        self.value = value
-        self.offset = offset
-
-
-class MockRequestHandler(BaseHTTPRequestHandler):
-    OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
-
-    def _handle_oauth(self):
-        payload = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
-                   'token_type': 'Bearer',
-                   'expires_in': 36000,
-                   'expires_at': 1499976952.401335,
-                   'scope': ['read', 'write']}
-        status_code = 201
-        return payload, status_code
-
-    def do_POST(self):
-        if re.search(self.OAUTH2_PATTERN, self.path):
-            payload, status_code = self._handle_oauth()
-            self._send_response(payload, status_code)
-            return True
-        return False
-
-    def _path_match(self, path):
-        return re.search(path, self.path)
-
-    def _send_response(self, payload, status_code=requests.codes.ok):
-        self.send_response(status_code)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
-        self.end_headers()
-        response = json.dumps(payload)
-        self.wfile.write(response.encode('utf-8'))
-
-    def do_GET(self):
-        raise NotImplemented
-
-    def log_message(self, *args, **kwargs): pass
-
-
-def get_free_port():
-    s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
-    s.bind(('localhost', 0))
-    address, port = s.getsockname()
-    s.close()
-    return port
-
-
-def start_mock_server(certs_dir, cls, port=None):
-    port = port or get_free_port()
-    mock_server = HTTPServer(('localhost', port), cls)
-    mock_server_thread = Thread(target=mock_server.serve_forever)
-    mock_server_thread.setDaemon(True)
-    mock_server_thread.start()
-
-
 def get_oauth_token(server_uri, client_id, client_secret):
     client = BackendApplicationClient(client_id)
     oauth_session = OAuth2Session(client=client)

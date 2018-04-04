@@ -24,7 +24,7 @@ from django.test import TestCase, client
 from mock import patch
 
 from hgw_common.models import Profile
-from hgw_common.utils import get_free_port, start_mock_server
+from hgw_common.utils.test import get_free_port, start_mock_server
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient
 from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \

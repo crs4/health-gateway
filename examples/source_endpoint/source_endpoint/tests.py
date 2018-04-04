@@ -30,7 +30,7 @@ from django.test import TestCase, client
 from oauth2_provider.models import get_application_model
 from oauth2_provider.settings import oauth2_settings
 
-from hgw_common.utils import MockRequestHandler, start_mock_server, get_free_port
+from hgw_common.utils.test import MockRequestHandler, start_mock_server, get_free_port
 from mock import patch
 
 CORRECT_CHANNEL_ID = 'correct'
