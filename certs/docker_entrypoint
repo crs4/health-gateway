@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /scripts/
+./generate_all.sh -o /out/ $@
