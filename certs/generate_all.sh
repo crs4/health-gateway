@@ -17,20 +17,46 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+function usage {
+    echo "Creates certificates for CAs and for services. By default it creates web and kafka certs for consentmanager hgwfrontend hgwbackend. If you need other services specify them"
+    echo "usage: ${0} [-s] [-h] [list of additional services]"
+    echo " -o       specify output dir. If not present it will use the current dir"
+    echo " -h       print this message"
+}
 
+if [ $# -ge 1 ]; then
+    case "$1" in
+        -h)
+            usage
+            exit 1
+            ;;
+        -o)
+            if [ "$#" = 1 ]; then
+                echo ERROR: Missing param for -o option
+                exit 1
+            fi
+            OUTPUT_DIR=$2
+            ;;
+    esac
+fi
+
+if [ -z "$OUTPUT_DIR" ]; then
+    OUTPUT_DIR=./
+    SERVICES=$@
+else
+    SERVICES=${@:3}
+fi
 
 ./generate_root_certs.sh
 ./generate_intermediate_certs.sh web
 ./generate_intermediate_certs.sh kafka
-for service in consentmanager destinationmockup hgwfrontend hgwbackend i2b2-destination source-endpoint-mockup; do
+for service in consentmanager hgwfrontend hgwbackend ${SERVICES}; do
     ./generate_web_certs.sh ${service}
 done
 
 ./generate_kafka_server_certificates.sh
-for service in destinationmockup hgwbackend hgwdispatcher hgwfrontend i2b2-destination \
-    integration-rest-destination source-endpoint-mockup; do
+for service in hgwbackend hgwdispatcher hgwfrontend ${SERVICES}; do
     ./generate_kafka_client_certificates.sh ${service}
 done
 
-# Creates the hgwbackend client cert for the source_endpoint_mockup
-./generate_web_certs.sh hgwbackend_client ca/web/certs/hgwbackend/source_endpoint_mockup_client true
+mv ca ${OUTPUT_DIR}
