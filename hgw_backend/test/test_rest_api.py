@@ -16,17 +16,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import json
+import logging
 import os
 import sys
+from _ssl import SSLError
 
 from django.test import TestCase, client
-from mock import patch
+from kafka.errors import KafkaTimeoutError, NoBrokersAvailable, TopicAuthorizationFailedError, KafkaError
+from mock import patch, MagicMock
 from oauth2_provider.settings import oauth2_settings
 
 from hgw_backend import settings
-from hgw_backend.models import OAuth2Authentication, RESTClient
+from hgw_backend.models import RESTClient
 from hgw_common.cipher import MAGIC_BYTES
-from hgw_common.utils.test import start_mock_server, MockKafkaConsumer, MockMessage
+from hgw_common.utils.test import start_mock_server, MockMessage
 from test.utils import MockSourceEnpointHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -37,8 +40,6 @@ OAUTH_SOURCE_PORT = 40001
 
 sys.path.append(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/management/')))
 
-from commands.kafka_consumer import Command
-
 
 class TestHGWBackendAPI(TestCase):
     fixtures = ['test_data.json']
@@ -46,6 +47,8 @@ class TestHGWBackendAPI(TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestHGWBackendAPI, cls).setUpClass()
+        logger = logging.getLogger('hgw_backend')
+        logger.setLevel(logging.ERROR)
         start_mock_server('certs', MockSourceEnpointHandler, OAUTH_SOURCE_PORT)
         start_mock_server('certs', MockSourceEnpointHandler, CERT_SOURCE_PORT)
 
@@ -170,8 +173,7 @@ class TestHGWBackendAPI(TestCase):
     #         res = Command().handle()
     #         self.assertIsNotNone(OAuth2Authentication.objects.get().token)
 
-    @patch('hgw_backend.views.KafkaProducer')
-    def test_send_message(self, mock_kp):
+    def test_send_message(self):
         channel_id = 'channel_id'
         payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
 
@@ -181,10 +183,11 @@ class TestHGWBackendAPI(TestCase):
         }
         oauth2_header = self._get_oauth_header()
         source_id = RESTClient.objects.get().source.source_id
-        res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
-        self.assertEquals(mock_kp().send.call_args_list[0][0][0], source_id)
-        self.assertEquals(mock_kp().send.call_args_list[0][0][1], data['channel_id'].encode('utf-8'))
-        self.assertEquals(mock_kp().send.call_args_list[0][0][2], data['payload'].encode('utf-8'))
+        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+            res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+            self.assertEquals(MockKP().send.call_args_list[0][0][0], source_id)
+            self.assertEquals(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
+            self.assertEquals(MockKP().send.call_args_list[0][1]['value'], data['payload'].encode('utf-8'))
         self.assertEquals(res.status_code, 200)
         self.assertEquals(res.json(), {})
 
@@ -229,7 +232,7 @@ class TestHGWBackendAPI(TestCase):
         self.assertEquals(res.status_code, 401)
         self.assertEquals(res.json(), {'detail': 'Authentication credentials were not provided.'})
 
-    def test_send_message_server_error(self):
+    def test_send_message_no_broker_available(self):
         channel_id = 'channel_id'
         payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
 
@@ -239,8 +242,83 @@ class TestHGWBackendAPI(TestCase):
         }
         oauth2_header = self._get_oauth_header()
 
-        res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+            MockKP.side_effect = NoBrokersAvailable
+            res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
 
-        self.assertEquals(res.status_code, 500)
-        self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+            self.assertEquals(res.status_code, 500)
+            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
 
+    def test_send_message_wrong_broker_credentials(self):
+        channel_id = 'channel_id'
+        payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
+
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+
+        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+            MockKP.side_effect = SSLError
+            res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+
+            self.assertEquals(res.status_code, 500)
+            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+
+    def test_send_message_missing_topic(self):
+        channel_id = 'channel_id'
+        payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
+
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+
+        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+            MockKP().send.side_effect = KafkaTimeoutError
+            res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+
+            self.assertEquals(res.status_code, 500)
+            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+
+    def test_send_message_no_authorization(self):
+        channel_id = 'channel_id'
+        payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
+
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+
+        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+            mock_future_record_metadata = MagicMock()
+            mock_future_record_metadata().get.side_effect = TopicAuthorizationFailedError
+            MockKP().send.side_effect = mock_future_record_metadata
+
+            res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+
+            self.assertEquals(res.status_code, 500)
+            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+
+    def test_send_message_generic_kafka_error(self):
+        channel_id = 'channel_id'
+        payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
+
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+
+        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+            mock_future_record_metadata = MagicMock()
+            mock_future_record_metadata().get.side_effect = KafkaError
+            MockKP().send.side_effect = mock_future_record_metadata
+
+            res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+
+            self.assertEquals(res.status_code, 500)
+            self.assertEquals(res.json(), {'error': 'cannot_send_message'})

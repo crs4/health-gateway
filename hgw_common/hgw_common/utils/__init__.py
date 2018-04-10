@@ -17,6 +17,7 @@
 
 
 import json
+import logging
 import re
 import socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -99,3 +100,14 @@ def get_oauth_token(server_uri, client_id, client_secret):
     access_token = access_token["access_token"]
     access_token_header = {"Authorization": "Bearer {}".format(access_token)}
     return oauth_session, access_token_header
+
+
+def get_logger(logger_name):
+    logger = logging.getLogger(logger_name)
+    fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(fmt)
+    logger.addHandler(ch)
+    logger.setLevel(logging.DEBUG)
+    return logger
