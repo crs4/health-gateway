@@ -49,6 +49,7 @@ class TokenHasResourceDetailedScope(TokenHasScope):
     """
 
     def get_scopes(self, request, view):
+
         try:
             view_specific_scopes = getattr(view, 'view_specific_scopes')
         except AttributeError:
@@ -63,17 +64,24 @@ class TokenHasResourceDetailedScope(TokenHasScope):
 
         if request.method.upper() in SAFE_HTTP_METHODS:
             scope_type = [oauth2_settings.READ_SCOPE]
-            if view.action in view_specific_scopes and 'read' in view_specific_scopes[view.action]:
-                scope_type.extend(view_specific_scopes[view.action]['read'])
+            try:
+                if view.action in view_specific_scopes and 'read' in view_specific_scopes[view.action]:
+                    scope_type.extend(view_specific_scopes[view.action]['read'])
+            except AttributeError:
+                pass
         else:
             scope_type = [oauth2_settings.WRITE_SCOPE]
-            if view.action in view_specific_scopes and 'write' in view_specific_scopes[view.action]:
-                scope_type.extend(view_specific_scopes[view.action]['write'])
+            try:
+                if view.action in view_specific_scopes and 'write' in view_specific_scopes[view.action]:
+                    scope_type.extend(view_specific_scopes[view.action]['write'])
+            except AttributeError:
+                pass
 
         required_scopes = [
             '{0}:{1}'.format(combined_scope[0], combined_scope[1]) for combined_scope in
             product(view_scopes, scope_type)
         ]
+
         return required_scopes
 
 

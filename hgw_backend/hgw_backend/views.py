@@ -16,12 +16,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+from django.http import Http404, HttpResponse
+from kafka import KafkaProducer, TopicPartition
+from kafka.errors import NoBrokersAvailable
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT
+from hgw_common.cipher import Cipher, is_encrypted
+from hgw_common.utils import TokenHasResourceDetailedScope
 from .models import Source
 from .serializers import SourceSerializer
-from django.http import Http404, HttpResponse
+
+
+def home(request):
+    return HttpResponse('<a href="/admin/">Click here to access admin page</a>')
 
 
 class SourcesList(APIView):
@@ -42,5 +52,41 @@ class SourcesList(APIView):
         return Response(serializer.data, content_type='application/json')
 
 
-def home(request):
-    return HttpResponse('<a href="/admin/">Click here to access admin page</a>')
+class Messages(APIView):
+    permission_classes = (TokenHasResourceDetailedScope,)
+    required_scopes = ['messages']
+
+    @staticmethod
+    def _get_kafka_producer():
+        kp = KafkaProducer(bootstrap_servers=KAFKA_BROKER,
+                           security_protocol='SSL',
+                           ssl_check_hostname=True,
+                           ssl_cafile=KAFKA_CA_CERT,
+                           ssl_certfile=KAFKA_CLIENT_CERT,
+                           ssl_keyfile=KAFKA_CLIENT_KEY)
+
+        return kp
+
+    @staticmethod
+    def _get_kafka_topic(request):
+        return request.auth.application.source.source_id
+
+    def post(self, request):
+        if 'channel_id' not in request.data or 'payload' not in request.data:
+            return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
+        payload = request.data['payload'].encode('utf-8')
+
+        if not is_encrypted(payload):
+            return Response({'error': 'not_encrypted_payload'}, status.HTTP_400_BAD_REQUEST)
+
+        channel_id = request.data['channel_id'].encode('utf-8')
+        try:
+            kp = self._get_kafka_producer()
+        except NoBrokersAvailable:
+            return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            topic = self._get_kafka_topic(request)
+            kp.send(topic, channel_id, payload)
+
+        return Response({}, 200)
+

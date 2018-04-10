@@ -31,4 +31,5 @@ urlpatterns = [
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^{}/sources/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
     url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
+    url(r'^{}/messages/$'.format(VERSION_REGEX), views.Messages.as_view()),
 ]

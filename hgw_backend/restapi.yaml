@@ -82,20 +82,23 @@ paths:
           schema:
             $ref: '#/definitions/Message'
       responses:
-        '201':
+        200:
           description: ''
-        '400':
+        400:
           description: Bad Request - Missing parameters or payload not encrypted
           schema:
             $ref: '#/definitions/Error'
-        '401':
+        401:
           description: Unauthorized - The client has not provide a valid token or the
             token has expired
           schema:
             $ref: '#/definitions/Error'
-        '403':
+        403:
           description: Forbidden - The client token has not the right scope for the
             operation
+        500:
+          description: Internal Server Error - Something wrong happened sending the message
+            (e.g., broker was unreachable)
       tags:
         - v1
       security:

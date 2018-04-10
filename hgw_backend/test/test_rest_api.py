@@ -25,6 +25,7 @@ from oauth2_provider.settings import oauth2_settings
 
 from hgw_backend import settings
 from hgw_backend.models import OAuth2Authentication, RESTClient
+from hgw_common.cipher import MAGIC_BYTES
 from hgw_common.utils.test import start_mock_server, MockKafkaConsumer, MockMessage
 from test.utils import MockSourceEnpointHandler
 
@@ -97,6 +98,10 @@ class TestHGWBackendAPI(TestCase):
         res = self._call_token_creation(params)
         return res.json()
 
+    def _get_oauth_header(self, client_index=0):
+        res = self._get_oauth_token(client_index)
+        return {'Authorization': 'Bearer {}'.format(res['access_token'])}
+
     def test_create_token(self):
         """
         Tests correct oauth2 token creation
@@ -158,11 +163,84 @@ class TestHGWBackendAPI(TestCase):
         self.assertEquals(res['Content-Type'], 'application/json')
         self.assertEquals(len(json_res), 2)
 
-    def test_add_connector(self):
-        with patch('commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            self.assertIsNone(OAuth2Authentication.objects.get().token)
-            res = Command().handle()
-            self.assertIsNotNone(OAuth2Authentication.objects.get().token)
+    # def test_add_connector(self):
+    #     with patch('commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer):
+    #         self.set_mock_kafka_consumer(MockKafkaConsumer)
+    #         self.assertIsNone(OAuth2Authentication.objects.get().token)
+    #         res = Command().handle()
+    #         self.assertIsNotNone(OAuth2Authentication.objects.get().token)
 
+    @patch('hgw_backend.views.KafkaProducer')
+    def test_send_message(self, mock_kp):
+        channel_id = 'channel_id'
+        payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
+
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+        source_id = RESTClient.objects.get().source.source_id
+        res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+        self.assertEquals(mock_kp().send.call_args_list[0][0][0], source_id)
+        self.assertEquals(mock_kp().send.call_args_list[0][0][1], data['channel_id'].encode('utf-8'))
+        self.assertEquals(mock_kp().send.call_args_list[0][0][2], data['payload'].encode('utf-8'))
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.json(), {})
+
+    def test_send_message_missing_paramaters(self):
+        channel_id = 'channel_id'
+        payload = 'encrypted_payload'
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+        for k, v in data.items():
+            params = {k: v}
+            res = self.client.post('/v1/messages/', data=json.dumps(params), content_type='application/json', **oauth2_header)
+            self.assertEquals(res.status_code, 400)
+            self.assertEquals(res.json(), {'error': 'missing_parameters'})
+
+    def test_send_message_not_encrypted(self):
+        channel_id = 'channel_id'
+        payload = 'not_encrypted_payload'
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+
+        res = self.client.post('/v1/messages/', data=json.dumps(data), content_type='application/json', **oauth2_header)
+        self.assertEquals(res.status_code, 400)
+        self.assertEquals(res.json(), {'error': 'not_encrypted_payload'})
+
+    def test_send_message_unauthorized(self):
+        channel_id = 'channel_id'
+        payload = 'payload'
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+        oauth2_header['Authorization'] = 'Bearer wrong'
+
+        res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+        self.assertEquals(res.status_code, 401)
+        self.assertEquals(res.json(), {'detail': 'Authentication credentials were not provided.'})
+
+    def test_send_message_server_error(self):
+        channel_id = 'channel_id'
+        payload = '{}encrypted_paylaod'.format(MAGIC_BYTES.decode('utf-8'))
+
+        data = {
+            'channel_id': channel_id,
+            'payload': payload
+        }
+        oauth2_header = self._get_oauth_header()
+
+        res = self.client.post('/v1/messages/', json.dumps(data), content_type='application/json', **oauth2_header)
+
+        self.assertEquals(res.status_code, 500)
+        self.assertEquals(res.json(), {'error': 'cannot_send_message'})
 

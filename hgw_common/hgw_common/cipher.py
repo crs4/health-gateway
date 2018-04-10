@@ -34,6 +34,10 @@ def create_cipher_from_file(file_obj, magic_bytes=MAGIC_BYTES):
     return Cipher(RSA.importKey(file_obj.read()), magic_bytes)
 
 
+def is_encrypted(message, magic_bytes=MAGIC_BYTES):
+    return message[:2] == magic_bytes
+
+
 class Cipher(object):
     class MissingPrivateKey(Exception):
         pass
@@ -124,7 +128,7 @@ class Cipher(object):
         return self.base_message + self.aes_cipher.encrypt(self.pad(message))
 
     def is_encrypted(self, message):
-        return message[:2] == self.magic_bytes
+        return is_encrypted(message, self.magic_bytes)
 
     @staticmethod
     def unpad(s):
