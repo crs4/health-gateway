@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'oauth2_provider',
     'rest_framework',
     'hgw_common',
     'hgw_backend',
@@ -74,9 +75,15 @@ INSTALLED_APPS = [
 if DEBUG is True:
     INSTALLED_APPS.append('sslserver')
 
+AUTHENTICATION_BACKENDS = [
+    'oauth2_provider.backends.OAuth2Backend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -85,6 +92,8 @@ MIDDLEWARE = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',),
+    'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_PARSER_CLASSES': ('rest_framework.parsers.JSONParser',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
@@ -117,23 +126,7 @@ DATABASES = {
     }
 }
 
-if DEBUG is False:
-    AUTH_PASSWORD_VALIDATORS = [
-        {
-            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-        },
-        {
-            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        },
-        {
-            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-        },
-        {
-            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-        },
-    ]
-else:
-    AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -148,6 +141,45 @@ MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../media/'))
 
 SESSION_COOKIE_NAME = 'hgw_backend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# OAUTH2 CONFIGURATIONS
+SCOPES = {
+    'messages:write': 'Write messages'
+}
+DEFAULT_SCOPES = SCOPES
+
+
+class ApplicationBasedScope(object):
+    """
+    Oauth2 custom class to handle scopes assignments to rest clients
+    """
+
+    @staticmethod
+    def get_all_scopes():
+        return SCOPES
+
+    @staticmethod
+    def get_available_scopes(application=None, request=None, *args, **kwargs):
+        if application.scopes:
+            return application.scopes.split(" ")
+        return SCOPES.keys()
+
+    @staticmethod
+    def get_default_scopes(application=None, request=None, *args, **kwargs):
+        if application.scopes:
+            return application.scopes.split(" ")
+        return DEFAULT_SCOPES
+
+
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'hgw_backend.RESTClient'
+
+OAUTH2_PROVIDER = {
+    'SCOPES': SCOPES,
+    'SCOPES_BACKEND_CLASS': ApplicationBasedScope,
+    'DEFAULT_SCOPES': DEFAULT_SCOPES
+}
+
+REQUEST_VALIDITY_SECONDS = 60
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'

@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 
 from .models import Source
 from .serializers import SourceSerializer
-from django.http import Http404
+from django.http import Http404, HttpResponse
 
 
 class SourcesList(APIView):
@@ -40,3 +40,7 @@ class SourcesList(APIView):
             sources = Source.objects.all()
             serializer = SourceSerializer(sources, many=True)
         return Response(serializer.data, content_type='application/json')
+
+
+def home(request):
+    return HttpResponse('<a href="/admin/">Click here to access admin page</a>')

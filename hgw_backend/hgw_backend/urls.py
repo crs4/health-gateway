@@ -25,8 +25,10 @@ from hgw_common.settings import VERSION_REGEX
 admin.autodiscover()
 
 urlpatterns = [
+    url(r'^$', views.home),
     url(r'^admin/', admin.site.urls),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
+    url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^{}/sources/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
     url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
 ]
