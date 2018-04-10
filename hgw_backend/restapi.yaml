@@ -59,7 +59,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
         401:
-          description: Unauthorized - one of client_id, client_secret of scopes were not recognized
+          description: Unauthorized - one of client_id, client_secret or scopes were not recognized
           schema:
             $ref: '#/definitions/Error'
   /protocol/version/:

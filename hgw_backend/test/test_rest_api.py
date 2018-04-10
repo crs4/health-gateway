@@ -21,8 +21,10 @@ import sys
 
 from django.test import TestCase, client
 from mock import patch
+from oauth2_provider.settings import oauth2_settings
 
-from hgw_backend.models import OAuth2Authentication
+from hgw_backend import settings
+from hgw_backend.models import OAuth2Authentication, RESTClient
 from hgw_common.utils.test import start_mock_server, MockKafkaConsumer, MockMessage
 from test.utils import MockSourceEnpointHandler
 
@@ -76,6 +78,78 @@ class TestHGWBackendAPI(TestCase):
         mock_kc_klass.MESSAGES = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
                                                  topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
                                                  value=json.dumps(v).encode('utf-8')) for i, v in enumerate(messages)}
+
+    @staticmethod
+    def _get_client_data(client_index=0):
+        app = RESTClient.objects.all()[client_index]
+        return app.client_id, app.client_secret
+
+    def _call_token_creation(self, data):
+        return self.client.post('/oauth2/token/', data=data)
+
+    def _get_oauth_token(self, client_index=0):
+        c_id, c_secret = self._get_client_data(client_index)
+        params = {
+            'grant_type': 'client_credentials',
+            'client_id': c_id,
+            'client_secret': c_secret
+        }
+        res = self._call_token_creation(params)
+        return res.json()
+
+    def test_create_token(self):
+        """
+        Tests correct oauth2 token creation
+        """
+        res = self._get_oauth_token(client_index=0)
+        for k in ['access_token', 'token_type', 'expires_in', 'scope']:
+            self.assertIn(k, res)
+        self.assertEquals(res['token_type'], 'Bearer')
+        self.assertIn(res['scope'], settings.DEFAULT_SCOPES)
+        self.assertEquals(res['expires_in'], oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS)
+
+    def test_create_token_wrong_client(self):
+        """
+        Tests failed token creation due to wrong client_id or client_secret
+        """
+        for client_data in [('wrong', self._get_client_data(0)[1]), (self._get_client_data(0)[0], 'wrong')]:
+            wrong_client_data = {
+                'grant_type': 'client_credentials',
+                'client_id': client_data[0],
+                'client_secret': client_data[1]
+            }
+            res = self._call_token_creation(wrong_client_data)
+            self.assertEquals(res.status_code, 401)
+            self.assertEquals(res.json(), {'error': 'invalid_client'})
+
+    def test_create_token_wrong_grant_type(self):
+        """
+        Tests failed token creation due to wrong grant_type
+        """
+        client_id, client_secret = self._get_client_data(0)
+        wrong_client_data = {
+            'grant_type': 'wrong',
+            'client_id': client_id,
+            'client_secret': client_secret
+        }
+        res = self._call_token_creation(wrong_client_data)
+        self.assertEquals(res.status_code, 400)
+        self.assertEquals(res.json(), {'error': 'unsupported_grant_type'})
+
+    def test_create_token_invalid_scope(self):
+        """
+        Tests failed token creation due to wrong grant_type
+        """
+        client_id, client_secret = self._get_client_data(0)
+        wrong_client_data = {
+            'grant_type': 'client_credentials',
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'scope': 'wrong'
+        }
+        res = self._call_token_creation(wrong_client_data)
+        self.assertEquals(res.status_code, 401)
+        self.assertEquals(res.json(), {'error': 'invalid_scope'})
 
     def test_get_sources(self):
         res = self.client.get('/v1/sources/')

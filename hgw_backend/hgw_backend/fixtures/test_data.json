@@ -55,5 +55,22 @@
       "client_id": "LyuxrjPfkjAQ6773cvyw0S7S50AUf4JmTF0ND8hL",
       "client_secret": "y5HnAbJEl8KuRtmwIIo4STHhS8g1DBXiou3Evt0cejtHxPb7t1CQLCDIONsRjNbo1PIXavWTcDVFOjJMtlXo5qKNpZn6K7MuRrmkWA7ZEThUH3TdNjNIuya0"
     }
+  },
+  {
+    "model": "hgw_backend.restclient",
+    "pk": 1,
+    "fields": {
+      "client_id": "TYtRHZM7P2xtDPevMRTOdTrPsN1vP7Mi8l9HnZMD",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "M3ZmctPHaeEPYBHYDObdHV0EFq9IOBSXC8UAVxZZ0yPasp4sIW1pqW9WkZlIQugwQmFbSgkTjf8bWpa1BH2sKEfM4pb8KExyO72HYRWcyDOmdvgVDPITAMEAhhFaOJLz",
+      "name": "SOURCE_ENPOINT_MOCKUP",
+      "skip_authorization": false,
+      "source": 1,
+      "client_role": "ST",
+      "scopes": "messages:write"
+    }
   }
 ]
