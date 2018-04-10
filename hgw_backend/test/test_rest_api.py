@@ -161,10 +161,9 @@ class TestHGWBackendAPI(TestCase):
 
     def test_get_sources(self):
         res = self.client.get('/v1/sources/')
-        json_res = json.loads(res.content.decode())
         self.assertEquals(res.status_code, 200)
         self.assertEquals(res['Content-Type'], 'application/json')
-        self.assertEquals(len(json_res), 2)
+        self.assertEquals(len(res.json()), 2)
 
     # def test_add_connector(self):
     #     with patch('commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer):

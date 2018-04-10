@@ -14,12 +14,18 @@ consumes:
 produces:
   - application/json
 securityDefinitions:
+  sources:
+    type: oauth2
+    tokenUrl: https://hgwbackend:8003/oauth2/token/
+    flow: application
+    scopes:
+      sources:read: Can get the list of sources
   messages:
     type: oauth2
     tokenUrl: https://hgwbackend:8003/oauth2/token/
     flow: application
     scopes:
-      messages:write: Send new messages
+      messages:write: Can send messages
 paths:
   /oauth2/token/:
     post:
@@ -67,10 +73,36 @@ paths:
       operationId: protocol_version_list
       description: ''
       responses:
-        '200':
+        200:
           description: ''
       tags:
         - protocol
+  /v1/sources/:
+    get:
+      operationId: v1_source_list
+      description: Returns a list of sources
+      responses:
+        200:
+          description: 'Success'
+          schema:
+            $ref: '#/definitions/Source'
+        400:
+          description: Bad Request - Missing parameters or payload not encrypted
+          schema:
+            $ref: '#/definitions/Error'
+        401:
+          description: Unauthorized - The client has not provide a valid token or the
+            token has expired
+          schema:
+            $ref: '#/definitions/Error'
+        403:
+          description: Forbidden - The client token has not the right scope for the
+            operation
+      tags:
+        - v1
+      security:
+        - sources:
+            - sources:read
   /v1/messages/:
     post:
       operationId: v1_messages_create
@@ -83,7 +115,7 @@ paths:
             $ref: '#/definitions/Message'
       responses:
         200:
-          description: ''
+          description: 'Success'
         400:
           description: Bad Request - Missing parameters or payload not encrypted
           schema:
@@ -105,6 +137,15 @@ paths:
         - messages:
             - messages:write
 definitions:
+  Source:
+    type: object
+    properties:
+      source_id:
+        description: The id of the source
+        type: string
+      name:
+        description: The name of the source
+        type: string
   Message:
     type: object
     properties:
