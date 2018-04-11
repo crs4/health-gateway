@@ -25,7 +25,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'source_endpoint.settings'
 django.setup()
 
 import source_endpoint.settings as settings
-from main.models import Connector
+from source_endpoint.models import Connector
 from kafka import KafkaProducer
 from hgw_common.cipher import Cipher
 

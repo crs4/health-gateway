@@ -6,7 +6,7 @@
       "source_id": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
       "name": "SOURCE_ENDPOINT_MOCKUP",
       "url": "https://source-endpoint-mockup:8004/v1/connectors/",
-      "content_type": 10,
+      "content_type": 13,
       "object_id": 1
     }
   },
