@@ -17,12 +17,14 @@
 import re
 
 import requests
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import URLValidator, _lazy_re_compile
 from django.db import models
 from django.forms import URLField as URLFormField
 from django.utils.crypto import get_random_string
+from oauth2_provider.models import AbstractApplication
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
 from requests_oauthlib import OAuth2Session
 
@@ -155,3 +157,24 @@ class OAuth2Authentication(models.Model):
 
     class Meta:
         verbose_name = 'OAuth2 Authentication'
+
+
+class RESTClient(AbstractApplication):
+    STANDARD = 'STANDARD'
+    SUPER = 'SUPER'
+
+    ROLE_CHOICES = (
+        ('ST', STANDARD),
+        ('SU', SUPER)
+    )
+
+    source = models.OneToOneField('Source', null=True, blank=True)
+    client_role = models.CharField(max_length=2, choices=ROLE_CHOICES, null=False, blank=False, default=STANDARD)
+    scopes = models.CharField(max_length=100, blank=False, null=False, default=" ".join(settings.DEFAULT_SCOPES),
+                              help_text="Space separated scopes to assign to the REST client")
+
+    def is_super_client(self):
+        return self.client_role == self.SUPER
+
+    def has_scope(self, scope):
+        return scope in self.scopes

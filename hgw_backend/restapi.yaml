@@ -1,0 +1,179 @@
+swagger: '2.0'
+info:
+  title: HGW Backend API
+  description: REST API of the Health Gateway Backend
+  contact:
+    email: vittorio.meloni@crs4.it
+  version: v1
+host: hgwbackend:8003
+schemes:
+  - https
+basePath: /
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  sources:
+    type: oauth2
+    tokenUrl: https://hgwbackend:8003/oauth2/token/
+    flow: application
+    scopes:
+      sources:read: Can get the list of sources
+  messages:
+    type: oauth2
+    tokenUrl: https://hgwbackend:8003/oauth2/token/
+    flow: application
+    scopes:
+      messages:write: Can send messages
+paths:
+  /oauth2/token/:
+    post:
+      consumes:
+        - application/x-www-form-urlencoded
+      operationId: acquire_token
+      description: This will create a token for the client. The token is needed to perform all the other operations
+      parameters:
+        - name:  client_id
+          in: formData
+          type: string
+          required: true
+          description: The id of the client assigned when it was enrolled
+        - name:  client_secret
+          in: formData
+          type: string
+          required: true
+          description: The secret of the client assigned when it was enrolled
+        - name:  grant_type
+          in: formData
+          type: string
+          required: true
+          description: The type of grant. The only available is client_credentials
+        - name: scopes
+          in: formData
+          type: string
+          required: false
+          description: The scopes required. The server actually already knows the scope to assign to every client,
+                  so it ignores the parameter
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/AccessToken'
+        400:
+          description: Bad Request - Input data are wrong
+          schema:
+            $ref: '#/definitions/Error'
+        401:
+          description: Unauthorized - one of client_id, client_secret or scopes were not recognized
+          schema:
+            $ref: '#/definitions/Error'
+  /protocol/version/:
+    get:
+      operationId: protocol_version_list
+      description: ''
+      responses:
+        200:
+          description: ''
+      tags:
+        - protocol
+  /v1/sources/:
+    get:
+      operationId: v1_source_list
+      description: Returns a list of sources
+      responses:
+        200:
+          description: 'Success'
+          schema:
+            $ref: '#/definitions/Source'
+        400:
+          description: Bad Request - Missing parameters or payload not encrypted
+          schema:
+            $ref: '#/definitions/Error'
+        401:
+          description: Unauthorized - The client has not provide a valid token or the
+            token has expired
+          schema:
+            $ref: '#/definitions/Error'
+        403:
+          description: Forbidden - The client token has not the right scope for the
+            operation
+      tags:
+        - v1
+      security:
+        - sources:
+            - sources:read
+  /v1/messages/:
+    post:
+      operationId: v1_messages_create
+      description: Creates a new message
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Message'
+      responses:
+        200:
+          description: 'Success'
+        400:
+          description: Bad Request - Missing parameters or payload not encrypted
+          schema:
+            $ref: '#/definitions/Error'
+        401:
+          description: Unauthorized - The client has not provide a valid token or the
+            token has expired
+          schema:
+            $ref: '#/definitions/Error'
+        403:
+          description: Forbidden - The client token has not the right scope for the
+            operation
+        500:
+          description: Internal Server Error - Something wrong happened sending the message
+            (e.g., broker was unreachable)
+      tags:
+        - v1
+      security:
+        - messages:
+            - messages:write
+definitions:
+  Source:
+    type: object
+    properties:
+      source_id:
+        description: The id of the source
+        type: string
+      name:
+        description: The name of the source
+        type: string
+  Message:
+    type: object
+    properties:
+      channel_id:
+        description: The id of the channel
+        type: string
+      payload:
+        description: The message to send. It must be encrypted with the Destination Public Key
+        type: string
+  Error:
+    type: object
+    properties:
+      error:
+        description: Description of the error
+        type: string
+  AccessToken:
+      type: object
+      properties:
+        access_token:
+          description: The token assigned
+          type: string
+        token_type:
+          description: The token type. It will always be "Bearer"
+          type: string
+        expires_in:
+          description: The number of seconds after which the token expires
+          type: integer
+        scope:
+          description: The space separated scopes assigned to the token. The scopes are assigned by the server and
+            the client can ask only a subset of the scopes it has assigned
+          type: string

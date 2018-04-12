@@ -46,7 +46,6 @@ urlpatterns = [
     url(r'^saml2/', include('djangosaml2.urls')),
     url(r'^swagger(?P<format>.json|.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
     url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-ui'),
-
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^{}/flow_requests/confirm/$'.format(VERSION_REGEX), confirm_request),
