@@ -14,9 +14,13 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+import copy
 import re
+import time
+from datetime import datetime
 
 import requests
+from requests.exceptions import ConnectionError
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -25,7 +29,7 @@ from django.db import models
 from django.forms import URLField as URLFormField
 from django.utils.crypto import get_random_string
 from oauth2_provider.models import AbstractApplication
-from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
+from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError, InvalidClientError, MissingTokenError
 from requests_oauthlib import OAuth2Session
 
 
@@ -38,12 +42,12 @@ class CustomURLValidator(URLValidator):
     Custom URL Validator that support the presence of only the hostname (e.g.: "https://hostname/" is a valid value)
     """
     tld_re = (
-        r'(\.'                                # dot
-        r'(?!-)'                             # can't start with a dash
-        r'(?:[a-z' + URLValidator.ul + '-]{2,63}'         # domain label
-        r'|xn--[a-z0-9]{1,59})'              # or punycode label
-        r'(?<!-)'                            # can't end with a dash
-        r'\.?)*'                               # may have a trailing dot
+            r'(\.'  # dot
+            r'(?!-)'  # can't start with a dash
+            r'(?:[a-z' + URLValidator.ul + '-]{2,63}'  # domain label
+                                           r'|xn--[a-z0-9]{1,59})'  # or punycode label
+                                           r'(?<!-)'  # can't end with a dash
+                                           r'\.?)*'  # may have a trailing dot
     )
     host_re = '(' + URLValidator.hostname_re + URLValidator.domain_re + tld_re + '|localhost)'
 
@@ -51,9 +55,9 @@ class CustomURLValidator(URLValidator):
         r'^(?:[a-z0-9\.\-\+]*)://'  # scheme is validated separately
         r'(?:\S+(?::\S*)?@)?'  # user:pass authentication
         r'(?:' + URLValidator.ipv4_re + '|' + URLValidator.ipv6_re + '|' + host_re + ')'
-        r'(?::\d{2,5})?'  # port
-        r'(?:[/?#][^\s]*)?'  # resource path
-        r'\Z', re.IGNORECASE)
+                                                                                     r'(?::\d{2,5})?'  # port
+                                                                                     r'(?:[/?#][^\s]*)?'  # resource path
+                                                                                     r'\Z', re.IGNORECASE)
 
 
 class CustomURLFormField(URLFormField):
@@ -113,40 +117,75 @@ class CertificatesAuthentication(models.Model):
             return "ID: {id}".format(id=self.id)
 
 
+class WrongUrlException(Exception):
+    pass
+
+
 class OAuth2Authentication(models.Model):
     source = GenericRelation(Source)
     token_url = models.CharField(max_length=100, blank=False, null=False)
     client_id = models.CharField(max_length=40, blank=False, null=False)
     client_secret = models.CharField(max_length=128, blank=False, null=False)
-    token = models.CharField(max_length=1024, blank=True, null=True)
 
-    def _get_new_token(self, oauth_session):
-        res = oauth_session.fetch_token(token_url=self.token_url,
-                                        client_id=self.client_id,
-                                        client_secret=self.client_secret)
-        self.token = res['access_token']
-        self.save()
-        return res
+    def _get_token(self):
+        try:
+            ac = AccessToken.objects.get(oauth2_authentication=self)
+        except AccessToken.DoesNotExist:
+            return None
+        return ac.to_python()
 
-    def _get_oauth2_token(self, force_new=False):
-        client = BackendApplicationClient(self.client_id)
-        if self.token is None or force_new is True:
-            oauth_session = OAuth2Session(client=client)
-            token = self._get_new_token(oauth_session)
+    def _fetch_token(self, oauth_session):
+        oauth_session.fetch_token(token_url=self.token_url,
+                                  client_id=self.client_id,
+                                  client_secret=self.client_secret)
+
+        self._save_token(oauth_session.token)
+
+    def _save_token(self, token_data):
+        token_data = copy.copy(token_data)
+        token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
+        try:
+            access_token = AccessToken.objects.get(oauth2_authentication=self)
+        except AccessToken.DoesNotExist:
+            AccessToken.objects.create(oauth2_authentication=self, **token_data)
         else:
-            token = {'access_token': self.token, 'token_type': 'Bearer'}
-            oauth_session = OAuth2Session(client=client, token=token)
+            for k, v in token_data.items():
+                setattr(access_token, k, v)
+            access_token.save()
 
-        access_token_header = {'Authorization': 'Bearer {}'.format(token['access_token'])}
-        return oauth_session, access_token_header
+    def _get_oauth2_session(self):
+        client = BackendApplicationClient(self.client_id)
+
+        access_token = self._get_token()
+
+        if access_token is None:
+            oauth_session = OAuth2Session(client=client)
+            self._fetch_token(oauth_session)
+        else:
+            oauth_session = OAuth2Session(client=client, token=access_token)
+
+        return oauth_session
 
     def create_connector(self, source, connector):
-        session, header = self._get_oauth2_token()
         try:
-            res = session.post(source.url, json=connector)
-        except TokenExpiredError:
-            session, header = self._get_oauth2_token(force_new=True)
-            res = session.post(source.url, json=connector)
+            session = self._get_oauth2_session()
+        except (ConnectionError, InvalidClientError, MissingTokenError):
+            res = None
+        else:
+            try:
+                res = session.post(source.url, json=connector)
+                if res.status_code == 401:
+                    raise TokenExpiredError
+            except TokenExpiredError:
+                self._fetch_token(session)
+                res = session.post(source.url, json=connector)
+            except ConnectionError:
+                res = None
+            except MissingTokenError:
+                res = None
+
+        if res is not None and res.status_code != 200:
+            return None
         return res
 
     def __str__(self):
@@ -178,3 +217,21 @@ class RESTClient(AbstractApplication):
 
     def has_scope(self, scope):
         return scope in self.scopes
+
+
+class AccessToken(models.Model):
+    oauth2_authentication = models.ForeignKey(OAuth2Authentication)
+    access_token = models.CharField(max_length=1024, null=False, blank=False)
+    token_type = models.CharField(max_length=10, null=False, blank=False)
+    expires_in = models.IntegerField()
+    expires_at = models.DateTimeField()
+    scope = models.CharField(max_length=30)
+
+    def to_python(self):
+        return {
+            'access_token': self.access_token,
+            'token_type': self.token_type,
+            'expires_in': self.expires_in,
+            'expires_at': self.expires_at.timestamp(),
+            'scope': self.scope
+        }

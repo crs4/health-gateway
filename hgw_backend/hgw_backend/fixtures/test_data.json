@@ -24,7 +24,7 @@
       "source_id": "6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC",
       "name": "cert_source",
       "url": "http://localhost:40000/v1/connectors/",
-      "content_type": 9,
+      "content_type": 13,
       "object_id": 1
     }
   },
@@ -35,7 +35,7 @@
       "source_id": "LD2j7v35BvUlzWDe8G89JGzz4SOincB7",
       "name": "oauth2_source",
       "url": "http://localhost:40001/v1/connectors/",
-      "content_type": 10,
+      "content_type": 14,
       "object_id": 1
     }
   },
@@ -51,9 +51,9 @@
     "model": "hgw_backend.oauth2authentication",
     "pk": 1,
     "fields": {
-      "token_url": "http://localhost:40000/oauth2/token/",
-      "client_id": "LyuxrjPfkjAQ6773cvyw0S7S50AUf4JmTF0ND8hL",
-      "client_secret": "y5HnAbJEl8KuRtmwIIo4STHhS8g1DBXiou3Evt0cejtHxPb7t1CQLCDIONsRjNbo1PIXavWTcDVFOjJMtlXo5qKNpZn6K7MuRrmkWA7ZEThUH3TdNjNIuya0"
+      "token_url": "http://localhost:40001/oauth2/token/",
+      "client_id": "writer",
+      "client_secret": "writer"
     }
   },
   {

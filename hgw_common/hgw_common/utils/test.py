@@ -22,6 +22,7 @@ Module with utlities to be used in unit tests
 import json
 import re
 import socket
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
@@ -43,8 +44,8 @@ class MockRequestHandler(BaseHTTPRequestHandler):
     def _handle_oauth(self):
         payload = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
                    'token_type': 'Bearer',
-                   'expires_in': 36000,
-                   'expires_at': 1499976952.401335,
+                   'expires_in': 1800,
+                   'expires_at': time.time() + 1800,
                    'scope': ['read', 'write']}
         status_code = 201
         return payload, status_code

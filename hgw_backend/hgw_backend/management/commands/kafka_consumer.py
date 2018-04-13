@@ -40,22 +40,21 @@ class Command(BaseCommand):
         kc.assign([TopicPartition(settings.KAFKA_TOPIC, 0)])
         kc.seek_to_beginning(TopicPartition(settings.KAFKA_TOPIC, 0))
         for msg in kc:
-            try:
-                channel_data = json.loads(msg.value.decode('utf-8'))
-                source = Source.objects.get(source_id=channel_data['source_id'])
-                destination_kafka_key = channel_data['destination']['kafka_public_key']
-                person_id = channel_data['person_id']
-                channel_id = channel_data['channel_id']
-                source_endpoint_profile = channel_data['profile']
-                connector = {
-                    'profile': source_endpoint_profile,
-                    'person_identifier': person_id,
-                    'dest_public_key': destination_kafka_key,
-                    'channel_id': channel_id
-                }
+            channel_data = json.loads(msg.value.decode('utf-8'))
+            source = Source.objects.get(source_id=channel_data['source_id'])
+            destination_kafka_key = channel_data['destination']['kafka_public_key']
+            person_id = channel_data['person_id']
+            channel_id = channel_data['channel_id']
+            source_endpoint_profile = channel_data['profile']
+            connector = {
+                'profile': source_endpoint_profile,
+                'person_identifier': person_id,
+                'dest_public_key': destination_kafka_key,
+                'channel_id': channel_id
+            }
 
-                res = source.create_connector(connector)
-                print(res)
-            except Exception as ex:
+            res = source.create_connector(connector)
+            if res is None:
                 logging.error('error processing msg %s', msg)
-                logging.exception(ex)
+                # TODO: decide what to do when connector creation failed
+                pass

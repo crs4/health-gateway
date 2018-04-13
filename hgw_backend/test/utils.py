@@ -16,20 +16,59 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import re
+import time
+
+import cgi
 
 from hgw_common.utils.test import MockRequestHandler
 
 
-class MockSourceEnpointHandler(MockRequestHandler):
+class MockSourceEndpointHandler(MockRequestHandler):
+    WRITER_CLIENT_ID = 'writer'
+    WRITER_CLIENT_SECRET = 'writer'
+    WRITE_SCOPE = 'connectors:write'
+    GRANT_TYPE = 'client_credentials'
+
+    OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
     CONNECTORS_PATTERN = re.compile(r'/v1/connectors/')
 
+    def _handle_oauth(self):
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD': 'POST'}
+        )
+
+        client_id = form.getvalue('client_id')
+        client_secret = form.getvalue('client_secret')
+        grant_type = form.getvalue('grant_type')
+
+        if client_id == self.WRITER_CLIENT_ID and client_secret == self.WRITER_CLIENT_SECRET \
+                and grant_type == self.GRANT_TYPE:
+            payload = {'access_token': 'token',
+                       'token_type': 'Bearer',
+                       'expires_in': 1800,
+                       'scope': [self.WRITE_SCOPE]
+                       }
+            status_code = 201
+        else:
+            payload = {'error': 'invalid_client'}
+            status_code = 401
+        return payload, status_code
+
     def do_POST(self):
-        res = super(MockSourceEnpointHandler, self).do_POST()
-        if res is False:
-            if self._path_match(self.CONNECTORS_PATTERN):
-                payload = {}
-                status_code = 200
+        if re.search(self.OAUTH2_PATTERN, self.path):
+            payload, status_code = self._handle_oauth()
+            self._send_response(payload, status_code)
+            return True
+        elif self._path_match(self.CONNECTORS_PATTERN):
+            if 'expired' in self.headers['Authorization']:
+                status_code = 401
+                payload = {'detail': 'Authentication credentials were not provided.'}
             else:
                 payload = {}
-                status_code = 404
-            self._send_response(payload, status_code)
+                status_code = 200
+        else:
+            payload = {}
+            status_code = 404
+        self._send_response(payload, status_code)

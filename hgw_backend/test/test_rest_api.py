@@ -20,17 +20,19 @@ import logging
 import os
 import sys
 from _ssl import SSLError
+from datetime import datetime, timedelta
 
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, client
 from kafka.errors import KafkaTimeoutError, NoBrokersAvailable, TopicAuthorizationFailedError, KafkaError
 from mock import patch, MagicMock
 from oauth2_provider.settings import oauth2_settings
 
 from hgw_backend import settings
-from hgw_backend.models import RESTClient
+from hgw_backend.models import RESTClient, OAuth2Authentication, Source, AccessToken
 from hgw_common.cipher import MAGIC_BYTES
-from hgw_common.utils.test import start_mock_server, MockMessage
-from test.utils import MockSourceEnpointHandler
+from hgw_common.utils.test import start_mock_server, MockMessage, MockKafkaConsumer
+from test.utils import MockSourceEndpointHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -39,6 +41,38 @@ CERT_SOURCE_PORT = 40000
 OAUTH_SOURCE_PORT = 40001
 
 sys.path.append(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/management/')))
+
+from kafka_consumer import Command
+
+PROFILE = {
+        'code': 'PROF001',
+        'version': 'hgw.document.profile.v0',
+        'start_time_validity': '2017-06-23T10:13:39Z',
+        'end_time_validity': '2018-06-23T23:59:59Z',
+        'payload': '{\'domain\': \'Laboratory\'}'
+    }
+
+PERSON_ID = 'AAAABBBBCCCCDDDD'
+DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----'
+
+CHANNEL_MESSAGE = {
+    'channel_id': 'KKa8QqqTBGePJStJpQMbspEvvV4LJJCY',
+    'source_id': 'LD2j7v35BvUlzWDe8G89JGzz4SOincB7',
+    'destination': {
+        'destination_id': 'random_dest_id',
+        'kafka_public_key': DEST_PUBLIC_KEY
+    },
+    'profile': PROFILE,
+    'person_id': PERSON_ID
+}
+
+CONNECTOR = {
+    'profile': PROFILE,
+    'person_identifier': PERSON_ID,
+    'dest_public_key': DEST_PUBLIC_KEY,
+    'channel_id': CHANNEL_MESSAGE['channel_id']
+
+}
 
 
 class TestHGWBackendAPI(TestCase):
@@ -49,8 +83,8 @@ class TestHGWBackendAPI(TestCase):
         super(TestHGWBackendAPI, cls).setUpClass()
         logger = logging.getLogger('hgw_backend')
         logger.setLevel(logging.ERROR)
-        start_mock_server('certs', MockSourceEnpointHandler, OAUTH_SOURCE_PORT)
-        start_mock_server('certs', MockSourceEnpointHandler, CERT_SOURCE_PORT)
+        start_mock_server('certs', MockSourceEndpointHandler, OAUTH_SOURCE_PORT)
+        start_mock_server('certs', MockSourceEndpointHandler, CERT_SOURCE_PORT)
 
     def setUp(self):
         self.messages_source_oauth = []
@@ -72,16 +106,16 @@ class TestHGWBackendAPI(TestCase):
         }
         with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/fixtures/test_data.json'))) as fixtures_file:
             self.fixtures = json.load(fixtures_file)
+        self.sources = [obj for obj in self.fixtures if obj['model'] == 'hgw_backend.source']
 
     @staticmethod
-    def set_mock_kafka_consumer(mock_kc_klass):
-        with open(os.path.join(os.path.dirname(__file__), './channels_data.json')) as cd:
-            messages = json.load(cd)
+    def configure_mock_kafka_consumer(mock_kc_klass, n_messages=1):
         mock_kc_klass.FIRST = 0
-        mock_kc_klass.END = len(messages)
-        mock_kc_klass.MESSAGES = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
+        mock_kc_klass.END = n_messages
+        mock_kc_klass.MESSAGES = {i: MockMessage(key='09876'.encode('utf-8'), offset=i,
                                                  topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
-                                                 value=json.dumps(v).encode('utf-8')) for i, v in enumerate(messages)}
+                                                 value=json.dumps(CHANNEL_MESSAGE).encode('utf-8')) for i in
+                                  range(mock_kc_klass.FIRST, mock_kc_klass.END)}
 
     @staticmethod
     def _get_client_data(client_index=0):
@@ -104,6 +138,11 @@ class TestHGWBackendAPI(TestCase):
     def _get_oauth_header(self, client_index=0):
         res = self._get_oauth_token(client_index)
         return {'Authorization': 'Bearer {}'.format(res['access_token'])}
+
+    @staticmethod
+    def _get_source_from_auth_obj(auth):
+        ct = ContentType.objects.get_for_model(auth)
+        return Source.objects.get(content_type=ct, object_id=auth.id)
 
     def test_create_token(self):
         """
@@ -160,17 +199,155 @@ class TestHGWBackendAPI(TestCase):
         self.assertEquals(res.json(), {'error': 'invalid_scope'})
 
     def test_get_sources(self):
+        """
+        Test getting sources
+        """
         res = self.client.get('/v1/sources/')
         self.assertEquals(res.status_code, 200)
         self.assertEquals(res['Content-Type'], 'application/json')
         self.assertEquals(len(res.json()), 2)
 
-    # def test_add_connector(self):
-    #     with patch('commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer):
-    #         self.set_mock_kafka_consumer(MockKafkaConsumer)
-    #         self.assertIsNone(OAuth2Authentication.objects.get().token)
-    #         res = Command().handle()
-    #         self.assertIsNotNone(OAuth2Authentication.objects.get().token)
+    def test_create_connector_oauth2_source_fails_connector_unreachable(self):
+        """
+        Tests creation of new connector failure because of source endpoint unreachable whne calling /v1/connectors
+        """
+        auth = OAuth2Authentication.objects.first()
+        source = self._get_source_from_auth_obj(auth)
+        source.url = 'https://localhost:1000'
+        res = auth.create_connector(source, CONNECTOR)
+        self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fails_wrong_connector_url(self):
+        """
+        Tests creation of new connector failure because of wrong connector url
+        """
+        auth = OAuth2Authentication.objects.first()
+        source = self._get_source_from_auth_obj(auth)
+        source.url = 'http://localhost:40000/wrong_url/'
+        res = auth.create_connector(source, CONNECTOR)
+        self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fails_oauth2_unreachable(self):
+        """
+        Tests creation of new connector failure because of source enpoint unreachable when calling /oauth2/token
+        """
+        auth = OAuth2Authentication.objects.first()
+        auth.token_url = 'https://localhost:1000/'
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+        self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fails_wrong_oauth2_url(self):
+        """
+        Tests creation of new connector failure because of source enpoint wrong oauth2 url
+        """
+        auth = OAuth2Authentication.objects.first()
+        auth.token_url = 'http://localhost:40000/wrong_url/'
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+        self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fails_create_token_wrong_client_id(self):
+        """
+        Tests creation of new connector failure because of token creation failure in case of wrong client id
+        """
+        auth = OAuth2Authentication.objects.first()
+        auth.client_id = "unkn"
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+        self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fails_create_token_wrong_client_secret(self):
+        """
+        Tests creation of new connector failure because of token creation failure in case of wrong client secret
+        """
+        auth = OAuth2Authentication.objects.first()
+        auth.client_secret = "unkn"
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+        self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_new_token(self):
+        """
+        Tests creation of new connector success when creating the first token
+        """
+        auth = OAuth2Authentication.objects.first()
+        self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        token = AccessToken.objects.get(oauth2_authentication=auth)
+        self.assertIsNotNone(token)
+        self.assertIsNotNone(res)
+
+    def test_create_connector_oauth2_source_refresh_token_token_expired_exception(self):
+        """
+        Tests token refresh in case of oauth2 library exception in case of oauth2 library raising TokenExpired exception
+        """
+        # Create an expired token in the db
+        auth_obj = OAuth2Authentication.objects.first()
+        AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='something',
+                                   token_type='Bearer', expires_in=3600, expires_at=datetime.now())
+
+        auth = OAuth2Authentication.objects.first()
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        token = AccessToken.objects.get(oauth2_authentication=auth)
+        self.assertIsNotNone(token)
+        self.assertNotEquals(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
+                             'expired')
+        self.assertIsNotNone(res)
+
+    def test_create_connector_oauth2_source_refresh_token_unauthorized_response(self):
+        """
+        Tests token refresh in case of unauthorized exception from server. When the server return 401
+        the client still needs to refresh the token
+        """
+        # Create an expired token in the db
+        auth_obj = OAuth2Authentication.objects.first()
+        AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='expired',
+                                   token_type='Bearer', expires_in=3600,
+                                   expires_at=datetime.now() + timedelta(3600))
+
+        auth = OAuth2Authentication.objects.first()
+        source = self._get_source_from_auth_obj(auth)
+        res = auth.create_connector(source, CONNECTOR)
+        token = AccessToken.objects.get(oauth2_authentication=auth)
+        self.assertIsNotNone(token)
+        self.assertNotEquals(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
+                             'expired')
+
+        self.assertIsNotNone(res)
+
+    # def test_add_connector_oauth2_source(self):
+    #     """
+    #     Tests adding connector correctly in case of a Source Endpoint that support OAuth2 authentication
+    #     """
+    #     with patch('kafka_consumer.KafkaConsumer', MockKafkaConsumer):
+    #         self.configure_mock_kafka_consumer(MockKafkaConsumer, 1)
+    #         source_id = CHANNEL_MESSAGE['source_id']
+    #         source = Source.objects.get(source_id=source_id)
+    #         with self.assertRaises(AccessToken.DoesNotExist):
+    #             AccessToken.objects.get(oauth2_authentication__id=source.object_id)
+    #         Command().handle()
+    #         token = AccessToken.objects.get(oauth2_authentication__id=source.object_id)
+    #         self.assertIsNotNone(token)
+    #
+    # def test_add_connector_refresh_token(self):
+    #     """
+    #     Tests adding connector correctly
+    #     """
+    #     auth_obj = OAuth2Authentication.objects.first()
+    #     AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='expired',
+    #                                token_type='Bearer', expires_in=3600, expires_at=datetime.now())
+    #     with patch('kafka_consumer.KafkaConsumer', MockKafkaConsumer):
+    #         self.configure_mock_kafka_consumer(MockKafkaConsumer, 1)
+    #         Command().handle()
+    #         self.assertNotEquals(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
+    #                              'expired')
 
     def test_send_message(self):
         channel_id = 'channel_id'
@@ -200,7 +377,8 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header()
         for k, v in data.items():
             params = {k: v}
-            res = self.client.post('/v1/messages/', data=json.dumps(params), content_type='application/json', **oauth2_header)
+            res = self.client.post('/v1/messages/', data=json.dumps(params), content_type='application/json',
+                                   **oauth2_header)
             self.assertEquals(res.status_code, 400)
             self.assertEquals(res.json(), {'error': 'missing_parameters'})
 
