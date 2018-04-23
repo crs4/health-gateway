@@ -26,6 +26,8 @@ import os
 import re
 
 # from oauth2_provider.models import get_application_model
+import time
+
 from django.test import TestCase, client
 from oauth2_provider.models import get_application_model
 from oauth2_provider.settings import oauth2_settings
@@ -134,6 +136,14 @@ class TestSourceEndpointAPI(TestCase):
         res = self.client.post('/v1/connectors/', data=json.dumps(self.data), content_type='application/json',
                                **wrong_header)
         self.assertEquals(res.status_code, 401)
+
+    def test_token_expires(self):
+        oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS = 2
+        token = self._get_oauth_token()
+        self.assertEquals(token['expires_in'], 2)
+        time.sleep(2)
+        res = self.client.get('/v1/connectors/', Authorization='Bearer {}'.format(token['access_token']))
+        print(res.content)
 
     def test_forbidden(self):
         oauth2_header = self._get_oauth_header(scopes=['write'])
