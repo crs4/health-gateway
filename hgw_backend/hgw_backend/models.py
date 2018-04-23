@@ -32,6 +32,10 @@ from oauth2_provider.models import AbstractApplication
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError, InvalidClientError, MissingTokenError
 from requests_oauthlib import OAuth2Session
 
+from hgw_common.utils import get_logger
+
+logger = get_logger('hgw_backend')
+
 
 def get_source_id():
     return get_random_string(32)
@@ -169,23 +173,31 @@ class OAuth2Authentication(models.Model):
     def create_connector(self, source, connector):
         try:
             session = self._get_oauth2_session()
-        except (ConnectionError, InvalidClientError, MissingTokenError):
+        except (ConnectionError, InvalidClientError, MissingTokenError) as e:
+            logger.debug("Error opening an oauth2 session with the source endpoint: {}".format(e))
             res = None
         else:
             try:
+                logger.debug("Creating connector")
                 res = session.post(source.url, json=connector)
                 if res.status_code == 401:
                     raise TokenExpiredError
             except TokenExpiredError:
+                logger.debug("Token for the source expired. Getting a new one")
                 self._fetch_token(session)
+                logger.debug("Creating connector with the new token")
                 res = session.post(source.url, json=connector)
             except ConnectionError:
+                logger.debug("Connection error creating the connector")
                 res = None
             except MissingTokenError:
+                logger.debug("Missing token for the source endpoint")
                 res = None
-
-        if res is not None and res.status_code != 200:
+        logger.debug(res.status_code)
+        if res is not None and res.status_code != 201:
+            logger.debug("Error opening connector: {} with status code: {}".format(res.content, res.status_code))
             return None
+        logger.debug("Connector created correctly")
         return res
 
     def __str__(self):

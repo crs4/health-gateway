@@ -42,7 +42,6 @@ OAUTH_SOURCE_PORT = 40001
 
 sys.path.append(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/management/')))
 
-from kafka_consumer import Command
 
 PROFILE = {
         'code': 'PROF001',
