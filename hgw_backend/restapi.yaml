@@ -117,7 +117,7 @@ paths:
           description: The id of the channel
         - name:  payload
           in: formData
-          type: string
+          type: file
           required: true
           description: The message to send. It must be encrypted with the Destination Public Key
       responses:

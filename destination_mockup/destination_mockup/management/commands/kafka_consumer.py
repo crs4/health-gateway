@@ -30,26 +30,20 @@ MAGIC_BYTES = '\xdf\xbb'
 
 
 class Command(BaseCommand):
-    PRI_RSA_KEY_PATH = os.path.join(settings.BASE_DIR, 'certs/kafka/payload_encryption/rsa_privatekey_2048')
+    PRI_RSA_KEY_PATH = os.path.join(settings.BASE_DIR, 'certs/kafka/payload_encryption/private_key.pem')
 
     help = 'Launch the kafka consumer '
 
     def __init__(self):
-        with open(self.PRI_RSA_KEY_PATH, 'rb') as f:
+        with open(self.PRI_RSA_KEY_PATH, 'r') as f:
             self.rsa_pri_key = RSA.importKey(f.read())
             self.cipher = Cipher(private_key=self.rsa_pri_key)
         super(Command, self).__init__()
 
     def _handle_payload(self, data, *args, **options):
-        docs = json.loads(data.decode('utf-8'))
+        print(data)
+        docs = json.loads(data)
         print('\nFound documents for {} person(s)'.format(len(docs)))
-
-        # for person_id, doc_list in six.iteritems(docs):
-        #     print('Person {} has {} documents'.format(person_id, len(doc_list)))
-        #     for index, doc in enumerate(doc_list):
-        #         doc_list[index] = ''.join(chr(abs(c)) for c in doc).decode('utf-8')
-        # with open('/tmp/doc', 'w') as f:
-        #     f.write(str(docs))
 
         unique_filename = str(uuid.uuid4())
         try:
@@ -57,7 +51,7 @@ class Command(BaseCommand):
         except OSError:
             pass
         with open('/tmp/msgs/{}'.format(unique_filename), 'w') as f:
-            f.write(data.decode('utf-8'))
+            f.write(data)
 
     def handle(self, *args, **options):
         kc = KafkaConsumer(bootstrap_servers=settings.KAFKA_BROKER,
@@ -77,4 +71,4 @@ class Command(BaseCommand):
             if self.cipher.is_encrypted(message):
                 self._handle_payload(self.cipher.decrypt(message), *args, **options)
             else:
-                self._handle_payload(message, *args, **options)
+                self._handle_payload(message.decode("utf-8"), *args, **options)

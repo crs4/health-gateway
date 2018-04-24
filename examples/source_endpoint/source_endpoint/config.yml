@@ -18,3 +18,8 @@ kafka:
   ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
   client_cert: ../../certs/ca/kafka/certs/source-endpoint-mockup/cert.pem
   client_key: ../../certs/ca/kafka/certs/source-endpoint-mockup/key.pem
+
+hgwbackend:
+  uri: https://hgwbackend:8003
+  client_id: TYtRHZM7P2xtDPevMRTOdTrPsN1vP7Mi8l9HnZMD
+  client_secret: M3ZmctPHaeEPYBHYDObdHV0EFq9IOBSXC8UAVxZZ0yPasp4sIW1pqW9WkZlIQugwQmFbSgkTjf8bWpa1BH2sKEfM4pb8KExyO72HYRWcyDOmdvgVDPITAMEAhhFaOJLz

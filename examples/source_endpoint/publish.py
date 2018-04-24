@@ -19,7 +19,7 @@
 import json
 import django
 import os
-from Crypto.PublicKey import RSA
+from Cryptodome.PublicKey import RSA
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'source_endpoint.settings'
 django.setup()
