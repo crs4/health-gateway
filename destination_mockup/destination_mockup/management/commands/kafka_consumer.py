@@ -41,7 +41,6 @@ class Command(BaseCommand):
         super(Command, self).__init__()
 
     def _handle_payload(self, data, *args, **options):
-        print(data)
         docs = json.loads(data)
         print('\nFound documents for {} person(s)'.format(len(docs)))
 

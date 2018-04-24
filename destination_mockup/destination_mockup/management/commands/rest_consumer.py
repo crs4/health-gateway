@@ -16,12 +16,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+import base64
 import json
 import os
+import time
 import uuid
 
 import requests
-import time
 from Cryptodome.PublicKey import RSA
 from django.core.management.base import BaseCommand
 
@@ -34,8 +35,11 @@ MAGIC_BYTES = '\xdf\xbb'
 
 logger = get_logger('rest_consumer')
 
+
 class Command(BaseCommand):
     PRI_RSA_KEY_PATH = os.path.join(settings.BASE_DIR, 'certs/kafka/payload_encryption/private_key.pem')
+
+    help = 'Launch the kafka consumer '
 
     def __init__(self):
         with open(self.PRI_RSA_KEY_PATH, 'r') as f:
@@ -78,17 +82,15 @@ class Command(BaseCommand):
                 try:
                     res = msg.json()
                     logger.info("Received message with key {} and id {}".format(res['process_id'], res['message_id']))
-                    message = res['data']
+                    message = base64.b64decode(res['data'])
                     current_id += 1
                     time.sleep(2)
-                    logger.info(msg['data'])
                     if self.cipher.is_encrypted(message):
                         self._handle_payload(self.cipher.decrypt(message), *args, **options)
                     else:
                         self._handle_payload(message, *args, **options)
-                except ValueError:
-                    # logger.info(res.content)
-                    pass
+                except ValueError as e:
+                    logger.info("Error")
             elif msg.status_code == 404:
                 logger.info("No message. Retrying in 6 seconds")
                 time.sleep(6)
