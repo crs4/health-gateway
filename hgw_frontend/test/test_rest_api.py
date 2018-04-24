@@ -19,10 +19,13 @@
 import json
 import logging
 import os
+import sys
 
+from Cryptodome.PublicKey import RSA
 from django.test import TestCase, client
 from mock import patch
 
+from hgw_common.cipher import Cipher
 from hgw_common.models import Profile
 from hgw_common.utils.test import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
 from hgw_frontend import ERRORS_MESSAGE
@@ -38,6 +41,8 @@ CONSENT_MANAGER_URI = 'http://localhost:{}'.format(CONSENT_MANAGER_PORT)
 
 HGW_BACKEND_PORT = get_free_port()
 HGW_BACKEND_URI = 'http://localhost:{}'.format(HGW_BACKEND_PORT)
+
+DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----'
 
 
 class TestHGWFrontendAPI(TestCase):
@@ -76,14 +81,15 @@ class TestHGWFrontendAPI(TestCase):
             "expire_validity": "2018-10-23T10:00:00"
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
+        self.encypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
 
-    @staticmethod
-    def set_mock_kafka_consumer(mock_kc_klass):
+    def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
         mock_kc_klass.END = 33
+        message = self.encypter.encrypt(1000000*'a')
         mock_kc_klass.MESSAGES = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
                                                  topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
-                                                 value=b'first_message') for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
+                                                 value=message) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
 
     def _create_flow_request_data(self):
         payload = '[{"clinical_domain": "Laboratory", ' \
