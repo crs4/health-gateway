@@ -193,7 +193,7 @@ class OAuth2Authentication(models.Model):
             except MissingTokenError:
                 logger.debug("Missing token for the source endpoint")
                 res = None
-        logger.debug(res.status_code)
+
         if res is not None and res.status_code != 201:
             logger.debug("Error opening connector: {} with status code: {}".format(res.content, res.status_code))
             return None

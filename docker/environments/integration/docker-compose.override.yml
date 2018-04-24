@@ -87,4 +87,4 @@ services:
 
   kafka:
     environment:
-      - KAFKA_CREATE_TOPICS=control:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,3okDHOMPQ2OpyFrPpNNVn05EmDCvvVUw:1:1:hgwdispatcher:hgwfrontend
+      - KAFKA_CREATE_TOPICS=control:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:hgwbackend:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,3okDHOMPQ2OpyFrPpNNVn05EmDCvvVUw:1:1:hgwdispatcher:hgwfrontend

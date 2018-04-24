@@ -67,7 +67,7 @@ class MockSourceEndpointHandler(MockRequestHandler):
                 payload = {'detail': 'Authentication credentials were not provided.'}
             else:
                 payload = {}
-                status_code = 200
+                status_code = 201
         else:
             payload = {}
             status_code = 404

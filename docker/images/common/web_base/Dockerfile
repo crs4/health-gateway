@@ -140,8 +140,7 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	requests \
 	requests_oauthlib \
 	kafka_python==1.3.5 \
-	pycrypto \
-	pycryptodomex \
+	pycryptodomex==3.4.7 \
 	coreapi \
 	drf_yasg \
 	PyYAML

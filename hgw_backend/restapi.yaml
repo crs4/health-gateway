@@ -105,14 +105,21 @@ paths:
             - sources:read
   /v1/messages/:
     post:
+      consumes:
+        - multipart/form-data
       operationId: v1_messages_create
       description: Creates a new message
       parameters:
-        - name: data
-          in: body
+        - name:  channel_id
+          in: formData
+          type: string
           required: true
-          schema:
-            $ref: '#/definitions/Message'
+          description: The id of the channel
+        - name:  payload
+          in: formData
+          type: file
+          required: true
+          description: The message to send. It must be encrypted with the Destination Public Key
       responses:
         200:
           description: 'Success'
@@ -145,15 +152,6 @@ definitions:
         type: string
       name:
         description: The name of the source
-        type: string
-  Message:
-    type: object
-    properties:
-      channel_id:
-        description: The id of the channel
-        type: string
-      payload:
-        description: The message to send. It must be encrypted with the Destination Public Key
         type: string
   Error:
     type: object

@@ -17,10 +17,12 @@
 from _ssl import SSLError
 from traceback import format_exc
 
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import Http404, HttpResponse
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable, KafkaError, KafkaTimeoutError, TopicAuthorizationFailedError
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -58,6 +60,7 @@ class SourcesList(APIView):
 class Messages(APIView):
     permission_classes = (TokenHasResourceDetailedScope,)
     required_scopes = ['messages']
+    parser_classes = (MultiPartParser,)
 
     @staticmethod
     def _get_kafka_producer():
@@ -78,13 +81,25 @@ class Messages(APIView):
         if 'channel_id' not in request.data or 'payload' not in request.data:
             logger.debug('Missing channel_id or payload in request')
             return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
-        payload = request.data['payload'].encode('utf-8')
+
+        payload = request.data.getlist('payload')
+        if len(payload) > 1:
+            payload = bytes(map(int, payload))
+        else:
+            if isinstance(payload[0], InMemoryUploadedFile):
+                payload = payload[0].read()
+            else:
+                payload = payload[0].encode('utf-8')
 
         if not is_encrypted(payload):
             logger.info('Source {} sent an unencrypted message'.format(self.request.auth.application.source.name))
             return Response({'error': 'not_encrypted_payload'}, status.HTTP_400_BAD_REQUEST)
 
-        channel_id = request.data['channel_id'].encode('utf-8')
+        try:
+            channel_id = request.data['channel_id'].encode('utf-8')
+        except ValueError:
+            return Response({'error': 'invalid_paramater: channel_id'})
+
         try:
             kp = self._get_kafka_producer()
         except NoBrokersAvailable:

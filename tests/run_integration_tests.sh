@@ -115,7 +115,7 @@ publish_data(){
     while [ "${ret}" != 0 ]
     do
         sleep ${SLEEP_TIME}
-        docker-compose exec source_endpoint_mockup python3 publish.py data
+        docker-compose exec source_endpoint_mockup python3 manage.py publish_data data/ -c
         ret=$?;
         if [ ${ret} != 0 ] ; then
         echo "ERROR: source cannot send data (no connectors?). Retrying in ${SLEEP_TIME}..."

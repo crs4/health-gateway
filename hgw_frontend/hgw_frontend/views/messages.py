@@ -14,7 +14,8 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+import base64
+import sys
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -91,7 +92,7 @@ class Messages(ViewSet):
             response = {
                 'message_id': msg.offset,
                 'process_id': msg.key,
-                'data': msg.value
+                'data': base64.b64encode(msg.value)
             }
         else:
             return Response({'first_id': first_offset,
@@ -157,7 +158,7 @@ class Messages(ViewSet):
             response.append({
                 'message_id': msg.offset,
                 'process_id': msg.key,
-                'data': msg.value
+                'data': base64.b64encode(msg.value)
             })
         headers = {
             'X-Skipped': start - first_offset,
