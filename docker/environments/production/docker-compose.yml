@@ -5,7 +5,7 @@ services:
       context: ../../images/production/hgw_frontend
       args:
         HTTP_PORT: 8000
-    image: crs4/hgw_frontend:production
+    image: crs4/hgw_frontend:latest
     ports:
       - 8000:8000
     volumes:
@@ -26,7 +26,7 @@ services:
   hgw_backend:
     build:
       context: ../../images/production/hgw_backend
-    image: crs4/hgw_backend:production
+    image: crs4/hgw_backend:latest
     depends_on:
       - kafka
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
@@ -55,7 +55,7 @@ services:
   consent_manager:
     build:
       context: ../../images/production/consent_manager
-    image: crs4/consent_manager:production
+    image: crs4/consent_manager:latest
     environment:
       - TZ=CET
     ports:
@@ -75,7 +75,7 @@ services:
 
   kafka:
     build: ../../images/common/kafka
-    image: crs4/kafka
+    image: crs4/kafka:latest
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_PORT=9092
@@ -97,7 +97,7 @@ services:
 
   hgw_dispatcher:
     build: ../../images/production/hgw_dispatcher
-    image: crs4/hgw_dispatcher:production
+    image: crs4/hgw_dispatcher:latest
     depends_on:
       - kafka
       - consent_manager

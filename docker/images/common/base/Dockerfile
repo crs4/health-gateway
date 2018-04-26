@@ -19,7 +19,7 @@
 FROM alpine:3.5
 MAINTAINER Vittorio Meloni <vittorio.meloni@crs4.it>
 
-RUN apk update && apk add gcc make python2 py2-pip ca-certificates openssl-dev vim bash
+RUN apk update && apk add gcc make python2 py2-pip ca-certificates openssl-dev bash
 
 ENV CONTAINER_DIR=/container/
 ENV CA_DIR=/cacerts/

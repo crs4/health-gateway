@@ -10,8 +10,8 @@ from hgw_common.utils.test import get_free_port
 PORT = get_free_port()
 
 BASE_DIR = os.path.dirname(__file__)
-PERSON1_ID = 'SLSMLR56M13C354H'
-PERSON2_ID = 'GVNFSL43S21H457H'
+PERSON1_ID = 'AAABBB12C34D567E'
+PERSON2_ID = 'FFFGGG12H34I567G'
 
 
 class TestAPI(TestCase):

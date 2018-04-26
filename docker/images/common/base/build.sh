@@ -18,4 +18,4 @@
 
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-docker build -t crs4/hgw_base ${DIR}
+docker build -t crs4/hgw_base:latest ${DIR}
