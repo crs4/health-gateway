@@ -1,0 +1,28 @@
+version: '3.0'
+services:
+  spid-testenv-identityserver:
+    build: ../../images/common/spid_testenv_identityserver/
+    image: crs4/spid-testenv-identityserver
+    ports:
+      - "9443:9443"
+    extra_hosts:
+      - "spid-testenv-identityserver:127.0.1.1"
+    networks:
+      default:
+        aliases:
+          - spid-testenv-identityserver
+
+  spid-testenv-backoffice:
+    build: ../../images/common/spid_testenv_backoffice/
+    image: crs4/spid-testenv-backoffice
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    depends_on:
+      - spid-testenv-identityserver
+    networks:
+      default:
+        aliases:
+          - spid-testenv-backoffice

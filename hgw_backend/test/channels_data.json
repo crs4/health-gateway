@@ -1,0 +1,18 @@
+[
+  {
+    "channel_id": "KKa8QqqTBGePJStJpQMbspEvvV4LJJCY",
+    "source_id": "LD2j7v35BvUlzWDe8G89JGzz4SOincB7",
+    "destination": {
+        "destination_id": "random_dest_id",
+        "kafka_public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----"
+    },
+    "profile": {
+      "code": "PROF002",
+      "version": "hgw.document.profile.v0",
+      "start_time_validity": "2017-06-23T10:13:39Z",
+      "end_time_validity": "2018-06-23T23:59:59Z",
+      "payload": "{\"clinical_domain\": \"Laboratory\"}"
+    },
+    "person_id": "AAAABBBBCCCCDDDD"
+  }
+]

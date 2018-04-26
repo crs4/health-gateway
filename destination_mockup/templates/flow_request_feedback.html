@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <script src="{% static "jquery-3.2.1.js" %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#close").click(function () {
+                close();
+            });
+        });
+    </script>
+</head>
+<body>
+<p id="operation-completed">The required operation has been completed. Click <a href="#" id="close">here</a> to return to the site</p>
+</body>
+</html>

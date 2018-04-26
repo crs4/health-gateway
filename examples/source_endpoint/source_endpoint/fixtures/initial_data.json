@@ -1,0 +1,34 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$xQh4BaoMLy8i$WLlErGChzsMR8KpOlWqbpPy750V+fRlKnbpUO9jTbyU=",
+      "last_login": "2017-05-22T15:10:25.916Z",
+      "is_superuser": true,
+      "username": "admin",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2017-05-19T15:03:42.962Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "oauth2_provider.application",
+    "pk": 1,
+    "fields": {
+      "client_id": "uHP3zkRrEYnXmLvdlxx1iD6C85kpNpFsaSiD9wmy",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "oaPLxNHozPQ6ZCpNLgxuZLi6f0BQy5EiaNYvAncESu7rVQEksSeW0SCNK7A2SkbF2VksPZwVcm4QFiJFNifnCM2a4pqNOXCzklRVLGPdxEtjsOGqugUDx8EymrVEJNk4",
+      "name": "HGW BACKEND",
+      "skip_authorization": false
+    }
+  }
+]

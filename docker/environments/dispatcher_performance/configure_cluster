@@ -1,0 +1,373 @@
+#!/usr/bin/env python3
+
+import argparse
+import hashlib
+import json
+import os
+import random
+import shutil
+import string
+import subprocess
+import sys
+import time
+
+import common
+
+START_DEST_PK = 100
+START_SOURCE_PK = 100
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+HGW_DIR = os.path.join(CURRENT_DIR, '../../../')
+DJANGO_PYTHONPATH = os.path.join(HGW_DIR, 'hgw_common')
+PROFILE = {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+        "code": "PROF002",
+        "version": "hgw.document.profile.v0",
+        "payload": [{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]},
+                    {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]},
+                    {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]},
+                    {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]
+    }
+}
+
+
+def _create_destination_fixture(dest_pk, dest_id, dest_type):
+    return {
+        "model": "hgw_frontend.destination",
+        "pk": dest_pk,
+        "fields": {
+            "destination_id": dest_id,
+            "rest_or_kafka": dest_type,
+            "name": "destination_{}".format(dest_pk),
+            "kafka_public_key": "-----BEGIN PUBLIC KEY-----\\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\\nXQIDAQAB\\n-----END PUBLIC KEY-----"
+        }
+    }
+
+
+def _create_rest_client(dest_pk, client_id, client_secret):
+    return {
+        "model": "hgw_frontend.restclient",
+        "fields": {
+            "client_id": client_id,
+            "user": None,
+            "redirect_uris": "",
+            "client_type": "confidential",
+            "authorization_grant_type": "client-credentials",
+            "client_secret": client_secret,
+            "name": "destination_{}".format(dest_pk),
+            "skip_authorization": True,
+            "destination": dest_pk,
+            "scopes": "flow_request:read flow_request:write messages:read"
+        }
+    }
+
+
+def _create_flow_request(flow_request_pk, flow_id, process_id, dest_pk, person_id):
+    return {
+        "model": "hgw_frontend.flowrequest",
+        "pk": flow_request_pk,
+        "fields": {
+            "flow_id": flow_id,
+            "process_id": process_id,
+            "status": "AC",
+            "profile": 1,
+            "destination": dest_pk,
+            "person_id": person_id,
+            "start_validity": "2017-10-23T10:00:00.000Z",
+            "expire_validity": "2018-10-23T10:00:00.000Z"
+        }
+    }
+
+
+def _create_consent_confirm(flow_request, consent_id, confirmation_id):
+    return {
+        "model": "hgw_frontend.consentconfirmation",
+        "fields": {
+            "flow_request": flow_request,
+            "consent_id": consent_id,
+            "confirmation_id": confirmation_id,
+            "destination_endpoint_callback_url": "http://localhost:8000"
+        }
+    }
+
+
+def _create_endpoint(_id, name):
+    return {
+        "model": "consent_manager.endpoint",
+        "fields": {
+            "id": _id,
+            "name": name
+        }
+    }
+
+
+def _create_channel(pk, consent_id, source, destination, person_id):
+    return {
+        "model": "consent_manager.consent",
+        "pk": pk,
+        "fields": {
+            "consent_id": consent_id,
+            "source": source,
+            "destination": destination,
+            "profile": 1,
+            "person_id": person_id,
+            "status": "AC",
+            "timestamp": "2018-10-10T10:00:00.000Z",
+            "confirmed": "2018-10-10T10:00:00.000Z",
+            "start_validity": "2017-10-23T10:00:00.000Z",
+            "expire_validity": "2018-10-23T10:00:00.000Z"
+        }
+    }
+
+
+def _create_source(source_pk, source_id):
+    return {
+        "model": "hgw_backend.source",
+        "pk": source_pk,
+        "fields": {
+            "source_id": source_id,
+            "name": "source_{}".format(source_pk),
+            "url": "https://source_{}:8444/connectors/".format(source_pk)
+        }
+    }
+
+
+def python_manage(cmd, cwd, env):
+    cmd = ['python', 'manage.py'] + list(cmd)
+    env.update({'PYTHONPATH': DJANGO_PYTHONPATH})
+    env.update(os.environ)
+    subprocess.run(cmd, cwd=cwd, env=env, check=True)
+
+
+def _get_app_dir(app):
+    return os.path.join(HGW_DIR, app)
+
+
+def _get_file_path(base_dir, file_name):
+    return os.path.join(base_dir, file_name)
+
+
+def _get_app_env(base_dir, db_name):
+    return {'DEFAULT_DB_NAME': _get_file_path(base_dir, db_name)}
+
+
+def load_fixture(app, db_name, base_dir, *fixtures):
+    print('load_fixture {}'.format(db_name))
+    for f in fixtures:
+        cmd = ['loaddata'] + [os.path.join(base_dir, f)]
+        python_manage(cmd, _get_app_dir(app), _get_app_env(base_dir, db_name))
+
+
+def init_db_app(app, db_name, base_dir):
+    if os.path.exists(_get_file_path(base_dir, db_name)):
+        ans = ''
+        while ans not in ('y', 'n'):
+            ans = input('File {} exists. This operation will overwrite it. '
+                        'Are you sure you want to continue (y/n): '.format(db_name))
+        if ans == 'n':
+            return False
+        else:
+            os.remove(_get_file_path(base_dir, db_name))
+    python_manage(['migrate'], _get_app_dir(app), _get_app_env(base_dir, db_name))
+    python_manage(['loaddata', 'initial_data'], _get_app_dir(app), _get_app_env(base_dir, db_name))
+    return True
+
+
+def init_db(dbs=None):
+    created = []
+    if dbs is None or 'consent_manager' in dbs:
+        if init_db_app('consent_manager', common.CONSENT_MANAGER_DB, output_dir):
+            created.append('consent_manager')
+    if dbs is None or 'hgw_backend' in dbs:
+        if init_db_app('hgw_backend', common.BACKEND_DB, output_dir):
+            created.append('hgw_backend')
+    if dbs is None or 'hgw_frontend' in dbs:
+        if init_db_app('hgw_frontend', common.FRONTEND_DB, output_dir):
+            created.append('hgw_frontend')
+    return created
+
+
+def load_data(output_dir, dbs=None):
+    if dbs is None or 'consent_manager' in dbs:
+        consent_manager_files = [f for f in os.listdir(output_dir) if
+                                 f.startswith(common.CONSENTS_FILE[0:common.CONSENTS_FILE.find('{')])]
+        load_fixture('consent_manager', common.CONSENT_MANAGER_DB, output_dir, common.ENDPOINTS_FILE,
+                     *consent_manager_files)
+    if dbs is None or 'hgw_backend' in dbs:
+        load_fixture('hgw_backend', common.BACKEND_DB, output_dir, common.BACKEND_FIXTURES_FILE)
+
+    if dbs is None or 'hgw_frontend' in dbs:
+        files = sorted(os.listdir(output_dir))
+        flow_requests_files = [f for f in files if
+                               f.startswith(
+                                   common.FLOW_REQUEST_DATA_FILE[0:common.FLOW_REQUEST_DATA_FILE.find('{')]
+                               )] + \
+                              [f for f in files if
+                               f.startswith(
+                                   common.CONSENT_CONFIRM_FILE[0:common.CONSENT_CONFIRM_FILE.find('{')])]
+
+        load_fixture('hgw_frontend', common.FRONTEND_DB, output_dir, common.FRONTEND_FIXTURES_FILE, common.PROFILE_FILE,
+                     *flow_requests_files)
+
+
+def generate_id(length=32):
+    gid = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
+    return gid
+
+
+def generate_destination(id_len=32):
+    return {'id': generate_id(id_len), 'client_id': generate_id(40), 'client_secret': generate_id(128)}
+
+
+def generate_hash(s):
+    gid = hashlib.md5(s.encode('utf-8')).hexdigest()
+    return gid
+
+
+def create_hgw_frontend_fixtures(dest_infos):
+    """
+    Generates base fixtures for hgw_frontend. It inserts the profile, the dispatcher rest client and the destinations
+    :param dest_infos:
+    :return:
+    """
+    dests = []
+    for i, info in enumerate(dest_infos):
+        pk = i + START_DEST_PK
+        dests.append(_create_destination_fixture(pk, info['id'], 'K'))
+        dests.append(_create_rest_client(pk, info['client_id'], info['client_secret']))
+
+    return dests
+
+
+def create_hgw_backend_fixtures(sources_id):
+    hgw_backend_data = []
+    for i, s in enumerate(sources_id):
+        hgw_backend_data.append(_create_source(i + START_SOURCE_PK, s))
+    return hgw_backend_data
+
+
+def get_hgw_frontend_flow_request_fixture(flow_request_pk, dest_pk, person_id):
+    return _create_flow_request(flow_request_pk, generate_id(), generate_id(), dest_pk, person_id)
+
+
+def get_hgw_frontend_consent_confirmation_fixture(flow_request_pk, channel_id):
+    return _create_consent_confirm(flow_request_pk, channel_id, generate_id())
+
+
+def create_consent_manager_fixtures(sources_id, dests_id):
+    endpoint_data = []
+    for i, s in enumerate(sources_id):
+        endpoint_data.append(_create_endpoint(s, 'source_{}'.format(i + START_SOURCE_PK)))
+
+    for i, d in enumerate(dests_id):
+        endpoint_data.append(_create_endpoint(d, 'destination_{}'.format(i + START_DEST_PK)))
+
+    return endpoint_data
+
+
+def dump_data(data, file, output_dir):
+    with open(os.path.join(output_dir, file), 'w') as f:
+        f.write(data)
+
+
+def save_conf(source_num, dest_num, n_citizens, output_dir):
+    info = {'SRC_NUM': source_num, 'DEST_NUM': dest_num, 'CHANNELS_PER_SRC': n_citizens*dest_num}
+    with open(os.path.join(output_dir, 'conf.py'), 'w') as f:
+        for k, v in info.items():
+            f.write('{} = {}\n'.format(k, v))
+
+
+def generate_data(source_num, dest_num, n_citizens, output_dir):
+    citizens = [generate_id(5) for _ in range(n_citizens)]
+    sources_id = [generate_id() for _ in range(source_num)]
+    dest_infos = [generate_destination() for _ in range(dest_num)]
+
+    dump_data(json.dumps(citizens), 'citizens', output_dir)
+    dump_data(json.dumps(sources_id), common.SOURCES_ID_FILE, output_dir)
+    dump_data(json.dumps(dest_infos), common.DESTS_ID_FILE, output_dir)
+
+    backend_fixtures = create_hgw_backend_fixtures(sources_id)
+    frontend_fixtures = create_hgw_frontend_fixtures(dest_infos)
+    consent_manager_fixtures = create_consent_manager_fixtures(sources_id, [d['id'] for d in dest_infos])
+
+    profile = [PROFILE]
+    dump_data(json.dumps(profile), common.PROFILE_FILE, output_dir)
+    dump_data(json.dumps(frontend_fixtures), common.FRONTEND_FIXTURES_FILE, output_dir)
+    dump_data(json.dumps(backend_fixtures), common.BACKEND_FIXTURES_FILE, output_dir)
+    dump_data(json.dumps(consent_manager_fixtures), common.ENDPOINTS_FILE, output_dir)
+
+    consent_manager_data = [PROFILE]
+    total_ch_count = 1
+    flow_requests_id = 1
+    flow_requests_data = []
+    consent_confirmation_data = []
+    print('ready to create channels')
+    ch_count = 0
+    for k, p in enumerate(citizens):
+        for j, info in enumerate(dest_infos):
+            d = info['id']
+            flow_requests_data.append(
+                get_hgw_frontend_flow_request_fixture(flow_requests_id, j + START_DEST_PK, p))
+            for i, s in enumerate(sources_id):
+                print('ch {}___{}'.format(s, ch_count))
+                ch = '{}{}'.format(s[:-10], ch_count)
+                consent_manager_data.append(_create_channel(total_ch_count, ch, s, d, p))
+                consent_confirmation_data.append(get_hgw_frontend_consent_confirmation_fixture(flow_requests_id, ch))
+                if total_ch_count % 10000 == 0:
+                    file_index = total_ch_count // 10000
+                    dump_data(json.dumps(consent_manager_data), common.CONSENTS_FILE.format(file_index), output_dir)
+                    dump_data(json.dumps(flow_requests_data), common.FLOW_REQUEST_DATA_FILE.format(file_index),
+                              output_dir)
+                    dump_data(json.dumps(consent_confirmation_data), common.CONSENT_CONFIRM_FILE.format(file_index),
+                              output_dir)
+                    consent_manager_data = []
+                    flow_requests_data = []
+                    consent_confirmation_data = []
+                total_ch_count += 1
+            flow_requests_id += 1
+            ch_count += 1
+
+    if len(consent_manager_data) > 0:
+        file_index = total_ch_count // 10000 + 1
+        dump_data(json.dumps(consent_manager_data), common.CONSENTS_FILE.format(file_index), output_dir)
+        dump_data(json.dumps(flow_requests_data), common.FLOW_REQUEST_DATA_FILE.format(file_index), output_dir)
+        dump_data(json.dumps(consent_confirmation_data), common.CONSENT_CONFIRM_FILE.format(file_index), output_dir)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Generates data for tests')
+    parser.add_argument('-s', '--source-num', dest='source_num', type=int, default=1, help='number of sources')
+    parser.add_argument('-d', '--dest-num', dest='dest_num', type=int, default=1, help='number of destinations')
+    parser.add_argument('-c', '--citizens', dest='citizens', type=int, default=1, help='number of citizens')
+    parser.add_argument('-f', '--force', dest='force', type=bool, const=True,
+                        help='force to overwrite existing output dir', nargs='?')
+    parser.add_argument('-l', '--load_db', dest='load', type=str,
+                        choices=('hgw_frontend', 'hgw_backend', 'consent_manager'),
+                        help='load the fixture in the specified db. If databases are not specified it will load all',
+                        nargs='*')
+    parser.add_argument('-o', '--output_dir', dest='output_dir', type=str, default='cluster',
+                        help='where cluster files are saved')
+
+    args = parser.parse_args()
+    output_dir = args.output_dir or 'cluster'
+    if not os.path.isabs(output_dir):
+        output_dir = os.path.join(CURRENT_DIR, output_dir)
+
+    if args.load is not None:
+        c = init_db(args.load or None)
+        load_data(output_dir, c)
+    else:
+        if args.force is True:
+            shutil.rmtree(output_dir)
+
+        try:
+            os.mkdir(output_dir)
+        except FileExistsError:
+            sys.exit("output_dir {} already exists, use -f to overwrite. Exiting...".format(output_dir))
+
+        init_db()
+        generate_data(args.source_num, args.dest_num, args.citizens, output_dir)
+        load_data(output_dir)
+        save_conf(args.source_num, args.dest_num, args.citizens, output_dir)
+        print('data saved in {}'.format(output_dir))

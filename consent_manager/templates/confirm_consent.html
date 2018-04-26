@@ -1,0 +1,57 @@
+{#Copyright (c) 2017-2018 CRS4 #}
+{##}
+{#Permission is hereby granted, free of charge, to any person obtaining a copy of #}
+{#this software and associated documentation files (the "Software"), to deal in #}
+{#the Software without restriction, including without limitation the rights to use, #}
+{#copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, #}
+{#and to permit persons to whom the Software is furnished to do so, subject to the following conditions: #}
+{##}
+{#The above copyright notice and this permission notice shall be included in all copies or #}
+{#substantial portions of the Software. #}
+{##}
+{#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, #}
+{#INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE #}
+{#AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, #}
+{#DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, #}
+{#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Consent Confirmation</title>
+</head>
+<body>
+The {{ destination_name }} wants to retrieve the following data:
+
+<form action="/v1/consents/confirm/" method="post" style="padding-top: 10px;">
+    {% csrf_token %}
+
+    <input type="hidden" name="callback_url" value="{{ callback_url }}">
+    {% for record in profile_payload %}
+        {{ record.clinical_comain }}
+        <ul>
+            {% for filter in record.filters %}
+                {% if filter.includes %}
+                    <li> {{ filter.includes }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endfor %}
+    <p>From these sources, and for these periods of time:</p>
+    {% for consent in consents %}
+        {% if consent.is_valid %}
+            <input id="{{ consent.source }}" type="checkbox" name="confirm_id" value="{{ consent.confirm_id }}"/>{{ consent.source }} -- From {{ consent.start_validity }} To {{ consent.expire_validity }} <br/>
+
+        {% endif %}
+    {% endfor %}
+    {% if errors %}
+        Some error has occurred for the following confirmations:
+        {% for error in errors %}
+            {{ error }}
+        {% endfor %}
+    {% endif %}
+    <input id="confirm" type="submit" value="Confirm"/>
+
+</form>
+</body>
+</html>

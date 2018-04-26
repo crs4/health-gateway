@@ -1,0 +1,73 @@
+{#Copyright (c) 2017-2018 CRS4 #}
+{##}
+{#Permission is hereby granted, free of charge, to any person obtaining a copy of #}
+{#this software and associated documentation files (the "Software"), to deal in #}
+{#the Software without restriction, including without limitation the rights to use, #}
+{#copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, #}
+{#and to permit persons to whom the Software is furnished to do so, subject to the following conditions: #}
+{##}
+{#The above copyright notice and this permission notice shall be included in all copies or #}
+{#substantial portions of the Software. #}
+{##}
+{#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, #}
+{#INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE #}
+{#AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, #}
+{#DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, #}
+{#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="/static/css/main.css" rel="stylesheet" type="text/css">
+    <meta charset="UTF-8">
+    <title>Consents Management</title>
+</head>
+<body>
+{% if status == 0 %}
+<form method="post">
+    <span>Active Consents</span>
+    {% csrf_token %}
+{% else %}
+    <span>Revoked Consents</span>
+{% endif %}
+    <div class="divTable">
+        <div class="divTableBody">
+            <div class="divTableRow">
+                <div class="divTableCell">SOURCE</div>
+                <div class="divTableCell">DESTINATION</div>
+                <div class="divTableCell">DATA SENT</div>
+                {% if status == 0 %}
+                <div class="divTableCell">REVOKE?</div>
+                {% endif %}
+            </div>
+            {% for consent in consents %}
+                <div class="divTableRow">
+                    <div class="divTableCell">{{ consent.source_name }}</div>
+                    <div class="divTableCell">{{ consent.destination_name }}</div>
+                    <div class="divTableCell">
+                        {% for record in consent.profile %}
+                            {{ record.clinical_comain }}
+                            <ul>
+                                {% for filter in record.filters %}
+                                    {% if filter.includes %}
+                                        <li> {{ filter.includes }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endfor %}
+                    </div>
+                    {% if status == 0 %}
+                    <div class="divTableCell">
+                        <input type="checkbox" name="revoke_list" value="{{ consent.id }}"/>
+                    </div>
+                    {% endif %}
+                </div>
+
+            {% endfor %}
+        </div>
+    </div>
+{% if status == 0 %}
+    <input id="confirm" type="submit" value="Revoke selected"/>
+</form>
+{% endif %}
+</body>
+</html>

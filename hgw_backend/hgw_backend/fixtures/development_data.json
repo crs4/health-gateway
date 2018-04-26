@@ -1,0 +1,47 @@
+[
+  {
+    "model": "hgw_backend.source",
+    "pk": 1,
+    "fields": {
+      "source_id": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
+      "name": "SOURCE_ENDPOINT_MOCKUP",
+      "url": "https://source-endpoint-mockup:8004/v1/connectors/",
+      "content_type": 14,
+      "object_id": 1
+    }
+  },
+  {
+    "model": "hgw_backend.certificatesauthentication",
+    "pk": 1,
+    "fields": {
+      "cert": "source_endpoint_mockup_client.cert.pem",
+      "key": "source_endpoint_mockup_client.key.pem"
+    }
+  },
+  {
+    "model": "hgw_backend.oauth2authentication",
+    "pk": 1,
+    "fields": {
+      "token_url": "https://source-endpoint-mockup:8004/oauth2/token/",
+      "client_id": "uHP3zkRrEYnXmLvdlxx1iD6C85kpNpFsaSiD9wmy",
+      "client_secret": "oaPLxNHozPQ6ZCpNLgxuZLi6f0BQy5EiaNYvAncESu7rVQEksSeW0SCNK7A2SkbF2VksPZwVcm4QFiJFNifnCM2a4pqNOXCzklRVLGPdxEtjsOGqugUDx8EymrVEJNk4"
+    }
+  },
+  {
+    "model": "hgw_backend.restclient",
+    "pk": 1,
+    "fields": {
+      "client_id": "TYtRHZM7P2xtDPevMRTOdTrPsN1vP7Mi8l9HnZMD",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "M3ZmctPHaeEPYBHYDObdHV0EFq9IOBSXC8UAVxZZ0yPasp4sIW1pqW9WkZlIQugwQmFbSgkTjf8bWpa1BH2sKEfM4pb8KExyO72HYRWcyDOmdvgVDPITAMEAhhFaOJLz",
+      "name": "SOURCE_ENPOINT_MOCKUP",
+      "skip_authorization": false,
+      "source": 1,
+      "client_role": "ST",
+      "scopes": "messages:write"
+    }
+  }
+]

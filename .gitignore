@@ -1,0 +1,16 @@
+*.cda
+*.db
+*.log
+*.idea
+*.iml
+*.sqlite3
+*.pyc
+*/docs/_build/
+*_build
+*.netbeans_automatic_build
+nb-configuration.xml
+*.class
+test-ws
+${env.CATALINA_HOME}
+/source_frontend/target/
+certs/ca/

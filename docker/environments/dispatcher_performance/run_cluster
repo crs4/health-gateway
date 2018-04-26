@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+import argparse
+import importlib
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+import common
+import django
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HGW_DIR = os.path.join(BASE_DIR, '../../../')
+KAFKA = 'K'
+REST = 'R'
+
+
+def create_topics(topics, writer, reader, partitions=1, zookeeper_host='zookeeper', env=None):
+    for topic_id in topics:
+        print("attempting to create topic {}".format(topic_id))
+        common.docker_compose_exec('kafka', 'bin/kafka-topics.sh', '--create', '--zookeeper', zookeeper_host,
+                                   '--replication-factor', '1', '--partitions', str(partitions), '--topic', topic_id,
+                                   env=env)
+        # if kind == 'source':
+        #     writer = 'source-endpoint-mockup'
+        #     reader = 'hgw_dispatcher'
+        # else:
+        #     writer = 'hgw_dispatcher'
+        #     reader = 'destinationmockup'
+
+        common.docker_compose_exec('kafka', 'bin/kafka-acls.sh', '--authorizer-properties',
+                                   'zookeeper.connect={}'.format(zookeeper_host), '--add', '--allow-principal',
+                                   'User:"CN={writer},ST=Italy,C=IT"'.format(
+                                       writer=writer),
+                                   '--topic', topic_id, '--operation', 'Write', env=env)
+
+        common.docker_compose_exec('kafka', 'bin/kafka-acls.sh', '--authorizer-properties',
+                                   'zookeeper.connect={}'.format(zookeeper_host), '--add', '--allow-principal',
+                                   'User:"CN={reader},ST=Italy,C=IT"'.format(
+                                       reader=reader),
+                                   '--topic', topic_id, '--operation', 'Read', '--operation', 'Describe', env=env)
+
+
+def create_all_topics(input_dir, client, env, src_partitions, dst_partitions):
+    with open(os.path.join(input_dir, common.SOURCES_ID_FILE)) as f:
+        create_topics(json.load(f), 'source-endpoint-mockup', 'hgw_dispatcher', env=env, partitions=src_partitions)
+
+    with open(os.path.join(input_dir, common.DESTS_ID_FILE)) as f:
+        dests_id = [d['id'] for d in json.load(f)]
+        writer = 'hgw_dispatcher'
+        reader = 'destinationmockup' if client == KAFKA else 'hgw_frontend'
+        create_topics(dests_id, writer, reader, env=env, partitions=dst_partitions)
+
+
+def set_client_type(client_type, input_dir):
+    old_env = os.environ
+    try:
+        os.environ['DEFAULT_DB_NAME'] = os.path.join(input_dir, common.FRONTEND_DB)
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+        sys.path += [HGW_DIR] + [os.path.join(HGW_DIR, d) for d in ('hgw_frontend/hgw_frontend', 'hgw_frontend/',
+                                                                    'hgw_common/')]
+        django.setup()
+        from hgw_frontend.models import Destination
+        import settings
+        for d in Destination.objects.all():
+            d.rest_or_kafka = client_type
+            d.save()
+
+    finally:
+        os.environ = old_env
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='load data into docker containers')
+    parser.add_argument('-d', dest='input_dir', default='cluster')
+    parser.add_argument('-m', '--MEAN_DOC_SIZE', dest='mean_doc_size', type=int, default=18000)
+    parser.add_argument('-s', '--SIGMA_DOC_SIZE', dest='sigma_doc_size', type=int, default=2000)
+    parser.add_argument('-b', '--BROKERS', dest='brokers', type=int, default=1)
+    parser.add_argument('-n', '--DISP_NUM', dest='disp_num', type=int, default=1)
+    parser.add_argument('--src_partitions', dest='src_partitions', type=int, default=1)
+    parser.add_argument('--dst_partitions', dest='dst_partitions', type=int, default=1)
+    parser.add_argument('-c', '--client', dest='client', type=str, default=KAFKA, choices=(KAFKA, REST),
+                        help="client type: {} = kafka, {} = rest".format(KAFKA, REST))
+    parser.add_argument('-k', '--kafka-address', dest='kafka_address', type=str, default='127.0.0.1',
+                        help='Ip address of the kafka broker')
+    parser.add_argument('-a', '--avg-events', dest='average_events', type=int, default=13,
+                        help='Average number of events per citizen in a year')
+    parser.add_argument('--producers', dest='producers', type=int, default=1,
+                        help="number of producer per source")
+    parser.add_argument('--dump', dest='dump_metrics', type=bool, default=False)
+
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('-e', dest='endpoints', action='store_true',
+                       help='If specified it only launches endpoints (source and'
+                            'destination)')
+    group.add_argument('-g', dest='gateway', action='store_true',
+                       help='If specified it only launches gateway servicese')
+
+    args = parser.parse_args()
+    env = os.environ.copy()
+    input_dir = args.input_dir if os.path.isabs(args.input_dir) else os.path.join(BASE_DIR, args.input_dir)
+    sys.path.append(input_dir)
+    conf = importlib.import_module('conf')
+
+    env.update({
+        'CONSENT_MANAGER_DB': '/data/{}'.format(common.CONSENT_MANAGER_DB),
+        'BACKEND_DB': '/data/{}'.format(common.BACKEND_DB),
+        'FRONTEND_DB': '/data/{}'.format(common.FRONTEND_DB),
+        'DATA_DIR': input_dir,
+        'MEAN_DOC_SIZE': str(args.mean_doc_size),
+        'SIGMA_DOC_SIZE': str(args.sigma_doc_size),
+        'CHANNELS_PER_SRC': str(conf.CHANNELS_PER_SRC),
+        'CLIENT': args.client,
+        'KAFKA_ADDRESS': args.kafka_address,
+        'AVG_EVENTS': str(args.average_events),
+        'PRODUCERS': str(args.producers)
+    })
+    set_client_type(args.client, input_dir)
+
+    compose_file = 'docker-compose-endpoints.yml' if args.endpoints else \
+        'docker-compose-gateway.yml' if args.gateway else 'docker-compose.yml'
+
+    if not args.endpoints:
+        # It means that we ha to launch the gateway
+        subprocess.run(
+            ['docker-compose', '-f', compose_file, 'up', '-d', '--scale', 'hgw_dispatcher={}'.format(args.disp_num),
+             '--scale',
+             'source_mock={}'.format(conf.SRC_NUM), '--scale', 'destination_mock={}'.format(conf.DEST_NUM),
+             '--scale', 'kafka={}'.format(args.brokers)],
+            check=True, env=env)
+
+        common.docker_compose_exec('kafka', '/wait-for-it.sh', '-t', '120', '-s', 'localhost:9093', env=env)
+        create_all_topics(args.input_dir, args.client, env, args.src_partitions, args.dst_partitions)
+        subprocess.run(['docker-compose', 'restart', 'hgw_frontend', 'hgw_backend', 'consent_manager',
+                        'hgw_dispatcher'], check=True, env=env)
+
+        # if args.dump_metrics:
+        #     subprocess.run(['docker-compose', 'restart', 'hgw_frontend', 'hgw_backend', 'consent_manager',
+        #                     'hgw_dispatcher'], check=True, env=env)
+
+    else:
+        subprocess.run(
+            ['docker-compose', '-f', compose_file, 'up', '-d'], check=True, env=env)
+
+    logged = ['source_mock', 'destination_mock', 'hgw_dispatcher']
+    if args.gateway is True:
+        logged = ['hgw_dispatcher']
+    elif args.endpoints is True:
+        logged = ['source_mock', 'destination_mock']
+
+    with open('.current_run', 'w') as f:
+        run_info = {
+            'dir': pathlib.Path(os.path.abspath(args.input_dir)).name.rstrip(os.sep),
+            'avg': args.average_events,
+            'src_partitions': args.src_partitions,
+            'dst_partitions': args.dst_partitions,
+            'disp_num': args.disp_num
+
+        }
+        json.dump(run_info, f)
+    subprocess.run(['docker-compose', 'logs', '-f'] + logged,
+                   check=True, env=env)
