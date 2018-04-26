@@ -10,7 +10,3 @@ kafka:
   ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
   client_cert: ../../certs/ca/kafka/certs/hgwbackend/cert.pem
   client_key: ../../certs/ca/kafka/certs/hgwbackend/key.pem
-
-source_endpoint:
-  client_cert: ../../certs/ca/web/certs/hgwbackend/source_endpoint_mockup_client.cert.pem
-  client_key: ../../certs/ca/web/certs/hgwbackend/source_endpoint_mockup_client.key.pem

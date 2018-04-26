@@ -187,5 +187,3 @@ KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
-SOURCE_ENDPOINT_CLIENT_CERT = cfg['source_endpoint']['client_cert']
-SOURCE_ENDPOINT_CLIENT_KEY = cfg['source_endpoint']['client_key']
