@@ -147,7 +147,7 @@ USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'consent_manager.ConsentManagerUser'
-STATIC_ROOT = os.path.join(BASE_DIR, './static/')
+STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
 

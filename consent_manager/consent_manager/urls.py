@@ -17,12 +17,14 @@
 
 
 from django.conf.urls import url, include
+from django.conf.urls.static import static
 from django.contrib import admin
+
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
-from consent_manager import views
+from consent_manager import views, settings
 from hgw_common.settings import VERSION_REGEX
 
 
@@ -39,10 +41,13 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
+    url(r'^$', views.home),
     url(r'^admin/', admin.site.urls),
+    url(r'^login/', views.perform_login),
+    url(r'^logout/', views.perform_logout),
     url(r'^saml2/', include('djangosaml2.urls')),
     url(r'^swagger(?P<format>.json|.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
-    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-ui'),
+    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-consent_manager'),
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^consents/revoke/$', views.revoke_consents),
@@ -51,4 +56,4 @@ urlpatterns = [
         name='consents'),
     url(r'^{}/consents/(?P<consent_id>\w+)/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'retrieve'}),
         name='consents'),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
