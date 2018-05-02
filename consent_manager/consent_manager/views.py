@@ -111,9 +111,13 @@ class ConsentView(ViewSet):
             403: openapi.Response('The token provided has not the right scope for the operation')
         })
     def list(self, request):
-        consents = Consent.objects.all()
+        if request.user is not None:
+            consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
+        else:
+            consents = Consent.objects.all()
+
         serializer = serializers.ConsentSerializer(consents, many=True)
-        if request.auth.application.is_super_client():
+        if request.user is not None or request.auth.application.is_super_client():
             return Response(serializer.data)
         else:
             res = []
