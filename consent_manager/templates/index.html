@@ -16,36 +16,7 @@
 {#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.#}
 {% extends 'base.html' %}
 {% block content %}
-The {{ destination_name }} wants to retrieve the following data:
-
-<form action="/v1/consents/confirm/" method="post" style="padding-top: 10px;">
-    {% csrf_token %}
-
-    <input type="hidden" name="callback_url" value="{{ callback_url }}">
-    {% for record in profile_payload %}
-        {{ record.clinical_comain }}
-        <ul>
-            {% for filter in record.filters %}
-                {% if filter.includes %}
-                    <li> {{ filter.includes }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    {% endfor %}
-    <p>From these sources, and for these periods of time:</p>
-    {% for consent in consents %}
-        {% if consent.is_valid %}
-            <input id="{{ consent.source }}" type="checkbox" name="confirm_id" value="{{ consent.confirm_id }}"/>{{ consent.source }} -- From {{ consent.start_validity }} To {{ consent.expire_validity }} <br/>
-
-        {% endif %}
-    {% endfor %}
-    {% if errors %}
-        Some error has occurred for the following confirmations:
-        {% for error in errors %}
-            {{ error }}
-        {% endfor %}
-    {% endif %}
-    <input id="confirm" type="submit" value="Confirm"/>
-
-</form>
+<h1>Consent Manager</h1>
+    <p class="lead">This is the Consent Manager. Here you can handle your consents: you can revoke consents and
+       request to delete all data related to a consent already transferred. Login to start handling your consents</p>
 {% endblock %}

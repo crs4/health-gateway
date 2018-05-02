@@ -14,60 +14,58 @@
 {#AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, #}
 {#DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, #}
 {#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.#}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link href="/static/css/main.css" rel="stylesheet" type="text/css">
-    <meta charset="UTF-8">
-    <title>Consents Management</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
 {% if status == 0 %}
-<form method="post">
-    <span>Active Consents</span>
+    <form method="post">
+    <h4>Active Consents</h4>
     {% csrf_token %}
 {% else %}
-    <span>Revoked Consents</span>
+    <h4>Consents revoked</h4>
 {% endif %}
-    <div class="divTable">
-        <div class="divTableBody">
-            <div class="divTableRow">
-                <div class="divTableCell">SOURCE</div>
-                <div class="divTableCell">DESTINATION</div>
-                <div class="divTableCell">DATA SENT</div>
-                {% if status == 0 %}
-                <div class="divTableCell">REVOKE?</div>
-                {% endif %}
-            </div>
-            {% for consent in consents %}
-                <div class="divTableRow">
-                    <div class="divTableCell">{{ consent.source_name }}</div>
-                    <div class="divTableCell">{{ consent.destination_name }}</div>
-                    <div class="divTableCell">
-                        {% for record in consent.profile %}
-                            {{ record.clinical_comain }}
-                            <ul>
-                                {% for filter in record.filters %}
-                                    {% if filter.includes %}
-                                        <li> {{ filter.includes }}</li>
-                                    {% endif %}
-                                {% endfor %}
-                            </ul>
-                        {% endfor %}
-                    </div>
-                    {% if status == 0 %}
-                    <div class="divTableCell">
-                        <input type="checkbox" name="revoke_list" value="{{ consent.id }}"/>
-                    </div>
+<table class="table">
+    <thead>
+    <tr class="table-success">
+        <th scope="col">Source</th>
+        <th scope="col">Destination</th>
+        <th scope="col">Data Sent</th>
+        {% if status == 0 %}
+            <th scope="col">Revoke</th>
+        {% endif %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for consent in consents %}
+        {% if forloop.counter0|divisibleby:2 %}
+            <tr class="table-light">
+                {% else %}
+            <tr class="table-light">
+        {% endif %}
+    <td>{{ consent.source_name }}</td>
+    <td>{{ consent.destination_name }}</td>
+    <td>
+        {% for record in consent.profile %}
+            {{ record.clinical_comain }}
+            <ul>
+                {% for filter in record.filters %}
+                    {% if filter.includes %}
+                        <li> {{ filter.includes }}</li>
                     {% endif %}
-                </div>
-
-            {% endfor %}
-        </div>
-    </div>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </td>
+    {% if status == 0 %}
+        <td class="divTableCell">
+            <input type="checkbox" name="revoke_list" value="{{ consent.id }}"/>
+        </td>
+    {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
 {% if status == 0 %}
-    <input id="confirm" type="submit" value="Revoke selected"/>
-</form>
+    <button class="btn btn-primary" id="confirm" type="submit">Revoke selected</button>
+    </form>
 {% endif %}
-</body>
-</html>
+{% endblock %}

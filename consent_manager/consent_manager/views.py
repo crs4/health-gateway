@@ -18,7 +18,7 @@
 
 import json
 from datetime import datetime
-
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
@@ -33,6 +33,25 @@ from rest_framework.viewsets import ViewSet
 from consent_manager import serializers, ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode
 from hgw_common.utils import TokenHasResourceDetailedScope
+
+
+@require_http_methods(["GET"])
+def home(request):
+    return render(request, 'index.html', context={'nav_bar': True})
+
+
+@require_http_methods(["GET"])
+@login_required
+def perform_login(request):
+    redirect = request.GET.get('next') or '/'
+    return HttpResponseRedirect(redirect)
+
+
+@require_http_methods(["GET"])
+@login_required
+def perform_logout(request):
+    logout(request)
+    return HttpResponseRedirect('/')
 
 
 class ConsentView(ViewSet):
@@ -92,9 +111,13 @@ class ConsentView(ViewSet):
             403: openapi.Response('The token provided has not the right scope for the operation')
         })
     def list(self, request):
-        consents = Consent.objects.all()
+        if request.user is not None:
+            consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
+        else:
+            consents = Consent.objects.all()
+
         serializer = serializers.ConsentSerializer(consents, many=True)
-        if request.auth.application.is_super_client():
+        if request.user is not None or request.auth.application.is_super_client():
             return Response(serializer.data)
         else:
             res = []
@@ -153,7 +176,7 @@ class ConsentView(ViewSet):
                     'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
                                                  description='The id of the consent'),
                     'person_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id of the person'),
+                                                description='The id of the person'),
                     'status': openapi.Schema(type=openapi.TYPE_STRING,
                                              description='The status of the consent',
                                              enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
@@ -275,6 +298,7 @@ def revoke_consents(request):
         'REVOKING': 0,
         'REVOKED': 1
     }
+    context = {'nav_bar': True}
     if request.method == 'GET':
         consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
         consent_list = []
@@ -287,7 +311,7 @@ def revoke_consents(request):
                     'profile': json.loads(c.profile.payload),
                     'id': c.id
                 })
-        context = {'status': page_status['REVOKING'], 'consents': consent_list}
+        context.update({'status': page_status['REVOKING'], 'consents': consent_list})
     else:
         revoke_list = request.POST.getlist('revoke_list')
         revoked = []
@@ -304,5 +328,5 @@ def revoke_consents(request):
                     'destination_name': c.destination.name,
                     'profile': json.loads(c.profile.payload),
                 })
-        context = {'status': page_status['REVOKED'], 'consents': revoked}
+        context.update({'status': page_status['REVOKED'], 'consents': revoked})
     return render(request, 'revoke_consent.html', context=context)

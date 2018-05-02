@@ -100,7 +100,6 @@ services:
       - kafka
       - consent_manager
     volumes:
-      - ../../../hgw_dispatcher/:/container/service
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

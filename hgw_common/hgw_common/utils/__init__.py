@@ -86,6 +86,13 @@ class TokenHasResourceDetailedScope(TokenHasScope):
         return required_scopes
 
 
+class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedScope):
+
+    def has_permission(self, request, view):
+        return (request.user and request.user.is_authenticated) or \
+            super(TokenHasResourceDetailedScope, self).has_permission(request, view)
+
+
 def generate_id():
     return get_random_string(32)
 
