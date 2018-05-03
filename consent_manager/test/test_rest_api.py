@@ -400,7 +400,7 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.post('/v1/consents/revoke/')
         self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.json, {'error': 'missing_parameters'})
+        self.assertEqual(res.json(), {'error': 'missing_parameters'})
 
     def test_revoke_consent_wrong_status(self):
         """
@@ -453,6 +453,23 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json(), {'revoked': []})
+
+    def test_revoke_consent_with_oauth_token(self):
+        """
+        Tests that the revoke action cannot be performed by an OAuth2 authenticated client
+        """
+        res = self._add_consent(self.json_consent_data)
+        # Manually changing it to ACTIVE
+        c = Consent.objects.get(consent_id=res.json()['consent_id'])
+        c.status = Consent.ACTIVE
+        c.save()
+
+        headers = self._get_oauth_header(0)
+        res = self.client.post('/v1/consents/revoke/', data=json.dumps([c.consent_id]),
+                               content_type='application/json', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertDictEqual(res.json(), {"detail":"You do not have permission to perform this action."})
+
 
     def test_confirm_redirect_to_identity_provider(self):
         """

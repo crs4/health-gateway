@@ -34,6 +34,7 @@ from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope
 
 class ConsentView(ViewSet):
     permission_classes = (IsAuthenticatedOrTokenHasResourceDetailedScope,)
+    oauth_views = ['list', 'create', 'retrieve']
     required_scopes = ['consent']
 
     @staticmethod

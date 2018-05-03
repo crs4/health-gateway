@@ -89,8 +89,21 @@ class TokenHasResourceDetailedScope(TokenHasScope):
 class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedScope):
 
     def has_permission(self, request, view):
-        return (request.user and request.user.is_authenticated) or \
-            super(TokenHasResourceDetailedScope, self).has_permission(request, view)
+        # The authenticated user can perform all the actions
+        if request.user and request.user.is_authenticated:
+            return True
+        else:
+            try:
+                # Some actions cannot be performed by external clients
+                if view.action not in view.oauth_views:
+                    return False
+                else:
+                    # Check the scopes
+                    return super(TokenHasResourceDetailedScope, self).has_permission(request, view)
+            except AttributeError:
+                return False
+
+
 
 
 def generate_id():
