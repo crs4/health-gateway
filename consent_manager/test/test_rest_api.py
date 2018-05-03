@@ -51,7 +51,8 @@ class TestAPI(TestCase):
 
         self.json_consent_data = json.dumps(self.consent_data)
 
-    def _get_client_data(self, client_index=0):
+    @staticmethod
+    def _get_client_data(client_index=0):
         app = RESTClient.objects.all()[client_index]
         return app.client_id, app.client_secret
 
@@ -365,45 +366,79 @@ class TestAPI(TestCase):
         """
         Tests consents revocation
         """
-        res = self._add_consent()
-        # Manually changing it to ACTIVE
-        c = Consent.objects.get(consent_id=res.json()['consent_id'])
-        c.status = Consent.ACTIVE
-        c.save()
+        consents = []
+        for i in range(4):
+            data = self.consent_data.copy()
+            data['source'] = {
+                'id': 'source_{}_id'.format(i),
+                'name': 'source_{}_name'.format(i)
+            }
+            res = self._add_consent(data=json.dumps(data))
+            consents.append(res.json()['consent_id'])
+            # Manually changing it to ACTIVE
+            c = Consent.objects.get(consent_id=res.json()['consent_id'])
+            c.status = Consent.ACTIVE
+            c.save()
 
         self.client.login(username='duck', password='duck')
-        data = {
-            'revoke_list': [c.id]
+        revoke_consents = {
+            'consents': consents
         }
-        res = self.client.post('/consents/revoke/', data=data)
+        res = self.client.post('/v1/consents/revoke/', data=json.dumps(revoke_consents),
+                               content_type='application/json')
         self.assertEqual(res.status_code, 200)
-        self.assertIn(c.source.name, res.content.decode('utf-8'))
-        self.assertIn(c.destination.name, res.content.decode('utf-8'))
+        self.assertDictEqual(res.json(), {'revoked': consents})
+        for consent in consents:
+            c = Consent.objects.get(consent_id=consent)
+            self.assertEqual(c.status, Consent.REVOKED)
+
+    def test_revoke_consent_missing_parameters(self):
+        """
+        Tests error when not sending consents
+        """
+
+        self.client.login(username='duck', password='duck')
+        res = self.client.post('/v1/consents/revoke/')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json, {'error': 'missing_parameters'})
 
     def test_revoke_consent_wrong_status(self):
         """
-        Tests consents revocation fail if the consent was in PENDING status
+        Tests that if the consent was not in ACTIVE status it is not revoked. It does so by trying to revoke
+        4 consent, one for every status (ACTIVE, PENDING, REVOKED, NOT_VALID). It checks that only the one that was in
+        ACTIVE status is returned and is in REVOKED status
         """
-        for status in (Consent.PENDING, Consent.REVOKED, Consent.NOT_VALID):
-            res = self._add_consent(self.json_consent_data)
-            consent_id = res.json()['consent_id']
-            c = Consent.objects.get(consent_id=consent_id)
-            c.status = status
+        consents = []
+        statuses = [Consent.ACTIVE, Consent.PENDING, Consent.REVOKED, Consent.NOT_VALID]
+        for i, s in enumerate(statuses):
+            data = self.consent_data.copy()
+            data['source'] = {
+                'id': 'source_{}_id'.format(i),
+                'name': 'source_{}_name'.format(i)
+            }
+            res = self._add_consent(data=json.dumps(data))
+            consents.append(res.json()['consent_id'])
+            # Manually changing it to ACTIVE
+            c = Consent.objects.get(consent_id=res.json()['consent_id'])
+            c.status = s
             c.save()
 
-            self.client.login(username='duck', password='duck')
-            data = {
-                'revoke_list': [c.id]
-            }
-            res = self.client.post('/consents/revoke/', data=data)
-            self.assertEqual(res.status_code, 200)
-            c = Consent.objects.get(consent_id=consent_id)
-            self.assertEqual(c.status, status)
-            c.delete()
+        self.client.login(username='duck', password='duck')
+
+        data = {
+            'consents': consents
+        }
+        res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertDictEqual(res.json(), {'revoked': [consents[0]]})
+        statuses[0] = Consent.REVOKED
+        for i, c in enumerate(consents):
+            c = Consent.objects.get(consent_id=c)
+            self.assertEqual(c.status, statuses[i])
 
     def test_revoke_consent_wrong_user(self):
         """
-        Tests consents revocation when the logged user is not the owner of the consent
+        Tests that when the logged user is not the owner of the consent to be revoked, the consent is not revoked
         """
         res = self._add_consent(self.json_consent_data)
         # Manually changing it to ACTIVE
@@ -413,12 +448,11 @@ class TestAPI(TestCase):
 
         self.client.login(username='paperone', password='paperone')
         data = {
-            'revoke_list': [c.id]
+            'consents': [c.consent_id]
         }
-        res = self.client.post('/consents/revoke/', data=data)
+        res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
-        self.assertNotIn(c.source.name, res.content.decode('utf-8'))
-        self.assertNotIn(c.destination.name, res.content.decode('utf-8'))
+        self.assertDictEqual(res.json(), {'revoked': []})
 
     def test_confirm_redirect_to_identity_provider(self):
         """

@@ -18,14 +18,11 @@
 
 import json
 from datetime import datetime
-from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -48,7 +45,7 @@ class ConsentView(ViewSet):
 
     def list(self, request):
         if request.user is not None:
-            consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
+            consents = Consent.objects.filter(person_id=request.user.fiscalNumber, status=Consent.ACTIVE)
         else:
             consents = Consent.objects.all()
 
@@ -87,7 +84,6 @@ class ConsentView(ViewSet):
         consent = self.get_consent(consent_id)
         serializer = serializers.ConsentSerializer(consent)
         if request.auth.application.is_super_client():
-            print(request)
             return Response(serializer.data)
         else:
             res = {
@@ -98,6 +94,25 @@ class ConsentView(ViewSet):
                 'expire_validity': serializer.data['expire_validity']
             }
             return Response(res)
+
+    def revoke(self, request):
+        try:
+            consents = request.data['consents']
+        except KeyError:
+            return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
+
+        revoked = []
+        for consent in consents:
+            try:
+                c = Consent.objects.get(consent_id=consent, status=Consent.ACTIVE,
+                                        person_id=request.user.fiscalNumber)
+            except Consent.DoesNotExist:
+                pass
+            else:
+                c.status = Consent.REVOKED
+                c.save()
+                revoked.append(c.consent_id)
+        return Response({'revoked': revoked}, status=status.HTTP_200_OK)
 
 
 @require_http_methods(["GET", "POST"])
@@ -164,44 +179,3 @@ def confirm_consent(request):
                                            confirm_ids]),
                                  )
             )
-
-
-@require_http_methods(["GET", "POST"])
-@login_required
-def revoke_consents(request):
-    page_status = {
-        'REVOKING': 0,
-        'REVOKED': 1
-    }
-    context = {'nav_bar': True}
-    if request.method == 'GET':
-        consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
-        consent_list = []
-        for c in consents:
-            if c.status == 'AC':
-                consent_list.append({
-                    'source_name': c.source.name,
-                    'destination_name': c.destination.name,
-                    'status': c.status,
-                    'profile': json.loads(c.profile.payload),
-                    'id': c.id
-                })
-        context.update({'status': page_status['REVOKING'], 'consents': consent_list})
-    else:
-        revoke_list = request.POST.getlist('revoke_list')
-        revoked = []
-        for consent in revoke_list:
-            try:
-                c = Consent.objects.get(id=consent, status=Consent.ACTIVE, person_id=request.user.fiscalNumber)
-            except Consent.DoesNotExist:
-                pass
-            else:
-                c.status = Consent.REVOKED
-                c.save()
-                revoked.append({
-                    'source_name': c.source.name,
-                    'destination_name': c.destination.name,
-                    'profile': json.loads(c.profile.payload),
-                })
-        context.update({'status': page_status['REVOKED'], 'consents': revoked})
-    return render(request, 'revoke_consent.html', context=context)
