@@ -6,3 +6,4 @@ django-sslserver
 djangosaml2==0.16.10
 coreapi
 PyYAML
+django-webpack-loader

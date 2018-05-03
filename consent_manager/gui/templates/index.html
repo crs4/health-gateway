@@ -14,9 +14,13 @@
 {#AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, #}
 {#DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, #}
 {#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.#}
+
 {% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
 {% block content %}
-<h1>Consent Manager</h1>
-    <p class="lead">This is the Consent Manager. Here you can handle your consents: you can revoke consents and
-       request to delete all data related to a consent already transferred. Login to start handling your consents</p>
+<div id="content"></div>
+{% render_bundle 'main' %}
+{#<h1>Consent Manager</h1>#}
+{#    <p class="lead">This is the Consent Manager. Here you can handle your consents: you can revoke consents and#}
+{#       request to delete all data related to a consent already transferred. Login to start handling your consents</p>#}
 {% endblock %}

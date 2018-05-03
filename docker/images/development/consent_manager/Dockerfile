@@ -20,10 +20,5 @@ FROM crs4/web_base
 
 ARG HTTP_PORT=8002
 
-#RUN pip install djangorestframework==3.6.3 \
-#	django-oauth-toolkit==0.12.0 \
-#	django-cors-middleware \
-#	django-sslserver \
-#	djangosaml2==0.16.1
-
+RUN pip3 install django-webpack-loader
 EXPOSE ${HTTP_PORT}

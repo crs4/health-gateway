@@ -32,30 +32,11 @@ from rest_framework.viewsets import ViewSet
 
 from consent_manager import serializers, ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode
-from hgw_common.utils import TokenHasResourceDetailedScope
-
-
-@require_http_methods(["GET"])
-def home(request):
-    return render(request, 'index.html', context={'nav_bar': True})
-
-
-@require_http_methods(["GET"])
-@login_required
-def perform_login(request):
-    redirect = request.GET.get('next') or '/'
-    return HttpResponseRedirect(redirect)
-
-
-@require_http_methods(["GET"])
-@login_required
-def perform_logout(request):
-    logout(request)
-    return HttpResponseRedirect('/')
+from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope
 
 
 class ConsentView(ViewSet):
-    permission_classes = (TokenHasResourceDetailedScope,)
+    permission_classes = (IsAuthenticatedOrTokenHasResourceDetailedScope,)
     required_scopes = ['consent']
 
     @staticmethod
@@ -65,51 +46,6 @@ class ConsentView(ViewSet):
         except Consent.DoesNotExist:
             raise Http404
 
-    @swagger_auto_schema(
-        operation_description='Get the list of consents',
-        security=[{'consents': ['consent:read']}],
-        responses={
-            200: openapi.Response('The list of consents', openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id of the consent'),
-                        'person_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id of the person'),
-                        'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The status of the consent',
-                                                 enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
-                        'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                  properties={
-                                                      'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                             description='A code identifying the profile'),
-                                                      'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='The version of the profile'),
-                                                      'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='A json encoded string that'
-                                                                                            'describe the profile')
-                                                  }),
-                        'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         format=openapi.FORMAT_DATETIME,
-                                                         description='The start date validity of the consent'),
-                        'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                          format=openapi.FORMAT_DATETIME,
-                                                          description='The end date validity of the consent'),
-                        'source': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                 properties={
-                                                     'id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                          description='The id of the source'),
-                                                     'name': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The name of the source'),
-                                                 })
-                    }
-                ))
-                                  ),
-            401: openapi.Response('The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('The token provided has not the right scope for the operation')
-        })
     def list(self, request):
         if request.user is not None:
             consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
@@ -131,21 +67,6 @@ class ConsentView(ViewSet):
                 })
             return Response(res)
 
-    @swagger_auto_schema(
-        operation_description='Creates a new consent which is set in a PENDING status until the user confirms it',
-        security=[{'consents': ['consent:write']}],
-        responses={
-            201: openapi.Response('The consent has been created successfully', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         description='the id of the newly created consent'),
-                            'confirmation_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                              description='the id to send to the confirmation '
-                                                                          'url to activate the consent')}
-            )),
-            401: openapi.Response('The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('The token provided has not the right scope for the operation')
-        })
     def create(self, request):
         request.data.update({
             'consent_id': get_random_string(32),
@@ -162,52 +83,6 @@ class ConsentView(ViewSet):
             return Response(res, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description='Get the consent identified by the consent id',
-        security=[{'consents': ['consent:read']}],
-        manual_parameters=[
-            openapi.Parameter('consents_id', openapi.IN_QUERY, type=openapi.TYPE_STRING,
-                              description='The id of the consents to retrieve')
-        ],
-        responses={
-            200: openapi.Response('The consent object', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id of the consent'),
-                    'person_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                description='The id of the person'),
-                    'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description='The status of the consent',
-                                             enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
-                    'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                              properties={
-                                                  'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                         description='A code identifying the profile'),
-                                                  'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The version of the profile'),
-                                                  'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='A json encoded string that'
-                                                                                        'describe the profile')
-                                              }),
-                    'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     format=openapi.FORMAT_DATETIME,
-                                                     description='The start date validity of the flow request'),
-                    'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                      format=openapi.FORMAT_DATETIME,
-                                                      description='The end date validity of the flow request'),
-                    'source': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                             properties={
-                                                 'id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                      description='The id of the source'),
-                                                 'name': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                        description='The name of the source'),
-                                             })
-                }
-            )),
-            401: openapi.Response('The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('The token provided has not the right scope for the operation')
-        })
     def retrieve(self, request, consent_id, format=None):
         consent = self.get_consent(consent_id)
         serializer = serializers.ConsentSerializer(consent)

@@ -73,10 +73,12 @@ INSTALLED_APPS = [
     'djangosaml2',
     'oauth2_provider',
     'rest_framework',
-    'consent_manager',
     'hgw_common',
     'corsheaders',
-    'drf_yasg'
+    'drf_yasg',
+    'webpack_loader',
+    'consent_manager',
+    'gui'
 ]
 
 if DEBUG is True:
@@ -115,7 +117,8 @@ REST_FRAMEWORK = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, '../templates')],
+        'DIRS': [os.path.join(BASE_DIR, '../templates'),
+                 os.path.join(BASE_DIR, '../gui/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -148,9 +151,23 @@ USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'consent_manager.ConsentManagerUser'
-STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
+STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
+STATICFILES_DIRS = (
+    ('gui', os.path.join(BASE_DIR, '../gui/assets/')),
+)
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': 'gui/bundles/', # must end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, '..//gui/webpack-stats.json'),
+        'POLL_INTERVAL': 0.1,
+        'TIMEOUT': None,
+        'IGNORE': ['.+\.hot-update.js', '.+\.map']
+    }
+}
 
 SESSION_COOKIE_NAME = 'consent_manager'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

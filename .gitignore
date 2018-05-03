@@ -14,3 +14,8 @@ test-ws
 ${env.CATALINA_HOME}
 /source_frontend/target/
 certs/ca/
+
+/* node */
+**/node_modules
+**webpack-stats.json
+**/bundles/

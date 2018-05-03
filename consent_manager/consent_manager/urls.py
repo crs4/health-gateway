@@ -24,7 +24,8 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
-from consent_manager import views, settings
+from consent_manager import settings, views
+from gui import views as fr_views
 from hgw_common.settings import VERSION_REGEX
 
 
@@ -41,10 +42,10 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    url(r'^$', views.home),
+    url(r'^$', fr_views.home),
+    url(r'^login/$', fr_views.perform_login),
+    url(r'^logout/$', fr_views.perform_logout),
     url(r'^admin/', admin.site.urls),
-    url(r'^login/', views.perform_login),
-    url(r'^logout/', views.perform_logout),
     url(r'^saml2/', include('djangosaml2.urls')),
     url(r'^swagger(?P<format>.json|.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
     url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-consent_manager'),
