@@ -1,6 +1,5 @@
-import React from 'react';
-
-// import PropTypes from "prop-types";
+import React from "react";
+import PropTypes from "prop-types";
 
 class DataProvider extends React.Component {
     constructor() {
@@ -10,12 +9,12 @@ class DataProvider extends React.Component {
             loaded: false,
             placeholder: "Loading..."
         };
-
     }
 
     componentDidMount() {
         fetch(this.props.endpoint, {credentials: "same-origin"})
             .then(response => {
+                console.log(response.status);
                 if (response.status !== 200) {
                     return this.setState({placeholder: "Something went wrong"});
                 }
@@ -29,5 +28,10 @@ class DataProvider extends React.Component {
         return loaded ? this.props.render(data) : <p>{placeholder}</p>;
     }
 }
+
+DataProvider.propTypes = {
+    endpoint: PropTypes.string,
+    render: PropTypes.func
+};
 
 export default DataProvider;

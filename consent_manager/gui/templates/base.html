@@ -23,9 +23,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title>Consent Manager</title>
-    <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="{% static "/consent_manager/css/flatly/bootstrap.min.css" %}">
-    <!-- Custom styles for this template -->
     <link href="{% static "/consent_manager/css/flatly/navbar.css" %}" rel="stylesheet">
 </head>
 
@@ -33,6 +31,7 @@
 
 {% if nav_bar is True %}
     <nav class="navbar navbar-narrow navbar-expand-sm navbar-dark fixed-top bg-primary">
+        <a class="navbar-brand" href="#">Consent Manager</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -43,9 +42,6 @@
                 <li class="nav-item active">
                     <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
                 </li>
-{#                <li class="nav-item active">#}
-{#                    <a class="nav-link" href="/consents/revoke/">Revoke Consents <span class="sr-only">(current)</span></a>#}
-{#                </li>#}
             </ul>
             <ul class="navbar-nav mr-right">
                 <li class="nav-item active">

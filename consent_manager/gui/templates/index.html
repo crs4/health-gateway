@@ -18,9 +18,6 @@
 {% extends 'base.html' %}
 {% load render_bundle from webpack_loader %}
 {% block content %}
-<div id="content"></div>
+<div id='content'></div>
 {% render_bundle 'main' %}
-{#<h1>Consent Manager</h1>#}
-{#    <p class="lead">This is the Consent Manager. Here you can handle your consents: you can revoke consents and#}
-{#       request to delete all data related to a consent already transferred. Login to start handling your consents</p>#}
 {% endblock %}
