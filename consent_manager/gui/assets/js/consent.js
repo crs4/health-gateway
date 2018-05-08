@@ -35,6 +35,7 @@ class Consent extends React.Component {
         const consents = this.state.consents;
         const rows = consents.map((c, i) => {
             if (c.status === "AC") {
+                const checked = this.state.revokeList.includes(c.consent_id);
                 return (
                     <tr key={i} className={i % 2 === 0 ? "table-light" : "table-secondary"}>
                         <td>{c.source.name}</td>
@@ -44,7 +45,7 @@ class Consent extends React.Component {
                         </td>
                         <td>
                             <input type="checkbox" name="revoke_list" value={c.consent_id}
-                                   onChange={this.checkBoxHandler.bind(this)}/>
+                                   checked={checked} onChange={this.checkBoxHandler.bind(this)}/>
                         </td>
                     </tr>
                 )
@@ -101,14 +102,16 @@ class Consent extends React.Component {
             xsrfCookieName: 'csrftoken',
             xsrfHeaderName: 'X-CSRFToken'
         }).then((response) => {
-            const newConsents = this.state.consents.filter(function(consent) {
-                return !response.data.revoked.includes(consent.consent_id)
+            const newConsents = this.state.consents.filter(function (consent) {
+                console.log(response.data.revoked);
+                return response.data.revoked.includes(consent.consent_id);
             });
 
             this.setState({
                 consents: newConsents,
                 revokeList: []
             });
+            this.props.notifier.success('Consents Revoked Correctly')
 
         }).catch((error) => {
             console.log(error);

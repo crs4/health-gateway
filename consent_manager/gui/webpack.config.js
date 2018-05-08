@@ -39,7 +39,12 @@ module.exports = {
                 query: {
                     presets: ['react']
                 }
+            },
+            {
+                test: /(\.css|\.scss)$/,
+                loaders: ['style-loader', 'css-loader', 'sass-loader']
             }
+
         ]
     },
 
