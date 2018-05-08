@@ -17,41 +17,102 @@
 
 import React from 'react'
 import Profile from './profile'
+import DjangoCSRFToken from 'django-react-csrftoken'
+import axios from 'axios';
+
 
 class Consent extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            consents: this.props.data.slice(),
+            revokeList: [],
+        };
+    }
+
     render() {
-        const consents =  this.props.data.slice();
+        const consents = this.state.consents;
         const rows = consents.map((c, i) => {
             if (c.status === "AC") {
                 return (
-                    <tr key={i} className="table-light">
+                    <tr key={i} className={i % 2 === 0 ? "table-light" : "table-secondary"}>
                         <td>{c.source.name}</td>
                         <td>{c.destination.name}</td>
                         <td>
                             <Profile data={c.profile}/>
                         </td>
                         <td>
-                            <input type="checkbox" name="revoke_list" value="{consent.id}"/>
+                            <input type="checkbox" name="revoke_list" value={c.consent_id}
+                                   onChange={this.checkBoxHandler.bind(this)}/>
                         </td>
                     </tr>
                 )
             }
         });
         return (
-            <table className="table">
-                <thead>
-                <tr className="table-success">
-                    <th scope="col">Source</th>
-                    <th scope="col">Destination</th>
-                    <th scope="col">Data Sent</th>
-                    <th scope="col">Revoke</th>
-                </tr>
-                </thead>
-                <tbody>
-                {rows}
-                </tbody>
-            </table>
+            <form>
+                <DjangoCSRFToken/>
+                <table className="table">
+                    <thead>
+                    <tr className="table-success">
+                        <th scope="col">Source</th>
+                        <th scope="col">Destination</th>
+                        <th scope="col">Data Sent</th>
+                        <th scope="col">Revoke</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {rows}
+                    </tbody>
+                </table>
+                <button type="button" className="btn btn-primary"
+                        disabled={!this.isEnabled()}
+                        onClick={this.sendRevoke.bind(this)}>Revoke Consents
+                </button>
+            </form>
         )
+    }
+
+    isEnabled() {
+        return this.state.revokeList.length > 0;
+    }
+
+    checkBoxHandler(event) {
+        let revokeList;
+        if (event.target.checked) {
+            revokeList = this.state.revokeList.concat(event.target.value);
+        }
+        else {
+            revokeList = this.state.revokeList.filter(consentId => {
+                return consentId !== event.target.value;
+            });
+        }
+        this.setState({
+            revokeList: revokeList
+        })
+    }
+
+    sendRevoke() {
+        axios.post('/v1/consents/revoke/', {
+            consents: this.state.revokeList,
+        }, {
+            withCredentials: true,
+            xsrfCookieName: 'csrftoken',
+            xsrfHeaderName: 'X-CSRFToken'
+        }).then((response) => {
+            const newConsents = this.state.consents.filter(function(consent) {
+                return !response.data.revoked.includes(consent.consent_id)
+            });
+
+            this.setState({
+                consents: newConsents,
+                revokeList: []
+            });
+
+        }).catch((error) => {
+            console.log(error);
+        });
     }
 }
 

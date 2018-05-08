@@ -31,7 +31,6 @@ class DataProvider extends React.Component {
     componentDidMount() {
         fetch(this.props.endpoint, {credentials: "same-origin"})
             .then(response => {
-                console.log(response.status);
                 if (response.status !== 200) {
                     return this.setState({placeholder: "Something went wrong"});
                 }

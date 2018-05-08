@@ -19,10 +19,12 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
 
 @require_http_methods(["GET"])
+@ensure_csrf_cookie
 def home(request):
     return render(request, 'index.html', context={'nav_bar': True})
 

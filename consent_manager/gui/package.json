@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "django-react-csrftoken": "^1.0.3",
     "prop-types": "^15.6.1"
   }
 }
