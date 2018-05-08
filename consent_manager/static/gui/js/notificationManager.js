@@ -28,6 +28,15 @@ class NotificationManager extends React.Component {
         })
     }
 
+    error(message) {
+        this.notificationSystem.addNotification({
+            title: 'Error',
+            message: message,
+            level: 'error',
+            position: 'tc',
+            autoDismiss: 3
+        })
+    }
 }
 
 export default NotificationManager;

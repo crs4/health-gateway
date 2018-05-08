@@ -56,7 +56,7 @@ class Consent extends React.Component {
                 <DjangoCSRFToken/>
                 <table className="table">
                     <thead>
-                    <tr className="table-success">
+                    <tr className="table-primary">
                         <th scope="col">Source</th>
                         <th scope="col">Destination</th>
                         <th scope="col">Data Sent</th>
@@ -102,19 +102,19 @@ class Consent extends React.Component {
             xsrfCookieName: 'csrftoken',
             xsrfHeaderName: 'X-CSRFToken'
         }).then((response) => {
-            const newConsents = this.state.consents.filter(function (consent) {
-                console.log(response.data.revoked);
-                return response.data.revoked.includes(consent.consent_id);
+            const newConsents = this.state.consents.filter((consent) => {
+                return !response.data.revoked.includes(consent.consent_id);
             });
 
             this.setState({
                 consents: newConsents,
                 revokeList: []
             });
-            this.props.notifier.success('Consents Revoked Correctly')
+            this.props.notifier.success('Consents revoked correctly');
 
         }).catch((error) => {
-            console.log(error);
+            this.props.notifier.error('Erros while revoking consents');
+
         });
     }
 }
