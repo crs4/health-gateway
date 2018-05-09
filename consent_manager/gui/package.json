@@ -29,6 +29,7 @@
     "node-sass": "^4.9.0",
     "prop-types": "^15.6.1",
     "react-notification-system": "^0.2.17",
-    "react-notifications": "^1.4.3"
+    "react-notifications": "^1.4.3",
+    "sass-loader": "^7.0.1"
   }
 }

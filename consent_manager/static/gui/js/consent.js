@@ -56,7 +56,7 @@ class Consent extends React.Component {
                 <DjangoCSRFToken/>
                 <table className="table">
                     <thead>
-                    <tr className="table-primary">
+                    <tr className="table-active">
                         <th scope="col">Source</th>
                         <th scope="col">Destination</th>
                         <th scope="col">Data Sent</th>

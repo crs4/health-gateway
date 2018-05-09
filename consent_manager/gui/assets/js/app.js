@@ -20,6 +20,8 @@ import DataProvider from './dataProvider';
 import Consent from './consent';
 import Welcome from './welcome';
 import NotificationManager from './notificationManager';
+require('../css/yeti/bootstrap.min.css');
+require('../css/custom.css');
 
 class App extends React.Component {
     renderConsents(data) {
