@@ -31,11 +31,13 @@ ATTRIB_MAP_DIR_PATH = path.join(path.dirname(__file__), './saml2/attribute-maps'
 
 def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
     return {
+
         # full path to the xmlsec1 binary programm
         'xmlsec_binary': '/usr/bin/xmlsec1',
 
         # your entity id, usually your subdomain plus the url to the metadata view
         'entityid': urljoin(root_url, '/saml2/metadata/'),
+        'allow_unknown_attributes': True,
 
         # directory with attribute mapping
         'attribute_map_dir': ATTRIB_MAP_DIR_PATH,
@@ -43,6 +45,7 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
         'service': {
             # we are just a lonely SP
             'sp': {
+
                 # fixme!
                 'allow_unsolicited': True,
                 'logout_requests_signed': True,
@@ -51,13 +54,13 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
                 'name': sp_name,
                 'name_id_format': saml.NAMEID_FORMAT_TRANSIENT,
                 'requested_attributes': [{
-                    'name': 'spidCode',
-                    'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
-                }, {
+                     'name': 'uid',
+                     'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
+                 }, {
                     'name': 'fiscalNumber',
                     'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
                 }],
-                'required_attributes': ['spidCode', 'fiscalNumber'],
+                'required_attributes': ['uid','fiscalNumber'],
                 'endpoints': {
                     # url and binding to the assetion consumer service view
                     # do not change the binding or service name
