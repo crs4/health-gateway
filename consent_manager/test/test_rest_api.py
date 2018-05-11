@@ -414,7 +414,8 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(revoke_consents),
                                content_type='application/json')
         self.assertEqual(res.status_code, 200)
-        self.assertDictEqual(res.json(), {'revoked': consents})
+        self.assertEqual(res.json()['revoked'], consents)
+        self.assertEqual(len(res.json()['failed']), 0)
         for consent in consents:
             c = Consent.objects.get(consent_id=consent)
             self.assertEqual(c.status, Consent.REVOKED)
@@ -457,7 +458,9 @@ class TestAPI(TestCase):
         }
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
-        self.assertDictEqual(res.json(), {'revoked': [consents[0]]})
+        self.assertEqual(len(res.json()['revoked']), 1)
+        self.assertEqual(len(res.json()['failed']), 3)
+        self.assertListEqual(res.json()['failed'], consents[1:])
         statuses[0] = Consent.REVOKED
         for i, c in enumerate(consents):
             c = Consent.objects.get(consent_id=c)
@@ -479,9 +482,41 @@ class TestAPI(TestCase):
         }
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
-        self.assertDictEqual(res.json(), {'revoked': []})
+        self.assertEqual(len(res.json()['revoked']), 0)
+        self.assertEquals(len(res.json()['failed']), 1)
+        self.assertEquals(res.json()['failed'][0], c.consent_id)
 
-    def test_revoke_consent_with_oauth_token(self):
+    def test_revoke_consent_unknown_consent(self):
+        """
+        Tests error when confirming an unknwown consent
+        """
+        consent_id = 'unknown'
+        self.client.login(username='duck', password='duck')
+        data = {
+            'consents': [consent_id]
+        }
+        res = self.client.post('/v1/consents/revoke/', data=json.dumps(data),
+                               content_type='application/json')
+
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(res.json()['revoked']), 0)
+        self.assertEquals(len(res.json()['failed']), 1)
+        self.assertEquals(res.json()['failed'][0], consent_id)
+        self.assertRaises(Consent.DoesNotExist, Consent.objects.get, consent_id=consent_id)
+
+    def test_revoke_consent_unauthorized(self):
+        res = self._add_consent()
+        # Manually changing it to ACTIVE
+        c = Consent.objects.get(consent_id=res.json()['consent_id'])
+        c.status = Consent.ACTIVE
+        c.save()
+
+        res = self.client.post('/v1/consents/revoke/', data=json.dumps([c.consent_id]),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 401)
+        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+
+    def test_revoke_consent_forbidden(self):
         """
         Tests that the revoke action cannot be performed by an OAuth2 authenticated client
         """
@@ -560,12 +595,147 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json()[0], expected)
 
-    def test_confirm_redirect_to_identity_provider(self):
+    def test_confirm_consent(self):
+        """
+        Tests correct consent confirmation
+        """
+
+        # First create some consents
+        consents = []
+        for i in range(4):
+            data = self.consent_data.copy()
+            data['source'] = {
+                'id': 'source_{}_id'.format(i),
+                'name': 'source_{}_name'.format(i)
+            }
+            res = self._add_consent(data=json.dumps(data))
+            consents.append(res.json()['consent_id'])
+
+        self.client.login(username='duck', password='duck')
+        data = {
+            'consents': consents
+        }
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
+                               content_type='application/json')
+
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(res.json()['confirmed']), 4)
+        self.assertEquals(len(res.json()['failed']), 0)
+        for c in consents:
+            self.assertEqual(Consent.objects.get(consent_id=c).status, Consent.ACTIVE)
+
+    def test_confirm_consent_unauthorized(self):
+        res = self._add_consent()
+        # Manually changing it to ACTIVE
+        consent_id = res.json()['consent_id']
+
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps([consent_id]),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 401)
+        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+
+    def test_confirm_consent_forbidden(self):
+        res = self._add_consent()
+        # Manually changing it to ACTIVE
+        consent_id = res.json()['consent_id']
+
+        headers = self._get_oauth_header(0)
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps([consent_id]),
+                               content_type='application/json', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertDictEqual(res.json(), {'detail': 'You do not have permission to perform this action.'})
+
+    def test_confirm_consent_missing_parameters(self):
+        """
+        Tests error when not sending consents
+        """
+
+        self.client.login(username='duck', password='duck')
+        res = self.client.post('/v1/consents/confirm/')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), {'error': 'missing_parameters'})
+
+    def test_confirm_consent_wrong_consent_status(self):
+        """
+        Tests that if the consent was not in PENDING status it is not activated. It does so by trying to revoke
+        4 consent, one for every status (PENDING, ACTIVE, REVOKED, NOT_VALID). It checks that only the one that was in
+        PENDING status is returned and is in ACTIVE status
+        """
+        consents = []
+        statuses = [Consent.PENDING, Consent.ACTIVE, Consent.REVOKED, Consent.NOT_VALID]
+        for i, s in enumerate(statuses):
+            data = self.consent_data.copy()
+            data['source'] = {
+                'id': 'source_{}_id'.format(i),
+                'name': 'source_{}_name'.format(i)
+            }
+            res = self._add_consent(data=json.dumps(data))
+            consents.append(res.json()['consent_id'])
+            # Manually changing it to ACTIVE
+            c = Consent.objects.get(consent_id=res.json()['consent_id'])
+            c.status = s
+            c.save()
+
+        self.client.login(username='duck', password='duck')
+
+        data = {
+            'consents': consents
+        }
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['confirmed']), 1)
+        self.assertEqual(len(res.json()['failed']), 3)
+        self.assertListEqual(res.json()['failed'], consents[1:])
+        statuses[0] = Consent.ACTIVE
+        for i, c in enumerate(consents):
+            c = Consent.objects.get(consent_id=c)
+            self.assertEqual(c.status, statuses[i])
+
+    def test_confirm_consent_wrong_user(self):
+        """
+        Tests error when confirming a consent of another user
+        """
+        res = self._add_consent()
+        consent_id = res.json()['consent_id']
+
+        self.client.login(username='paperone', password='paperone')
+        data = {
+            'consents': [consent_id]
+        }
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
+                               content_type='application/json')
+
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(res.json()['confirmed']), 0)
+        self.assertEquals(len(res.json()['failed']), 1)
+        self.assertEquals(res.json()['failed'][0], consent_id)
+        c = Consent.objects.get(consent_id=consent_id)
+        self.assertEqual(c.status, Consent.PENDING)
+
+    def test_confirm_consent_unknown_consent(self):
+        """
+        Tests error when confirming an unknwown consent
+        """
+        consent_id = 'unknown'
+        self.client.login(username='duck', password='duck')
+        data = {
+            'consents': [consent_id]
+        }
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
+                               content_type='application/json')
+
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(len(res.json()['confirmed']), 0)
+        self.assertEquals(len(res.json()['failed']), 1)
+        self.assertEquals(res.json()['failed'][0], consent_id)
+        self.assertRaises(Consent.DoesNotExist, Consent.objects.get, consent_id=consent_id)
+
+    def test_page_confirm_redirect_to_identity_provider(self):
         """
         Tests that confirm url is protected by login and redirects to the identity provider
         """
-        res = self.client.get('/v1/consents/confirm/')
-        self.assertRedirects(res, '/saml2/login/?next=/v1/consents/confirm/', fetch_redirect_response=False)
+        res = self.client.get('/confirm_consents/')
+        self.assertRedirects(res, '/saml2/login/?next=/confirm_consents/', fetch_redirect_response=False)
 
     def test_confirm_wrong_method(self):
         """
@@ -573,147 +743,57 @@ class TestAPI(TestCase):
         """
         for m in ('put', 'head', 'options', 'delete', 'trace'):
             met = getattr(self.client, m)
-            res = met('/v1/consents/confirm/')
+            res = met('/confirm_consents/')
             self.assertEquals(res.status_code, 405)
 
-    def test_confirm_missing_parameters(self):
-        """
-        Tests missing parameters when confirming consent
-        """
-        res = self._add_consent()
-        confirm_id = res.json()['confirm_id']
-        callback_url = 'http://127.0.0.1/'
-
-        self.client.login(username='duck', password='duck')
-        res = self.client.get('/v1/consents/confirm/')
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
-
-        res = self.client.get('/v1/consents/confirm/?confirm_id={}'.format(confirm_id))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
-
-        res = self.client.get('/v1/consents/confirm/?callback_url={}'.format(callback_url))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
-
-    def test_confirm_invalid_confirmation_code(self):
-        """
-        Tests error when sending an invalid confirmation code
-        """
-        headers = self._get_oauth_header()
-
-        # using delete but it doesn't matter if it's delete or add
-        self.client.delete('/v1/flow_requests/54321/', **headers)
-        callback_url = 'http://127.0.0.1/'
-        self.client.login(username='duck', password='duck')
-        res = self.client.get('/v1/consents/confirm/?confirm_id={}&callback_url={}'.format('invalid', callback_url))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
-
-    def test_confirm_wrong_consent_state(self):
-        """
-        Tests error when confirming a consent in the wrong state
-        """
-        consent = Consent.objects.get(pk=1)
-        consent.status = Consent.ACTIVE
-        consent.save()
-
-        cc = ConfirmationCode.objects.create(consent=consent)
-        cc.save()
-
-        callback_url = 'http://127.0.0.1/'
-        self.client.login(username='duck', password='duck')
-        res = self.client.get('/v1/consents/confirm/?confirm_id={}&callback_url={}'.format(cc.code, callback_url))
-
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.context['errors']), 1)
-
-    def test_confirm_valid(self):
-        """
-        Tests the valid confirmation. First, the user calls the confirmation page and gets an html page
-        with the form that shows all the consents. Then it posts the form and the consent is set to active.
-        """
-        res = self._add_consent()
-
-        confirm_id = res.json()['confirm_id']
-        callback_url = 'http://127.0.0.1/'
-
-        self.client.login(username='duck', password='duck')
-        res = self.client.get('/v1/consents/confirm/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res['Content-Type'], 'text/html; charset=utf-8')
-        cc = ConfirmationCode.objects.get(code=confirm_id)
-        consent = cc.consent
-        self.assertEquals(consent.status, Consent.PENDING)
-        self.assertIsNone(consent.confirmed)
-        post_data = {
-            'csrf_token': res.context['csrf_token'],
-            'confirm_id': res.context['consents'][0]['confirm_id'],
-            'callback_url': res.context['callback_url']
-        }
-        res = self.client.post('/v1/consents/confirm/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url),
-                               post_data)
-        self.assertRedirects(res, '{}?success=true&consent_confirm_id={}'.format(callback_url, confirm_id),
-                             fetch_redirect_response=False)
-        consent.refresh_from_db()
-        self.assertEquals(consent.status, Consent.ACTIVE)
-        self.assertIsNotNone(consent.confirmed)
-
-    def test_two_consents_confirm_valid(self):
-        """
-        Tests the valid confirmation for two consents.
-        """
-        consent_data = [
-            self.consent_data,
-            {
-                'source': {
-                    'id': '1',
-                    'name': 'SECOND SOURCE'
-                },
-                'destination': {
-                    'id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
-                    'name': 'DEST_MOCKUP'
-                },
-                'profile': self.profile,
-                'person_id': PERSON1_ID,
-                'start_validity': '2017-10-23T10:00:00.000Z',
-                'expire_validity': '2018-04-23T10:00:00.000Z'
-            }
-        ]
-        confirm_ids = []
-
-        for data in consent_data:
-            res = self._add_consent(json.dumps(data))
-            confirm_ids.append(res.json()['confirm_id'])
-
-        callback_url = 'http://127.0.0.1/'
-
-        self.client.login(username='duck', password='duck')
-        res = self.client.get('/v1/consents/confirm/?{}&callback_url={}'.format(
-            '&'.join(['confirm_id={}'.format(confirm_id) for confirm_id in confirm_ids]),
-            callback_url))
-
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res['Content-Type'], 'text/html; charset=utf-8')
-
-        context = res.context
-        self.assertEquals(len(context['consents']), 2)
-        self.assertEquals(len(context['errors']), 0)
-
-        context = res.context
-        for confirm_id in confirm_ids:
-            cc = ConfirmationCode.objects.get(code=confirm_id)
-            consent = cc.consent
-            self.assertEquals(consent.status, Consent.PENDING)
-            post_data = {
-                'csrf_token': context['csrf_token'],
-                'confirm_id': confirm_id,
-                'callback_url': context['callback_url']
-            }
-            res = self.client.post('/v1/consents/confirm/',
-                                   post_data)
-            self.assertRedirects(res, '{}?success=true&consent_confirm_id={}'.format(callback_url, confirm_id),
-                                 fetch_redirect_response=False)
-            consent.refresh_from_db()
-            self.assertEquals(consent.status, Consent.ACTIVE)
+    # def test_confirm_missing_parameters(self):
+    #     """
+    #     Tests missing parameters when confirming consent
+    #     """
+    #     res = self._add_consent()
+    #     confirm_id = res.json()['confirm_id']
+    #     callback_url = 'http://127.0.0.1/'
+    #
+    #     self.client.login(username='duck', password='duck')
+    #     res = self.client.get('/confirm_consents/')
+    #     self.assertEquals(res.status_code, 400)
+    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+    #
+    #     res = self.client.get('/confirm_consents/?confirm_id={}'.format(confirm_id))
+    #     self.assertEquals(res.status_code, 400)
+    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+    #
+    #     res = self.client.get('/confirm_consents/?callback_url={}'.format(callback_url))
+    #     self.assertEquals(res.status_code, 400)
+    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+    #
+    # def test_confirm_valid(self):
+    #     """
+    #     Tests the valid confirmation. First, the user calls the confirmation page and gets an html page
+    #     with the form that shows all the consents. Then it posts the form and the consent is set to active.
+    #     """
+    #     res = self._add_consent()
+    #
+    #     confirm_id = res.json()['confirm_id']
+    #     callback_url = 'http://127.0.0.1/'
+    #
+    #     self.client.login(username='duck', password='duck')
+    #     res = self.client.get('/confirm_consents/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
+    #     self.assertEquals(res.status_code, 200)
+    #     self.assertEquals(res['Content-Type'], 'text/html; charset=utf-8')
+    #     cc = ConfirmationCode.objects.get(code=confirm_id)
+    #     consent = cc.consent
+    #     self.assertEquals(consent.status, Consent.PENDING)
+    #     self.assertIsNone(consent.confirmed)
+    #     post_data = {
+    #         'csrf_token': res.context['csrf_token'],
+    #         'confirm_id': res.context['consents'][0]['confirm_id'],
+    #         'callback_url': res.context['callback_url']
+    #     }
+    #     res = self.client.post('/confirm_consents/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url),
+    #                            post_data)
+    #     self.assertRedirects(res, '{}?success=true&consent_confirm_id={}'.format(callback_url, confirm_id),
+    #                          fetch_redirect_response=False)
+    #     consent.refresh_from_db()
+    #     self.assertEquals(consent.status, Consent.ACTIVE)
+    #     self.assertIsNotNone(consent.confirmed)

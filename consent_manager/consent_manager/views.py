@@ -103,17 +103,18 @@ class ConsentView(ViewSet):
             return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
 
         revoked = []
+        failed = []
         for consent in consents:
             try:
                 c = Consent.objects.get(consent_id=consent, status=Consent.ACTIVE,
                                         person_id=request.user.fiscalNumber)
             except Consent.DoesNotExist:
-                pass
+                failed.append(consent)
             else:
                 c.status = Consent.REVOKED
                 c.save()
                 revoked.append(c.consent_id)
-        return Response({'revoked': revoked}, status=status.HTTP_200_OK)
+        return Response({'revoked': revoked, 'failed': failed}, status=status.HTTP_200_OK)
 
     def find(self, request):
         """
@@ -130,22 +131,28 @@ class ConsentView(ViewSet):
             return Response({}, status.HTTP_404_NOT_FOUND)
 
         consents = [cc.consent for cc in ccs if cc.check_validity()]
-        # for cc in ccs:
-        #     if cc.check_validity():
-        #         consents.append({
-        #             'confirm_id': cc.code,
-        #             'source': cc.consent.source.name,
-        #             'is_valid': cc.check_validity(),
-        #             'status': cc.consent.status,
-        #             'profile': cc.consent.profile.payload,
-        #             'start_validity': cc.consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
-        #             'expire_validity': cc.consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
-        #         })
         serializer = serializers.ConsentSerializer(consents, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def confirm(self, request):
-        return Response({}, status=status.HTTP_200_OK)
+        try:
+            consents = request.data['consents']
+        except KeyError:
+            return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
+
+        confirmed = []
+        failed = []
+        for consent in consents:
+            try:
+                c = Consent.objects.get(consent_id=consent, status=Consent.PENDING,
+                                        person_id=request.user.fiscalNumber)
+            except Consent.DoesNotExist:
+                failed.append(consent)
+            else:
+                c.status = Consent.ACTIVE
+                c.save()
+                confirmed.append(c.consent_id)
+        return Response({'confirmed': confirmed, 'failed': failed}, status=status.HTTP_200_OK)
 
 
 @require_http_methods(["GET", "POST"])
