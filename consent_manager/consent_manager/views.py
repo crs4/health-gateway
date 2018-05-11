@@ -144,6 +144,9 @@ class ConsentView(ViewSet):
         serializer = serializers.ConsentSerializer(consents, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def confirm(self, request):
+        return Response({}, status=status.HTTP_200_OK)
+
 
 @require_http_methods(["GET", "POST"])
 @login_required

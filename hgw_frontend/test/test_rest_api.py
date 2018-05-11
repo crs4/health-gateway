@@ -19,8 +19,6 @@
 import json
 import logging
 import os
-import sys
-
 from Cryptodome.PublicKey import RSA
 from django.test import TestCase, client
 from mock import patch
@@ -30,6 +28,7 @@ from hgw_common.models import Profile
 from hgw_common.utils.test import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient
+from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \
     TEST_PERSON1_ID
 from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler
@@ -508,8 +507,8 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEquals(ConsentConfirmation.objects.count(), previous_consent_count + 1)
         consent_confirm_id = ConsentConfirmation.objects.last().confirmation_id
         consent_callback_url = 'http://testserver/v1/flow_requests/consents_confirmed/'
-        self.assertRedirects(res, '{}/v1/consents/confirm/?confirm_id={}&callback_url={}'.
-                             format(CONSENT_MANAGER_URI, consent_confirm_id, consent_callback_url),
+        self.assertRedirects(res, '{}?confirm_id={}&callback_url={}'.
+                             format(CONSENT_MANAGER_CONFIRMATION_PAGE, consent_confirm_id, consent_callback_url),
                              fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)

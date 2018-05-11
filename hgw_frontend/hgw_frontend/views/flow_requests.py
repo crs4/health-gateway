@@ -19,9 +19,6 @@
 import datetime
 import json
 import logging
-from operator import xor
-
-import coreapi
 import requests
 import six
 from django.contrib.auth.decorators import login_required
@@ -33,10 +30,10 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from kafka import KafkaProducer
 from oauthlib.oauth2 import BackendApplicationClient
+from operator import xor
 from requests_oauthlib import OAuth2Session
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.schemas import AutoSchema
 from rest_framework.viewsets import ViewSet
 
 import hgw_frontend.serializers
@@ -45,7 +42,8 @@ from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination
 from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
-    KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CRT, KAFKA_CA_CERT
+    KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CRT, KAFKA_CA_CERT, \
+    CONSENT_MANAGER_CONFIRMATION_PAGE
 
 logger = logging.getLogger('hgw_frontend')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -418,8 +416,8 @@ def _ask_consent(request, flow_request, callback_url):
             return HttpResponse("All available consents already inserted")
         logger.debug("Created consent")
         consent_callback_url = _get_callback_url(request)
-        return HttpResponseRedirect('{}/v1/consents/confirm/?{}&callback_url={}'.
-                                    format(CONSENT_MANAGER_URI,
+        return HttpResponseRedirect('{}?{}&callback_url={}'.
+                                    format(CONSENT_MANAGER_CONFIRMATION_PAGE,
                                            '&'.join(['confirm_id={}'.format(consent) for consent in consents]),
                                            consent_callback_url))
     else:

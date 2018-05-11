@@ -237,6 +237,7 @@ SWAGGER_SETTINGS = {
 CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
 CONSENT_MANAGER_CLIENT_ID = cfg['consent_manager']['client_id']
 CONSENT_MANAGER_CLIENT_SECRET = cfg['consent_manager']['client_secret']
+CONSENT_MANAGER_CONFIRMATION_PAGE = '{}/confirm_consents/'.format(CONSENT_MANAGER_URI)
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'

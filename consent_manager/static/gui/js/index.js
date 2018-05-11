@@ -30,6 +30,6 @@ wrapper ? ReactDOM.render(
     <BrowserRouter>
         <Switch>
             <Route exact path='/' component={App}/>
-            <Route path='/v1/consents/confirm/' component={Confirm}/>
+            <Route path='/confirm_consents/' component={Confirm}/>
         </Switch>
     </BrowserRouter>, wrapper) : null;
