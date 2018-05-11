@@ -53,9 +53,11 @@ urlpatterns = [
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^{}/consents/confirm/$'.format(VERSION_REGEX), views.confirm_consent),
     url(r'^{}/consents/revoke/$'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke'}),
-        name='consents'),
+        name='consents_revoke'),
+    url(r'^{}/consents/find/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'find'}),
+        name='consents_find'),
     url(r'^{}/consents/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'list', 'post': 'create'}),
         name='consents'),
     url(r'^{}/consents/(?P<consent_id>\w+)/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'retrieve'}),
-        name='consents'),
+        name='consents_retrieve'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

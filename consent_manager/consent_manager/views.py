@@ -115,6 +115,35 @@ class ConsentView(ViewSet):
                 revoked.append(c.consent_id)
         return Response({'revoked': revoked}, status=status.HTTP_200_OK)
 
+    def find(self, request):
+        """
+        Method to find consent. The only supported query parameter is by confirmation_id
+        :param request:
+        :return:
+        """
+        if 'confirm_id' not in request.query_params:
+            return Response({'error': ERRORS_MESSAGE['MISSING_PARAM']}, status.HTTP_400_BAD_REQUEST)
+
+        confirm_ids = request.GET.getlist('confirm_id')
+        ccs = ConfirmationCode.objects.filter(code__in=confirm_ids, consent__status=Consent.PENDING)
+        if not ccs:
+            return Response({}, status.HTTP_404_NOT_FOUND)
+
+        consents = [cc.consent for cc in ccs if cc.check_validity()]
+        # for cc in ccs:
+        #     if cc.check_validity():
+        #         consents.append({
+        #             'confirm_id': cc.code,
+        #             'source': cc.consent.source.name,
+        #             'is_valid': cc.check_validity(),
+        #             'status': cc.consent.status,
+        #             'profile': cc.consent.profile.payload,
+        #             'start_validity': cc.consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
+        #             'expire_validity': cc.consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
+        #         })
+        serializer = serializers.ConsentSerializer(consents, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 @require_http_methods(["GET", "POST"])
 @login_required
@@ -154,10 +183,9 @@ def confirm_consent(request):
                     ctx['consents'].append({
                         'confirm_id': cc.code,
                         'source': cc.consent.source.name,
-                        'is_valid': cc.check_validity(),
                         'status': cc.consent.status,
-                        'start_validity': consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
-                        'expire_validity': consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
+                        'start_validity': cc.consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
+                        'expire_validity': cc.consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
                     })
                 else:
                     ctx['errors'].append(cc.code)

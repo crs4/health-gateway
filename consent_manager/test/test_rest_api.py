@@ -5,6 +5,7 @@ from django.test import TestCase, client
 
 from consent_manager import ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode, RESTClient
+from consent_manager.serializers import ConsentSerializer
 from hgw_common.utils.test import get_free_port
 
 PORT = get_free_port()
@@ -45,7 +46,7 @@ class TestAPI(TestCase):
             },
             'profile': self.profile,
             'person_id': PERSON1_ID,
-            'start_validity': '2017-10-23T10:00:00.000Z',
+            'start_validity': '2017-10-23T10:00:54.123Z',
             'expire_validity': '2018-10-23T10:00:00.000Z'
         }
 
@@ -93,8 +94,8 @@ class TestAPI(TestCase):
         """
         expected = {'consent_id': 'q18r2rpd1wUqQjAZPhh24zcN9KCePRyr',
                     'status': 'PE',
+                    'start_validity': '2017-10-23T10:00:54.123000Z',
                     'expire_validity': '2018-10-23T10:00:00Z',
-                    'start_validity': '2017-10-23T10:00:00Z',
                     'source': {
                         'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
                         'name': 'SOURCE_1'
@@ -116,7 +117,7 @@ class TestAPI(TestCase):
         """
         expected = {
             'status': 'PE',
-            'start_validity': '2017-10-23T10:00:00Z',
+            'start_validity': '2017-10-23T10:00:54.123000Z',
             'expire_validity': '2018-10-23T10:00:00Z',
             'profile': {
                 'code': 'PROF002',
@@ -174,8 +175,34 @@ class TestAPI(TestCase):
         Test correct add consent
         """
         res = self._add_consent()
+        consent_id = res.json()['consent_id']
+
+        expected = {
+            'status': 'PE',
+            'start_validity': '2017-10-23T10:00:54.123000Z',
+            'expire_validity': '2018-10-23T10:00:00Z',
+            'profile': {
+                'code': 'PROF002',
+                'version': 'hgw.document.profile.v0',
+                'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
+            },
+            'destination': {
+                'id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
+                'name': 'DEST_MOCKUP'
+            },
+            'consent_id': consent_id,
+            'person_id': PERSON1_ID,
+            'source': {
+                'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
+                'name': 'SOURCE_1'
+            }
+        }
+
+        c = Consent.objects.get(consent_id=consent_id)
+        serializer = ConsentSerializer(c)
         self.assertEquals(res.status_code, 201)
         self.assertEquals(set(res.json().keys()), {'consent_id', 'confirm_id'})
+        self.assertDictEqual(serializer.data, expected)
 
     def test_add_consent_forbidden(self):
         """
@@ -468,8 +495,70 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps([c.consent_id]),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {"detail":"You do not have permission to perform this action."})
+        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
 
+    def test_find_consent_unauthorized(self):
+        res = self._add_consent()
+
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+
+    def test_find_consent_with_oauth_token(self):
+        res = self._add_consent()
+
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        headers = self._get_oauth_header(0)
+        res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url),
+                              **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
+
+    def test_find_consent_missing_parameters(self):
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/consents/find/')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), {'error': 'missing_parameters'})
+
+    def test_find_consent_not_found(self):
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/consents/find/?confirm_id=unk')
+        self.assertEqual(res.status_code, 404)
+        self.assertDictEqual(res.json(), {})
+
+    def test_find_consent(self):
+        res = self._add_consent()
+        confirm_id = res.json()['confirm_id']
+        consent_id = res.json()['consent_id']
+        expected = {
+            'status': 'PE',
+            'start_validity': '2017-10-23T10:00:54.123000Z',
+            'expire_validity': '2018-10-23T10:00:00Z',
+            'profile': {
+                'code': 'PROF002',
+                'version': 'hgw.document.profile.v0',
+                'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
+            },
+            'destination': {
+                'id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
+                'name': 'DEST_MOCKUP'
+            },
+            'consent_id': consent_id,
+            'person_id': PERSON1_ID,
+            'source': {
+                'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
+                'name': 'SOURCE_1'
+            }
+        }
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/consents/find/?confirm_id={}'.format(confirm_id))
+        self.assertEqual(res.status_code, 200)
+        self.assertDictEqual(res.json()[0], expected)
 
     def test_confirm_redirect_to_identity_provider(self):
         """

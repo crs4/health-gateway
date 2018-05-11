@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ERRORS_MESSAGE = {
-    'MISSING_PARAM': 'Missing parameters',
+    'MISSING_PARAM': 'missing_parameters',
     'UNKNOWN_ACTION': 'Unknown action',
     'INVALID_CONFIRMATION_CODE': 'Confirmation code not valid',
     'INVALID_STATUS': 'Invalid status',
