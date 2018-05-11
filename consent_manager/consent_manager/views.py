@@ -148,63 +148,64 @@ class ConsentView(ViewSet):
 @require_http_methods(["GET", "POST"])
 @login_required
 def confirm_consent(request):
-    try:
-        if request.method == 'GET':
-            confirm_ids = request.GET.getlist('confirm_id')
-            callback_url = request.GET['callback_url']
-        else:
-            confirm_ids = request.POST.getlist('confirm_id')
-            callback_url = request.POST['callback_url']
-    except KeyError:
-        return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
-    else:
-        if not confirm_ids:
-            return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
-
-        ccs = ConfirmationCode.objects.filter(code__in=confirm_ids)
-        if not ccs:
-            return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
-
-        if request.method == 'GET':
-            consent = ccs[0].consent
-            payload = json.loads(consent.profile.payload)
-            destination_name = consent.destination.name
-
-            ctx = {
-                'callback_url': callback_url,
-                'destination_name': destination_name,
-                'profile_payload': payload,
-                'consents': [],
-                'errors': []
-            }
-
-            for cc in ccs:
-                if cc.consent.status == Consent.PENDING and cc.check_validity():
-                    ctx['consents'].append({
-                        'confirm_id': cc.code,
-                        'source': cc.consent.source.name,
-                        'status': cc.consent.status,
-                        'start_validity': cc.consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
-                        'expire_validity': cc.consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
-                    })
-                else:
-                    ctx['errors'].append(cc.code)
-
-            return render(request, 'confirm_consent.html', context=ctx)
-        else:
-            success = False
-            for cc in ccs:
-                if cc.check_validity() and cc.consent.status == Consent.PENDING:
-                    cc.consent.status = Consent.ACTIVE
-                    cc.consent.confirmed = datetime.now()
-                    cc.consent.save()
-                    if not success:
-                        success = True
-
-            return HttpResponseRedirect(
-                '{}?{}{}'.format(callback_url,
-                                 'success={}&'.format(json.dumps(success)),
-                                 '&'.join(['consent_confirm_id={}'.format(confirm_id) for confirm_id in
-                                           confirm_ids]),
-                                 )
-            )
+    return render(request, 'index.html', context={'nav_bar': False})
+    # try:
+    #     if request.method == 'GET':
+    #         confirm_ids = request.GET.getlist('confirm_id')
+    #         callback_url = request.GET['callback_url']
+    #     else:
+    #         confirm_ids = request.POST.getlist('confirm_id')
+    #         callback_url = request.POST['callback_url']
+    # except KeyError:
+    #     return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
+    # else:
+    #     if not confirm_ids:
+    #         return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
+    #
+    #     ccs = ConfirmationCode.objects.filter(code__in=confirm_ids)
+    #     if not ccs:
+    #         return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
+    #
+    #     if request.method == 'GET':
+    #         consent = ccs[0].consent
+    #         payload = json.loads(consent.profile.payload)
+    #         destination_name = consent.destination.name
+    #
+    #         ctx = {
+    #             'callback_url': callback_url,
+    #             'destination_name': destination_name,
+    #             'profile_payload': payload,
+    #             'consents': [],
+    #             'errors': []
+    #         }
+    #
+    #         for cc in ccs:
+    #             if cc.consent.status == Consent.PENDING and cc.check_validity():
+    #                 ctx['consents'].append({
+    #                     'confirm_id': cc.code,
+    #                     'source': cc.consent.source.name,
+    #                     'status': cc.consent.status,
+    #                     'start_validity': cc.consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
+    #                     'expire_validity': cc.consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
+    #                 })
+    #             else:
+    #                 ctx['errors'].append(cc.code)
+    #
+    #         return render(request, 'confirm_consent.html', context=ctx)
+    #     else:
+    #         success = False
+    #         for cc in ccs:
+    #             if cc.check_validity() and cc.consent.status == Consent.PENDING:
+    #                 cc.consent.status = Consent.ACTIVE
+    #                 cc.consent.confirmed = datetime.now()
+    #                 cc.consent.save()
+    #                 if not success:
+    #                     success = True
+    #
+    #         return HttpResponseRedirect(
+    #             '{}?{}{}'.format(callback_url,
+    #                              'success={}&'.format(json.dumps(success)),
+    #                              '&'.join(['consent_confirm_id={}'.format(confirm_id) for confirm_id in
+    #                                        confirm_ids]),
+    #                              )
+    #         )

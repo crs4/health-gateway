@@ -16,20 +16,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import React from 'react';
-import ReactDOM from 'react-dom'
-import { BrowserRouter } from 'react-router-dom';
-import {Route, Switch} from 'react-router-dom';
-import App from "./app";
-import Confirm from "./confirm";
+import 'url-search-params-polyfill';
+import DataProvider from './dataProvider';
+import {ConfirmConsents} from './consent';
+import NotificationManager from './notificationManager';
 
-require('../css/yeti/bootstrap.min.css');
-require('../css/custom.css');
+class Confirm extends React.Component {
 
-const wrapper = document.getElementById("content");
-wrapper ? ReactDOM.render(
-    <BrowserRouter>
-        <Switch>
-            <Route exact path='/' component={App}/>
-            <Route path='/v1/consents/confirm/' component={Confirm}/>
-        </Switch>
-    </BrowserRouter>, wrapper) : null;
+    renderConsents(data) {
+        return (
+            <ConfirmConsents data={data} notifier={this.notifier}/>
+        )
+    }
+
+    componentDidMount() {
+        this.notifier = this.refs.notificationManager;
+    }
+
+    render() {
+        const params = new URLSearchParams(this.props.location.search);
+        const confirm_id = params.get('confirm_id');
+
+        return (
+            <div>
+                <DataProvider endpoint={'/v1/consents/find/'}
+                              params={{'confirm_id': confirm_id}}
+                              render={data => this.renderConsents(data)}/>
+                <NotificationManager ref="notificationManager"/>
+            </div>
+        )
+    }
+}
+
+export default Confirm;

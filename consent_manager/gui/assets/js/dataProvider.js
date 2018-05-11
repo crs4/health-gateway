@@ -17,6 +17,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 
 class DataProvider extends React.Component {
     constructor() {
@@ -29,14 +30,16 @@ class DataProvider extends React.Component {
     }
 
     componentDidMount() {
-        fetch(this.props.endpoint, {credentials: "same-origin"})
-            .then(response => {
-                if (response.status !== 200) {
-                    return this.setState({placeholder: "Something went wrong"});
-                }
-                return response.json();
-            })
-            .then(data => this.setState({data: data, loaded: true}));
+        console.log(this.props.params);
+        axios.get(this.props.endpoint, {
+            params: this.props.params !== undefined ? this.props.params : {},
+            withCredentials: true,
+        }).then((response) => {
+            this.setState({data: response.data, loaded: true});
+        }).catch((error) => {
+            // this.setState({placeholder: "Something went wrong"});
+            this.setState({data: undefined, loaded: true});
+        });
     }
 
     render() {

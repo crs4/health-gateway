@@ -17,8 +17,19 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom'
-import App from './app'
+import { BrowserRouter } from 'react-router-dom';
+import {Route, Switch} from 'react-router-dom';
+import App from "./app";
+import Confirm from "./confirm";
+
+require('../css/yeti/bootstrap.min.css');
+require('../css/custom.css');
 
 const wrapper = document.getElementById("content");
 wrapper ? ReactDOM.render(
-        <App/>, wrapper) : null;
+    <BrowserRouter>
+        <Switch>
+            <Route exact path='/' component={App}/>
+            <Route path='/v1/consents/confirm/' component={Confirm}/>
+        </Switch>
+    </BrowserRouter>, wrapper) : null;

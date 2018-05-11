@@ -17,11 +17,9 @@
 
 import React from 'react';
 import DataProvider from './dataProvider';
-import Consent from './consent';
+import {RevokeConsents} from './consent';
 import Welcome from './welcome';
 import NotificationManager from './notificationManager';
-require('../css/yeti/bootstrap.min.css');
-require('../css/custom.css');
 
 class App extends React.Component {
     renderConsents(data) {
@@ -30,7 +28,7 @@ class App extends React.Component {
         }
         else {
             return (
-                <Consent data={data} notifier={this.notifier}/>
+                <RevokeConsents data={data} notifier={this.notifier}/>
             )
         }
     }
