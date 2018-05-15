@@ -3,12 +3,31 @@ FROM ubuntu:16.04
 RUN apt-get update
 RUN apt-get -y install vim default-jdk ca-certificates openssl tomcat8 apache2 ntp wget less net-tools iputils-ping \
 libmysql-java libmysql-java libcommons-dbcp-java libcommons-pool-java
-ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+#ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
 ENV IDP_SRC=/usr/local/src/shibboleth-identity-provider-3.3.1
 ENV ANT_OPTS="-Didp.src.dir=/usr/local/src/shibboleth-identity-provider-3.3.1 \
 -Didp.target.dir=/opt/shibboleth-idp -Didp.host.name=fakespid.healthgateway.it \
 -Didp.sealer.password=hgwdev -Didp.sealer.alias=hgwdev -Didp.keystore.password=hgwdev \
 -Didp.scope=healthgateway.it -Didp.uri.subject.alt.name=https://fakespid.healthgateway.it/idp/shibboleth"
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends locales && \
+  locale-gen en_US.UTF-8 && \
+  apt-get dist-upgrade -y && \
+  apt-get --purge -y remove openjdk* && \
+  echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections && \
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/webupd8team-java-trusty.list && \
+  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886 && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends oracle-java8-installer oracle-java8-set-default && \
+  apt-get clean all
+
+
+RUN apt install -y tomcat8
+#RUN groupadd tomcat8
+#RUN useradd -s /bin/false -g tomcat8 -d /opt/tomcat8 tomcat8
+
 RUN mkdir /root/certificates
 COPY idp-cert-server.crt /root/certificates
 COPY idp-key-server.key /root/certificates
@@ -61,6 +80,24 @@ COPY sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-f
 COPY sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
 COPY credentials/* /opt/shibboleth-idp/credentials/
 
+#Disable this in production - too noise log levels
+#COPY logback.xml /opt/shibboleth-idp/conf/logback.xml
+
+COPY ca-CNS-bundle.crt /root/certificates
+
+#install module for X.509 CLIENT CERTIFICATE SLL auth
+
+#WORKDIR /usr/local
+#RUN apt-get -y install maven
+#RUN apt-get -y install subversion
+#RUN svn export https://subversion.switch.ch/svn/general/aai/java-idp-x509-login-handler/trunk/ java-idp-x509-login-handler
+#WORKDIR /usr/local/java-idp-x509-login-handler
+#RUN mvn package
+#RUN wget https://forge.switch.ch/attachments/download/674/x509-login-handler-0.5.0.jar
+#RUN cp x509-login-handler-0.5.0.jar /opt/shibboleth-idp/lib
+#COPY X509-login.jsp /opt/shibboleth-idp/src/main/webapp/
+
 EXPOSE 443
+#ENTRYPOINT ["tail","-f", "/dev/null"]
 
 ENTRYPOINT ["run.sh"]

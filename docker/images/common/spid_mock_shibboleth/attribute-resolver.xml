@@ -6,36 +6,72 @@
         xsi:schemaLocation="urn:mace:shibboleth:2.0:resolver http://shibboleth.net/schema/idp/shibboleth-attribute-resolver.xsd">
 
     <AttributeDefinition id="uid" xsi:type="Simple" sourceAttributeID="uid">
-        <Dependency ref="myLDAP" />
+        <Dependency ref="ScriptedAttributeConnector" />
         <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:uid" encodeType="false" />
         <AttributeEncoder xsi:type="SAML2String" name="urn:oid:0.9.2342.19200300.100.1.1" friendlyName="uid" encodeType="false" />
     </AttributeDefinition>
 
     <AttributeDefinition id="cn" xsi:type="Simple" sourceAttributeID="cn">
-        <Dependency ref="myLDAP" />
+        <Dependency ref="ScriptedAttributeConnector" />
         <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:cn" encodeType="false" />
         <AttributeEncoder xsi:type="SAML2String" name="urn:oid:2.5.4.3" friendlyName="cn" encodeType="false" />
     </AttributeDefinition>
 
+    <!--TODO: note that this urn:oid is fake! fiscalNumber doesn't have one that we found-->
+
     <AttributeDefinition id="fiscalNumber" xsi:type="Simple" sourceAttributeID="fiscalNumber">
-        <Dependency ref="myLDAP" />
+        <Dependency ref="ScriptedAttributeConnector" />
         <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:fiscalNumber" encodeType="false" />
-        <!-- TODO: note that this urn:oid is fake! fiscalNumber doesn't have one that we found -->
         <AttributeEncoder xsi:type="SAML2String" name="urn:mace:dir:attribute-def:fiscalNumber" friendlyName="fiscalNumber" encodeType="false" />
     </AttributeDefinition>
 
-    <DataConnector id="myLDAP" xsi:type="LDAPDirectory"
-        ldapURL="%{idp.attribute.resolver.LDAP.ldapURL}"
-        baseDN="%{idp.attribute.resolver.LDAP.baseDN}" 
-        principal="%{idp.attribute.resolver.LDAP.bindDN}"
-        principalCredential="%{idp.attribute.resolver.LDAP.bindDNCredential}"
-        useStartTLS="%{idp.attribute.resolver.LDAP.useStartTLS:false}"
-        connectTimeout="%{idp.attribute.resolver.LDAP.connectTimeout}"
-        responseTimeout="%{idp.attribute.resolver.LDAP.responseTimeout}">
-        <FilterTemplate>
-            <![CDATA[
-                %{idp.attribute.resolver.LDAP.searchFilter}
-            ]]>
-        </FilterTemplate>
-    </DataConnector>
+
+<DataConnector id="ScriptedAttributeConnector" xsi:type="ScriptedDataConnector">
+    <Script><![CDATA[
+                logger = Java.type("org.slf4j.LoggerFactory").getLogger("net.shibboleth.idp.attribute");
+
+                var IdPAttribute = Java.type("net.shibboleth.idp.attribute.IdPAttribute");
+                var HashSet = Java.type("java.util.HashSet");
+                var StringAttributeValue = Java.type("net.shibboleth.idp.attribute.StringAttributeValue");
+                logger.info(subjects.length);
+                var subject = subjects[0];
+                var principals = subject.getPrincipals();
+                logger.info(principals);
+                var iterator = principals.iterator();
+                var certificateData = new String();
+                while (iterator.hasNext()) {
+                       var principal = (iterator.next()).toString();
+                       if (principal.contains("CN")){
+                            logger.info("CERTIFICATE DATA:"+principal);
+                            certificateData = principal;
+
+                       }
+                }
+                var certDataArray = certificateData.split(",");
+                var cn = certDataArray[0].split("=")[1];
+                logger.info("CN:"+cn);
+                var fiscalNumber = certDataArray[2].split("=")[1].substring(1,17);
+                logger.info("FISCAL NUMBER:"+fiscalNumber);
+
+
+                var attr = new IdPAttribute("fiscalNumber");
+                var set = new HashSet();
+                set.add(new StringAttributeValue(fiscalNumber));
+                attr.setValues(set);
+                connectorResults.add(attr);
+                attr = new IdPAttribute("uid");
+                set = new HashSet();
+                set.add(new StringAttributeValue(cn+"_user"));
+                attr.setValues(set);
+                connectorResults.add(attr);
+                attr = new IdPAttribute("cn");
+                set = new HashSet();
+                set.add(new StringAttributeValue(cn));
+                attr.setValues(set);
+                connectorResults.add(attr);
+
+    ]]></Script>
+</DataConnector>
+
+
 </AttributeResolver>
