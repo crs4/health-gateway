@@ -15,11 +15,12 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import React from 'react'
-import Profile from './profile'
-import DjangoCSRFToken from 'django-react-csrftoken'
+import React from 'react';
+import Profile from './profile';
+import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
 import {Button, Modal, ModalHeader, ModalBody, ModalFooter} from 'reactstrap';
+import moment from "moment";
 
 class RevokeConsents extends React.Component {
 
@@ -148,10 +149,10 @@ class ConfirmConsents extends React.Component {
                             <Profile data={c.profile}/>
                         </td>
                         <td className="table_responsive__cell" data-title="Start Validity">
-                            {c.start_validity}
+                            {moment(c.start_validity).format('L')}
                         </td>
                         <td className="table_responsive__cell" data-title="End Validity">
-                            {c.expire_validity}
+                            {moment(c.expire_validity).format('L')}
                         </td>
                         <td className="table_responsive__cell" data-title="Legal Notice">
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut

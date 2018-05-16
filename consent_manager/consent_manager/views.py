@@ -159,7 +159,6 @@ class ConsentView(ViewSet):
         failed = []
         for confirm_id in confirm_ids:
             try:
-                print(confirm_id)
                 cc = ConfirmationCode.objects.get(code=confirm_id)
             except ConfirmationCode.DoesNotExist:
                 logger.info('Consent associated to confirm_id {} not found'.format(confirm_id))
@@ -183,7 +182,6 @@ class ConsentView(ViewSet):
                         c.save()
                         confirmed.append(confirm_id)
                         logger.info('consent with id {} confirmed'.format(c))
-        print(confirmed)
         return Response({'confirmed': confirmed, 'failed': failed}, status=status.HTTP_200_OK)
 
 

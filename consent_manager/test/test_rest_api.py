@@ -612,7 +612,6 @@ class TestAPI(TestCase):
             }
             res = self._add_consent(data=json.dumps(data))
             confirm_ids.append(res.json()['confirm_id'])
-        print(confirm_ids)
         self.client.login(username='duck', password='duck')
         data = {
             'confirm_ids': confirm_ids
