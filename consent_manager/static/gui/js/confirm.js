@@ -23,13 +23,18 @@ import NotificationManager from './notificationManager';
 
 class Confirm extends React.Component {
 
-    renderConsents(data) {
+    constructor(props) {
+        super(props);
         const params = new URLSearchParams(this.props.location.search);
-        const callbackUrl = params.get('callback_url');
+        this.confirmId = params.getAll('confirm_id');
+        this.callbackUrl = params.get('callback_url');
+    }
+
+    renderConsents(data) {
         return (
             <ConfirmConsents data={data}
                              notifier={this.notifier}
-                             callbackUrl={callbackUrl}/>
+                             callbackUrl={this.callbackUrl}/>
         )
     }
 
@@ -38,12 +43,10 @@ class Confirm extends React.Component {
     }
 
     render() {
-        const params = new URLSearchParams(this.props.location.search);
-        const confirmId = params.getAll('confirm_id');
         return (
             <div>
                 <DataProvider endpoint={'/v1/consents/find/'}
-                              params={{'confirm_id': confirmId}}
+                              params={{'confirm_id': this.confirmId}}
                               render={data => this.renderConsents(data)}/>
                 <NotificationManager ref="notificationManager"/>
             </div>

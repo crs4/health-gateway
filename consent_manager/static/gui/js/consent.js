@@ -19,8 +19,6 @@ import React from 'react'
 import Profile from './profile'
 import DjangoCSRFToken from 'django-react-csrftoken'
 import axios from 'axios';
-import Redirect from 'react-router-dom'
-
 
 class RevokeConsents extends React.Component {
 
@@ -69,14 +67,14 @@ class RevokeConsents extends React.Component {
                     </tbody>
                 </table>
                 <button type="button" className="btn btn-primary"
-                        disabled={!this.isEnabled()}
+                        disabled={!this.canSubmit()}
                         onClick={this.sendRevoke.bind(this)}>Revoke Consents
                 </button>
             </form>
         )
     }
 
-    isEnabled() {
+    canSubmit() {
         return this.state.revokeList.length > 0;
     }
 
@@ -127,6 +125,7 @@ class ConfirmConsents extends React.Component {
         this.state = {
             consents: this.props.data.slice(),
             confirmedList: [],
+            sent: false
         };
     }
 
@@ -134,7 +133,7 @@ class ConfirmConsents extends React.Component {
         const consents = this.state.consents;
         const rows = consents.map((c, i) => {
             if (c.status === "PE") {
-                const checked = this.state.confirmedList.includes(c.consent_id);
+                const checked = this.state.confirmedList.includes(c.confirm_id);
                 return (
                     <tr key={i} className="table_responsive__row">
                         <td className="table_responsive__cell"  data-title="Destination">
@@ -152,8 +151,12 @@ class ConfirmConsents extends React.Component {
                         <td className="table_responsive__cell" data-title="End Validity">
                             {c.expire_validity}
                         </td>
-                        <td className="table_responsive__cell" data-title="Confirm?">
-                            <input type="checkbox" name="confirm_list" value={c.consent_id}
+                        <td className="table_responsive__cell" data-title="Legal Notice">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                        </td>
+                        <td className="table_responsive__cell" data-title="Confirm">
+                            <input type="checkbox" name="confirm_list" value={c.confirm_id}
+                                   disabled={this.state.sent}
                                    checked={checked} onChange={this.checkBoxHandler.bind(this)}/>
                         </td>
                     </tr>
@@ -171,7 +174,13 @@ class ConfirmConsents extends React.Component {
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">Data Profile</th>
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">Start Validity</th>
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">End Validity</th>
-                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Confirm?</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Legal notice</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">
+                            <input type="checkbox" name="confirm_all"
+                                   disabled={this.state.sent}
+                                   checked={this.state.confirmedList.length === this.state.consents.length}
+                                   onChange={this.checkBoxAllHandler.bind(this)}/>
+                        </th>
                     </tr>
                     </thead>
                     <tbody className="table_responsive__body">
@@ -179,7 +188,7 @@ class ConfirmConsents extends React.Component {
                     </tbody>
                 </table>
                 <button type="button" className="btn btn-primary"
-                        disabled={!this.isEnabled()}
+                        disabled={!this.canSubmit()}
                         onClick={this.sendConfirmed.bind(this)}>
                     Confirm Consents
                 </button>
@@ -187,8 +196,8 @@ class ConfirmConsents extends React.Component {
         )
     }
 
-    isEnabled() {
-        return this.state.confirmedList.length > 0;
+    canSubmit() {
+        return this.state.confirmedList.length > 0 && !this.state.sent ;
     }
 
     checkBoxHandler(event) {
@@ -197,9 +206,24 @@ class ConfirmConsents extends React.Component {
             confirmedList = this.state.confirmedList.concat(event.target.value);
         }
         else {
-            confirmedList = this.state.confirmedList.filter(consentId => {
-                return consentId !== event.target.value;
+            confirmedList = this.state.confirmedList.filter(confirmId => {
+                return confirmId !== event.target.value;
             });
+        }
+        this.setState({
+            confirmedList: confirmedList
+        })
+    }
+
+    checkBoxAllHandler(event) {
+        let confirmedList;
+        if (event.target.checked) {
+            confirmedList = this.state.consents.map((consent) => {
+                return consent.confirm_id;
+            });
+        }
+        else {
+            confirmedList = [];
         }
         this.setState({
             confirmedList: confirmedList
@@ -208,25 +232,21 @@ class ConfirmConsents extends React.Component {
 
     sendConfirmed() {
         axios.post('/v1/consents/confirm/', {
-            consents: this.state.confirmedList,
+            confirm_ids: this.state.confirmedList,
         }, {
             withCredentials: true,
             xsrfCookieName: 'csrftoken',
             xsrfHeaderName: 'X-CSRFToken'
         }).then((response) => {
-            const newConsents = this.state.consents.filter((consent) => {
-                return !response.data.confirmed.includes(consent.consent_id);
-            });
-
+            const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
+            const callback = this.props.callbackUrl + '?success=true&consent_confirm_id=' + confirmedParams;
+            this.props.notifier.success('Consents confirmed correctly', () => {window.location = callback});
             this.setState({
-                consents: newConsents,
-                confirmedList: []
+                confirmedList: [],
+                sent: true
             });
-            this.props.notifier.success('Consents confirmed correctly');
-
         }).catch((error) => {
             this.props.notifier.error('Erros while revoking consents');
-
         });
     }
 }

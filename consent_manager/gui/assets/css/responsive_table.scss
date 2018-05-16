@@ -96,7 +96,7 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
   &__cell[data-title]:before {
     display: inline-block;
     min-width: $table-wrapped-header;
-    content: attr(data-title) ":";
+    content: attr(data-title);
     font-weight: bold;
 
     // Desktop
@@ -129,10 +129,7 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
   }
 
   &__cell--spanned {
-    //@include breakpoint(medium) {
     font-size: 1.2rem;
-    //font-weight: bold;
-    //}
   }
 
 }

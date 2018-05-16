@@ -8,23 +8,18 @@ class NotificationManager extends React.Component {
     }
 
     render() {
-        const style = {
-            Containers: { // Override the notification item
-                DefaultStyle: { // Applied to every notification, regardless of the notification level
-                    top: '50px'
-                }
-            }
-        };
         return <NotificationSystem ref="notificationSystem"/>
     }
 
-    success(message) {
+    success(message, callback) {
         this.notificationSystem.addNotification({
             title: 'Success',
             message: message,
             level: 'success',
             position: 'tc',
-            autoDismiss: 3
+            autoDismiss: 2,
+            dismissible: true,
+            onRemove: callback
         })
     }
 
@@ -34,7 +29,8 @@ class NotificationManager extends React.Component {
             message: message,
             level: 'error',
             position: 'tc',
-            autoDismiss: 3
+            autoDismiss: 2,
+            dismissible: true
         })
     }
 }
