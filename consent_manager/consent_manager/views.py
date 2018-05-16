@@ -31,7 +31,7 @@ from consent_manager import serializers, ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode
 from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
 
-logger = get_logger('consen_manager')
+logger = get_logger('consent_manager')
 
 
 class ConsentView(ViewSet):
@@ -135,29 +135,55 @@ class ConsentView(ViewSet):
             return Response({}, status.HTTP_404_NOT_FOUND)
         logger.debug('Found {} consents'.format(len(ccs)))
         logger.debug('Checking validity'.format(len(ccs)))
-        consents = [cc.consent for cc in ccs if cc.check_validity()]
+        consents = []
+        for cc in ccs:
+            if cc.check_validity():
+                serializer = serializers.ConsentSerializer(cc.consent)
+                consent_data = serializer.data.copy()
+                consent_data.update({'confirm_id': cc.code})
+                del consent_data['consent_id']
+                consents.append(consent_data)
         logger.info('Found {} valid consents'.format(len(consents)))
-        serializer = serializers.ConsentSerializer(consents, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(consents, status=status.HTTP_200_OK)
 
     def confirm(self, request):
-        try:
-            consents = request.data['consents']
-        except KeyError:
+        logger.info('Received consent confirmation request')
+        if 'confirm_ids' not in request.data:
+            logger.info('Missing the consents query params. Returning error')
             return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
+
+        confirm_ids = request.data['confirm_ids']
+        logger.info('Specified the following consents: {}'.format(', '.join(confirm_ids)))
 
         confirmed = []
         failed = []
-        for consent in consents:
+        for confirm_id in confirm_ids:
             try:
-                c = Consent.objects.get(consent_id=consent, status=Consent.PENDING,
-                                        person_id=request.user.fiscalNumber)
-            except Consent.DoesNotExist:
-                failed.append(consent)
+                print(confirm_id)
+                cc = ConfirmationCode.objects.get(code=confirm_id)
+            except ConfirmationCode.DoesNotExist:
+                logger.info('Consent associated to confirm_id {} not found'.format(confirm_id))
+                failed.append(confirm_id)
             else:
-                c.status = Consent.ACTIVE
-                c.save()
-                confirmed.append(c.consent_id)
+                if not cc.check_validity():
+                    logger.info('Confirmation expired'.format(confirm_id))
+                    failed.append(confirm_id)
+                else:
+                    c = cc.consent
+                    logger.info('consent_id is {}'.format(c.consent_id))
+                    if c.status != Consent.PENDING:
+                        logger.info('consent not in PENDING status. Cannot confirm it')
+                        failed.append(confirm_id)
+                    elif c.person_id != request.user.fiscalNumber:
+                        logger.info('consent found but it is not of the logged user. Cannot confirm it')
+                        failed.append(confirm_id)
+                    else:
+                        c.status = Consent.ACTIVE
+                        c.confirmed = datetime.now()
+                        c.save()
+                        confirmed.append(confirm_id)
+                        logger.info('consent with id {} confirmed'.format(c))
+        print(confirmed)
         return Response({'confirmed': confirmed, 'failed': failed}, status=status.HTTP_200_OK)
 
 
