@@ -29,7 +29,9 @@ from rest_framework.viewsets import ViewSet
 
 from consent_manager import serializers, ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode
-from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope
+from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
+
+logger = get_logger('consen_manager')
 
 
 class ConsentView(ViewSet):
@@ -123,14 +125,18 @@ class ConsentView(ViewSet):
         :return:
         """
         if 'confirm_id' not in request.query_params:
+            logger.debug('confirm_id paramater not preent')
             return Response({'error': ERRORS_MESSAGE['MISSING_PARAM']}, status.HTTP_400_BAD_REQUEST)
 
         confirm_ids = request.GET.getlist('confirm_id')
+        logger.info('Called /v1/consents/find/ with query paramaters {}'.format(request.query_params))
         ccs = ConfirmationCode.objects.filter(code__in=confirm_ids, consent__status=Consent.PENDING)
         if not ccs:
             return Response({}, status.HTTP_404_NOT_FOUND)
-
+        logger.debug('Found {} consents'.format(len(ccs)))
+        logger.debug('Checking validity'.format(len(ccs)))
         consents = [cc.consent for cc in ccs if cc.check_validity()]
+        logger.info('Found {} valid consents'.format(len(consents)))
         serializer = serializers.ConsentSerializer(consents, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -158,7 +164,7 @@ class ConsentView(ViewSet):
 @require_http_methods(["GET", "POST"])
 @login_required
 def confirm_consent(request):
-    return render(request, 'index.html', context={'nav_bar': False})
+    return render(request, 'index.html', context={'nav_bar': True})
     # try:
     #     if request.method == 'GET':
     #         confirm_ids = request.GET.getlist('confirm_id')

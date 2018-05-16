@@ -18,6 +18,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
+import qs from 'qs'
 
 class DataProvider extends React.Component {
     constructor() {
@@ -30,9 +31,11 @@ class DataProvider extends React.Component {
     }
 
     componentDidMount() {
-        console.log(this.props.params);
         axios.get(this.props.endpoint, {
             params: this.props.params !== undefined ? this.props.params : {},
+            paramsSerializer: function(params) {
+               return qs.stringify(params, {arrayFormat: 'repeat'})
+            },
             withCredentials: true,
         }).then((response) => {
             this.setState({data: response.data, loaded: true});

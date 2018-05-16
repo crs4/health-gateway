@@ -24,6 +24,7 @@ import Confirm from "./confirm";
 
 require('../css/yeti/bootstrap.min.css');
 require('../css/custom.css');
+require('../css/responsive_table.scss');
 
 const wrapper = document.getElementById("content");
 wrapper ? ReactDOM.render(

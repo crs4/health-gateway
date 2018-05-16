@@ -19,6 +19,7 @@ import React from 'react'
 import Profile from './profile'
 import DjangoCSRFToken from 'django-react-csrftoken'
 import axios from 'axios';
+import Redirect from 'react-router-dom'
 
 
 class RevokeConsents extends React.Component {
@@ -135,15 +136,23 @@ class ConfirmConsents extends React.Component {
             if (c.status === "PE") {
                 const checked = this.state.confirmedList.includes(c.consent_id);
                 return (
-                    <tr key={i} className={i % 2 === 0 ? "table-light" : "table-secondary"}>
-                        <td>{c.source.name}</td>
-                        <td>{c.destination.name}</td>
-                        <td>
+                    <tr key={i} className="table_responsive__row">
+                        <td className="table_responsive__cell"  data-title="Destination">
+                            {c.destination.name}
+                        </td>
+                        <td className="table_responsive__cell" data-title="Source">
+                            {c.source.name}
+                        </td>
+                        <td className="table_responsive__cell" data-title="Data Profile">
                             <Profile data={c.profile}/>
                         </td>
-                        <td>{c.start_validity}</td>
-                        <td>{c.expire_validity}</td>
-                        <td>
+                        <td className="table_responsive__cell" data-title="Start Validity">
+                            {c.start_validity}
+                        </td>
+                        <td className="table_responsive__cell" data-title="End Validity">
+                            {c.expire_validity}
+                        </td>
+                        <td className="table_responsive__cell" data-title="Confirm?">
                             <input type="checkbox" name="confirm_list" value={c.consent_id}
                                    checked={checked} onChange={this.checkBoxHandler.bind(this)}/>
                         </td>
@@ -154,19 +163,19 @@ class ConfirmConsents extends React.Component {
         return (
             <form>
                 <DjangoCSRFToken/>
-                <table className="table">
-                    <thead>
-                    <tr className="table-active">
-                        <th scope="col">Source</th>
-                        <th scope="col">Destination</th>
-                        <th scope="col">Data Profile</th>
-                        <th scope="col">Start Date</th>
-                        <th scope="col">End Date</th>
-                        <th scope="col">Check</th>
+                <table className="sheru-cp-section table_responsive">
+                    <thead className="table_responsive__head">
+                    <tr className="table_responsive__row">
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Destination</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Source</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Data Profile</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Start Validity</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">End Validity</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Confirm?</th>
                     </tr>
                     </thead>
-                    <tbody>
-                    {rows}
+                    <tbody className="table_responsive__body">
+                        {rows}
                     </tbody>
                 </table>
                 <button type="button" className="btn btn-primary"
@@ -198,30 +207,28 @@ class ConfirmConsents extends React.Component {
     }
 
     sendConfirmed() {
+        axios.post('/v1/consents/confirm/', {
+            consents: this.state.confirmedList,
+        }, {
+            withCredentials: true,
+            xsrfCookieName: 'csrftoken',
+            xsrfHeaderName: 'X-CSRFToken'
+        }).then((response) => {
+            const newConsents = this.state.consents.filter((consent) => {
+                return !response.data.confirmed.includes(consent.consent_id);
+            });
 
+            this.setState({
+                consents: newConsents,
+                confirmedList: []
+            });
+            this.props.notifier.success('Consents confirmed correctly');
+
+        }).catch((error) => {
+            this.props.notifier.error('Erros while revoking consents');
+
+        });
     }
-    //     axios.post('/v1/consents/revoke/', {
-    //         consents: this.state.confirmedList,
-    //     }, {
-    //         withCredentials: true,
-    //         xsrfCookieName: 'csrftoken',
-    //         xsrfHeaderName: 'X-CSRFToken'
-    //     }).then((response) => {
-    //         const newConsents = this.state.consents.filter((consent) => {
-    //             return !response.data.revoked.includes(consent.consent_id);
-    //         });
-    //
-    //         this.setState({
-    //             consents: newConsents,
-    //             revokeList: []
-    //         });
-    //         this.props.notifier.success('Consents revoked correctly');
-    //
-    //     }).catch((error) => {
-    //         this.props.notifier.error('Erros while revoking consents');
-    //
-    //     });
-    // }
 }
 
 export {ConfirmConsents, RevokeConsents};

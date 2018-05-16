@@ -24,7 +24,9 @@ from django.utils import timezone
 from oauth2_provider.models import AbstractApplication
 
 from consent_manager.settings import REQUEST_VALIDITY_SECONDS, DEFAULT_SCOPES
-from hgw_common.utils import generate_id
+from hgw_common.utils import generate_id, get_logger
+
+logger = get_logger('consent_manager')
 
 
 class Consent(models.Model):

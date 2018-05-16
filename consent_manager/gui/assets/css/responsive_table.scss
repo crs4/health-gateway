@@ -1,0 +1,138 @@
+// Mixing to make breakpoints a little easier. Can be expanded with any breakpoints as needed.
+@mixin breakpoint($point) {
+  @media (min-width: 48rem) {
+    @content ;
+  }
+}
+
+// Variables ===================================================================
+
+// Namespace so that it's easy to use your own table namespace
+$namespace: "table_responsive";
+$table-wrapped-header: 120px;
+$table-cell-padding: 6px;
+$color-table: #008cba !default;
+$color-table-body: #eee;
+$font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+
+.#{$namespace} {
+
+  transition: 0.5s;
+  padding-bottom: 0;
+  width: 100%;
+  font-family: $font-family-sans-serif;
+  margin-bottom: 10px;
+
+  &__head {
+    display: none;
+    visibility: hidden;
+    color: #ffffff;
+
+    // Desktop
+    @include breakpoint(medium) {
+      width: 100%;
+      display: table-header-group;
+      visibility: visible;
+    }
+  }
+
+  &__body,
+  &__row,
+  &__cell {
+    display: block;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+
+    // table cells in the table main header row
+    .#{$namespace}__head & {
+
+      // desktop
+      @include breakpoint(medium) {
+        padding: 0.75rem;
+        font-size: 0.8203125rem;
+        background: $color-table;
+        border: 1 solid darken($color-table, 5%);
+      }
+    }
+  }
+
+  &__row {
+    margin-bottom: 10px;
+
+    // Desktop
+    @include breakpoint(medium) {
+      display: table-row;
+      width: 100%;
+
+      .#{$namespace}__cell {
+        display: table-cell;
+      }
+    }
+
+    background-color: $color-table-body;
+
+    &:nth-last-child(1) {
+      margin-bottom: 0;
+    }
+  }
+
+  &__cell {
+    padding: $table-cell-padding;
+    transition: 1s;
+
+    // All cells that belong to the table body
+    .#{$namespace}__body & {
+      text-align: left;
+      padding: 10px;
+      border: 1px solid darken($color-table-body, 5%);
+    }
+  }
+
+  &__body {
+    display: table-row-group;
+  }
+
+  &__cell[data-title]:before {
+    display: inline-block;
+    min-width: $table-wrapped-header;
+    content: attr(data-title) ":";
+    font-weight: bold;
+
+    // Desktop
+    @include breakpoint(medium) {
+      display: none;
+      content: "";
+    }
+  }
+
+  &__cell:empty {
+    display: none;
+
+    // Desktop
+    @include breakpoint(medium) {
+      display: table-cell;
+    }
+  }
+
+  &__cell--head {
+
+    // Desktop
+    @include breakpoint(medium) {
+
+      &[data-title]:before {
+        display: none;
+        content: "";
+      }
+    }
+
+  }
+
+  &__cell--spanned {
+    //@include breakpoint(medium) {
+    font-size: 1.2rem;
+    //font-weight: bold;
+    //}
+  }
+
+}
