@@ -35,6 +35,7 @@
     "react-notifications": "^1.4.3",
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
+    "reactstrap": "^6.0.1",
     "sass-loader": "^7.0.1",
     "tablesaw": "^3.0.9",
     "url-search-params-polyfill": "^4.0.0"

@@ -19,6 +19,7 @@ import React from 'react'
 import Profile from './profile'
 import DjangoCSRFToken from 'django-react-csrftoken'
 import axios from 'axios';
+import {Button, Modal, ModalHeader, ModalBody, ModalFooter} from 'reactstrap';
 
 class RevokeConsents extends React.Component {
 
@@ -125,7 +126,8 @@ class ConfirmConsents extends React.Component {
         this.state = {
             consents: this.props.data.slice(),
             confirmedList: [],
-            sent: false
+            sent: false,
+            modal: false
         };
     }
 
@@ -136,7 +138,7 @@ class ConfirmConsents extends React.Component {
                 const checked = this.state.confirmedList.includes(c.confirm_id);
                 return (
                     <tr key={i} className="table_responsive__row">
-                        <td className="table_responsive__cell"  data-title="Destination">
+                        <td className="table_responsive__cell" data-title="Destination">
                             {c.destination.name}
                         </td>
                         <td className="table_responsive__cell" data-title="Source">
@@ -152,7 +154,11 @@ class ConfirmConsents extends React.Component {
                             {c.expire_validity}
                         </td>
                         <td className="table_responsive__cell" data-title="Legal Notice">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+                            labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                            laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
+                            voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+                            cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
                         </td>
                         <td className="table_responsive__cell" data-title="Confirm">
                             <input type="checkbox" name="confirm_list" value={c.confirm_id}
@@ -171,10 +177,14 @@ class ConfirmConsents extends React.Component {
                     <tr className="table_responsive__row">
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">Destination</th>
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">Source</th>
-                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Data Profile</th>
-                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Start Validity</th>
-                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">End Validity</th>
-                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Legal notice</th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Data Profile
+                        </th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Start Validity
+                        </th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">End Validity
+                        </th>
+                        <th className="table_responsive__cell table_responsive__cell--head" scope="col">Legal notice
+                        </th>
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">
                             <input type="checkbox" name="confirm_all"
                                    disabled={this.state.sent}
@@ -184,20 +194,29 @@ class ConfirmConsents extends React.Component {
                     </tr>
                     </thead>
                     <tbody className="table_responsive__body">
-                        {rows}
+                    {rows}
                     </tbody>
                 </table>
-                <button type="button" className="btn btn-primary"
-                        disabled={!this.canSubmit()}
-                        onClick={this.sendConfirmed.bind(this)}>
-                    Confirm Consents
-                </button>
+                <Button color="primary"
+                        onClick={this.toggle.bind(this)}
+                        disabled={!this.canSubmit()}>Confirm Consents</Button>
+                <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
+                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure</ModalHeader>
+                    <ModalBody>
+                        Are you sure you want to authorize data transfer from the source to the selected
+                        destinations?
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button color="primary" onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}
+                        <Button color="secondary" onClick={this.toggle.bind(this)}>Cancel</Button>
+                    </ModalFooter>
+                </Modal>
             </form>
         )
     }
 
     canSubmit() {
-        return this.state.confirmedList.length > 0 && !this.state.sent ;
+        return this.state.confirmedList.length > 0 && !this.state.sent;
     }
 
     checkBoxHandler(event) {
@@ -230,7 +249,14 @@ class ConfirmConsents extends React.Component {
         })
     }
 
+    toggle() {
+        this.setState({
+            modal: !this.state.modal
+        })
+    }
+
     sendConfirmed() {
+        this.toggle();
         axios.post('/v1/consents/confirm/', {
             confirm_ids: this.state.confirmedList,
         }, {
@@ -240,7 +266,9 @@ class ConfirmConsents extends React.Component {
         }).then((response) => {
             const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
             const callback = this.props.callbackUrl + '?success=true&consent_confirm_id=' + confirmedParams;
-            this.props.notifier.success('Consents confirmed correctly', () => {window.location = callback});
+            this.props.notifier.success('Consents confirmed correctly', () => {
+                window.location = callback
+            });
             this.setState({
                 confirmedList: [],
                 sent: true
