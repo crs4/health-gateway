@@ -214,7 +214,8 @@ class ConfirmConsents extends React.Component {
                     {rows}
                     </tbody>
                 </table>
-                <Button color="primary"
+                <Button id='btn-confirm-consents'
+                        color='primary'
                         onClick={this.toggle.bind(this)}
                         disabled={!this.canSubmit()}>Confirm Consents</Button>
                 <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
@@ -224,8 +225,8 @@ class ConfirmConsents extends React.Component {
                         destinations?
                     </ModalBody>
                     <ModalFooter>
-                        <Button color="primary" onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}
-                        <Button color="secondary" onClick={this.toggle.bind(this)}>Cancel</Button>
+                        <Button color="primary" id="btn-modal-confirm-consents" onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}
+                        <Button color="secondary" id="btn-modal-cancel-consents" onClick={this.toggle.bind(this)}>Cancel</Button>
                     </ModalFooter>
                 </Modal>
             </form>
@@ -305,8 +306,8 @@ class ConfirmConsents extends React.Component {
         }).then((response) => {
             const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
             const callback = this.props.callbackUrl + '?success=true&consent_confirm_id=' + confirmedParams;
-            this.props.notifier.success('Consents confirmed correctly', () => {
-                // window.location = callback
+            this.props.notifier.success('Consents confirmed correctly. Redirecting in 2 seconds', () => {
+                window.location = callback
             });
             this.setState({
                 confirmed: [],
