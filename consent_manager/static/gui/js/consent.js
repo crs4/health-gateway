@@ -24,6 +24,8 @@ import DatePicker from 'react-datepicker'
 import moment from "moment";
 import {arrayToObject, iterate} from './utils'
 
+moment.locale('it');
+
 class RevokeConsents extends React.Component {
 
     constructor(props) {
@@ -184,8 +186,6 @@ class ConfirmConsents extends React.Component {
                 )
             }
         }
-        console.log(checkedCounter);
-        console.log(Object.keys(this.state.consents).length);
         return (
             <form>
                 <DjangoCSRFToken/>
