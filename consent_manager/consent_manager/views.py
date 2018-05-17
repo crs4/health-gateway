@@ -148,16 +148,16 @@ class ConsentView(ViewSet):
 
     def confirm(self, request):
         logger.info('Received consent confirmation request')
-        if 'confirm_ids' not in request.data:
+        if 'consents' not in request.data:
             logger.info('Missing the consents query params. Returning error')
             return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
 
-        confirm_ids = request.data['confirm_ids']
-        logger.info('Specified the following consents: {}'.format(', '.join(confirm_ids)))
+        consents = request.data['consents']
+        logger.info('Specified the following consents: {}'.format(', '.join(consents.keys())))
 
         confirmed = []
         failed = []
-        for confirm_id in confirm_ids:
+        for confirm_id, consent_data in consents.items():
             try:
                 cc = ConfirmationCode.objects.get(code=confirm_id)
             except ConfirmationCode.DoesNotExist:
@@ -179,6 +179,10 @@ class ConsentView(ViewSet):
                     else:
                         c.status = Consent.ACTIVE
                         c.confirmed = datetime.now()
+                        if 'start_validity' in consent_data:
+                            c.start_validity = consent_data['start_validity']
+                        if 'expire_validity' in consent_data:
+                            c.expire_validity = consent_data['expire_validity']
                         c.save()
                         confirmed.append(confirm_id)
                         logger.info('consent with id {} confirmed'.format(c))

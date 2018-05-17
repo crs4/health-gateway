@@ -603,7 +603,7 @@ class TestAPI(TestCase):
         """
 
         # First create some consents
-        confirm_ids = []
+        consents = {}
         for i in range(4):
             data = self.consent_data.copy()
             data['source'] = {
@@ -611,10 +611,13 @@ class TestAPI(TestCase):
                 'name': 'source_{}_name'.format(i)
             }
             res = self._add_consent(data=json.dumps(data))
-            confirm_ids.append(res.json()['confirm_id'])
+            consents[res.json()['confirm_id']] = {
+                'start_validity': '2018-03-0{}T10:05:05.123000Z'.format(i+1),
+                'expire_validity': '2019-03-0{}T10:05:05.123000Z'.format(i+1),
+            }
         self.client.login(username='duck', password='duck')
         data = {
-            'confirm_ids': confirm_ids
+            'consents': consents
         }
         res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
                                content_type='application/json')
@@ -622,26 +625,28 @@ class TestAPI(TestCase):
         self.assertEquals(res.status_code, 200)
         self.assertEquals(len(res.json()['confirmed']), 4)
         self.assertEquals(len(res.json()['failed']), 0)
-        for c in confirm_ids:
-            self.assertEqual(ConfirmationCode.objects.get(code=c).consent.status, Consent.ACTIVE)
+        for confirm_id, consent_data in consents.items():
+            consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
+            self.assertEqual(consent_obj.status, Consent.ACTIVE)
+            self.assertEqual(consent_obj.start_validity.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                             consent_data['start_validity'])
+            self.assertEqual(consent_obj.expire_validity.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                             consent_data['expire_validity'])
 
     def test_confirm_consent_unauthorized(self):
         res = self._add_consent()
-        # Manually changing it to ACTIVE
-        consent_id = res.json()['consent_id']
-
-        res = self.client.post('/v1/consents/confirm/', data=json.dumps([consent_id]),
+        consent = {res.json()['confirm_id']: {}}
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
 
     def test_confirm_consent_forbidden(self):
         res = self._add_consent()
-        # Manually changing it to ACTIVE
-        consent_id = res.json()['consent_id']
 
+        consent = {res.json()['confirm_id']: {}}
         headers = self._get_oauth_header(0)
-        res = self.client.post('/v1/consents/confirm/', data=json.dumps([consent_id]),
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
         self.assertDictEqual(res.json(), {'detail': 'You do not have permission to perform this action.'})
@@ -662,8 +667,9 @@ class TestAPI(TestCase):
         4 consent, one for every status (PENDING, ACTIVE, REVOKED, NOT_VALID). It checks that only the one that was in
         PENDING status is returned and is in ACTIVE status
         """
-        confirm_ids = []
+        consents = {}
         statuses = [Consent.PENDING, Consent.ACTIVE, Consent.REVOKED, Consent.NOT_VALID]
+        confirm_ids = []
         for i, s in enumerate(statuses):
             data = self.consent_data.copy()
             data['source'] = {
@@ -671,16 +677,19 @@ class TestAPI(TestCase):
                 'name': 'source_{}_name'.format(i)
             }
             res = self._add_consent(data=json.dumps(data))
-            confirm_ids.append(res.json()['confirm_id'])
-            # Manually changing it to ACTIVE
+            consents[res.json()['confirm_id']] = {
+                'start_validity': '2018-03-0{}T10:05:05.123000Z'.format(i + 1),
+                'expire_validity': '2019-03-0{}T10:05:05.123000Z'.format(i + 1),
+            }
             c = Consent.objects.get(consent_id=res.json()['consent_id'])
             c.status = s
             c.save()
+            confirm_ids.append(res.json()['confirm_id'])
 
         self.client.login(username='duck', password='duck')
 
         data = {
-            'confirm_ids': confirm_ids
+            'consents': consents
         }
         res = self.client.post('/v1/consents/confirm/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
@@ -688,8 +697,8 @@ class TestAPI(TestCase):
         self.assertEqual(len(res.json()['failed']), 3)
         self.assertListEqual(res.json()['failed'], confirm_ids[1:])
         statuses[0] = Consent.ACTIVE
-        for i, c in enumerate(confirm_ids):
-            c = ConfirmationCode.objects.get(code=c).consent
+        for i, confirm_id in enumerate(confirm_ids):
+            c = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(c.status, statuses[i])
 
     def test_confirm_consent_wrong_user(self):
@@ -698,12 +707,10 @@ class TestAPI(TestCase):
         """
         res = self._add_consent()
         confirm_id = res.json()['confirm_id']
+        consent = {confirm_id: {}}
 
         self.client.login(username='paperone', password='paperone')
-        data = {
-            'confirm_ids': [confirm_id]
-        }
-        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
 
         self.assertEquals(res.status_code, 200)
@@ -719,13 +726,12 @@ class TestAPI(TestCase):
         """
         res = self._add_consent()
         confirm_id = res.json()['confirm_id']
+        consent = {confirm_id: {}}
+
         c = ConfirmationCode.objects.get(code=confirm_id)
         c.validity = datetime.now() - timedelta(hours=10)
         self.client.login(username='paperone', password='paperone')
-        data = {
-            'confirm_ids': [confirm_id]
-        }
-        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
 
         self.assertEquals(res.status_code, 200)
@@ -740,11 +746,9 @@ class TestAPI(TestCase):
         Tests error when confirming an unknwown consent
         """
         confirm_id = 'unknown'
+        consent = {confirm_id: {}}
         self.client.login(username='duck', password='duck')
-        data = {
-            'confirm_ids': [confirm_id]
-        }
-        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
 
         self.assertEquals(res.status_code, 200)

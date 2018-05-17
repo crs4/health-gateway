@@ -20,7 +20,9 @@ import Profile from './profile';
 import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
 import {Button, Modal, ModalHeader, ModalBody, ModalFooter} from 'reactstrap';
+import DatePicker from 'react-datepicker'
 import moment from "moment";
+import {arrayToObject, iterate} from './utils'
 
 class RevokeConsents extends React.Component {
 
@@ -125,20 +127,22 @@ class ConfirmConsents extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            consents: this.props.data.slice(),
-            confirmedList: [],
+            consents: arrayToObject(this.props.data, 'confirm_id', {'checked': false}),
             sent: false,
             modal: false
         };
     }
 
     render() {
-        const consents = this.state.consents;
-        const rows = consents.map((c, i) => {
+        let rows = [];
+        let checkedCounter = 0;
+        for (let [k, c] of iterate(this.state.consents)) {
+            if (c['checked'] === true) {
+                checkedCounter++;
+            }
             if (c.status === "PE") {
-                const checked = this.state.confirmedList.includes(c.confirm_id);
-                return (
-                    <tr key={i} className="table_responsive__row">
+                rows.push(
+                    <tr key={k} className="table_responsive__row">
                         <td className="table_responsive__cell" data-title="Destination">
                             {c.destination.name}
                         </td>
@@ -149,10 +153,20 @@ class ConfirmConsents extends React.Component {
                             <Profile data={c.profile}/>
                         </td>
                         <td className="table_responsive__cell" data-title="Start Validity">
-                            {moment(c.start_validity).format('L')}
+                            <DatePicker
+                                minDate={moment(c.start_validity)}
+                                maxDate={moment(c.expire_validity)}
+                                selected={moment(c.start_validity)}
+                                onChange={this.changeDate.bind(this, c.confirm_id, 'S')}
+                            />
                         </td>
                         <td className="table_responsive__cell" data-title="End Validity">
-                            {moment(c.expire_validity).format('L')}
+                            <DatePicker
+                                minDate={moment(c.start_validity)}
+                                selected={moment(c.expire_validity)}
+                                onChange={this.changeDate.bind(this, c.confirm_id, 'E')}
+                            />
+                            {/*{moment(c.expire_validity).format('L')}*/}
                         </td>
                         <td className="table_responsive__cell" data-title="Legal Notice">
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
@@ -164,12 +178,12 @@ class ConfirmConsents extends React.Component {
                         <td className="table_responsive__cell" data-title="Confirm">
                             <input type="checkbox" name="confirm_list" value={c.confirm_id}
                                    disabled={this.state.sent}
-                                   checked={checked} onChange={this.checkBoxHandler.bind(this)}/>
+                                   checked={c.checked} onChange={this.checkBoxHandler.bind(this)}/>
                         </td>
                     </tr>
                 )
             }
-        });
+        }
         return (
             <form>
                 <DjangoCSRFToken/>
@@ -189,7 +203,7 @@ class ConfirmConsents extends React.Component {
                         <th className="table_responsive__cell table_responsive__cell--head" scope="col">
                             <input type="checkbox" name="confirm_all"
                                    disabled={this.state.sent}
-                                   checked={this.state.confirmedList.length === this.state.consents.length}
+                                   checked={checkedCounter === Object.keys(this.state.consents).length}
                                    onChange={this.checkBoxAllHandler.bind(this)}/>
                         </th>
                     </tr>
@@ -217,37 +231,49 @@ class ConfirmConsents extends React.Component {
     }
 
     canSubmit() {
-        return this.state.confirmedList.length > 0 && !this.state.sent;
+        if (this.state.sent) {
+            return false;
+        }
+        else {
+            for (let [k, v] of iterate(this.state.consents)) {
+                if (v['checked'] === true) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    changeDate(confirmId, startOrEnd, dateObject) {
+        if (startOrEnd === 'S') {
+            startOrEnd = 'start'
+        }
+        else {
+            startOrEnd = 'expire'
+        }
+        let consents = Object.assign({}, this.state.consents);
+        consents[confirmId][startOrEnd + '_validity'] = dateObject.format();
+        this.setState({
+            consents: consents
+        });
     }
 
     checkBoxHandler(event) {
-        let confirmedList;
-        if (event.target.checked) {
-            confirmedList = this.state.confirmedList.concat(event.target.value);
-        }
-        else {
-            confirmedList = this.state.confirmedList.filter(confirmId => {
-                return confirmId !== event.target.value;
-            });
-        }
+        let consents = Object.assign({}, this.state.consents);
+        consents[event.target.value]['checked'] = event.target.checked;
         this.setState({
-            confirmedList: confirmedList
+            consents: consents
         })
     }
 
     checkBoxAllHandler(event) {
-        let confirmedList;
-        if (event.target.checked) {
-            confirmedList = this.state.consents.map((consent) => {
-                return consent.confirm_id;
-            });
-        }
-        else {
-            confirmedList = [];
+        let consents = Object.assign({}, this.state.consents);
+        for (let [k, v] of iterate(consents)) {
+            v['checked'] = event.target.checked;
         }
         this.setState({
-            confirmedList: confirmedList
-        })
+            consents: consents
+        });
     }
 
     toggle() {
@@ -258,8 +284,18 @@ class ConfirmConsents extends React.Component {
 
     sendConfirmed() {
         this.toggle();
+        let consentsData = {};
+        for (let [k, v] of iterate(this.state.consents)) {
+            if (v['checked'] === true) {
+                consentsData[k] = {
+                    'start_validity': v['start_validity'],
+                    'expire_validity': v['expire_validity']
+                }
+            }
+        }
+
         axios.post('/v1/consents/confirm/', {
-            confirm_ids: this.state.confirmedList,
+            consents: consentsData,
         }, {
             withCredentials: true,
             xsrfCookieName: 'csrftoken',
@@ -268,10 +304,10 @@ class ConfirmConsents extends React.Component {
             const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
             const callback = this.props.callbackUrl + '?success=true&consent_confirm_id=' + confirmedParams;
             this.props.notifier.success('Consents confirmed correctly', () => {
-                window.location = callback
+                // window.location = callback
             });
             this.setState({
-                confirmedList: [],
+                confirmed: [],
                 sent: true
             });
         }).catch((error) => {

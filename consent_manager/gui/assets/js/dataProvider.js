@@ -40,8 +40,15 @@ class DataProvider extends React.Component {
         }).then((response) => {
             this.setState({data: response.data, loaded: true});
         }).catch((error) => {
+            let data;
+            if (error.response.status === 404) {
+                data = [];
+            }
+            else {
+                data = undefined;
+            }
             // this.setState({placeholder: "Something went wrong"});
-            this.setState({data: undefined, loaded: true});
+            this.setState({data: data, loaded: true});
         });
     }
 
