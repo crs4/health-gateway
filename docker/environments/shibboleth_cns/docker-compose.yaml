@@ -1,0 +1,41 @@
+version: '3.0'
+services:
+  spid_mock_mysql:
+    build: ../../images/common/spid_mock_mysql
+    image: crs4/spid_mock_mysql
+    ports:
+      - 3306:3306
+    environment:
+      - TZ=CET
+      - MYSQL_ROOT_PASSWORD=shibboleth
+    networks:
+      default:
+        aliases:
+          - mysql.healthgateway.it
+
+  spid_mock_ldap:
+    build: ../../images/common/spid_mock_ldap
+    image: crs4/spid_mock_ldap
+    ports:
+      - 389:389
+    environment:
+      - TZ=CET
+    networks:
+      default:
+        aliases:
+          - ldap.healthgateway.it
+
+  spid_mock_shibboleth:
+    build: ../../images/common/spid_mock_shibboleth
+    image: crs4/spid_mock_shibboleth_idp
+    extra_hosts:
+      - "fakespid.healthgateway.it:127.0.1.1"
+    ports:
+      - 443:443
+    environment:
+      - TZ=CET
+    networks:
+      default:
+        aliases:
+          - fakespid.healthgateway.it
+

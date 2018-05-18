@@ -177,13 +177,24 @@ SAML_SP_NAME = cfg['saml']['sp_name']
 SAML_SP_KEY_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_key'])
 SAML_SP_CRT_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_cert'])
 SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
+#SAML_ATTRIBUTE_MAPPING = {
+#    'spidCode': ('username',),
+#    'fiscalNumber': ('fiscalNumber',)
+#}
+#SAML_AUTHN_CUSTOM_ARGS = {
+#    'attribute_consuming_service_index': '1'
+#}
+
 SAML_ATTRIBUTE_MAPPING = {
-    'spidCode': ('username',),
-    'fiscalNumber': ('fiscalNumber',)
+    'uid': ('username', ),
+    'fiscalNumber': ('fiscalNumber', )
 }
+
+
 SAML_AUTHN_CUSTOM_ARGS = {
     'attribute_consuming_service_index': '1'
 }
+
 
 # OAUTH2 CONFIGURATIONS
 SCOPES = {

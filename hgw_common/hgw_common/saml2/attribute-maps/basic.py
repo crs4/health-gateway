@@ -82,6 +82,7 @@ MAP = {
         'urn:mace:dir:attribute-def:favouriteDrink': 'favouriteDrink',
         'urn:mace:dir:attribute-def:fax': 'fax',
         'urn:mace:dir:attribute-def:federationFeideSchemaVersion': 'federationFeideSchemaVersion',
+        'urn:mace:dir:attribute-def:fiscalNumber': 'fiscalNumber',
         'urn:mace:dir:attribute-def:friendlyCountryName': 'friendlyCountryName',
         'urn:mace:dir:attribute-def:generationQualifier': 'generationQualifier',
         'urn:mace:dir:attribute-def:givenName': 'givenName',
@@ -179,8 +180,8 @@ MAP = {
         'urn:mace:dir:attribute-def:userid': 'userid',
         'urn:mace:dir:attribute-def:x121Address': 'x121Address',
         'urn:mace:dir:attribute-def:x500UniqueIdentifier': 'x500UniqueIdentifier',
-        'fiscalNumber': 'fiscalNumber',
-        'spidCode': 'spidCode',
+        #'fiscalNumber': 'fiscalNumber',
+        #'spidCode': 'spidCode',
         },
     "to": {
         'aRecord': 'urn:mace:dir:attribute-def:aRecord',
@@ -245,6 +246,7 @@ MAP = {
         'favouriteDrink': 'urn:mace:dir:attribute-def:favouriteDrink',
         'fax': 'urn:mace:dir:attribute-def:fax',
         'federationFeideSchemaVersion': 'urn:mace:dir:attribute-def:federationFeideSchemaVersion',
+        'fiscalNumber': 'urn:mace:dir:attribute-def:fiscalNumber',
         'friendlyCountryName': 'urn:mace:dir:attribute-def:friendlyCountryName',
         'generationQualifier': 'urn:mace:dir:attribute-def:generationQualifier',
         'givenName': 'urn:mace:dir:attribute-def:givenName',
@@ -342,7 +344,7 @@ MAP = {
         'userid': 'urn:mace:dir:attribute-def:userid',
         'x121Address': 'urn:mace:dir:attribute-def:x121Address',
         'x500UniqueIdentifier': 'urn:mace:dir:attribute-def:x500UniqueIdentifier',
-        'fiscalNumber': 'fiscalNumber',
-        'spidCode': 'spidCode',
+        #'fiscalNumber': 'fiscalNumber',
+        #'spidCode': 'spidCode',
     }
 }

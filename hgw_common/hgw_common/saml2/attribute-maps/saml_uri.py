@@ -134,6 +134,7 @@ MAP = {
         SCHAC+'19': 'schacUserStatus',
         SCHAC+'20': 'schacProjectMembership',
         SCHAC+'21': 'schacProjectSpecificRole',
+        'urn:mace:dir:attribute-def:fiscalNumber': 'fiscalNumber',
     },
     "to": {
         'roleOccupant': X500ATTR_OID+'33',
@@ -257,5 +258,6 @@ MAP = {
         'schacUserStatus': SCHAC+'19',
         'schacProjectMembership': SCHAC+'20',
         'schacProjectSpecificRole': SCHAC+'21',
+        'fiscalNumber': 'urn:mace:dir:attribute-def:fiscalNumber',
     }
 }  
