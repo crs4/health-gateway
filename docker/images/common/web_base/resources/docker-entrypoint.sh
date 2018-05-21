@@ -24,14 +24,22 @@ if [ ! -e "$INITIALIZED" ]; then
 	python3 manage.py migrate
     python3 manage.py loaddata initial_data
     FIXTURES_DIR=/container/fixtures
-    TEST_FIXTURES_DIR=/container/test_fixtures
-    for fixture_dir in $FIXTURES_DIR $TEST_FIXTURES_DIR; do
-        if [ -d $fixture_dir ]; then
-            for fixture in `ls $fixture_dir/*.json`; do
+
+    if [ -d ${FIXTURES_DIR} ]; then
+        for fixture in `ls ${FIXTURES_DIR}/*.json`; do
+            python3 manage.py loaddata $fixture
+        done
+    fi
+
+    if [[ -z ${DEVELOPMENT} ]]; then
+        TEST_FIXTURES_DIR=/container/test_fixtures
+        if [ -d ${TEST_FIXTURES_DIR} ]; then
+            for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
                 python3 manage.py loaddata $fixture
             done
         fi
-    done
+    fi
+
 	touch ${INITIALIZED}
 fi
 
