@@ -19,25 +19,31 @@
 echo "Starting kafka consumer"
 /launch-kafka.sh &
 
-FIRST_START_DONE="/tmp/slapd-first-start-done"
+INITIALIZED="/container/initialized"
 
-if [ ! -e "$FIRST_START_DONE" ]; then
+if [ ! -e "$INITIALIZED" ]; then
 	python3 manage.py migrate
     python3 manage.py loaddata initial_data
     FIXTURES_DIR=/container/fixtures
-    if [ -d $FIXTURES_DIR ]; then
-        for fixture in `ls $FIXTURES_DIR/*.json`; do
+
+    if [ -d ${FIXTURES_DIR} ]; then
+        for fixture in `ls ${FIXTURES_DIR}/*.json`; do
             python3 manage.py loaddata $fixture
         done
     fi
-	touch ${FIRST_START_DONE}
+
+    if [[ ! -z ${DEVELOPMENT} ]]; then
+        TEST_FIXTURES_DIR=/container/test_fixtures
+        if [ -d ${TEST_FIXTURES_DIR} ]; then
+            for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
+                python3 manage.py loaddata $fixture
+            done
+        fi
+    fi
+
+	touch ${INITIALIZED}
 fi
 
-if [[ -z ${DEVELOPMENT} ]]; then
-    #chown gunicorn:gunicorn /var/lib/*.sqlite3
-    envsubst '${HTTP_PORT}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
-    nginx
-    gunicorn_start.sh
-else
-    expect -f launch_python_development.exp
-fi
+envsubst '${HTTP_PORT}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
+nginx
+gunicorn_start.sh

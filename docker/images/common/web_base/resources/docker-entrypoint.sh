@@ -31,7 +31,7 @@ if [ ! -e "$INITIALIZED" ]; then
         done
     fi
 
-    if [[ -z ${DEVELOPMENT} ]]; then
+    if [[ ! -z ${DEVELOPMENT} ]]; then
         TEST_FIXTURES_DIR=/container/test_fixtures
         if [ -d ${TEST_FIXTURES_DIR} ]; then
             for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
