@@ -68,6 +68,7 @@ class ConsentView(ViewSet):
             return Response(res)
 
     def create(self, request):
+        logger.debug(request.scheme)
         request.data.update({
             'consent_id': get_random_string(32),
             'status': Consent.PENDING

@@ -6,6 +6,7 @@ django:
     name: ../hgw_frontend_db.sqlite3
 
 saml:
+  service: spid
   sp_name: HGW Frontend Service Provider
   sp_cert: ../certs/spid.cert.pem
   sp_key: ../certs/spid.key.pem

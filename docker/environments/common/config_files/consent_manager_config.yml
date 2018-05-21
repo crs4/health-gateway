@@ -6,6 +6,7 @@ django:
     name: /container/service/consent_manager_db.sqlite3
 
 saml:
+  service: spid
   sp_name: Consent Manager Service Provider
   sp_cert: /container/service/certs/spid.cert.pem
   sp_key: /container/service/certs/spid.key.pem

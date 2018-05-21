@@ -131,7 +131,7 @@ ARG DJANGO_VERSION=1.11.0
 ARG HTTP_PORT=80
 
 RUN pip3 install Django==${DJANGO_VERSION} \
-    gunicorn \
+    gunicorn==19.7.1 \
 	mock \
     djangorestframework==3.7.7 \
 	django-oauth-toolkit==0.12.0 \
@@ -158,8 +158,6 @@ ADD resources/docker-entrypoint.sh /custom_entrypoint/
 ADD resources/wait-for-it.sh /custom_entrypoint/
 ADD resources/nginx_https.template /etc/nginx/conf.d/nginx_https.template
 ADD resources/gunicorn_start.sh /usr/local/bin
-ADD resources/launch_python_development.sh /usr/local/bin/
-ADD resources/launch_python_development.exp /usr/local/bin/
 
 RUN addgroup -S gunicorn && adduser -D -S -s /sbin/nologin -G gunicorn gunicorn
 

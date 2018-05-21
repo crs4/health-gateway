@@ -173,6 +173,7 @@ class FlowRequestView(ViewSet):
             403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
         })
     def create(self, request):
+        logger.debug(request.scheme)
         if 'flow_id' not in request.data or 'profile' not in request.data or \
                 xor(('start_validity' not in request.data), ('expire_validity' not in request.data)):
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
@@ -406,7 +407,9 @@ def _get_callback_url(request):
     :param request:
     :return:
     """
-    return '{}://{}/v1/flow_requests/consents_confirmed/'.format(request.scheme, request.get_host())
+    callback_url = '{}://{}/v1/flow_requests/consents_confirmed/'.format(request.scheme, request.get_host())
+    logger.debug("Callback url {}".format(callback_url))
+    return callback_url
 
 
 def _ask_consent(request, flow_request, callback_url):
@@ -487,9 +490,10 @@ def consents_confirmed(request):
 @require_GET
 @login_required
 def confirm_request(request):
+    logger.debug("Scheme: {}".format(request.scheme))
+    logger.debug("User: {}".format(request.user.fiscalNumber))
     if not request.user.fiscalNumber:
         return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PERSON_ID'])
-
     try:
         logger.debug('request.GET.keys() %s', request.GET.keys())
         fr_confirm_code = request.GET['confirm_id']

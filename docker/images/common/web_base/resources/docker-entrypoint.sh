@@ -18,25 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-FIRST_START_DONE="/tmp/slapd-first-start-done"
+INITIALIZED="/container/initialized"
 
-if [ ! -e "$FIRST_START_DONE" ]; then
+if [ ! -e "$INITIALIZED" ]; then
 	python3 manage.py migrate
     python3 manage.py loaddata initial_data
     FIXTURES_DIR=/container/fixtures
-    if [ -d $FIXTURES_DIR ]; then
-        for fixture in `ls $FIXTURES_DIR/*.json`; do
-            python3 manage.py loaddata $fixture
-        done
-    fi
-	touch ${FIRST_START_DONE}
+    TEST_FIXTURES_DIR=/container/test_fixtures
+    for fixture_dir in $FIXTURES_DIR $TEST_FIXTURES_DIR; do
+        if [ -d $fixture_dir ]; then
+            for fixture in `ls $fixture_dir/*.json`; do
+                python3 manage.py loaddata $fixture
+            done
+        fi
+    done
+	touch ${INITIALIZED}
 fi
 
-if [[ -z ${DEVELOPMENT} ]]; then
-    #chown gunicorn:gunicorn /var/lib/*.sqlite3
-    envsubst '${HTTP_PORT}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
-    nginx
-    gunicorn_start.sh
-else
-    expect -f launch_python_development.exp
-fi
+envsubst '${HTTP_PORT}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
+nginx
+gunicorn_start.sh
