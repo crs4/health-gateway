@@ -22,9 +22,9 @@ import {Route, Switch} from 'react-router-dom';
 import App from "./app";
 import Confirm from "./confirm";
 
-require('../css/yeti/bootstrap.min.css');
+require('../css/sandstone/bootstrap.min.css');
 require('../css/custom.css');
-require('../css/responsive_table.scss');
+require('../css/stack-table.scss');
 import 'react-datepicker/dist/react-datepicker.css';
 
 const wrapper = document.getElementById("content");

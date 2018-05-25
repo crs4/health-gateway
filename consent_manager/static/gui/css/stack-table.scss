@@ -139,4 +139,9 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
     border: 0 !important;
   }
 
+  &-cell-modify {
+    @include breakpoint(medium) {
+      text-align: center !important;
+    }
+  }
 }

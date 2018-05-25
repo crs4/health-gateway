@@ -48,10 +48,11 @@ class ConsentView(ViewSet):
 
     def list(self, request):
         if request.user is not None:
-            consents = Consent.objects.filter(person_id=request.user.fiscalNumber, status=Consent.ACTIVE)
+            consents = Consent.objects.filter(person_id=request.user.fiscalNumber,
+                                              status__in=(Consent.ACTIVE, Consent.REVOKED))
+            logger.info('Found {} consents for user {}'.format(len(consents), request.user.fiscalNumber))
         else:
             consents = Consent.objects.all()
-
         serializer = serializers.ConsentSerializer(consents, many=True)
         if request.user is not None or request.auth.application.is_super_client():
             return Response(serializer.data)
