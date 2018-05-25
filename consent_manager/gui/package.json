@@ -29,6 +29,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "django-react-csrftoken": "^1.0.3",
+    "history": "^4.7.2",
     "moment": "^2.22.1",
     "node-sass": "^4.9.0",
     "prop-types": "^15.6.1",

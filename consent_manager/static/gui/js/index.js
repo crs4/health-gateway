@@ -17,21 +17,24 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
-import {Route, Switch} from 'react-router-dom';
-import App from "./app";
-import Confirm from "./confirm";
+import {BrowserRouter, Route, Switch} from 'react-router-dom';
+import App from './app';
+import Confirm from './confirm';
+import {ModifyConsent} from './consent'
+import 'react-datepicker/dist/react-datepicker.css';
+import createBrowserHistory from 'history/createBrowserHistory'
 
 require('../css/sandstone/bootstrap.min.css');
 require('../css/custom.css');
 require('../css/stack-table.scss');
-import 'react-datepicker/dist/react-datepicker.css';
 
+const history = createBrowserHistory()
 const wrapper = document.getElementById("content");
 wrapper ? ReactDOM.render(
     <BrowserRouter>
         <Switch>
             <Route exact path='/' component={App}/>
             <Route path='/confirm_consents/' component={Confirm}/>
+            <Route path='/modify_consent/' component={ModifyConsent}/>
         </Switch>
     </BrowserRouter>, wrapper) : null;

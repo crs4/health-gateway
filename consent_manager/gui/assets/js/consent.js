@@ -19,11 +19,12 @@ import React from 'react';
 import Profile from './profile';
 import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
-import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
+import {Button, Modal, ModalBody, ModalFooter, ModalHeader, Table} from 'reactstrap';
 import DatePicker from 'react-datepicker'
 import moment from 'moment';
 import {arrayToObject, iterate} from './utils';
 import Pencil from 'react-icons/lib/fa/pencil';
+import {Link} from 'react-router-dom';
 
 moment.locale('it');
 
@@ -53,9 +54,7 @@ class ManageConsents extends React.Component {
             'RE': 'REVOKED'
         };
         this.state = {
-            consents: arrayToObject(consents, 'consent_id', {'collapsed': true}),
-            sent: false,
-            modal: false
+            consents: arrayToObject(consents, 'consent_id', {'collapsed': true})
         }
     }
 
@@ -74,7 +73,7 @@ class ManageConsents extends React.Component {
                 currentDest = c.destination.name;
             }
             rows.push(
-                <tr key={k} className="stack-table-row" onClick={this.toggleCollapse.bind(this, k)}>
+                <tr key={k} className="stack-table-row">
                     <td className="stack-table-cell" data-title="Source">
                         {c.source.name}
                     </td>
@@ -91,16 +90,22 @@ class ManageConsents extends React.Component {
                         {moment(c.expire_validity).format('L')}
                     </td>
                     <td className="stack-table-cell stack-table-cell-modify">
-                        <div onClick={() => {console.log('quaa')}}>
-                            <Pencil size={20}/>
-                        </div>
+                        <Link className='link' to={{
+                            pathname: '/modify_consent/',
+                            state: {
+                                consent: c
+                            }
+                        }}>
+                            <Pencil
+                                size={20}/>
+                        </Link>
                     </td>
                 </tr>
-            );
+            )
+            ;
         }
         return (
             <form>
-                <DjangoCSRFToken/>
                 <table className="sheru-cp-section stack-table">
                     <thead className="stack-table-head">
                     <tr className="stack-table-row">
@@ -116,82 +121,8 @@ class ManageConsents extends React.Component {
                     {rows}
                     </tbody>
                 </table>
-                <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
-                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure</ModalHeader>
-                    <ModalBody>
-                        Are you sure you want to authorize data transfer from the source to the selected
-                        destinations?
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button color="primary" id="btn-modal-confirm-consents"
-                                onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}
-                        <Button color="secondary" id="btn-modal-cancel-consents"
-                                onClick={this.toggle.bind(this)}>Cancel</Button>
-                    </ModalFooter>
-                </Modal>
             </form>
         )
-    }
-
-    changeDate(confirmId, startOrEnd, dateObject) {
-        if (startOrEnd === 'S') {
-            startOrEnd = 'start'
-        }
-        else {
-            startOrEnd = 'expire'
-        }
-        let consents = Object.assign({}, this.state.consents);
-        consents[confirmId][startOrEnd + '_validity'] = dateObject.format();
-        this.setState({
-            consents: consents
-        });
-    }
-
-    toggle() {
-        this.setState({
-            modal: !this.state.modal
-        })
-    }
-
-    toggleCollapse(consentId) {
-        let consents = Object.assign({}, this.state.consents);
-        consents[consentId].collapsed = !this.state.consents[consentId].collapsed;
-        this.setState({
-            consents: consents
-        });
-    }
-
-    sendConfirmed() {
-        this.toggle();
-        let consentsData = {};
-        for (let [k, v] of iterate(this.state.consents)) {
-            if (v['checked'] === true) {
-                consentsData[k] = {
-                    'start_validity': v['start_validity'],
-                    'expire_validity': v['expire_validity']
-                }
-            }
-        }
-
-        axios.post('/v1/consents/confirm/', {
-            consents: consentsData,
-        }, {
-            withCredentials: true,
-            xsrfCookieName: 'csrftoken',
-            xsrfHeaderName: 'X-CSRFToken'
-        }).then((response) => {
-            const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
-            const callback = this.props.callbackUrl + '?success=true&consent_confirm_id=' + confirmedParams;
-            this.props.notifier.success('Consents confirmed correctly. Redirecting in 2 seconds', () => {
-                window.location = callback
-            });
-            this.setState({
-                confirmed: [],
-                sent: true
-            });
-        }).catch((error) => {
-            this.props.notifier.error('Erros while revoking consents');
-        });
     }
 }
 
@@ -239,7 +170,6 @@ class ConfirmConsents extends React.Component {
                                 selected={moment(c.expire_validity)}
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'E')}
                             />
-                            {/*{moment(c.expire_validity).format('L')}*/}
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
@@ -392,4 +322,143 @@ class ConfirmConsents extends React.Component {
     }
 }
 
-export {ConfirmConsents, ManageConsents};
+class ModifyConsent extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            consent: this.props.location.state.consent,
+            modal: false
+        };
+    }
+
+    render() {
+        const consent = this.state.consent;
+        return (
+            <div>
+                <div className='table-responsive-md details-table-container'>
+                    <DjangoCSRFToken/>
+                    <table className='sheru-cp-section details-table'>
+                        <tbody className='details-table-body'>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Destination
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                {consent.destination.name}
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Source
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                {consent.source.name}
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Data Profile
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                <Profile data={consent.profile}/>
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Start Date
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                <DatePicker
+                                    minDate={moment(consent.start_validity)}
+                                    maxDate={moment(consent.expire_validity)}
+                                    selected={moment(consent.start_validity)}
+                                    onChange={this.changeDate.bind(this, 'S')}
+                                />
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                End Date
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                <DatePicker
+                                    minDate={moment(consent.start_validity)}
+                                    selected={moment(consent.expire_validity)}
+                                    onChange={this.changeDate.bind(this, 'E')}
+                                />
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Legal Notice
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                                incididunt ut
+                                labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                                ullamco
+                                laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
+                                in
+                                voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+                                cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <Button id='btn-cancel'
+                        color='info'
+                        onClick={this.props.history.goBack}>
+                    Cancel
+                </Button>{' '}
+                <Button id='btn-modify'
+                        color='primary'>
+                    Modify
+                </Button>{' '}
+                <Button id='btn-revoke'
+                        color='success'>
+                    Revoke
+                </Button>{' '}
+                <Button id='btn-delete'
+                        color='danger'>
+                    Delete all data
+                </Button>
+                <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
+                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure</ModalHeader>
+                    <ModalBody>
+                        Are you sure you want to authorize data transfer from the source to the selected
+                        destinations?
+                    </ModalBody>
+                    <ModalFooter>
+                        {/*<Button color="primary" id="btn-modal-confirm-consents"*/}
+                        {/*onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}*/}
+                        {/*<Button color="secondary" id="btn-modal-cancel-consents"*/}
+                        {/*onClick={this.toggle.bind(this)}>Cancel</Button>*/}
+                    </ModalFooter>
+                </Modal>
+            </div>
+        )
+    }
+
+    changeDate(startOrEnd, dateObject) {
+        if (startOrEnd === 'S') {
+            startOrEnd = 'start'
+        }
+        else {
+            startOrEnd = 'expire'
+        }
+        let consent = Object.assign({}, this.state.consent);
+        consent[startOrEnd + '_validity'] = dateObject.format();
+        this.setState({
+            consent: consent
+        });
+    }
+
+    toggle() {
+        this.setState({
+            modal: !this.state.modal
+        })
+    }
+}
+
+export {ConfirmConsents, ManageConsents, ModifyConsent};
