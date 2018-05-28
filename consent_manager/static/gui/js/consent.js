@@ -19,14 +19,20 @@ import React from 'react';
 import Profile from './profile';
 import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
-import {Button, Modal, ModalBody, ModalFooter, ModalHeader, Table} from 'reactstrap';
-import DatePicker from 'react-datepicker'
+import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
+import DatePicker from 'react-datepicker';
 import moment from 'moment';
-import {arrayToObject, iterate} from './utils';
+import {arrayToObject, copy, iterate} from './utils';
 import Pencil from 'react-icons/lib/fa/pencil';
-import {Link} from 'react-router-dom';
+import PropTypes from 'prop-types';
+import NotificationManager from './notificationManager';
 
 moment.locale('it');
+
+const status = {
+    'AC': 'ACTIVE',
+    'RE': 'REVOKED'
+};
 
 function sortConsents(a, b) {
     if (a['destination']['name'] < b['destination']['name']) {
@@ -42,88 +48,6 @@ function sortConsents(a, b) {
         return 1;
     }
     return 0;
-}
-
-class ManageConsents extends React.Component {
-
-    constructor(props) {
-        super(props);
-        let consents = this.props.data.sort(sortConsents);
-        this.status = {
-            'AC': 'ACTIVE',
-            'RE': 'REVOKED'
-        };
-        this.state = {
-            consents: arrayToObject(consents, 'consent_id', {'collapsed': true})
-        }
-    }
-
-    render() {
-        let rows = [];
-        let currentDest = "";
-        for (let [k, c] of iterate(this.state.consents)) {
-            if (c.destination.name !== currentDest) {
-                rows.push(
-                    <tr key={k + 'head'} className="stack-table-row">
-                        <th className="stack-table-cell stack-table-cell-header
-                        stack-table-cell-spanned" colSpan="6">{c.destination.name}
-                        </th>
-                    </tr>
-                );
-                currentDest = c.destination.name;
-            }
-            rows.push(
-                <tr key={k} className="stack-table-row">
-                    <td className="stack-table-cell" data-title="Source">
-                        {c.source.name}
-                    </td>
-                    <td className="stack-table-cell" data-title="Status">
-                        {this.status[c.status]}
-                    </td>
-                    <td className="stack-table-cell" data-title="Data Profile">
-                        <Profile data={c.profile}/>
-                    </td>
-                    <td className="stack-table-cell" data-title="Start Validity">
-                        {moment(c.start_validity).format('L')}
-                    </td>
-                    <td className="stack-table-cell" data-title="End Validity">
-                        {moment(c.expire_validity).format('L')}
-                    </td>
-                    <td className="stack-table-cell stack-table-cell-modify">
-                        <Link className='link' to={{
-                            pathname: '/modify_consent/',
-                            state: {
-                                consent: c
-                            }
-                        }}>
-                            <Pencil
-                                size={20}/>
-                        </Link>
-                    </td>
-                </tr>
-            )
-            ;
-        }
-        return (
-            <form>
-                <table className="sheru-cp-section stack-table">
-                    <thead className="stack-table-head">
-                    <tr className="stack-table-row">
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Status</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Validity</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Validity</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col"/>
-                    </tr>
-                    </thead>
-                    <tbody className="stack-table-body">
-                    {rows}
-                    </tbody>
-                </table>
-            </form>
-        )
-    }
 }
 
 class ConfirmConsents extends React.Component {
@@ -257,8 +181,8 @@ class ConfirmConsents extends React.Component {
         else {
             startOrEnd = 'expire'
         }
-        let consents = Object.assign({}, this.state.consents);
-        consents[confirmId][startOrEnd + '_validity'] = dateObject.format();
+        let consents = copy(this.state.consents);
+        consents[confirmId][`${startOrEnd}_validity`] = dateObject.format();
         this.setState({
             consents: consents
         });
@@ -273,7 +197,7 @@ class ConfirmConsents extends React.Component {
     }
 
     checkBoxAllHandler(event) {
-        let consents = Object.assign({}, this.state.consents);
+        let consents = copy(this.state.consents);
         for (let [k, v] of iterate(consents)) {
             v['checked'] = event.target.checked;
         }
@@ -308,7 +232,7 @@ class ConfirmConsents extends React.Component {
             xsrfHeaderName: 'X-CSRFToken'
         }).then((response) => {
             const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
-            const callback = this.props.callbackUrl + '?success=true&consent_confirm_id=' + confirmedParams;
+            const callback = `${this.props.callbackUrl}?success=true&consent_confirm_id=${confirmedParams}`;
             this.props.notifier.success('Consents confirmed correctly. Redirecting in 2 seconds', () => {
                 window.location = callback
             });
@@ -316,18 +240,99 @@ class ConfirmConsents extends React.Component {
                 confirmed: [],
                 sent: true
             });
-        }).catch((error) => {
+        }).catch(() => {
             this.props.notifier.error('Erros while revoking consents');
         });
     }
 }
 
-class ModifyConsent extends React.Component {
+class ConsentsViewer extends React.Component {
+    render() {
+        let rows = [];
+        let currentDest = "";
+        for (let [k, c] of iterate(this.props.consents)) {
+            if (c.destination.name !== currentDest) {
+                rows.push(
+                    <tr key={`${k}head`} className="stack-table-row">
+                        <th className="stack-table-cell stack-table-cell-header
+                        stack-table-cell-spanned" colSpan="6">{c.destination.name}
+                        </th>
+                    </tr>
+                );
+                currentDest = c.destination.name;
+            }
+            rows.push(
+                <tr key={k} className="stack-table-row">
+                    <td className="stack-table-cell" data-title="Source">
+                        {c.source.name}
+                    </td>
+                    <td className="stack-table-cell" data-title="Status">
+                        {status[c.status]}
+                    </td>
+                    <td className="stack-table-cell" data-title="Data Profile">
+                        <Profile data={c.profile}/>
+                    </td>
+                    <td className="stack-table-cell" data-title="Start Validity">
+                        {moment(c.start_validity).format('L')}
+                    </td>
+                    <td className="stack-table-cell" data-title="End Validity">
+                        {moment(c.expire_validity).format('L')}
+                    </td>
+                    <td className="stack-table-cell stack-table-cell-modify"
+                        onClick={this.callSelectConsent.bind(this, c)}>
+                        <Pencil
+                            size={20}/>
+                    </td>
+                </tr>
+            )
+            ;
+        }
+        return (
+            <form>
+                <table className="sheru-cp-section stack-table">
+                    <thead className="stack-table-head">
+                    <tr className="stack-table-row">
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Status</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Validity</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Validity</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col"/>
+                    </tr>
+                    </thead>
+                    <tbody className="stack-table-body">
+                    {rows}
+                    </tbody>
+                </table>
+            </form>
+        )
+    }
+
+    callSelectConsent(c) {
+        this.props.selectConsent(c);
+    }
+}
+
+ConsentsViewer.propTypes = {
+    consents: PropTypes.array,
+    selectConsent: PropTypes.func.isRequired
+};
+
+class ConsentManager extends React.Component {
     constructor(props) {
         super(props);
+        this.actions = {
+            REVOKE: 'revoke'
+        };
+        this.alertMessages = {
+            'revoke': 'If you revoke the consent all the messages incoming from the source ' +
+            'will not be sent to the destination anymore.\n' +
+            'The data already sent to the destination will be kept\n' +
+            'Do you want to continue?'
+        };
         this.state = {
-            consent: this.props.location.state.consent,
-            modal: false
+            consent: copy(this.props.consent),
+            modal: null
         };
     }
 
@@ -353,6 +358,14 @@ class ModifyConsent extends React.Component {
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
                                 {consent.source.name}
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Status
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                {status[consent.status]}
                             </td>
                         </tr>
                         <tr className='details-table-row'>
@@ -406,34 +419,36 @@ class ModifyConsent extends React.Component {
                         </tbody>
                     </table>
                 </div>
-                <Button id='btn-cancel'
+                <Button id='btn-back'
                         color='info'
-                        onClick={this.props.history.goBack}>
-                    Cancel
+                        onClick={this.endModify.bind(this)}>
+                    Back
                 </Button>{' '}
                 <Button id='btn-modify'
-                        color='primary'>
+                        color='primary'
+                        disabled={consent.status !== 'AC'}>
                     Modify
                 </Button>{' '}
                 <Button id='btn-revoke'
-                        color='success'>
+                        color='success'
+                        disabled={consent.status !== 'AC'}
+                        onClick={this.toggleModal.bind(this, this.actions.REVOKE)}>
                     Revoke
                 </Button>{' '}
                 <Button id='btn-delete'
                         color='danger'>
                     Delete all data
                 </Button>
-                <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
-                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure</ModalHeader>
+                <Modal isOpen={this.state.modal !== null} toggle={this.toggleModal.bind(this, this.state.modal)}>
+                    <ModalHeader toggle={this.toggleModal.bind(this, this.state.modal)}>Are you sure</ModalHeader>
                     <ModalBody>
-                        Are you sure you want to authorize data transfer from the source to the selected
-                        destinations?
+                        {this.alertMessages[this.state.modal]}
                     </ModalBody>
                     <ModalFooter>
-                        {/*<Button color="primary" id="btn-modal-confirm-consents"*/}
-                        {/*onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}*/}
-                        {/*<Button color="secondary" id="btn-modal-cancel-consents"*/}
-                        {/*onClick={this.toggle.bind(this)}>Cancel</Button>*/}
+                        <Button color="primary" id="btn-modal-confirm-consents"
+                                onClick={this.sendCommand.bind(this, this.state.modal)}>Confirm</Button>{' '}
+                        <Button color="secondary" id="btn-modal-cancel-consents"
+                                onClick={this.toggleModal.bind(this, this.state.modal)}>Cancel</Button>
                     </ModalFooter>
                 </Modal>
             </div>
@@ -447,18 +462,96 @@ class ModifyConsent extends React.Component {
         else {
             startOrEnd = 'expire'
         }
-        let consent = Object.assign({}, this.state.consent);
-        consent[startOrEnd + '_validity'] = dateObject.format();
+        let consent = copy(this.state.consent);
+        consent[`${startOrEnd}_validity`] = dateObject.format();
         this.setState({
             consent: consent
         });
     }
 
-    toggle() {
+    endModify() {
+        this.props.endModify(this.state.consent);
+    }
+
+    sendCommand(action) {
+        switch (action) {
+            case this.actions.REVOKE:
+                const consent_id = this.state.consent.consent_id;
+                axios.post(`/v1/consents/${consent_id}/revoke/`, {}, {
+                    withCredentials: true,
+                    xsrfCookieName: 'csrftoken',
+                    xsrfHeaderName: 'X-CSRFToken'
+                }).then(() => {
+                    let consent = copy(this.state.consent);
+                    consent.status = 'RE';
+                    this.setState({
+                        consent: consent,
+                    });
+                    this.toggleModal(action);
+                    this.props.notifier.success('Consents revoked correctly');
+                }).catch(() => {
+                    this.toggleModal(action);
+                    this.props.notifier.error('Errors happened revoking consents');
+                });
+        }
+    }
+
+    toggleModal(action) {
         this.setState({
-            modal: !this.state.modal
+            modal: this.state.modal === null ? action : null
         })
     }
 }
 
-export {ConfirmConsents, ManageConsents, ModifyConsent};
+ConsentManager.propTypes = {
+    consent: PropTypes.object,
+    notifier: PropTypes.instanceOf(NotificationManager),
+    endModify: PropTypes.func.isRequired
+
+};
+
+class ConsentsController extends React.Component {
+
+    constructor(props) {
+        super(props);
+        let consents = this.props.data.sort(sortConsents);
+        this.state = {
+            consents: arrayToObject(consents, 'consent_id', {'collapsed': true}),
+            currentConsent: null
+        }
+    }
+
+    render() {
+        if (this.state.currentConsent === null) {
+            return (<ConsentsViewer consents={this.state.consents}
+                                    selectConsent={this.selectConsent.bind(this)}/>)
+        }
+        else {
+            return (<ConsentManager consent={this.state.currentConsent}
+                                    notifier={this.props.notifier}
+                                    endModify={this.endModify.bind(this)}/>)
+        }
+    }
+
+    selectConsent(consent) {
+        this.setState({
+            currentConsent: consent
+        });
+    }
+
+    endModify(consent) {
+        let consents = copy(this.state.consents);
+        consents[consent.consent_id] = consent;
+        this.setState({
+            consents: consents,
+            currentConsent: null
+        });
+    }
+}
+
+ConsentsController.propTypes = {
+    data: PropTypes.array,
+    notifier: PropTypes.instanceOf(NotificationManager)
+};
+
+export {ConfirmConsents, ConsentsController, ConsentManager};

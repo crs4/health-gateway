@@ -17,7 +17,7 @@
 
 import React from 'react';
 import DataProvider from './dataProvider';
-import {ManageConsents} from './consent';
+import {ConsentsController} from './consent';
 import Welcome from './welcome';
 import NotificationManager from './notificationManager';
 
@@ -28,7 +28,7 @@ class App extends React.Component {
         }
         else {
             return (
-                <ManageConsents data={data} notifier={this.notifier}/>
+                <ConsentsController data={data} notifier={this.notifier}/>
             )
         }
     }
