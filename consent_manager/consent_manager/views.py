@@ -16,10 +16,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-import json
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
@@ -29,6 +28,7 @@ from rest_framework.viewsets import ViewSet
 
 from consent_manager import serializers, ERRORS_MESSAGE
 from consent_manager.models import Consent, ConfirmationCode
+from consent_manager.settings import USER_ID_FIELD
 from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
 
 logger = get_logger('consent_manager')
@@ -48,9 +48,10 @@ class ConsentView(ViewSet):
 
     def list(self, request):
         if request.user is not None:
-            consents = Consent.objects.filter(person_id=request.user.fiscalNumber,
+            person_id = getattr(request.user, USER_ID_FIELD)
+            consents = Consent.objects.filter(person_id=person_id,
                                               status__in=(Consent.ACTIVE, Consent.REVOKED))
-            logger.info('Found {} consents for user {}'.format(len(consents), request.user.fiscalNumber))
+            logger.info('Found {} consents for user {}'.format(len(consents), person_id))
         else:
             consents = Consent.objects.all()
         serializer = serializers.ConsentSerializer(consents, many=True)
@@ -100,25 +101,48 @@ class ConsentView(ViewSet):
             }
             return Response(res)
 
-    def revoke(self, request):
+    @staticmethod
+    def _revoke_consent(consent_id, person_id):
+        try:
+            c = Consent.objects.get(consent_id=consent_id)
+        except Consent.DoesNotExist:
+            logger.info('Consent not found')
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            if c.status != Consent.ACTIVE:
+                logger.info('Consent is not ACTIVE. Not revoked')
+                return Response({'error': 'wrong_consent_status'}, status=status.HTTP_400_BAD_REQUEST)
+            elif c.person_id != person_id:
+                logger.warn('Consent not of the logged in person so it is not revoked')
+                return Response({'error': 'wrong_person'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                logger.info('Consent revoked')
+                c.status = Consent.REVOKED
+                c.save()
+                return Response({}, status=status.HTTP_200_OK)
+
+    def revoke_list(self, request):
         try:
             consents = request.data['consents']
         except KeyError:
             return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
+        logger.info('Received consents revoke request for consents {}'.format(', '.join(consents)))
 
         revoked = []
         failed = []
-        for consent in consents:
-            try:
-                c = Consent.objects.get(consent_id=consent, status=Consent.ACTIVE,
-                                        person_id=request.user.fiscalNumber)
-            except Consent.DoesNotExist:
-                failed.append(consent)
+        person_id = getattr(request.user, USER_ID_FIELD)
+        for consent_id in consents:
+            logger.info('Revoking consent {}'.format(consent_id))
+            res = self._revoke_consent(consent_id, person_id)
+            if res.status_code == status.HTTP_200_OK:
+                revoked.append(consent_id)
             else:
-                c.status = Consent.REVOKED
-                c.save()
-                revoked.append(c.consent_id)
+                failed.append(consent_id)
         return Response({'revoked': revoked, 'failed': failed}, status=status.HTTP_200_OK)
+
+    def revoke(self, request, consent_id):
+        logger.info('Received consent revoke request for consent {}'.format(consent_id))
+        return self._revoke_consent(consent_id, getattr(request.user, USER_ID_FIELD))
 
     def find(self, request):
         """
@@ -127,7 +151,7 @@ class ConsentView(ViewSet):
         :return:
         """
         if 'confirm_id' not in request.query_params:
-            logger.debug('confirm_id paramater not preent')
+            logger.debug('confirm_id paramater not present')
             return Response({'error': ERRORS_MESSAGE['MISSING_PARAM']}, status.HTTP_400_BAD_REQUEST)
 
         confirm_ids = request.GET.getlist('confirm_id')
@@ -175,7 +199,7 @@ class ConsentView(ViewSet):
                     if c.status != Consent.PENDING:
                         logger.info('consent not in PENDING status. Cannot confirm it')
                         failed.append(confirm_id)
-                    elif c.person_id != request.user.fiscalNumber:
+                    elif c.person_id != getattr(request.user, USER_ID_FIELD):
                         logger.info('consent found but it is not of the logged user. Cannot confirm it')
                         failed.append(confirm_id)
                     else:

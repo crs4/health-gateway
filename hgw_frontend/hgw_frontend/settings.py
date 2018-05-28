@@ -150,6 +150,7 @@ USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'hgw_frontend.HGWFrontendUser'
+USER_ID_FIELD = 'fiscalNumber'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'

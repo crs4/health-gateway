@@ -151,6 +151,7 @@ USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'consent_manager.ConsentManagerUser'
+USER_ID_FIELD = 'fiscalNumber'
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')

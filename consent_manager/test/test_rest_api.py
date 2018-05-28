@@ -394,6 +394,114 @@ class TestAPI(TestCase):
 
     def test_revoke_consent(self):
         """
+        Test revoke operation for a single consent. Test that the consent is not revoked in case
+        the consent doesn't belong to the logged person
+        """
+
+        res = self._add_consent()
+        consent_id = res.json()['consent_id']
+        c = Consent.objects.get(consent_id=consent_id)
+        c.status = Consent.ACTIVE
+        c.save()
+
+        self.client.login(username='duck', password='duck')
+        res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), {})
+        c = Consent.objects.get(consent_id=consent_id)
+        self.assertEqual(c.status, Consent.REVOKED)
+
+    def test_revoke_consent_wrong_status(self):
+        """
+        Test revoke operation for a single consent. Test that the consent is not revoked in case
+        the consent is not in ACTIVE status
+        """
+        consents = []
+        statuses = [Consent.PENDING, Consent.REVOKED, Consent.NOT_VALID]
+        for i, s in enumerate(statuses):
+            data = self.consent_data.copy()
+            data['source'] = {
+                'id': 'source_{}_id'.format(i),
+                'name': 'source_{}_name'.format(i)
+            }
+            res = self._add_consent(data=json.dumps(data))
+            consents.append(res.json()['consent_id'])
+            # Manually changing it to ACTIVE
+            c = Consent.objects.get(consent_id=res.json()['consent_id'])
+            c.status = s
+            c.save()
+
+        self.client.login(username='duck', password='duck')
+        for i, c in enumerate(consents):
+            res = self.client.post('/v1/consents/{}/revoke/'.format(c), content_type='application/json')
+            self.assertEqual(res.status_code, 400)
+            self.assertEqual(res.json(), {'error': 'wrong_consent_status'})
+            c = Consent.objects.get(consent_id=c)
+            self.assertEqual(c.status, statuses[i])
+
+    def test_revoke_consent_wrong_person(self):
+        """
+        Test revoke operation for a single consent. Test that the consent is not revoked in case
+        the consent doesn't belong to the logged person
+        """
+
+        res = self._add_consent()
+        consent_id = res.json()['consent_id']
+        c = Consent.objects.get(consent_id=consent_id)
+        c.status = Consent.ACTIVE
+        c.save()
+
+        self.client.login(username='paperone', password='paperone')
+        res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), {'error': 'wrong_person'})
+        c = Consent.objects.get(consent_id=consent_id)
+        self.assertEqual(c.status, Consent.ACTIVE)
+
+    def test_revoke_consent_unauthorized(self):
+        res = self._add_consent()
+        consent_id = res.json()['consent_id']
+        # Manually changing it to ACTIVE
+        c = Consent.objects.get(consent_id=consent_id)
+        c.status = Consent.ACTIVE
+        c.save()
+
+        res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id), data=json.dumps([c.consent_id]),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 401)
+        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+
+    def test_revoke_list_consent_forbidden(self):
+        """
+        Tests that the revoke action cannot be performed by an OAuth2 authenticated client
+        """
+        res = self._add_consent(self.json_consent_data)
+        consent_id = res.json()['consent_id']
+        # Manually changing it to ACTIVE
+        c = Consent.objects.get(consent_id=consent_id)
+        c.status = Consent.ACTIVE
+        c.save()
+
+        headers = self._get_oauth_header(0)
+        res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id), data=json.dumps([c.consent_id]),
+                               content_type='application/json', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
+
+    def test_revoke_consent_not_found(self):
+        """
+        Test revoke operation for a single consent. Test revoke error when the consent is not found
+        """
+
+        self.client.login(username='duck', password='duck')
+        res = self.client.post('/v1/consents/unkn/revoke/')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json(), {})
+
+    def test_revoke_consent_list(self):
+        """
         Tests consents revocation
         """
         consents = []
@@ -423,7 +531,7 @@ class TestAPI(TestCase):
             c = Consent.objects.get(consent_id=consent)
             self.assertEqual(c.status, Consent.REVOKED)
 
-    def test_revoke_consent_missing_parameters(self):
+    def test_revoke_consent_list_missing_parameters(self):
         """
         Tests error when not sending consents
         """
@@ -433,7 +541,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), {'error': 'missing_parameters'})
 
-    def test_revoke_consent_wrong_status(self):
+    def test_revoke_consent_list_wrong_status(self):
         """
         Tests that if the consent was not in ACTIVE status it is not revoked. It does so by trying to revoke
         4 consent, one for every status (ACTIVE, PENDING, REVOKED, NOT_VALID). It checks that only the one that was in
@@ -469,7 +577,7 @@ class TestAPI(TestCase):
             c = Consent.objects.get(consent_id=c)
             self.assertEqual(c.status, statuses[i])
 
-    def test_revoke_consent_wrong_user(self):
+    def test_revoke_consent_list_wrong_user(self):
         """
         Tests that when the logged user is not the owner of the consent to be revoked, the consent is not revoked
         """
@@ -489,7 +597,7 @@ class TestAPI(TestCase):
         self.assertEquals(len(res.json()['failed']), 1)
         self.assertEquals(res.json()['failed'][0], c.consent_id)
 
-    def test_revoke_consent_unknown_consent(self):
+    def test_revoke_consent_list_unknown_consent(self):
         """
         Tests error when confirming an unknwown consent
         """
@@ -507,7 +615,7 @@ class TestAPI(TestCase):
         self.assertEquals(res.json()['failed'][0], consent_id)
         self.assertRaises(Consent.DoesNotExist, Consent.objects.get, consent_id=consent_id)
 
-    def test_revoke_consent_unauthorized(self):
+    def test_revoke_consent_list_unauthorized(self):
         res = self._add_consent()
         # Manually changing it to ACTIVE
         c = Consent.objects.get(consent_id=res.json()['consent_id'])
@@ -519,7 +627,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
 
-    def test_revoke_consent_forbidden(self):
+    def test_revoke_consent_list_forbidden(self):
         """
         Tests that the revoke action cannot be performed by an OAuth2 authenticated client
         """
