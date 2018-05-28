@@ -52,7 +52,7 @@ DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, c
 
 HOSTNAME = cfg['django']['hostname']
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
 ALLOWED_HOSTS = [HOSTNAME]
 

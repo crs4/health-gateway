@@ -20,6 +20,7 @@ import json
 import logging
 import re
 import socket
+from django.conf import settings
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from itertools import product
 from threading import Thread
@@ -104,8 +105,6 @@ class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedSco
                 return False
 
 
-
-
 def generate_id():
     return get_random_string(32)
 
@@ -123,11 +122,12 @@ def get_oauth_token(server_uri, client_id, client_secret):
 
 
 def get_logger(logger_name):
+    level = logging.DEBUG if settings.DEBUG is True else logging.INFO
     logger = logging.getLogger(logger_name)
     fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(level)
     ch.setFormatter(fmt)
     logger.addHandler(ch)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
     return logger

@@ -1,4 +1,5 @@
 django:
+  debug: true
   secret_key: i*w3i*-y589ynfl_sar!h9r1mpra8mkjpwobeage5h5a(0x!d$
   hostname: consentmanager
   port: 8002
