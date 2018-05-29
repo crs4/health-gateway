@@ -16,29 +16,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from django.http import Http404
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 
+class ERRORS:
+    MISSING_PARAMETERS = 'missing_parameters'
+    FORBIDDEN = 'forbidden'
+    NOT_AUTHENTICATED = 'not_authenticated'
+    NOT_FOUND = 'not_found'
+
+
 def custom_exception_handler(exc, context):
     if isinstance(exc, Http404):
-        response = Response({'errors': ['not_found']}, status=status.HTTP_404_NOT_FOUND)
+        response = Response({'errors': [ERRORS.NOT_FOUND]}, status=status.HTTP_404_NOT_FOUND)
+    elif isinstance(exc, NotAuthenticated):
+        response = Response({'errors': [ERRORS.NOT_AUTHENTICATED]}, status=status.HTTP_401_UNAUTHORIZED)
+    elif isinstance(exc, PermissionDenied):
+        response = Response({'errors': [ERRORS.FORBIDDEN]}, status=status.HTTP_403_FORBIDDEN)
     else:
-        # Call REST framework's default exception handler first,
-        # to get the standard error response.
         response = exception_handler(exc, context)
 
     return response
-
-
-ERRORS_MESSAGE = {
-    'MISSING_PARAM': 'missing_parameters',
-    'UNKNOWN_ACTION': 'Unknown action',
-    'INVALID_CONFIRMATION_CODE': 'Confirmation code not valid',
-    'INVALID_STATUS': 'Invalid status',
-    'EXPIRED_CONFIRMATION_ID': 'Confirmation code expired',
-    'INVALID_CONSENT_STATUS': 'Invalid consent status',
-    'UNKNOWN_CONSENT': 'Unknown consent',
-    'INVALID_DATA': 'Invalid parameters',
-    'MISSING_PERSON_ID': 'Missing person id'
-}

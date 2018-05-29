@@ -27,7 +27,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from consent_manager import serializers, ERRORS_MESSAGE
+from consent_manager import serializers, ERRORS
 from consent_manager.models import Consent, ConfirmationCode
 from consent_manager.settings import USER_ID_FIELD
 from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
@@ -128,13 +128,13 @@ class ConsentView(ViewSet):
             if raise_exc:
                 raise
             else:
-                return http_status.HTTP_404_NOT_FOUND, {'error': 'wrong_consent_status'}
+                return http_status.HTTP_404_NOT_FOUND, {'errors': ['wrong_consent_status']}
         if c.status != Consent.ACTIVE:
             logger.info('Consent is not ACTIVE. Not revoked')
-            return http_status.HTTP_400_BAD_REQUEST, {'error': 'wrong_consent_status'}
+            return http_status.HTTP_400_BAD_REQUEST, {'errors': ['wrong_consent_status']}
         elif c.person_id != person_id:
             logger.warn('Consent not of the logged in person so it is not revoked')
-            return http_status.HTTP_400_BAD_REQUEST, {'error': 'wrong_person'}
+            return http_status.HTTP_400_BAD_REQUEST, {'errors': ['wrong_person']}
         else:
             logger.info('Consent revoked')
             c.status = Consent.REVOKED
@@ -145,7 +145,7 @@ class ConsentView(ViewSet):
         try:
             consents = request.data['consents']
         except KeyError:
-            return Response({'error': 'missing_parameters'}, http_status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
         logger.info('Received consents revoke request for consents {}'.format(', '.join(consents)))
 
         revoked = []
@@ -173,7 +173,7 @@ class ConsentView(ViewSet):
         """
         if 'confirm_id' not in request.query_params:
             logger.debug('confirm_id paramater not present')
-            return Response({'error': ERRORS_MESSAGE['MISSING_PARAM']}, http_status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
 
         confirm_ids = request.GET.getlist('confirm_id')
         logger.info('Called /v1/consents/find/ with query paramaters {}'.format(request.query_params))
@@ -197,7 +197,7 @@ class ConsentView(ViewSet):
         logger.info('Received consent confirmation request')
         if 'consents' not in request.data:
             logger.info('Missing the consents query params. Returning error')
-            return Response({'error': 'missing_parameters'}, http_status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
 
         consents = request.data['consents']
         logger.info('Specified the following consents: {}'.format(', '.join(consents.keys())))
@@ -240,63 +240,3 @@ class ConsentView(ViewSet):
 @login_required
 def confirm_consent(request):
     return render(request, 'index.html', context={'nav_bar': True})
-    # try:
-    #     if request.method == 'GET':
-    #         confirm_ids = request.GET.getlist('confirm_id')
-    #         callback_url = request.GET['callback_url']
-    #     else:
-    #         confirm_ids = request.POST.getlist('confirm_id')
-    #         callback_url = request.POST['callback_url']
-    # except KeyError:
-    #     return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
-    # else:
-    #     if not confirm_ids:
-    #         return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
-    #
-    #     ccs = ConfirmationCode.objects.filter(code__in=confirm_ids)
-    #     if not ccs:
-    #         return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
-    #
-    #     if request.method == 'GET':
-    #         consent = ccs[0].consent
-    #         payload = json.loads(consent.profile.payload)
-    #         destination_name = consent.destination.name
-    #
-    #         ctx = {
-    #             'callback_url': callback_url,
-    #             'destination_name': destination_name,
-    #             'profile_payload': payload,
-    #             'consents': [],
-    #             'errors': []
-    #         }
-    #
-    #         for cc in ccs:
-    #             if cc.consent.status == Consent.PENDING and cc.check_validity():
-    #                 ctx['consents'].append({
-    #                     'confirm_id': cc.code,
-    #                     'source': cc.consent.source.name,
-    #                     'status': cc.consent.status,
-    #                     'start_validity': cc.consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
-    #                     'expire_validity': cc.consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
-    #                 })
-    #             else:
-    #                 ctx['errors'].append(cc.code)
-    #
-    #         return render(request, 'confirm_consent.html', context=ctx)
-    #     else:
-    #         success = False
-    #         for cc in ccs:
-    #             if cc.check_validity() and cc.consent.status == Consent.PENDING:
-    #                 cc.consent.status = Consent.ACTIVE
-    #                 cc.consent.confirmed = datetime.now()
-    #                 cc.consent.save()
-    #                 if not success:
-    #                     success = True
-    #
-    #         return HttpResponseRedirect(
-    #             '{}?{}{}'.format(callback_url,
-    #                              'success={}&'.format(json.dumps(success)),
-    #                              '&'.join(['consent_confirm_id={}'.format(confirm_id) for confirm_id in
-    #                                        confirm_ids]),
-    #                              )
-    #         )

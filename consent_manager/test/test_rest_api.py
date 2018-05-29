@@ -6,7 +6,7 @@ import os
 
 from django.test import TestCase, client
 
-from consent_manager import ERRORS_MESSAGE
+from consent_manager import ERRORS
 from consent_manager.models import Consent, ConfirmationCode, RESTClient
 from consent_manager.serializers import ConsentSerializer
 from hgw_common.utils.test import get_free_port
@@ -157,7 +157,7 @@ class TestAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/consents/unknown/', **headers)
         self.assertEquals(res.status_code, 404)
-        self.assertEquals(res.json(), {'errors': ['not_found']})
+        self.assertEquals(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
     def get_consent_forbidden(self):
         headers = self._get_oauth_header(client_index=3)
@@ -527,7 +527,7 @@ class TestAPI(TestCase):
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_modify_consent_forbidden(self):
         """
@@ -544,7 +544,7 @@ class TestAPI(TestCase):
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_modify_consent_not_found(self):
         """
@@ -554,7 +554,7 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.put('/v1/consents/unkn/')
         self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
     def test_revoke_consent(self):
         """
@@ -593,7 +593,7 @@ class TestAPI(TestCase):
         for i, c in enumerate(consents):
             res = self.client.post('/v1/consents/{}/revoke/'.format(c), content_type='application/json')
             self.assertEqual(res.status_code, 400)
-            self.assertEqual(res.json(), {'error': 'wrong_consent_status'})
+            self.assertEqual(res.json(), {'errors': ['wrong_consent_status']})
             c = Consent.objects.get(consent_id=c)
             self.assertEqual(c.status, statuses[i])
 
@@ -610,7 +610,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id),
                                content_type='application/json')
         self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.json(), {'error': 'wrong_person'})
+        self.assertEqual(res.json(), {'errors': ['wrong_person']})
         c = Consent.objects.get(consent_id=consent_id)
         self.assertEqual(c.status, Consent.ACTIVE)
 
@@ -621,7 +621,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id), data=json.dumps([consent_id]),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_revoke_consent_forbidden(self):
         """
@@ -634,7 +634,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id), data=json.dumps([consent_id]),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_revoke_consent_not_found(self):
         """
@@ -644,7 +644,7 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.post('/v1/consents/unkn/revoke/')
         self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
     def test_revoke_consent_list(self):
         """
@@ -681,7 +681,7 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.post('/v1/consents/revoke/')
         self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.json(), {'error': 'missing_parameters'})
+        self.assertEqual(res.json(), {'errors': [ERRORS.MISSING_PARAMETERS]})
 
     def test_revoke_consent_list_wrong_status(self):
         """
@@ -756,7 +756,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps([consent_id]),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_revoke_consent_list_forbidden(self):
         """
@@ -768,7 +768,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps([consent_id]),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_find_consent_unauthorized(self):
         res = self._add_consent()
@@ -778,7 +778,7 @@ class TestAPI(TestCase):
 
         res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_find_consent_with_oauth_token(self):
         res = self._add_consent()
@@ -790,13 +790,13 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url),
                               **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {"detail": "You do not have permission to perform this action."})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_find_consent_missing_parameters(self):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/consents/find/')
         self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.json(), {'error': 'missing_parameters'})
+        self.assertEqual(res.json(), {'errors': [ERRORS.MISSING_PARAMETERS]})
 
     def test_find_consent_not_found(self):
         self.client.login(username='duck', password='duck')
@@ -874,7 +874,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_confirm_consent_forbidden(self):
         res = self._add_consent()
@@ -884,7 +884,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {'detail': 'You do not have permission to perform this action.'})
+        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_confirm_consent_missing_parameters(self):
         """
@@ -894,7 +894,7 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.post('/v1/consents/confirm/')
         self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.json(), {'error': 'missing_parameters'})
+        self.assertEqual(res.json(), {'errors': [ERRORS.MISSING_PARAMETERS]})
 
     def test_confirm_consent_wrong_consent_status(self):
         """
