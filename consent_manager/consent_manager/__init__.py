@@ -14,6 +14,22 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+from django.http import Http404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
+
+
+def custom_exception_handler(exc, context):
+    if isinstance(exc, Http404):
+        response = Response({'errors': ['not_found']}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        # Call REST framework's default exception handler first,
+        # to get the standard error response.
+        response = exception_handler(exc, context)
+
+    return response
+
 
 ERRORS_MESSAGE = {
     'MISSING_PARAM': 'missing_parameters',

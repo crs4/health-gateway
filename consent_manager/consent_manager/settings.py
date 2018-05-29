@@ -112,6 +112,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'EXCEPTION_HANDLER': 'consent_manager.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'generic_errors',
 }
 
 TEMPLATES = [

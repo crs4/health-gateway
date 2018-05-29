@@ -61,6 +61,7 @@ urlpatterns = [
         name='consents'),
     url(r'^{}/consents/(?P<consent_id>\w+)/revoke/$'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke'}),
         name='consents_retrieve'),
-    url(r'^{}/consents/(?P<consent_id>\w+)/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'retrieve'}),
+    url(r'^{}/consents/(?P<consent_id>\w+)/$'.format(VERSION_REGEX),
+        views.ConsentView.as_view({'get': 'retrieve', 'put': 'update'}),
         name='consents_retrieve'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

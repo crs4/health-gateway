@@ -322,7 +322,8 @@ class ConsentManager extends React.Component {
     constructor(props) {
         super(props);
         this.actions = {
-            REVOKE: 'revoke'
+            REVOKE: 'revoke',
+            MODIFY: 'modify'
         };
         this.alertMessages = {
             'revoke': 'If you revoke the consent all the messages incoming from the source ' +
@@ -474,8 +475,27 @@ class ConsentManager extends React.Component {
     }
 
     sendCommand(action) {
+        const consent_id = this.state.consent.consent_id;
         switch (action) {
             case this.actions.REVOKE:
+                axios.post(`/v1/consents/${consent_id}/revoke/`, {}, {
+                    withCredentials: true,
+                    xsrfCookieName: 'csrftoken',
+                    xsrfHeaderName: 'X-CSRFToken'
+                }).then(() => {
+                    let consent = copy(this.state.consent);
+                    consent.status = 'RE';
+                    this.setState({
+                        consent: consent,
+                    });
+                    this.toggleModal(action);
+                    this.props.notifier.success('Consents revoked correctly');
+                }).catch(() => {
+                    this.toggleModal(action);
+                    this.props.notifier.error('Errors happened revoking consents');
+                });
+                break;
+            case this.actions.MODIFY:
                 const consent_id = this.state.consent.consent_id;
                 axios.post(`/v1/consents/${consent_id}/revoke/`, {}, {
                     withCredentials: true,
