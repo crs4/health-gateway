@@ -21,8 +21,7 @@ FROM crs4/web_base
 ARG HTTP_PORT=8002
 
 ADD service/ /container/service/
-RUN pip3 install django-webpack-loader
-
+RUN pip3 install django-webpack-loader==0.6.0
 ENV DJANGO_APP_NAME=consent_manager
 ENV HTTP_PORT=${HTTP_PORT}
 

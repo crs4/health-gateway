@@ -79,8 +79,6 @@ INSTALLED_APPS = [
     'drf_yasg'
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
 
 ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 

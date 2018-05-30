@@ -27,10 +27,11 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from consent_manager import serializers, ERRORS
+from consent_manager import serializers
 from consent_manager.models import Consent, ConfirmationCode
 from consent_manager.settings import USER_ID_FIELD
 from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
+from hgw_common.utils import ERRORS
 
 logger = get_logger('consent_manager')
 

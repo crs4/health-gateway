@@ -327,9 +327,10 @@ class ConsentManager extends React.Component {
         };
         this.alertMessages = {
             'revoke': 'If you revoke the consent all the messages incoming from the source ' +
-            'will not be sent to the destination anymore.\n' +
-            'The data already sent to the destination will be kept\n' +
-            'Do you want to continue?'
+                    'will not be sent to the destination anymore.\n' +
+                    'The data already sent to the destination will be kept\n' +
+                    'Do you want to continue?',
+            'modify': 'This action will change the consent data. Are you sure you want to continue?'
         };
         this.state = {
             consent: copy(this.props.consent),
@@ -383,7 +384,7 @@ class ConsentManager extends React.Component {
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
                                 <DatePicker
-                                    minDate={moment(consent.start_validity)}
+                                    minDate={moment(this.props.consent.start_validity)}
                                     maxDate={moment(consent.expire_validity)}
                                     selected={moment(consent.start_validity)}
                                     onChange={this.changeDate.bind(this, 'S')}
@@ -427,7 +428,8 @@ class ConsentManager extends React.Component {
                 </Button>{' '}
                 <Button id='btn-modify'
                         color='primary'
-                        disabled={consent.status !== 'AC'}>
+                        disabled={!this.canModify.bind(this)}
+                        onClick={this.toggleModal.bind(this, this.actions.MODIFY)}>
                     Modify
                 </Button>{' '}
                 <Button id='btn-revoke'
@@ -454,6 +456,11 @@ class ConsentManager extends React.Component {
                 </Modal>
             </div>
         )
+    }
+
+    canModify() {
+        return this.state.consent.status === 'AC' && (this.state.consent.start_validity !== this.props.consent.start_validity ||
+            this.state.consent.expire_validity !== this.props.consent.expire_validity)
     }
 
     changeDate(startOrEnd, dateObject) {
@@ -496,17 +503,14 @@ class ConsentManager extends React.Component {
                 });
                 break;
             case this.actions.MODIFY:
-                const consent_id = this.state.consent.consent_id;
-                axios.post(`/v1/consents/${consent_id}/revoke/`, {}, {
+                axios.put(`/v1/consents/${consent_id}/`, {
+                    'start_validity': this.state.consent.start_validity,
+                    'expire_validity': this.state.consent.expire_validity
+                }, {
                     withCredentials: true,
                     xsrfCookieName: 'csrftoken',
                     xsrfHeaderName: 'X-CSRFToken'
                 }).then(() => {
-                    let consent = copy(this.state.consent);
-                    consent.status = 'RE';
-                    this.setState({
-                        consent: consent,
-                    });
                     this.toggleModal(action);
                     this.props.notifier.success('Consents revoked correctly');
                 }).catch(() => {

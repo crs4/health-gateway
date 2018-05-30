@@ -72,8 +72,6 @@ INSTALLED_APPS = [
     'hgw_backend',
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
 
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',

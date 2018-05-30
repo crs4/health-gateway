@@ -81,9 +81,6 @@ INSTALLED_APPS = [
     'gui'
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
-
 ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 
 ROOT_URLCONF = 'consent_manager.urls'
@@ -112,7 +109,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-    'EXCEPTION_HANDLER': 'consent_manager.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'hgw_common.utils.custom_exception_handler',
     'NON_FIELD_ERRORS_KEY': 'generic_errors',
 }
 

@@ -132,18 +132,17 @@ ARG HTTP_PORT=80
 
 RUN pip3 install Django==${DJANGO_VERSION} \
     gunicorn==19.7.1 \
-	mock \
-    djangorestframework==3.7.7 \
+	mock==2.0.0 \
+    djangorestframework==3.8.2 \
 	django-oauth-toolkit==0.12.0 \
-	django-cors-middleware \
-	django-sslserver \
-	requests \
-	requests_oauthlib \
+	django-cors-middleware==1.3.1 \
+	requests==2.18.4 \
+	requests_oauthlib==0.8.0 \
 	kafka_python==1.3.5 \
 	pycryptodomex==3.4.7 \
-	coreapi \
+	coreapi==2.3.3 \
 	drf_yasg \
-	PyYAML
+	PyYAML==3.12
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 

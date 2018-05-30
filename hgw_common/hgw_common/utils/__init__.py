@@ -16,23 +16,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-import json
-import logging
-import re
-import socket
-from django.conf import settings
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from itertools import product
-from threading import Thread
 
-import requests
+import logging
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.http import Http404
 from django.utils.crypto import get_random_string
 from oauth2_provider.ext.rest_framework import TokenHasScope
 from oauth2_provider.ext.rest_framework.permissions import SAFE_HTTP_METHODS
 from oauth2_provider.settings import oauth2_settings
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
+from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
 
 
 class TokenHasResourceDetailedScope(TokenHasScope):
@@ -131,3 +130,23 @@ def get_logger(logger_name):
     logger.addHandler(ch)
     logger.setLevel(level)
     return logger
+
+
+class ERRORS:
+    MISSING_PARAMETERS = 'missing_parameters'
+    FORBIDDEN = 'forbidden'
+    NOT_AUTHENTICATED = 'not_authenticated'
+    NOT_FOUND = 'not_found'
+
+
+def custom_exception_handler(exc, context):
+    if isinstance(exc, Http404):
+        response = Response({'errors': [ERRORS.NOT_FOUND]}, status=status.HTTP_404_NOT_FOUND)
+    elif isinstance(exc, NotAuthenticated):
+        response = Response({'errors': [ERRORS.NOT_AUTHENTICATED]}, status=status.HTTP_401_UNAUTHORIZED)
+    elif isinstance(exc, PermissionDenied):
+        response = Response({'errors': [ERRORS.FORBIDDEN]}, status=status.HTTP_403_FORBIDDEN)
+    else:
+        response = exception_handler(exc, context)
+
+    return response
