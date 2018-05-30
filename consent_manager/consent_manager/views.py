@@ -99,6 +99,7 @@ class ConsentView(ViewSet):
             logger.warn('Consent doesn\'t belong to the logged in person so it is not revoked')
             return Response({'errors': ['wrong_person']}, status=http_status.HTTP_400_BAD_REQUEST)
 
+        logger.info('Update data: {}'.format(request.data))
         serializer = serializers.ConsentSerializer(consent, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -113,6 +114,7 @@ class ConsentView(ViewSet):
         if request.auth.application.is_super_client():
             return Response(serializer.data)
         else:
+            logger.info(serializer.data)
             res = {
                 'consent_id': serializer.data['consent_id'],
                 'source': serializer.data['source'],

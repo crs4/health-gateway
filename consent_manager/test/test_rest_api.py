@@ -6,9 +6,9 @@ import os
 
 from django.test import TestCase, client
 
-from consent_manager import ERRORS
 from consent_manager.models import Consent, ConfirmationCode, RESTClient
 from consent_manager.serializers import ConsentSerializer
+from hgw_common.utils import ERRORS
 from hgw_common.utils.test import get_free_port
 
 PORT = get_free_port()
@@ -49,8 +49,8 @@ class TestAPI(TestCase):
             },
             'profile': self.profile,
             'person_id': PERSON1_ID,
-            'start_validity': '2017-10-23T10:00:54.123Z',
-            'expire_validity': '2018-10-23T10:00:00.000Z'
+            'start_validity': '2017-10-23T10:00:54.123000+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
 
         self.json_consent_data = json.dumps(self.consent_data)
@@ -97,8 +97,8 @@ class TestAPI(TestCase):
         """
         expected = {'consent_id': 'q18r2rpd1wUqQjAZPhh24zcN9KCePRyr',
                     'status': 'PE',
-                    'start_validity': '2017-10-23T10:00:54.123000Z',
-                    'expire_validity': '2018-10-23T10:00:00Z',
+                    'start_validity': '2017-10-23T10:00:54.123000+02:00',
+                    'expire_validity': '2018-10-23T10:00:00+02:00',
                     'source': {
                         'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
                         'name': 'SOURCE_1'
@@ -120,8 +120,8 @@ class TestAPI(TestCase):
         """
         expected = {
             'status': 'PE',
-            'start_validity': '2017-10-23T10:00:54.123000Z',
-            'expire_validity': '2018-10-23T10:00:00Z',
+            'start_validity': '2017-10-23T10:00:54.123000+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
             'profile': {
                 'code': 'PROF002',
                 'version': 'hgw.document.profile.v0',
@@ -185,32 +185,43 @@ class TestAPI(TestCase):
         res = self._add_consent()
         consent_id = res.json()['consent_id']
 
-        expected = {
+        expected = self.consent_data.copy()
+        expected.update({
             'status': 'PE',
-            'start_validity': '2017-10-23T10:00:54.123000Z',
-            'expire_validity': '2018-10-23T10:00:00Z',
-            'profile': {
-                'code': 'PROF002',
-                'version': 'hgw.document.profile.v0',
-                'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
-            },
-            'destination': {
-                'id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
-                'name': 'DEST_MOCKUP'
-            },
             'consent_id': consent_id,
             'person_id': PERSON1_ID,
-            'source': {
-                'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
-                'name': 'SOURCE_1'
-            }
-        }
+
+        })
 
         c = Consent.objects.get(consent_id=consent_id)
         serializer = ConsentSerializer(c)
         self.assertEquals(res.status_code, 201)
         self.assertEquals(set(res.json().keys()), {'consent_id', 'confirm_id'})
         self.assertDictEqual(serializer.data, expected)
+
+    def test_add_consent_other_timezone(self):
+        """
+        Tests that when the date is sent using timezone different from settings.TIME_ZONE,
+        when it is returned is still represented with settings.TIME_ZONE timezone.
+        """
+        for tz in (('08', 'Z'), ('09', '+01:00')):
+            consent_data = self.consent_data.copy()
+            consent_data['start_validity'] = '2017-10-23T{}:00:54.123000{}'.format(tz[0], tz[1])
+            consent_data['expire_validity'] = '2018-10-23T{}:00:00{}'.format(tz[0], tz[1])
+            res = self._add_consent(data=json.dumps(consent_data))
+            consent_id = res.json()['consent_id']
+            expected = self.consent_data.copy()
+            expected.update({
+                'status': 'PE',
+                'consent_id': consent_id,
+                'person_id': PERSON1_ID,
+
+            })
+            c = Consent.objects.get(consent_id=consent_id)
+            serializer = ConsentSerializer(c)
+            self.assertEquals(res.status_code, 201)
+            self.assertEquals(set(res.json().keys()), {'consent_id', 'confirm_id'})
+            self.assertDictEqual(serializer.data, expected)
 
     def test_add_consent_forbidden(self):
         """
@@ -369,7 +380,7 @@ class TestAPI(TestCase):
         """
         # First we add one REVOKED and one NOT_VALID consents
         for status in (Consent.REVOKED, Consent.NOT_VALID):
-            res = self._add_consent(self.json_consent_data, status=status)
+            self._add_consent(self.json_consent_data, status=status)
 
         # then we add a PENDING consent
         res = self._add_consent(self.json_consent_data)
@@ -399,8 +410,8 @@ class TestAPI(TestCase):
         consent_id = res.json()['consent_id']
 
         updated_data = {
-            'start_validity': '2017-11-23T10:00:54.123000Z',
-            'expire_validity': '2018-11-23T10:00:00Z'
+            'start_validity': '2017-09-23T10:00:54.123000+02:00',
+            'expire_validity': '2018-09-23T10:00:00+02:00'
         }
 
         self.client.login(username='duck', password='duck')
@@ -432,10 +443,6 @@ class TestAPI(TestCase):
             'start_validity': '2017-11-23T10:00:54.123Z',
             'expire_validity': '2018-11-23T10:00:00.000Z'
         }
-        expected_data = {
-            'start_validity': '2017-10-23T10:00:54.123000Z',
-            'expire_validity': '2018-10-23T10:00:00Z'
-        }
         self.client.login(username='duck', password='duck')
         for i, c in enumerate(consents):
             res = self.client.put('/v1/consents/{}/'.format(c), data=json.dumps(updated_data),
@@ -444,8 +451,8 @@ class TestAPI(TestCase):
             self.assertEqual(res.json(), {'errors': ['wrong_consent_status']})
             c = Consent.objects.get(consent_id=c)
             s = ConsentSerializer(c)
-            self.assertEqual(s.data['start_validity'], expected_data['start_validity'])
-            self.assertEqual(s.data['expire_validity'], expected_data['expire_validity'])
+            self.assertEqual(s.data['start_validity'], self.consent_data['start_validity'])
+            self.assertEqual(s.data['expire_validity'], self.consent_data['expire_validity'])
 
     def test_modify_consent_unallowed_fields(self):
         """
@@ -496,12 +503,8 @@ class TestAPI(TestCase):
         consent_id = res.json()['consent_id']
 
         updated_data = {
-            'start_validity': '2017-11-23T10:00:54.123Z',
-            'expire_validity': '2018-11-23T10:00:00.000Z'
-        }
-        expected_data = {
-            'start_validity': '2017-10-23T10:00:54.123000Z',
-            'expire_validity': '2018-10-23T10:00:00Z'
+            'start_validity': '2017-09-23T10:00:54.123000+02:00',
+            'expire_validity': '2018-09-23T10:00:00+02:00'
         }
 
         self.client.login(username='paperone', password='paperone')
@@ -511,8 +514,8 @@ class TestAPI(TestCase):
         self.assertEqual(res.json(), {'errors': ['wrong_person']})
         c = Consent.objects.get(consent_id=consent_id)
         s = ConsentSerializer(c)
-        self.assertEqual(s.data['start_validity'], expected_data['start_validity'])
-        self.assertEqual(s.data['expire_validity'], expected_data['expire_validity'])
+        self.assertEqual(s.data['start_validity'], self.consent_data['start_validity'])
+        self.assertEqual(s.data['expire_validity'], self.consent_data['expire_validity'])
 
     def test_modify_consent_unauthorized(self):
         """
@@ -807,26 +810,12 @@ class TestAPI(TestCase):
     def test_find_consent(self):
         res = self._add_consent()
         confirm_id = res.json()['confirm_id']
-        expected = {
+        expected = self.consent_data.copy()
+        expected.update({
             'status': 'PE',
-            'start_validity': '2017-10-23T10:00:54.123000Z',
-            'expire_validity': '2018-10-23T10:00:00Z',
-            'profile': {
-                'code': 'PROF002',
-                'version': 'hgw.document.profile.v0',
-                'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
-            },
-            'destination': {
-                'id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
-                'name': 'DEST_MOCKUP'
-            },
             'confirm_id': confirm_id,
             'person_id': PERSON1_ID,
-            'source': {
-                'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
-                'name': 'SOURCE_1'
-            }
-        }
+        })
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/consents/find/?confirm_id={}'.format(confirm_id))
         self.assertEqual(res.status_code, 200)

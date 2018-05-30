@@ -56,9 +56,6 @@ class Consent(models.Model):
     def save(self, *args, **kwargs):
         super(Consent, self).save(*args, **kwargs)
 
-    # class Meta:
-    #     unique_together = ('source', 'destination', 'person_id', 'profile', 'status')
-
 
 def get_validity():
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)
