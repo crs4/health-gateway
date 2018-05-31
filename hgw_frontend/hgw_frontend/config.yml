@@ -3,6 +3,7 @@ django:
   secret_key: 8m#4t%c_z1l7=gsfpf=han8ibdmd-+w1-05^&-+e4%)vwn2*7@
   hostname: hgwfrontend
   port: 8000
+  timezone: Europe/Rome
   database:
     name: ../hgw_frontend_db.sqlite3
 
