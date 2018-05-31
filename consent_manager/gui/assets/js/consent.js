@@ -27,7 +27,7 @@ import Pencil from 'react-icons/lib/fa/pencil';
 import PropTypes from 'prop-types';
 import NotificationManager from './notificationManager';
 
-moment.locale('it');
+moment.locale('it');  // This should correspond to the timezone set in Django
 
 const status = {
     'AC': 'ACTIVE',
@@ -314,7 +314,7 @@ class ConsentsViewer extends React.Component {
 }
 
 ConsentsViewer.propTypes = {
-    consents: PropTypes.array,
+    consents: PropTypes.object,
     selectConsent: PropTypes.func.isRequired
 };
 
@@ -423,12 +423,12 @@ class ConsentManager extends React.Component {
                 </div>
                 <Button id='btn-back'
                         color='info'
-                        onClick={this.endModify.bind(this)}>
+                        onClick={this.goBack.bind(this)}>
                     Back
                 </Button>{' '}
                 <Button id='btn-modify'
                         color='primary'
-                        disabled={!this.canModify.bind(this)}
+                        disabled={!this.canModify()}
                         onClick={this.toggleModal.bind(this, this.actions.MODIFY)}>
                     Modify
                 </Button>{' '}
@@ -448,9 +448,9 @@ class ConsentManager extends React.Component {
                         {this.alertMessages[this.state.modal]}
                     </ModalBody>
                     <ModalFooter>
-                        <Button color="primary" id="btn-modal-confirm-consents"
-                                onClick={this.sendCommand.bind(this, this.state.modal)}>Confirm</Button>{' '}
-                        <Button color="secondary" id="btn-modal-cancel-consents"
+                        <Button color="primary" id="btn-modal-ok"
+                                onClick={this.sendCommand.bind(this, this.state.modal)}>OK</Button>{' '}
+                        <Button color="secondary" id="btn-modal-cancel"
                                 onClick={this.toggleModal.bind(this, this.state.modal)}>Cancel</Button>
                     </ModalFooter>
                 </Modal>
@@ -459,6 +459,8 @@ class ConsentManager extends React.Component {
     }
 
     canModify() {
+        console.log(this.state.consent.status);
+        console.log(this.state.consent.start_validity !== this.props.consent.start_validity)
         return this.state.consent.status === 'AC' && (this.state.consent.start_validity !== this.props.consent.start_validity ||
             this.state.consent.expire_validity !== this.props.consent.expire_validity)
     }
@@ -477,8 +479,8 @@ class ConsentManager extends React.Component {
         });
     }
 
-    endModify() {
-        this.props.endModify(this.state.consent);
+    goBack() {
+        this.props.goBack(this.state.consent);
     }
 
     sendCommand(action) {
@@ -496,10 +498,10 @@ class ConsentManager extends React.Component {
                         consent: consent,
                     });
                     this.toggleModal(action);
-                    this.props.notifier.success('Consents revoked correctly');
+                    this.props.notifier.success('Consent revoked correctly');
                 }).catch(() => {
                     this.toggleModal(action);
-                    this.props.notifier.error('Errors happened revoking consents');
+                    this.props.notifier.error('Errors happened revoking consent');
                 });
                 break;
             case this.actions.MODIFY:
@@ -512,10 +514,10 @@ class ConsentManager extends React.Component {
                     xsrfHeaderName: 'X-CSRFToken'
                 }).then(() => {
                     this.toggleModal(action);
-                    this.props.notifier.success('Consents revoked correctly');
+                    this.props.notifier.success('Consent modified correctly');
                 }).catch(() => {
                     this.toggleModal(action);
-                    this.props.notifier.error('Errors happened revoking consents');
+                    this.props.notifier.error('Errors happened modifying consent');
                 });
         }
     }
@@ -530,7 +532,7 @@ class ConsentManager extends React.Component {
 ConsentManager.propTypes = {
     consent: PropTypes.object,
     notifier: PropTypes.instanceOf(NotificationManager),
-    endModify: PropTypes.func.isRequired
+    goBack: PropTypes.func.isRequired
 
 };
 
@@ -553,7 +555,7 @@ class ConsentsController extends React.Component {
         else {
             return (<ConsentManager consent={this.state.currentConsent}
                                     notifier={this.props.notifier}
-                                    endModify={this.endModify.bind(this)}/>)
+                                    goBack={this.doneModify.bind(this)}/>)
         }
     }
 
@@ -563,7 +565,7 @@ class ConsentsController extends React.Component {
         });
     }
 
-    endModify(consent) {
+    doneModify(consent) {
         let consents = copy(this.state.consents);
         consents[consent.consent_id] = consent;
         this.setState({

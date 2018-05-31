@@ -221,6 +221,7 @@ class TestAPI(TestCase):
             serializer = ConsentSerializer(c)
             self.assertEquals(res.status_code, 201)
             self.assertEquals(set(res.json().keys()), {'consent_id', 'confirm_id'})
+
             self.assertDictEqual(serializer.data, expected)
 
     def test_add_consent_forbidden(self):
@@ -440,8 +441,8 @@ class TestAPI(TestCase):
             consents.append(res.json()['consent_id'])
 
         updated_data = {
-            'start_validity': '2017-11-23T10:00:54.123Z',
-            'expire_validity': '2018-11-23T10:00:00.000Z'
+            'start_validity': '2017-11-23T10:00:54.123+02:00',
+            'expire_validity': '2018-11-23T10:00:00.000+02:00'
         }
         self.client.login(username='duck', password='duck')
         for i, c in enumerate(consents):
@@ -464,7 +465,7 @@ class TestAPI(TestCase):
 
         updated_data = {
             'person_id': 'DIFFERENT_PERSON',
-            'expire_validity': '2018-11-23T10:00:00Z'
+            'expire_validity': '2018-11-23T10:00:00+02:00'
         }
 
         self.client.login(username='duck', password='duck')
@@ -524,8 +525,8 @@ class TestAPI(TestCase):
         res = self._add_consent(status=Consent.ACTIVE)
         consent_id = res.json()['consent_id']
         updated_data = {
-            'start_validity': '2017-11-23T10:00:54.123Z',
-            'expire_validity': '2018-11-23T10:00:00.000Z'
+            'start_validity': '2017-11-23T10:00:54.123+02:00',
+            'expire_validity': '2018-11-23T10:00:00.000+02:00'
         }
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json')
@@ -541,8 +542,8 @@ class TestAPI(TestCase):
 
         headers = self._get_oauth_header(0)
         updated_data = {
-            'start_validity': '2017-11-23T10:00:54.123Z',
-            'expire_validity': '2018-11-23T10:00:00.000Z'
+            'start_validity': '2017-11-23T10:00:54.123+02:00',
+            'expire_validity': '2018-11-23T10:00:00.000+02:00'
         }
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json', **headers)
@@ -836,8 +837,8 @@ class TestAPI(TestCase):
             }
             res = self._add_consent(data=json.dumps(data))
             consents[res.json()['confirm_id']] = {
-                'start_validity': '2018-03-0{}T10:05:05.123000Z'.format(i + 1),
-                'expire_validity': '2019-03-0{}T10:05:05.123000Z'.format(i + 1),
+                'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
+                'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1),
             }
         self.client.login(username='duck', password='duck')
         data = {
@@ -852,9 +853,10 @@ class TestAPI(TestCase):
         for confirm_id, consent_data in consents.items():
             consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(consent_obj.status, Consent.ACTIVE)
-            self.assertEqual(consent_obj.start_validity.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            s = ConsentSerializer(consent_obj)
+            self.assertEqual(s.data['start_validity'],
                              consent_data['start_validity'])
-            self.assertEqual(consent_obj.expire_validity.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            self.assertEqual(s.data['expire_validity'],
                              consent_data['expire_validity'])
 
     def test_confirm_consent_unauthorized(self):
@@ -902,8 +904,8 @@ class TestAPI(TestCase):
             }
             res = self._add_consent(data=json.dumps(data), status=s)
             consents[res.json()['confirm_id']] = {
-                'start_validity': '2018-03-0{}T10:05:05.123000Z'.format(i + 1),
-                'expire_validity': '2019-03-0{}T10:05:05.123000Z'.format(i + 1),
+                'start_validity': '2018-03-0{}T10:05:05.123000+02:00'.format(i + 1),
+                'expire_validity': '2019-03-0{}T10:05:05.123000+02:00'.format(i + 1),
             }
             confirm_ids.append(res.json()['confirm_id'])
 

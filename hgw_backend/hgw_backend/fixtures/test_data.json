@@ -12,7 +12,7 @@
       "email": "",
       "is_staff": true,
       "is_active": true,
-      "date_joined": "2017-07-25T15:26:35.424Z",
+      "date_joined": "2017-07-25T15:26:35.424+02:00",
       "groups": [],
       "user_permissions": []
     }
