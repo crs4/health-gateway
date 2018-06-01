@@ -27,7 +27,7 @@ import Pencil from 'react-icons/lib/fa/pencil';
 import PropTypes from 'prop-types';
 import NotificationManager from './notificationManager';
 
-moment.locale('it');
+moment.locale('it');  // This should correspond to the timezone set in Django
 
 const status = {
     'AC': 'ACTIVE',
@@ -459,8 +459,6 @@ class ConsentManager extends React.Component {
     }
 
     canModify() {
-        console.log(this.state.consent.status);
-        console.log(this.state.consent.start_validity !== this.props.consent.start_validity)
         return this.state.consent.status === 'AC' && (this.state.consent.start_validity !== this.props.consent.start_validity ||
             this.state.consent.expire_validity !== this.props.consent.expire_validity)
     }

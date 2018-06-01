@@ -24,13 +24,14 @@
     "url-loader": "^1.0.1",
     "webpack": "^4.6.0",
     "webpack-bundle-tracker": "^0.3.0",
-    "webpack-cli": "^2.1.2"
+    "webpack-cli": "^2.1.4"
   },
   "dependencies": {
     "axios": "^0.18.0",
     "django-react-csrftoken": "^1.0.3",
     "history": "^4.7.2",
     "moment": "^2.22.1",
+    "moment-timezone": "^0.5.17",
     "node-sass": "^4.9.0",
     "prop-types": "^15.6.1",
     "qs": "^6.5.2",
