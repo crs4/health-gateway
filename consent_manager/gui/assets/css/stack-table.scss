@@ -5,17 +5,18 @@
   }
 }
 
-// Variables ===================================================================
-
 // Namespace so that it's easy to use your own table namespace
-$namespace: "table_responsive";
+$namespace-stack: "stack-table";
+$namespace-detail: "details-table";
 $table-wrapped-header: 120px;
 $table-cell-padding: 6px;
-$color-table: #008cba !default;
-$color-table-body: #eee;
+$color-table-head: #325d88 !default;
+$color-table-spanned: lighten($color-table-head, 15%);
+$color-table-odd: #c6d2de !default;
+$color-table-even: lighten($color-table-odd, 10%);
 $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
 
-.#{$namespace} {
+.#{$namespace-stack} {
 
   transition: 0.5s;
   padding-bottom: 0;
@@ -23,10 +24,10 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
   font-family: $font-family-sans-serif;
   margin-bottom: 10px;
 
-  &__head {
+  &-head {
     display: none;
     visibility: hidden;
-    color: #ffffff;
+    color: white;
 
     // Desktop
     @include breakpoint(medium) {
@@ -36,64 +37,65 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
     }
   }
 
-  &__body,
-  &__row,
-  &__cell {
+  &-body,
+  &-row,
+  &-cell {
     display: block;
     border: 0;
     text-align: left;
     white-space: normal;
 
     // table cells in the table main header row
-    .#{$namespace}__head & {
+    .#{$namespace-stack}-head & {
 
       // desktop
       @include breakpoint(medium) {
         padding: 0.75rem;
         font-size: 0.8203125rem;
-        background: $color-table;
-        border: 1 solid darken($color-table, 5%);
+        background: $color-table-head;
       }
     }
   }
 
-  &__row {
-    margin-bottom: 10px;
-
+  &-row {
     // Desktop
     @include breakpoint(medium) {
       display: table-row;
       width: 100%;
 
-      .#{$namespace}__cell {
+      .#{$namespace-stack}-cell {
         display: table-cell;
       }
     }
 
-    background-color: $color-table-body;
+    background-color: $color-table-odd;
+
+    &:nth-child(even) {
+      background-color: $color-table-even;
+    }
 
     &:nth-last-child(1) {
       margin-bottom: 0;
     }
   }
 
-  &__cell {
+  &-cell {
     padding: $table-cell-padding;
     transition: 1s;
 
     // All cells that belong to the table body
-    .#{$namespace}__body & {
+    .#{$namespace-stack}-body & {
       text-align: left;
       padding: 10px;
-      border: 1px solid darken($color-table-body, 5%);
+      border: 1px solid darken($color-table-even, 5%);
     }
   }
 
-  &__body {
+  &-body {
     display: table-row-group;
   }
 
-  &__cell[data-title]:before {
+  &-cell[data-title]:before {
     display: inline-block;
     min-width: $table-wrapped-header;
     content: attr(data-title);
@@ -106,7 +108,7 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
     }
   }
 
-  &__cell:empty {
+  &-cell:empty {
     display: none;
 
     // Desktop
@@ -115,7 +117,7 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
     }
   }
 
-  &__cell--head {
+  &-cell-header {
 
     // Desktop
     @include breakpoint(medium) {
@@ -128,8 +130,78 @@ $font-family-sans-serif: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe 
 
   }
 
-  &__cell--spanned {
-    font-size: 1.2rem;
+  &-cell-spanned {
+    color: white;
+    font-size: 0.8rem;
+    background-color: $color-table-spanned;
+    border: 0 !important;
   }
 
+  &-cell-modify {
+    @include breakpoint(medium) {
+      text-align: center !important;
+    }
+  }
+}
+
+.#{$namespace-detail} {
+
+  transition: 0.5s;
+  padding-bottom: 0;
+  width: 100%;
+  font-family: $font-family-sans-serif;
+  margin-bottom: 10px;
+
+  //&-container {
+  //  width: 100%;
+  //}
+
+  &-head {
+    color: white;
+    width: 100%;
+    display: table-header-group;
+    visibility: visible;
+  }
+
+  &-body,
+  &-row,
+  &-cell {
+    display: block;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  &-row {
+    display: table-row;
+    width: 100%;
+
+    .#{$namespace-detail}-cell {
+      display: table-cell;
+    }
+  }
+
+  &-cell {
+    padding: $table-cell-padding;
+    transition: 1s;
+
+    // All cells that belong to the table body
+    .#{$namespace-detail}-body & {
+      text-align: left;
+      padding: 10px;
+      border: 1px solid darken($color-table-even, 5%);
+    }
+  }
+
+  &-cell-key {
+    background-color: $color-table-odd
+  }
+
+  &-cell-value {
+    background-color: $color-table-even
+  }
+
+  &-body {
+    display: table-row-group;
+  }
 }

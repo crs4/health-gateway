@@ -1,7 +1,9 @@
 django:
+  debug: true
   secret_key: 5ed9#sef91*#bn+etd6ug*ty6)iysxmcnl%qv3c+i&-1ec1644
   hostname: hgwbackend
   port: 8003
+  timezone: Europe/Rome
   database:
     name: ../hgw_backend_db.sqlite3
 

@@ -17,15 +17,15 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
-import {Route, Switch} from 'react-router-dom';
-import App from "./app";
-import Confirm from "./confirm";
-
-require('../css/yeti/bootstrap.min.css');
-require('../css/custom.css');
-require('../css/responsive_table.scss');
+import {BrowserRouter, Route, Switch} from 'react-router-dom';
+import App from './app';
+import Confirm from './confirm';
 import 'react-datepicker/dist/react-datepicker.css';
+
+require('../css/sandstone/bootstrap.min.css');
+require('../css/custom.css');
+require('../css/stack-table.scss');
+
 
 const wrapper = document.getElementById("content");
 wrapper ? ReactDOM.render(

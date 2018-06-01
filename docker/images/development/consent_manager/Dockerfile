@@ -20,5 +20,5 @@ FROM crs4/web_base
 
 ARG HTTP_PORT=8002
 
-RUN pip3 install django-webpack-loader
+RUN pip3 install django-webpack-loader==0.6.0
 EXPOSE ${HTTP_PORT}

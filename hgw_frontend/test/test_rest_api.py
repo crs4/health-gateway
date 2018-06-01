@@ -41,7 +41,15 @@ CONSENT_MANAGER_URI = 'http://localhost:{}'.format(CONSENT_MANAGER_PORT)
 HGW_BACKEND_PORT = get_free_port()
 HGW_BACKEND_URI = 'http://localhost:{}'.format(HGW_BACKEND_PORT)
 
-DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----'
+DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
+                  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n' \
+                  '8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\n' \
+                  'kCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\n' \
+                  'MOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\n' \
+                  'Be9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n' \
+                  '8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\n' \
+                  'XQIDAQAB\n' \
+                  '-----END PUBLIC KEY-----'
 
 
 class TestHGWFrontendAPI(TestCase):
@@ -76,8 +84,8 @@ class TestHGWFrontendAPI(TestCase):
         self.flow_request_data = {
             'flow_id': '11111',
             'profile': self.profile,
-            "start_validity": "2017-10-23T10:00:00",
-            "expire_validity": "2018-10-23T10:00:00"
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
         self.encypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
@@ -89,31 +97,6 @@ class TestHGWFrontendAPI(TestCase):
         mock_kc_klass.MESSAGES = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
                                                  topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
                                                  value=message) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
-
-    def _create_flow_request_data(self):
-        payload = '[{"clinical_domain": "Laboratory", ' \
-                  '"filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, ' \
-                  '{"clinical_domain": "Radiology", ' \
-                  '"filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, ' \
-                  '{"clinical_domain": "Emergency", ' \
-                  '"filters": [{"excludes": "", "includes": ""}]}, ' \
-                  '{"clinical_domain": "Prescription", ' \
-                  '"filters": [{"excludes": "", "includes": ""}]}]'
-
-        self.profile = {
-            'code': 'PROF002',
-            'version': 'hgw.document.profile.v0',
-            'payload': payload
-
-        }
-
-        self.flow_request_data = {
-            'flow_id': '11111',
-            'profile': self.profile,
-            "start_validity": "2017-10-23T10:00:00",
-            "expire_validity": "2018-10-23T10:00:00"
-        }
-        self.flow_request_json_data = json.dumps(self.flow_request_data)
 
     @staticmethod
     def _get_client_data(client_index=0):
@@ -185,8 +168,8 @@ class TestHGWFrontendAPI(TestCase):
                         'version': 'hgw.document.profile.v0',
                         'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
                     },
-                    'start_validity': '2017-10-23T10:00:00Z',
-                    'expire_validity': '2018-10-23T10:00:00Z'
+                    'start_validity': '2017-10-23T10:00:00+02:00',
+                    'expire_validity': '2018-10-23T10:00:00+02:00'
                     }
         self.assertDictEqual(res.json(), expected)
 
@@ -205,8 +188,8 @@ class TestHGWFrontendAPI(TestCase):
                         'version': 'hgw.document.profile.v0',
                         'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
                     },
-                    'start_validity': '2017-10-23T10:00:00Z',
-                    'expire_validity': '2018-10-23T10:00:00Z'
+                    'start_validity': '2017-10-23T10:00:00+02:00',
+                    'expire_validity': '2018-10-23T10:00:00+02:00'
                     }
         self.assertDictEqual(res.json(), expected)
 
@@ -254,8 +237,8 @@ class TestHGWFrontendAPI(TestCase):
         self.flow_request_data = {
             'flow_id': '11111',
             'profile': self.profile,
-            "start_validity": "2017-10-23T10:00:00",
-            "expire_validity": "2018-10-23T10:00:00"
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
 
@@ -424,8 +407,8 @@ class TestHGWFrontendAPI(TestCase):
             'status': FlowRequest.ACTIVE,
             'profile': profile,
             'destination': destination,
-            "start_validity": "2017-10-23T10:00:00",
-            "expire_validity": "2018-10-23T10:00:00"
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         fr = FlowRequest.objects.create(**data)
         fr.save()
@@ -455,8 +438,8 @@ class TestHGWFrontendAPI(TestCase):
             'status': FlowRequest.ACTIVE,
             'profile': profile,
             'destination': destination,
-            "start_validity": "2017-10-23T10:00:00",
-            "expire_validity": "2018-10-23T10:00:00"
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         fr = FlowRequest.objects.create(**data)
         fr.save()

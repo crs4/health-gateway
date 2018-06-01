@@ -4,7 +4,7 @@
     "pk": 1,
     "fields": {
       "password": "pbkdf2_sha256$36000$TVusveN6piW0$9UjyDyTZUVkf32I5y3kdoqLGu2Bvgt5ybnOTLn43dQE=",
-      "last_login": "2017-08-01T14:56:13.019Z",
+      "last_login": "2017-08-01T14:56:13.019+02:00",
       "is_superuser": false,
       "username": "duck",
       "first_name": "",
@@ -12,7 +12,7 @@
       "email": "",
       "is_staff": false,
       "is_active": true,
-      "date_joined": "2017-08-01T14:56:12.915Z",
+      "date_joined": "2017-08-01T14:56:12.915+02:00",
       "fiscalNumber": "AAABBB12C34D567E",
       "groups": [],
       "user_permissions": []
@@ -23,7 +23,7 @@
     "pk": 2,
     "fields": {
       "password": "pbkdf2_sha256$36000$xQh4BaoMLy8i$WLlErGChzsMR8KpOlWqbpPy750V+fRlKnbpUO9jTbyU=",
-      "last_login": "2017-05-22T15:10:25.916Z",
+      "last_login": "2017-05-22T15:10:25.916+02:00",
       "is_superuser": true,
       "username": "admin",
       "first_name": "",
@@ -31,7 +31,7 @@
       "email": "",
       "is_staff": true,
       "is_active": true,
-      "date_joined": "2017-05-19T15:03:42.962Z",
+      "date_joined": "2017-05-19T15:03:42.962+02:00",
       "groups": [],
       "user_permissions": []
     }
@@ -41,7 +41,7 @@
     "pk": 2,
     "fields": {
       "password": "pbkdf2_sha256$36000$d9hyULmkTgCu$Q33bICNOFvf4L5e1hqvyKeWDKSO5xEInzVTUNteJBBc=",
-      "last_login": "2017-05-22T15:10:25.916Z",
+      "last_login": "2017-05-22T15:10:25.916+02:00",
       "is_superuser": true,
       "username": "paperone",
       "first_name": "",
@@ -49,7 +49,7 @@
       "email": "",
       "is_staff": true,
       "is_active": true,
-      "date_joined": "2017-05-19T15:03:42.962Z",
+      "date_joined": "2017-05-19T15:03:42.962+02:00",
       "fiscalNumber": "FFFGGG12H34I567G",
       "groups": [],
       "user_permissions": []
@@ -152,10 +152,10 @@
       "profile": 1,
       "person_id": "AAABBB12C34D567E",
       "status": "PE",
-      "timestamp": "2018-10-10T10:00:00.000Z",
+      "timestamp": "2018-10-10T10:00:00+02:00",
       "confirmed": null,
-      "start_validity": "2017-10-23T10:00:54.123Z",
-      "expire_validity": "2018-10-23T10:00:00.000Z"
+      "start_validity": "2017-10-23T10:00:54.123000+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00"
     }
   }
 ]

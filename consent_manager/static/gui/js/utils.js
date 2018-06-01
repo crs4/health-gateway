@@ -14,3 +14,7 @@ export function* iterate(obj) {
      yield [key, obj[key]];
    }
 }
+
+export function copy(obj) {
+    return Object.assign({}, obj);
+}

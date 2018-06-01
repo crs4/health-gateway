@@ -52,7 +52,7 @@ DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, c
 
 HOSTNAME = cfg['django']['hostname']
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
 ALLOWED_HOSTS = [HOSTNAME]
 
@@ -72,8 +72,6 @@ INSTALLED_APPS = [
     'hgw_backend',
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
 
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',
@@ -129,7 +127,7 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True

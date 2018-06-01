@@ -67,9 +67,6 @@ INSTALLED_APPS = [
     'source_endpoint',
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
-
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',
     'django.contrib.auth.backends.ModelBackend',
@@ -129,7 +126,7 @@ REST_FRAMEWORK = {
 }
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True

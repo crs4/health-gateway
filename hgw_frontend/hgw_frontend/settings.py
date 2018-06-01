@@ -56,7 +56,7 @@ DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, c
 
 HOSTNAME = cfg['django']['hostname']
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
 ALLOWED_HOSTS = [HOSTNAME]
 
@@ -79,8 +79,6 @@ INSTALLED_APPS = [
     'drf_yasg'
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
 
 ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 
@@ -144,12 +142,13 @@ AUTH_PASSWORD_VALIDATORS = []
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'hgw_frontend.HGWFrontendUser'
+USER_ID_FIELD = 'fiscalNumber'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'

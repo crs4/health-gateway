@@ -7,3 +7,7 @@ body {
 .jumbotron {
   padding: 2rem 2rem;
 }
+
+.link {
+  color: black !important;
+}

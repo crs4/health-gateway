@@ -56,7 +56,7 @@ DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, c
 
 HOSTNAME = cfg['django']['hostname']
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
 ALLOWED_HOSTS = ['*']
 
@@ -80,9 +80,6 @@ INSTALLED_APPS = [
     'consent_manager',
     'gui'
 ]
-
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
 
 ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
 
@@ -112,6 +109,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'EXCEPTION_HANDLER': 'hgw_common.utils.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'generic_errors',
 }
 
 TEMPLATES = [
@@ -145,12 +144,13 @@ AUTH_PASSWORD_VALIDATORS = []
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'consent_manager.ConsentManagerUser'
+USER_ID_FIELD = 'fiscalNumber'
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
