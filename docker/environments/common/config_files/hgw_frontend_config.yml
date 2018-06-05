@@ -8,7 +8,7 @@ django:
     name: /container/service/hgw_frontend_db.sqlite3
 
 saml:
-  service: spid
+  service: ts_cns
   sp_name: HGW Frontend Service Provider
   sp_cert: /container/service/certs/spid.cert.pem
   sp_key: /container/service/certs/spid.key.pem

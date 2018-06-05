@@ -1,9 +1,8 @@
 FROM ubuntu:16.04
 
 RUN apt-get update
-RUN apt-get -y install vim default-jdk ca-certificates openssl tomcat8 apache2 ntp wget less net-tools iputils-ping \
-libmysql-java libmysql-java libcommons-dbcp-java libcommons-pool-java
-#ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+
+# Create some env variables
 ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
 ENV IDP_SRC=/usr/local/src/shibboleth-identity-provider-3.3.1
 ENV ANT_OPTS="-Didp.src.dir=/usr/local/src/shibboleth-identity-provider-3.3.1 \
@@ -11,6 +10,11 @@ ENV ANT_OPTS="-Didp.src.dir=/usr/local/src/shibboleth-identity-provider-3.3.1 \
 -Didp.sealer.password=hgwdev -Didp.sealer.alias=hgwdev -Didp.keystore.password=hgwdev \
 -Didp.scope=healthgateway.it -Didp.uri.subject.alt.name=https://fakespid.healthgateway.it/idp/shibboleth"
 
+# Install packages
+RUN apt-get -y install ca-certificates openssl apache2 ntp wget less net-tools iputils-ping \
+libmysql-java libcommons-dbcp-java libcommons-pool-java
+
+# Install Oracle Java
 RUN apt-get update && \
   apt-get install -y --no-install-recommends locales && \
   locale-gen en_US.UTF-8 && \
@@ -23,16 +27,26 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends oracle-java8-installer oracle-java8-set-default && \
   apt-get clean all
 
-
+# Tomcat Installation and Configuration
 RUN apt install -y tomcat8
-#RUN groupadd tomcat8
-#RUN useradd -s /bin/false -g tomcat8 -d /opt/tomcat8 tomcat8
+COPY conf/tomcat/tomcat-server.xml /etc/tomcat8/server.xml
+COPY conf/tomcat/idp.xml /etc/tomcat8/Catalina/localhost/idp.xml
+COPY conf/tomcat/tomcat-context.xml /etc/tomcat8/context.xml
+COPY conf/tomcat/tomcat-default /etc/default/tomcat8
+WORKDIR /usr/share/tomcat8/lib/
+RUN ln -s ../../java/mysql.jar mysql-connector-java.jar
+RUN ln -s ../../java/tomcat-jbcp.jar tomcat-jbcp.jar
 
-RUN mkdir /root/certificates
-COPY idp-cert-server.crt /root/certificates
-COPY idp-key-server.key /root/certificates
-RUN chmod 400 /root/certificates/idp-key-server.key
-RUN chmod 644 /root/certificates/idp-cert-server.crt
+# Apache configuration
+COPY conf/apache/idp.conf /etc/apache2/sites-available/idp.conf
+COPY conf/apache/shibboleth-virtual-host.prod.conf /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf
+COPY conf/apache/shibboleth-virtual-host.dev.conf /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf
+COPY conf/apache/ports.conf /etc/apache2/ports.conf
+RUN a2enmod ssl headers proxy_ajp
+RUN a2ensite idp.conf
+RUN a2dissite 000-default.conf
+
+# Shibboleth installation
 WORKDIR /usr/local/src
 RUN wget http://shibboleth.net/downloads/identity-provider/3.3.1/shibboleth-identity-provider-3.3.1.tar.gz
 RUN tar -xzvf shibboleth-identity-provider-3.3.1.tar.gz
@@ -45,45 +59,34 @@ RUN chown -R tomcat8 /opt/shibboleth-idp/logs/
 RUN chown -R tomcat8 /opt/shibboleth-idp/metadata/
 RUN chown -R tomcat8 /opt/shibboleth-idp/credentials/
 RUN chown -R tomcat8 /opt/shibboleth-idp/conf
-COPY shibboleth-virtual-host.conf /etc/apache2/sites-available/shibboleth-virtual-host.conf
-COPY ports.conf /etc/apache2/ports.conf
-COPY tomcat-server.xml /etc/tomcat8/server.xml
-COPY idp.xml /etc/tomcat8/Catalina/localhost/idp.xml
-COPY idp.conf /etc/apache2/sites-available/idp.conf
-COPY tomcat-context.xml /etc/tomcat8/context.xml
-COPY tomcat-default /etc/default/tomcat8
-COPY idp.properties /opt/shibboleth-idp/conf/idp.properties
-RUN a2enmod ssl headers proxy_ajp
-RUN a2ensite shibboleth-virtual-host.conf idp.conf
-RUN a2dissite 000-default.conf
-COPY run.sh /usr/local/bin/run.sh 
-RUN chmod +x /usr/local/bin/run.sh 
-
-RUN apt-get -y install
-
-WORKDIR /usr/share/tomcat8/lib/
-RUN ln -s ../../java/mysql.jar mysql-connector-java.jar
-RUN ln -s ../../java/tomcat-jbcp.jar tomcat-jbcp.jar
 
 WORKDIR /opt/shibboleth-idp
 RUN ./bin/build.sh
-COPY saml-nameid.properties /opt/shibboleth-idp/conf/saml-nameid.properties
-COPY saml-nameid.xml /opt/shibboleth-idp/conf/saml-nameid.xml
-COPY subject-c14n.xml /opt/shibboleth-idp/conf/c14n/subject-c14n.xml
-COPY global.xml /opt/shibboleth-idp/conf/global.xml
-COPY ldap.properties /opt/shibboleth-idp/conf/ldap.properties
-COPY attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
-COPY attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
-COPY metadata-providers.xml /opt/shibboleth-idp/conf/metadata-providers.xml
-COPY idp-metadata.xml /opt/shibboleth-idp/metadata/idp-metadata.xml
-COPY sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
-COPY sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
+COPY conf/shibboleth/saml-nameid.xml /opt/shibboleth-idp/conf/saml-nameid.xml
+COPY conf/shibboleth/saml-nameid.properties /opt/shibboleth-idp/conf/saml-nameid.properties
+COPY conf/shibboleth/subject-c14n.xml /opt/shibboleth-idp/conf/c14n/subject-c14n.xml
+COPY conf/shibboleth/global.xml /opt/shibboleth-idp/conf/global.xml
+COPY conf/shibboleth/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
+COPY conf/shibboleth/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
+COPY conf/shibboleth/metadata-providers.xml /opt/shibboleth-idp/conf/metadata-providers.xml
+COPY conf/shibboleth/idp.properties /opt/shibboleth-idp/conf/idp.properties
+
+COPY metadata/idp-metadata.xml /opt/shibboleth-idp/metadata/idp-metadata.xml
+COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
+COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
 COPY credentials/* /opt/shibboleth-idp/credentials/
 
 #Disable this in production - too noise log levels
 #COPY logback.xml /opt/shibboleth-idp/conf/logback.xml
 
-COPY ca-CNS-bundle.crt /root/certificates
+# Copy certificates. TODO: This will be volumes
+RUN mkdir /root/certificates
+COPY certs/idp-cert-server.crt /root/certificates/
+COPY certs/idp-key-server.key /root/certificates/
+COPY certs/ca-CNS-bundle.crt /root/certificates
+COPY certs/ca-development.crt /root/certificates
+RUN chmod 400 /root/certificates/idp-key-server.key
+RUN chmod 644 /root/certificates/idp-cert-server.crt
 
 #install module for X.509 CLIENT CERTIFICATE SLL auth
 
@@ -97,7 +100,9 @@ COPY ca-CNS-bundle.crt /root/certificates
 #RUN cp x509-login-handler-0.5.0.jar /opt/shibboleth-idp/lib
 #COPY X509-login.jsp /opt/shibboleth-idp/src/main/webapp/
 
+COPY run.sh /usr/local/bin/run.sh 
+RUN chmod +x /usr/local/bin/run.sh 
+
 EXPOSE 443
-#ENTRYPOINT ["tail","-f", "/dev/null"]
 
 ENTRYPOINT ["run.sh"]

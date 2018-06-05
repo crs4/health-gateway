@@ -13,18 +13,6 @@ services:
         aliases:
           - mysql.healthgateway.it
 
-  spid_mock_ldap:
-    build: ../../images/common/spid_mock_ldap
-    image: crs4/spid_mock_ldap
-    ports:
-      - 389:389
-    environment:
-      - TZ=CET
-    networks:
-      default:
-        aliases:
-          - ldap.healthgateway.it
-
   spid_mock_shibboleth:
     build: ../../images/common/spid_mock_shibboleth
     image: crs4/spid_mock_shibboleth_idp
@@ -34,6 +22,7 @@ services:
       - 443:443
     environment:
       - TZ=CET
+      - DEVELOPMENT=true
     networks:
       default:
         aliases:
