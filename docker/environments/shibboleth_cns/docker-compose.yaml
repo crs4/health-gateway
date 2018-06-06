@@ -1,8 +1,8 @@
 version: '3.0'
 services:
-  spid_mock_mysql:
-    build: ../../images/common/spid_mock_mysql
-    image: crs4/spid_mock_mysql
+  ts_cns_mysql:
+    build: ../../images/common/ts_cns_mysql
+    image: crs4/ts_cns_mysql
     ports:
       - 3306:3306
     environment:
@@ -13,9 +13,9 @@ services:
         aliases:
           - mysql.healthgateway.it
 
-  spid_mock_shibboleth:
-    build: ../../images/common/spid_mock_shibboleth
-    image: crs4/spid_mock_shibboleth_idp
+  ts_cns_shibboleth:
+    build: ../../images/common/ts_cns_shibboleth
+    image: crs4/ts_cns_shibboleth
     extra_hosts:
       - "fakespid.healthgateway.it:127.0.1.1"
     ports:
