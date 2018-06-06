@@ -70,14 +70,14 @@ COPY conf/shibboleth/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-r
 COPY conf/shibboleth/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
 COPY conf/shibboleth/metadata-providers.xml /opt/shibboleth-idp/conf/metadata-providers.xml
 COPY conf/shibboleth/idp.properties /opt/shibboleth-idp/conf/idp.properties
+#Disable this in production - too noise log levels
+#COPY logback.xml /opt/shibboleth-idp/conf/logback.xml
 
 COPY metadata/idp-metadata.xml /opt/shibboleth-idp/metadata/idp-metadata.xml
 COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
 COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
 COPY credentials/* /opt/shibboleth-idp/credentials/
 
-#Disable this in production - too noise log levels
-#COPY logback.xml /opt/shibboleth-idp/conf/logback.xml
 
 # Copy certificates. TODO: This will be volumes
 RUN mkdir /root/certificates
