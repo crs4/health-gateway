@@ -6,7 +6,7 @@
         xsi:schemaLocation="urn:mace:shibboleth:2.0:afp http://shibboleth.net/schema/idp/shibboleth-afp.xsd">
 
         <AttributeFilterPolicy id="SP1_attrib_policy">
-            <PolicyRequirementRule xsi:type="Requester" value="https://hgwfrontend:8000/saml2/metadata/" />
+            <PolicyRequirementRule xsi:type="ANY"/>
             <AttributeRule attributeID="uid">
                 <PermitValueRule xsi:type="ANY" />
             </AttributeRule>
@@ -17,18 +17,4 @@
                 <PermitValueRule xsi:type="ANY" />
             </AttributeRule>
         </AttributeFilterPolicy>
-
-        <AttributeFilterPolicy id="SP2_attrib_policy">
-            <PolicyRequirementRule xsi:type="Requester" value="https://consentmanager:8002/saml2/metadata/" />
-            <AttributeRule attributeID="uid">
-                <PermitValueRule xsi:type="ANY" />
-            </AttributeRule>
-            <AttributeRule attributeID="fiscalNumber">
-                <PermitValueRule xsi:type="ANY" />
-            </AttributeRule>
-            <AttributeRule attributeID="cn">
-                <PermitValueRule xsi:type="ANY" />
-            </AttributeRule>
-        </AttributeFilterPolicy>
-
 </AttributeFilterPolicyGroup>

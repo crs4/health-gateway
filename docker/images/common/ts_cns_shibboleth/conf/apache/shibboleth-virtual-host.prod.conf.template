@@ -1,6 +1,5 @@
 <VirtualHost _default_:443>
-  ServerName fakespid.healthgateway.it:443
-  ServerAdmin admin@healthgateway.it
+  ServerName ${SERVER_NAME}:443
   DocumentRoot /var/www/html
 
   SSLEngine On
@@ -16,20 +15,13 @@
   # Enable HTTP Strict Transport Security with a 2 year duration
   Header always set Strict-Transport-Security "max-age=63072000;includeSubDomains"
   
-  SSLCertificateFile /root/certificates/idp-cert-server.crt
-  SSLCertificateKeyFile /root/certificates/idp-key-server.key
-
+  SSLCertificateFile /root/certificates/idp_server.cert.pem
+  SSLCertificateKeyFile /root/certificates/idp_server.key.pem
   SSLCACertificateFile  /root/certificates/ca-CNS-bundle.crt
 
   <Location /idp/Authn/X509>
-
-                    SSLVerifyClient require
-                    SSLOptions +ExportCertData +StdEnvVars
-                    SSLVerifyDepth 4
-
-
-       </Location>
-
-
-  
+    SSLVerifyClient require
+    SSLOptions +ExportCertData +StdEnvVars
+    SSLVerifyDepth 4
+  </Location> 
 </VirtualHost>

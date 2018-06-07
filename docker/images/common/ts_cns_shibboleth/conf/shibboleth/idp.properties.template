@@ -2,7 +2,7 @@
 idp.additionalProperties= /conf/saml-nameid.properties, /conf/services.properties, /conf/authn/duo.properties
 
 # Set the entityID of the IdP
-idp.entityID= https://fakespid.healthgateway.it/idp/shibboleth
+idp.entityID= https://${SERVER_NAME}/idp/shibboleth
 
 # Set the scope used in the attribute resolver for scoped attributes
 idp.scope= healthgateway.it
@@ -23,11 +23,11 @@ idp.scope= healthgateway.it
 # Settings for internal AES encryption key
 #idp.sealer.storeType = JCEKS
 #idp.sealer.updateInterval = PT15M
-idp.sealer.aliasBase = hgwdev
+idp.sealer.aliasBase = hgw
 idp.sealer.storeResource= %{idp.home}/credentials/sealer.jks
 idp.sealer.versionResource= %{idp.home}/credentials/sealer.kver
-idp.sealer.storePassword= hgwdev
-idp.sealer.keyPassword= hgwdev
+idp.sealer.storePassword= hgwpwd
+idp.sealer.keyPassword= hgwpwd
 
 # Settings for public/private signing and encryption key(s)
 # During decryption key rollover, point the ".2" properties at a second
@@ -159,6 +159,7 @@ idp.authn.flows= X509
 #idp.policy.messageLifetime = PT3M
 #idp.policy.clockSkew = PT3M
 
+# Set to custom bean for alternate storage of repl
 # Set to custom bean for alternate storage of replay cache
 #idp.replayCache.StorageService = shibboleth.StorageService
 

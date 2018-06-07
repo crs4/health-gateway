@@ -6,13 +6,13 @@ RUN apt-get update
 ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
 ENV IDP_SRC=/usr/local/src/shibboleth-identity-provider-3.3.1
 ENV ANT_OPTS="-Didp.src.dir=/usr/local/src/shibboleth-identity-provider-3.3.1 \
--Didp.target.dir=/opt/shibboleth-idp -Didp.host.name=fakespid.healthgateway.it \
--Didp.sealer.password=hgwdev -Didp.sealer.alias=hgwdev -Didp.keystore.password=hgwdev \
--Didp.scope=healthgateway.it -Didp.uri.subject.alt.name=https://fakespid.healthgateway.it/idp/shibboleth"
+-Didp.target.dir=/opt/shibboleth-idp -Didp.host.name=changeit \
+-Didp.sealer.password=hgwpwd -Didp.sealer.alias=hgw -Didp.keystore.password=hgwpwd \
+-Didp.scope=healthgateway.it -Didp.uri.subject.alt.name=https://changeit/idp/shibboleth"
 
 # Install packages
 RUN apt-get -y install ca-certificates openssl apache2 ntp wget less net-tools iputils-ping \
-libmysql-java libcommons-dbcp-java libcommons-pool-java
+libmysql-java libcommons-dbcp-java libcommons-pool-java gettext-base
 
 # Install Oracle Java
 RUN apt-get update && \
@@ -39,8 +39,8 @@ RUN ln -s ../../java/tomcat-jbcp.jar tomcat-jbcp.jar
 
 # Apache configuration
 COPY conf/apache/idp.conf /etc/apache2/sites-available/idp.conf
-COPY conf/apache/shibboleth-virtual-host.prod.conf /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf
-COPY conf/apache/shibboleth-virtual-host.dev.conf /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf
+COPY conf/apache/shibboleth-virtual-host.dev.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf.template
+COPY conf/apache/shibboleth-virtual-host.prod.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf.template
 COPY conf/apache/ports.conf /etc/apache2/ports.conf
 RUN a2enmod ssl headers proxy_ajp
 RUN a2ensite idp.conf
@@ -69,40 +69,36 @@ COPY conf/shibboleth/global.xml /opt/shibboleth-idp/conf/global.xml
 COPY conf/shibboleth/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
 COPY conf/shibboleth/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
 COPY conf/shibboleth/metadata-providers.xml /opt/shibboleth-idp/conf/metadata-providers.xml
-COPY conf/shibboleth/idp.properties /opt/shibboleth-idp/conf/idp.properties
+COPY conf/shibboleth/idp.properties.template /opt/shibboleth-idp/conf/idp.properties.template
 #Disable this in production - too noise log levels
-#COPY logback.xml /opt/shibboleth-idp/conf/logback.xml
+COPY conf/shibboleth/logback.xml /opt/shibboleth-idp/conf/logback.xml
 
 COPY metadata/idp-metadata.xml /opt/shibboleth-idp/metadata/idp-metadata.xml
 COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
 COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
-COPY credentials/* /opt/shibboleth-idp/credentials/
+COPY credentials/idp-encryption.crt /opt/shibboleth-idp/credentials/
+COPY credentials/idp-encryption.key /opt/shibboleth-idp/credentials/
+COPY credentials/idp-signing.crt /opt/shibboleth-idp/credentials/
+COPY credentials/idp-signing.key /opt/shibboleth-idp/credentials/
+COPY credentials/idp-backchannel.crt /opt/shibboleth-idp/credentials/
+COPY credentials/idp-backchannel.p12 /opt/shibboleth-idp/credentials/
 
 
 # Copy certificates. TODO: This will be volumes
 RUN mkdir /root/certificates
-COPY certs/idp-cert-server.crt /root/certificates/
-COPY certs/idp-key-server.key /root/certificates/
-COPY certs/ca-CNS-bundle.crt /root/certificates
-COPY certs/ca-development.crt /root/certificates
-RUN chmod 400 /root/certificates/idp-key-server.key
-RUN chmod 644 /root/certificates/idp-cert-server.crt
-
-#install module for X.509 CLIENT CERTIFICATE SLL auth
-
-#WORKDIR /usr/local
-#RUN apt-get -y install maven
-#RUN apt-get -y install subversion
-#RUN svn export https://subversion.switch.ch/svn/general/aai/java-idp-x509-login-handler/trunk/ java-idp-x509-login-handler
-#WORKDIR /usr/local/java-idp-x509-login-handler
-#RUN mvn package
-#RUN wget https://forge.switch.ch/attachments/download/674/x509-login-handler-0.5.0.jar
-#RUN cp x509-login-handler-0.5.0.jar /opt/shibboleth-idp/lib
-#COPY X509-login.jsp /opt/shibboleth-idp/src/main/webapp/
+COPY certs/idp_server.cert.pem /root/certificates/
+COPY certs/idp_server.key.pem /root/certificates/
+COPY certs/ca-CNS-bundle.crt /root/certificates/
+COPY certs/ca-development.crt /root/certificates/
+RUN chmod 644 /root/certificates/idp_server.cert.pem
+RUN chmod 400 /root/certificates/idp_server.key.pem
 
 COPY run.sh /usr/local/bin/run.sh 
 RUN chmod +x /usr/local/bin/run.sh 
 
 EXPOSE 443
+
+VOLUME /opt/shibboleth-idp/credentials/
+VOLUME /root/certificates/
 
 ENTRYPOINT ["run.sh"]
