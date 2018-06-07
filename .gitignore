@@ -17,5 +17,3 @@ certs/ca/
 
 /* node */
 **/node_modules
-**webpack-stats.json
-**/bundles/
