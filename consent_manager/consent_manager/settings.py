@@ -161,8 +161,8 @@ STATICFILES_DIRS = (
 WEBPACK_LOADER = {
     'DEFAULT': {
         'CACHE': not DEBUG,
-        'BUNDLE_DIR_NAME': 'gui/bundles/', # must end with slash
-        'STATS_FILE': os.path.join(BASE_DIR, '..//gui/webpack-stats.json'),
+        'BUNDLE_DIR_NAME': 'gui/bundles/',  # must end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, '../gui/webpack-stats.json'),
         'POLL_INTERVAL': 0.1,
         'TIMEOUT': None,
         'IGNORE': ['.+\.hot-update.js', '.+\.map']
