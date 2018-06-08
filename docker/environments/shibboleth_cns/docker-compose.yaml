@@ -18,6 +18,13 @@ services:
       - TZ=CET
       - DEVELOPMENT=true
       - SERVER_NAME=tscns
+    volumes:
+      - ../../../certs/ca/web/certs/tscns/idp-backchannel.crt:/opt/shibboleth-idp/credentials/idp-backchannel.crt
+      - ../../../certs/ca/web/certs/tscns/idp-backchannel.p12:/opt/shibboleth-idp/credentials/idp-backchannel.p12
+      - ../../../certs/ca/web/certs/tscns/idp-signing.crt:/opt/shibboleth-idp/credentials/idp-signing.crt
+      - ../../../certs/ca/web/certs/tscns/idp-signing.key:/opt/shibboleth-idp/credentials/idp-signing.key
+      - ../../../certs/ca/web/certs/tscns/idp-encryption.crt:/opt/shibboleth-idp/credentials/idp-encryption.crt
+      - ../../../certs/ca/web/certs/tscns/idp-encryption.key:/opt/shibboleth-idp/credentials/idp-encryption.key
     networks:
       default:
         aliases:

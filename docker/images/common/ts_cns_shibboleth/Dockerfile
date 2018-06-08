@@ -73,16 +73,9 @@ COPY conf/shibboleth/idp.properties.template /opt/shibboleth-idp/conf/idp.proper
 #Disable this in production - too noise log levels
 COPY conf/shibboleth/logback.xml /opt/shibboleth-idp/conf/logback.xml
 
-COPY metadata/idp-metadata.xml /opt/shibboleth-idp/metadata/idp-metadata.xml
+COPY metadata/idp-metadata.xml.template /opt/shibboleth-idp/metadata/idp-metadata.xml.template
 COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
 COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
-COPY credentials/idp-encryption.crt /opt/shibboleth-idp/credentials/
-COPY credentials/idp-encryption.key /opt/shibboleth-idp/credentials/
-COPY credentials/idp-signing.crt /opt/shibboleth-idp/credentials/
-COPY credentials/idp-signing.key /opt/shibboleth-idp/credentials/
-COPY credentials/idp-backchannel.crt /opt/shibboleth-idp/credentials/
-COPY credentials/idp-backchannel.p12 /opt/shibboleth-idp/credentials/
-
 
 # Copy certificates. TODO: This will be volumes
 RUN mkdir /root/certificates
@@ -93,12 +86,15 @@ COPY certs/ca-development.crt /root/certificates/
 RUN chmod 644 /root/certificates/idp_server.cert.pem
 RUN chmod 400 /root/certificates/idp_server.key.pem
 
-COPY run.sh /usr/local/bin/run.sh 
-RUN chmod +x /usr/local/bin/run.sh 
+RUN mkdir /container/
+COPY scripts/replace_certs.sh /container/
+COPY scripts/entrypoint.sh /container/entrypoint.sh
+RUN chmod +x /container/replace_certs.sh
+RUN chmod +x /container/entrypoint.sh
 
 EXPOSE 443
 
 VOLUME /opt/shibboleth-idp/credentials/
 VOLUME /root/certificates/
 
-ENTRYPOINT ["run.sh"]
+ENTRYPOINT ["/container/entrypoint.sh"]
