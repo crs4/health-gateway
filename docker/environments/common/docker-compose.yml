@@ -11,6 +11,8 @@ services:
       - DJANGO_APP_NAME=hgw_frontend
     ports:
       - 8000:8000
+    extra_hosts:
+      - "tscns:172.17.0.1"
     volumes:
       - ../../../hgw_frontend/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
@@ -72,6 +74,8 @@ services:
       - TZ=CET
     ports:
       - 8002:8002
+    extra_hosts:
+      - "tscns:172.17.0.1"
     volumes:
       - ../../../consent_manager/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
