@@ -79,12 +79,8 @@ COPY metadata/idp-metadata.xml.template /opt/shibboleth-idp/metadata/idp-metadat
 
 # Copy certificates. TODO: This will be volumes
 RUN mkdir /root/certificates
-COPY certs/idp_server.cert.pem /root/certificates/
-COPY certs/idp_server.key.pem /root/certificates/
 COPY certs/ca-CNS-bundle.crt /root/certificates/
 COPY certs/ca-development.crt /root/certificates/
-RUN chmod 644 /root/certificates/idp_server.cert.pem
-RUN chmod 400 /root/certificates/idp_server.key.pem
 
 RUN mkdir /container/
 COPY scripts/replace_certs.sh /container/
