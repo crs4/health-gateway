@@ -4,6 +4,16 @@ if [[ -z ${SERVER_NAME} ]]; then
     exit 1
 fi
 
+if [[ -z ${HGW_FRONTEND_ADDR} ]]; then
+    echo "HGW Frontend address not found. Set HGW_FRONTEND_ADDR env variable."
+    exit 1
+fi
+
+if [[ -z ${CONSENT_MANAGER_ADDR} ]]; then
+    echo "Consent Manager address not found. Set CONSENT_MANAGER_ADDR env variable."
+    exit 1
+fi
+
 SHIBBOLETH_BASE_DIR=/opt/shibboleth-idp
 SHIBBOLETH_CREDENTIALS_DIR=${SHIBBOLETH_BASE_DIR}/credentials
 SHIBBOLETH_METADATA=${SHIBBOLETH_BASE_DIR}/metadata/idp-metadata.xml
@@ -28,7 +38,8 @@ for f in idp-backchannel idp-signing idp-encryption; do
 done
 
 /container/replace_certs.sh
-/opt/shibboleth-idp/bin/build.sh
+
+envsubst '${HGW_FRONTEND_ADDR} ${CONSENT_MANAGER_ADDR}' < /opt/shibboleth-idp/conf/metadata-providers.xml.template > /opt/shibboleth-idp/conf/metadata-providers.xml
 
 if [[ -z "${DEVELOPMENT}" ]]; then
     envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf
@@ -40,6 +51,8 @@ fi
 apache2ctl start
 
 envsubst '${SERVER_NAME}' < /opt/shibboleth-idp/conf/idp.properties.template > /opt/shibboleth-idp/conf/idp.properties
+
+/opt/shibboleth-idp/bin/build.sh
 
 #JAVA_OPTS="-Djava.awt.headless=true -XX:+UseConcMarkSweepGC -Djava.util.logging.config.file=/var/lib/tomcat8/conf/logging.properties" 
 CATALINA_TMPDIR=/tmp/ \

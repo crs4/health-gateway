@@ -11,8 +11,8 @@ saml:
   service: ts_cns
   idp_url: https://tscns/idp/shibboleth
   sp_name: HGW Frontend Service Provider
-  sp_cert: ../certs/spid.cert.pem
-  sp_key: ../certs/spid.key.pem
+  sp_cert: ../saml2/spid.cert.pem
+  sp_key: ../saml2/spid.key.pem
 
 consent_manager:
   uri: https://consentmanager:8002

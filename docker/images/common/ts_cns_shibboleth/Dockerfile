@@ -68,14 +68,14 @@ COPY conf/shibboleth/subject-c14n.xml /opt/shibboleth-idp/conf/c14n/subject-c14n
 COPY conf/shibboleth/global.xml /opt/shibboleth-idp/conf/global.xml
 COPY conf/shibboleth/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
 COPY conf/shibboleth/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
-COPY conf/shibboleth/metadata-providers.xml /opt/shibboleth-idp/conf/metadata-providers.xml
+COPY conf/shibboleth/metadata-providers.xml.template /opt/shibboleth-idp/conf/metadata-providers.xml.template
 COPY conf/shibboleth/idp.properties.template /opt/shibboleth-idp/conf/idp.properties.template
 #Disable this in production - too noise log levels
 COPY conf/shibboleth/logback.xml /opt/shibboleth-idp/conf/logback.xml
 
 COPY metadata/idp-metadata.xml.template /opt/shibboleth-idp/metadata/idp-metadata.xml.template
-COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
-COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
+#COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
+#COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
 
 # Copy certificates. TODO: This will be volumes
 RUN mkdir /root/certificates
@@ -96,5 +96,7 @@ EXPOSE 443
 
 VOLUME /opt/shibboleth-idp/credentials/
 VOLUME /root/certificates/
+VOLUME /root/metadata/
+
 
 ENTRYPOINT ["/container/entrypoint.sh"]
