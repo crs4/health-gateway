@@ -9,11 +9,17 @@ run:
 run_with_spid:
 	docker-compose -f docker-compose-with-spid.yml -f docker-compose.override.yml up
 
+run_with_tscns:
+	docker-compose -f docker-compose-with-tscns.yml -f docker-compose.override.yml up
+
 down:
 	docker-compose down
 
 down_with_spid:
 	docker-compose -f docker-compose-with-spid.yml -f docker-compose.override.yml down
+
+down_with_tscns:
+	docker-compose -f docker-compose-with-tscns.yml -f docker-compose.override.yml down
 
 rund:
 	docker-compose up -d
@@ -32,6 +38,10 @@ init_db_run_with_spid: init_db run_with_spid
 
 init_db_rund_with_spid: init_db rund_with_spid
 
+init_db_run_with_tscns: init_db run_with_tscns
+
+init_db_rund_with_tscns: init_db rund_with_tscns
+
 build_init_db_run: build init_db_run
 
 build_init_db_rund: build init_db_rund
@@ -39,3 +49,7 @@ build_init_db_rund: build init_db_rund
 build_init_db_run_with_spid: build init_db_run_with_spid
 
 build_init_db_rund_with_spid: build init_db_rund_with_spid
+
+build_init_db_run_with_tscns: build init_db_run_with_tscns
+
+build_init_db_rund_with_tscns: build init_db_rund_with_tscns

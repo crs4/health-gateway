@@ -1,47 +1,51 @@
 version: '3.0'
 services:
-  spid-testenv-identityserver:
-    build: ../../images/common/spid_testenv_identityserver/
-    image: crs4/spid-testenv-identityserver
+  ts_cns_mysql:
+    build: ../../images/common/ts_cns_mysql
+    image: crs4/ts_cns_mysql
     ports:
-      - "9443:9443"
-    extra_hosts:
-      - "spid-testenv-identityserver:127.0.1.1"
-    networks:
-      default:
-        aliases:
-          - spid-testenv-identityserver
-
-  spid-testenv-backoffice:
-    build: ../../images/common/spid_testenv_backoffice/
-    image: crs4/spid-testenv-backoffice
-    ports:
-      - "8080:8080"
+      - 3306:3306
     environment:
-      - NODE_ENV=development
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
-    depends_on:
-      - spid-testenv-identityserver
+      - TZ=CET
+      - MYSQL_ROOT_PASSWORD=shibboleth
+
+  ts_cns_shibboleth:
+    build: ../../images/common/ts_cns_shibboleth
+    image: crs4/ts_cns_shibboleth
+    ports:
+      - 443:443
+    environment:
+      - TZ=CET
+      - DEVELOPMENT=true
+      - SERVER_NAME=tscns
+      - HGW_FRONTEND_ADDR=hgwfrontend:8000
+      - CONSENT_MANAGER_ADDR=consentmanager:8002
+    volumes:
+      - ../../../hgw_frontend/saml2/metadata.xml:/root/metadata/hgw-frontend-metadata.xml
+      - ../../../consent_manager/saml2/metadata.xml:/root/metadata/consent-manager-metadata.xml
+      - ../../../certs/ca/web/certs/tscns/idp_server.cert.pem:/root/certificates/idp_server.cert.pem
+      - ../../../certs/ca/web/certs/tscns/idp_server.key.pem:/root/certificates/idp_server.key.pem
+      - ../../../certs/ca/web/certs/tscns/idp-backchannel.crt:/opt/shibboleth-idp/credentials/idp-backchannel.crt
+      - ../../../certs/ca/web/certs/tscns/idp-backchannel.p12:/opt/shibboleth-idp/credentials/idp-backchannel.p12
+      - ../../../certs/ca/web/certs/tscns/idp-signing.crt:/opt/shibboleth-idp/credentials/idp-signing.crt
+      - ../../../certs/ca/web/certs/tscns/idp-signing.key:/opt/shibboleth-idp/credentials/idp-signing.key
+      - ../../../certs/ca/web/certs/tscns/idp-encryption.crt:/opt/shibboleth-idp/credentials/idp-encryption.crt
+      - ../../../certs/ca/web/certs/tscns/idp-encryption.key:/opt/shibboleth-idp/credentials/idp-encryption.key
     networks:
       default:
         aliases:
-          - spid-testenv-backoffice
+          - tscns
 
   hgw_frontend:
     build:
-      context: ../../images/development/hgw_frontend
+      context: ../../images/production/hgw_frontend
       args:
         HTTP_PORT: 8000
-    image: crs4/hgw_frontend:development
-    environment:
-      - HTTP_PORT=8000
-      - DJANGO_APP_NAME=hgw_frontend
+    image: crs4/hgw_frontend:latest
     ports:
       - 8000:8000
     volumes:
-      - ../../../hgw_frontend/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/hgw_frontend_config.spid.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -49,6 +53,7 @@ services:
       - ../../../certs/ca/kafka/certs/hgwfrontend/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/hgwfrontend/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
+      - ../../../certs/:/container/certs/
     networks:
       default:
         aliases:
@@ -56,16 +61,12 @@ services:
 
   hgw_backend:
     build:
-      context: ../../images/development/hgw_backend
-      args:
-        HTTP_PORT: 8003
-    image: crs4/hgw_backend:development
+      context: ../../images/production/hgw_backend
+    image: crs4/hgw_backend:latest
     depends_on:
       - kafka
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
     environment:
-      - HTTP_PORT=8003
-      - DJANGO_APP_NAME=hgw_backend
       - TZ=CET
     ports:
       - 8003:8003
@@ -89,20 +90,16 @@ services:
 
   consent_manager:
     build:
-      context: ../../images/development/consent_manager
-      args:
-        HTTP_PORT: 8002
-    image: crs4/consent_manager:development
+      context: ../../images/production/consent_manager
+    image: crs4/consent_manager:latest
     environment:
-      - HTTP_PORT=8002
-      - DJANGO_APP_NAME=consent_manager
       - TZ=CET
     ports:
       - 8002:8002
     volumes:
       - ../../../consent_manager/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/consent_manager_config.spid.yml:/etc/hgw_service/consent_manager_config.yml
+      - ./config_files/consent_manager_config.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -114,7 +111,7 @@ services:
 
   kafka:
     build: ../../images/common/kafka
-    image: crs4/kafka
+    image: crs4/kafka:latest
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_PORT=9092
@@ -134,13 +131,11 @@ services:
           - kafka
 
   hgw_dispatcher:
-    build: ../../images/development/hgw_dispatcher
-    image: crs4/hgw_dispatcher:development
+    build: ../../images/production/hgw_dispatcher
+    image: crs4/hgw_dispatcher:latest
     depends_on:
       - kafka
       - consent_manager
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
-      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
     volumes:
       - ../../../hgw_dispatcher/:/container/service
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
@@ -150,3 +145,6 @@ services:
       - ../../../certs/ca/kafka/certs/hgwdispatcher/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/hgwdispatcher/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--",
+      "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
