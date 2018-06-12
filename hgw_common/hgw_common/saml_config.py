@@ -26,7 +26,7 @@ from saml2 import saml
 import saml2
 
 SAML_SERVICE_SPID = 'spid'
-SAML_SERVICE_TS_CNS = 'ts_cns'
+SAML_SERVICE_TS_CNS = 'tscns'
 
 IDP_META_PATH = {
     SAML_SERVICE_SPID: path.join(path.dirname(__file__), './saml2/spid_idp_metadata.xml'),
