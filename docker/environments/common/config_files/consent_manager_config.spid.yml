@@ -5,11 +5,11 @@ django:
   port: 8002
   timezone: Europe/Rome
   database:
-    name: ../consent_manager_db.sqlite3
+    name: /container/service/consent_manager_db.sqlite3
 
 saml:
-  service: tscns
+  service: spid
   idp_url: https://tscns/idp/shibboleth
   sp_name: Consent Manager Service Provider
-  sp_cert: ../saml2/saml2.cert.pem
-  sp_key: ../saml2/saml2.key.pem
+  sp_cert: /container/service/saml2/saml2.cert.pem
+  sp_key: /container/service/saml2/saml2.key.pem

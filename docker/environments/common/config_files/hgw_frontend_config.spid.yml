@@ -5,14 +5,14 @@ django:
   port: 8000
   timezone: Europe/Rome
   database:
-    name: ../hgw_frontend_db.sqlite3
+    name: /container/service/hgw_frontend_db.sqlite3
 
 saml:
-  service: tscns
+  service: spid
   idp_url: https://tscns/idp/shibboleth
   sp_name: HGW Frontend Service Provider
-  sp_cert: ../saml2/saml2.cert.pem
-  sp_key: ../saml2/saml2.key.pem
+  sp_cert: /container/service/saml2/saml2.cert.pem
+  sp_key: /container/service/saml2/saml2.key.pem
 
 consent_manager:
   uri: https://consentmanager:8002
@@ -21,9 +21,9 @@ consent_manager:
 
 kafka:
   uri: kafka:9093
-  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
-  client_cert: ../../certs/ca/kafka/certs/hgwfrontend/cert.pem
-  client_key: ../../certs/ca/kafka/certs/hgwfrontend/key.pem
+  ca_cert: /container/client_certs/kafka.chain.cert.pem
+  client_cert: /container/client_certs/cert.pem
+  client_key: /container/client_certs/key.pem
 
 hgw_backend:
   uri: https://hgwbackend:8003

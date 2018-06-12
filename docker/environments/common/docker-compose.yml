@@ -11,10 +11,12 @@ services:
       - DJANGO_APP_NAME=hgw_frontend
     ports:
       - 8000:8000
+    extra_hosts:
+      - "tscns:172.17.0.1"
     volumes:
       - ../../../hgw_frontend/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -72,10 +74,12 @@ services:
       - TZ=CET
     ports:
       - 8002:8002
+    extra_hosts:
+      - "tscns:172.17.0.1"
     volumes:
       - ../../../consent_manager/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/consent_manager_config.yml:/etc/hgw_service/consent_manager_config.yml
+      - ./config_files/consent_manager_config.tscns.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem

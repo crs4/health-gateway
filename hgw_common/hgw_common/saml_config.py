@@ -26,11 +26,10 @@ from saml2 import saml
 import saml2
 
 SAML_SERVICE_SPID = 'spid'
-SAML_SERVICE_TS_CNS = 'ts_cns'
+SAML_SERVICE_TS_CNS = 'tscns'
 
 IDP_META_PATH = {
     SAML_SERVICE_SPID: path.join(path.dirname(__file__), './saml2/spid_idp_metadata.xml'),
-    SAML_SERVICE_TS_CNS: path.join(path.dirname(__file__), './saml2/ts_cns_idp_metadata.xml')
 }
 
 REQ_ATTRIBUTES = {
@@ -53,8 +52,21 @@ REQ_ATTRIBUTES = {
 ATTRIB_MAP_DIR_PATH = path.join(path.dirname(__file__), './saml2/attribute-maps')
 
 
-def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file, saml_service):
+def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file, saml_service, idp_url):
     assert saml_service in (SAML_SERVICE_SPID, SAML_SERVICE_TS_CNS)
+
+    if saml_service == SAML_SERVICE_SPID:
+        metadata = {
+            'local': [IDP_META_PATH[SAML_SERVICE_SPID]],
+        }
+    else:
+        metadata = {
+            'remote': [
+                {
+                    'url': idp_url
+                }
+            ]
+        }
 
     return {
 
@@ -98,9 +110,7 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file, saml_service):
             }
         },
         # where the remote metadata is stored
-        'metadata': {
-            'local': [IDP_META_PATH[saml_service]],
-        },
+        'metadata': metadata,
         # set to 1 to output debugging information
         'debug': 1,
         'timeslack': 5000,
