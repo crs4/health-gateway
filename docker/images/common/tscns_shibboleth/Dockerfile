@@ -51,6 +51,11 @@ WORKDIR /usr/local/src
 RUN wget http://shibboleth.net/downloads/identity-provider/3.3.1/shibboleth-identity-provider-3.3.1.tar.gz
 RUN tar -xzvf shibboleth-identity-provider-3.3.1.tar.gz
 WORKDIR /usr/local/src/shibboleth-identity-provider-3.3.1
+COPY web_gui/x509-prompt.jsp /usr/local/src/shibboleth-identity-provider-3.3.1/webapp/x509-prompt.jsp
+COPY web_gui/bootstrap.css /usr/local/src/shibboleth-identity-provider-3.3.1/webapp/css/bootstrap.css
+COPY web_gui/bootstrap.min.css /usr/local/src/shibboleth-identity-provider-3.3.1/webapp/css/bootstrap.min.css
+COPY web_gui/bootstrap-responsive.css /usr/local/src/shibboleth-identity-provider-3.3.1/webapp/css/bootstrap-responsive.css
+COPY web_gui/bootstrap-responsive.min.css /usr/local/src/shibboleth-identity-provider-3.3.1/webapp/css/bootstrap-responsive.min.css
 RUN mkdir /opt/shibboleth-idp
 RUN ./bin/install.sh
 RUN wget https://build.shibboleth.net/nexus/service/local/repositories/thirdparty/content/javax/servlet/jstl/1.2/jstl-1.2.jar -O /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/jstl-1.2.jar
@@ -59,6 +64,7 @@ RUN chown -R tomcat8 /opt/shibboleth-idp/logs/
 RUN chown -R tomcat8 /opt/shibboleth-idp/metadata/
 RUN chown -R tomcat8 /opt/shibboleth-idp/credentials/
 RUN chown -R tomcat8 /opt/shibboleth-idp/conf
+COPY web_gui/attribute-release.vm /opt/shibboleth-idp/views/intercept/attribute-release.vm
 
 WORKDIR /opt/shibboleth-idp
 RUN ./bin/build.sh
