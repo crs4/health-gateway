@@ -23,6 +23,7 @@ services:
     volumes:
       - ../../../hgw_frontend/saml2/metadata.xml:/root/metadata/hgw-frontend-metadata.xml
       - ../../../consent_manager/saml2/metadata.xml:/root/metadata/consent-manager-metadata.xml
+      - ../../../certs/ca/web/certs/ca/web.chain.cert.pem:/root/certificates/ca-development.crt
       - ../../../certs/ca/web/certs/tscns/idp_server.cert.pem:/root/certificates/idp_server.cert.pem
       - ../../../certs/ca/web/certs/tscns/idp_server.key.pem:/root/certificates/idp_server.key.pem
       - ../../../certs/ca/web/certs/tscns/idp-backchannel.crt:/opt/shibboleth-idp/credentials/idp-backchannel.crt
