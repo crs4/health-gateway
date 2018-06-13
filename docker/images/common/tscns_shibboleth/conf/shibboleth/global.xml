@@ -51,7 +51,7 @@
     <!-- A DataSource bean suitable for use in the idp.persistentId.dataSource property. -->
 <bean id="MyDataSource" class="org.apache.commons.dbcp.BasicDataSource"
       p:driverClassName="com.mysql.jdbc.Driver"
-      p:url="jdbc:mysql://ts_cns_mysql:3306/shibboleth?autoReconnect=true"
+      p:url="jdbc:mysql://tscns_mysql:3306/shibboleth?autoReconnect=true"
       p:username="hgw"
       p:password="hgwpwd"
       p:maxActive="10"
