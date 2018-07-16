@@ -73,14 +73,14 @@ class TestSourceEndpointAPI(TestCase):
     def __init__(self, *args, **kwargs):
         super(TestSourceEndpointAPI, self).__init__(*args, **kwargs)
         self.client = client.Client()
-        payload = [{'clinical_domain': 'Laboratory',
-                    'filters': [{'includes': 'immunochemistry', 'excludes': 'HDL'}]},
-                   {'clinical_domain': 'Radiology',
-                    'filters': [{'includes': 'Tomography', 'excludes': 'Radiology'}]},
-                   {'clinical_domain': 'Emergency',
-                    'filters': [{'includes': '', 'excludes': ''}]},
-                   {'clinical_domain': 'Prescription',
-                    'filters': [{'includes': '', 'excludes': ''}]}]
+        payload = [{'clinical_domain': 'Laboratory'}]
+        #  'filters': [{'includes': 'immunochemistry', 'excludes': 'HDL'}]},
+        # {'clinical_domain': 'Radiology',
+        #  'filters': [{'includes': 'Tomography', 'excludes': 'Radiology'}]},
+        # {'clinical_domain': 'Emergency',
+        #  'filters': [{'includes': '', 'excludes': ''}]},
+        # {'clinical_domain': 'Prescription',
+        #  'filters': [{'includes': '', 'excludes': ''}]}]
 
         profile = {
             'code': 'PROF002',
@@ -92,10 +92,13 @@ class TestSourceEndpointAPI(TestCase):
 
         self.data = {
             'person_identifier': 'some_guy',
-            'dest_public_key': 'some_string',
+            'dest_public_key': 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKhkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQYMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjgBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzdXQIDAQAB',
             'channel_id': WRONG_CHANNEL_ID,
             'profile': profile
         }
+        jsonstr = "{\"person_identifier\": \"AAABBB75I13I275G\", \"dest_public_key\": \"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKhkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQYMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjgBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzdXQIDAQAB\", \"channel_id\": \"channel_id\", \"profile\": {\"code\": \"PROF002\", \"version\": \"hgw.document.profile.v0\", \"start_time_validity\": \"2017-06-23T10:13:39+02:00\", \"end_time_validity\": \"2018-06-23T23:59:59+02:00\", \"payload\": \"prova\"}}";
+        # jsonstr = """{"person_identifier": "AAABBB75I13I275G", "dest_public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKhkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQYMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjgBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzdXQIDAQAB", "channel_id": "channel_id", "profile": {"code": "PROF002", "version": "hgw.document.profile.v0", "start_time_validity": "2017-06-23T10:13:39+02:00", "end_time_validity": "2018-06-23T23:59:59+02:00", "payload": "[{\\\"clinical_domain\\\": \\\"Laboratory\\\"}]"}}"""
+        json.loads(jsonstr)
 
     @staticmethod
     def _get_client_data(client_index):

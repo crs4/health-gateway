@@ -8,8 +8,8 @@ django:
     name: /container/service/hgw_frontend_db.sqlite3
 
 saml:
-  service: tscns
-  idp_url: https://tscns/idp/shibboleth
+  service: spid
+  idp_url: https://spid-testenv-identityserver:9443/samlsso
   sp_name: HGW Frontend Service Provider
   sp_cert: /container/service/saml2/saml2.cert.pem
   sp_key: /container/service/saml2/saml2.key.pem

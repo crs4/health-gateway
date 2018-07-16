@@ -317,7 +317,7 @@ MAP = {
         'serialNumber': 'urn:mace:dir:attribute-def:serialNumber',
         'singleLevelQuality': 'urn:mace:dir:attribute-def:singleLevelQuality',
         'sn': 'urn:mace:dir:attribute-def:sn',
-        'spidCode': 'urn:mace:dir:attribute-def:fiscalNumber:spidCode',
+        'spidCode': 'urn:mace:dir:attribute-def:spidCode',
         'st': 'urn:mace:dir:attribute-def:st',
         'stateOrProvinceName': 'urn:mace:dir:attribute-def:stateOrProvinceName',
         'street': 'urn:mace:dir:attribute-def:street',

@@ -1,7 +1,7 @@
 {
   "resourceType": "Observation",
   "subject": {
-    "reference": "http://fake_fse.it/Person/AAABBB12C34D567E"
+    "reference": "http://fake_fse.it/Person/{person_id}"
     }
   ,
   "status": "final",

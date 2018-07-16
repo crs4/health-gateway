@@ -37,7 +37,8 @@ OAUTH_CLIENT_SECRET = getattr(
 
 DESTINATION_ID = getattr(settings, 'DESTINATION_ID', None)
 if DESTINATION_ID is None:
-    DESTINATION_ID_PATHS = ['/etc/destination_mockup/destination_id', '/etc/destination_id', 'destination_id']
+    DESTINATION_ID_PATHS = ['/etc/destination_mockup/destination_id', '/etc/destination_id',
+                            os.path.join(BASE_DIR, 'destination_id')]
     for dp in DESTINATION_ID_PATHS:
         try:
             with open(dp, 'r') as f:

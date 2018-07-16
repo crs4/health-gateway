@@ -78,37 +78,40 @@ class Command(BaseCommand):
         if resource_type != 'Observation':
             raise UnsupportedResource('{} is not supported'.format(resource_type))
 
-        person_id = data['subject']['reference'].split('/')[-1]
-        connectors = Connector.objects.filter(person_identifier=person_id)
-        print("Connector.objects.all().count()", Connector.objects.all().count())
+        connectors = Connector.objects.all()
+        print("Connector.objects.all().count()", connectors.count())
         if connectors.count() < 1:
-            raise NoConnectorAvailable('No connector for person_id = {}'.format(person_id))
+            raise NoConnectorAvailable('No connector available')
 
         for connector in connectors:
-            if person_id == connector.person_identifier:
-                value = json.dumps(data)
-                if cipher:
-                    if connector.channel_id not in self.ciphers:
-                        self.ciphers[connector.channel_id] = Cipher(
-                            public_key=RSA.importKey(connector.dest_public_key)
-                        )
-                    value = self.ciphers[connector.channel_id].encrypt(value)
-                else:
-                    value = '{}{}'.format(MAGIC_BYTES.decode('utf-8'), value)
-                session = self._get_oauth2_session()
-                channel_id = {
-                    'channel_id': connector.channel_id
-                }
-                message = {
-                    'payload': value
-                }
-                headers = {
-                    'Authorization': 'Bearer {}'.format(session.token['access_token']),
-                }
+            person_id = connector.person_identifier
+            print(person_id)
+            data['subject']['reference'] = data['subject']['reference'].format(person_id=person_id)
+            print(data)
+            value = json.dumps(data)
+            print(value)
+            if cipher:
+                if connector.channel_id not in self.ciphers:
+                    self.ciphers[connector.channel_id] = Cipher(
+                        public_key=RSA.importKey(connector.dest_public_key)
+                    )
+                value = self.ciphers[connector.channel_id].encrypt(value)
+            else:
+                value = '{}{}'.format(MAGIC_BYTES.decode('utf-8'), value)
+            session = self._get_oauth2_session()
+            channel_id = {
+                'channel_id': connector.channel_id
+            }
+            message = {
+                'payload': value
+            }
+            headers = {
+                'Authorization': 'Bearer {}'.format(session.token['access_token']),
+            }
 
-                res = requests.post("{}/v1/messages/".format(HGW_BACKEND_URI),
-                                    data=channel_id, files=message, headers=headers)
-                if res.status_code == 200:
-                    print('sent correctly')
-                else:
-                    print("Error occurred")
+            res = requests.post("{}/v1/messages/".format(HGW_BACKEND_URI),
+                                data=channel_id, files=message, headers=headers)
+            if res.status_code == 200:
+                print('sent correctly')
+            else:
+                print("Error occurred")

@@ -26,6 +26,9 @@ from kafka import KafkaConsumer, TopicPartition
 from hgw_common.cipher import Cipher
 from Cryptodome.PublicKey import RSA
 
+if not os.environ.get('DJANGO_SETTINGS_MODULE'):
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "destination_mockup.settings")
+
 MAGIC_BYTES = '\xdf\xbb'
 
 
@@ -54,15 +57,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         kc = KafkaConsumer(bootstrap_servers=settings.KAFKA_BROKER,
+                           client_id=settings.DESTINATION_ID,
+                           group_id=settings.DESTINATION_ID,
                            security_protocol='SSL',
                            ssl_check_hostname=True,
                            ssl_cafile=settings.KAFKA_CA_CERT,
                            ssl_certfile=settings.KAFKA_CLIENT_CERT,
                            ssl_keyfile=settings.KAFKA_CLIENT_KEY)
-
-        tp = TopicPartition(settings.KAFKA_TOPIC, 0)
-        kc.assign([tp])
-        kc.seek_to_beginning(tp)
+        kc.subscribe([settings.KAFKA_TOPIC])
         print('Starting to receive messages for topic: {}'.format(settings.KAFKA_TOPIC))
         for msg in kc:
             print("Received message with key: {}".format(msg.key))
@@ -71,3 +73,8 @@ class Command(BaseCommand):
                 self._handle_payload(self.cipher.decrypt(message), *args, **options)
             else:
                 self._handle_payload(message.decode("utf-8"), *args, **options)
+
+
+if __name__ == '__main__':
+    c = Command()
+    c.handle()

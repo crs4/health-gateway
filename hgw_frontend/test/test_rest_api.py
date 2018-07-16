@@ -488,6 +488,8 @@ class TestHGWFrontendAPI(TestCase):
             confirm_id, callback_url))
         self.assertEquals(res.status_code, 302)
         self.assertEquals(ConsentConfirmation.objects.count(), previous_consent_count + 1)
+        fr = ConfirmationCode.objects.get(code=confirm_id).flow_request
+        self.assertEquals(fr.person_id, '100001')
         consent_confirm_id = ConsentConfirmation.objects.last().confirmation_id
         consent_callback_url = 'http://testserver/v1/flow_requests/consents_confirmed/'
         self.assertRedirects(res, '{}?confirm_id={}&callback_url={}'.
@@ -510,10 +512,10 @@ class TestHGWFrontendAPI(TestCase):
         redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
-        fr = c.flow_request
+        fr = c.flow_request.id
         self.assertEquals(fr.status, FlowRequest.ACTIVE)
 
-        destination = c.flow_request.destination
+        destination = fr.destination
         kafka_data = {
             'channel_id': c.consent_id,
             'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',

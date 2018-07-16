@@ -413,18 +413,15 @@ def _get_callback_url(request):
 
 
 def _ask_consent(request, flow_request, callback_url):
-    if flow_request.status == FlowRequest.PENDING:
-        consents = _create_consent(flow_request, callback_url, request.user)
-        if not consents:
-            return HttpResponse("All available consents already inserted")
-        logger.debug("Created consent")
-        consent_callback_url = _get_callback_url(request)
-        return HttpResponseRedirect('{}?{}&callback_url={}'.
-                                    format(CONSENT_MANAGER_CONFIRMATION_PAGE,
-                                           '&'.join(['confirm_id={}'.format(consent) for consent in consents]),
-                                           consent_callback_url))
-    else:
-        return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_FR_STATUS'])
+    consents = _create_consent(flow_request, callback_url, request.user)
+    if not consents:
+        return HttpResponse("All available consents already inserted")
+    logger.debug("Created consent")
+    consent_callback_url = _get_callback_url(request)
+    return HttpResponseRedirect('{}?{}&callback_url={}'.
+                                format(CONSENT_MANAGER_CONFIRMATION_PAGE,
+                                       '&'.join(['confirm_id={}'.format(consent) for consent in consents]),
+                                       consent_callback_url))
 
 
 def _confirm(request, consent_confirm_id):
@@ -514,7 +511,12 @@ def confirm_request(request):
             else:
                 fr = cc.flow_request
                 if action == CONFIRM_ACTIONS[0]:
-                    return _ask_consent(request, fr, fr_callback_url)
+                    if fr.status == FlowRequest.PENDING:
+                        fr.person_id = request.user.fiscalNumber
+                        fr.save()
+                        return _ask_consent(request, fr, fr_callback_url)
+                    else:
+                        return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_FR_STATUS'])
                 else:
                     if fr.status == FlowRequest.DELETE_REQUESTED:
                         fr.delete()
