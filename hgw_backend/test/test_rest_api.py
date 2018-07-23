@@ -199,7 +199,9 @@ class TestHGWBackendAPI(TestCase):
         """
         Test getting sources
         """
-        res = self.client.get('/v1/sources/')
+        oauth2_header = self._get_oauth_header(client_index=1)
+
+        res = self.client.get('/v1/sources/', **oauth2_header)
         self.assertEquals(res.status_code, 200)
         self.assertEquals(res['Content-Type'], 'application/json')
         self.assertEquals(len(res.json()), 2)
@@ -209,6 +211,22 @@ class TestHGWBackendAPI(TestCase):
             req_source = {k: s[k] for k in SourceSerializer.Meta.fields}
             req_source['profile'] = self.profiles[int(s['profile']-1)]
             self.assertEquals(ret_source, req_source)
+
+    def test_get_sources_forbidden(self):
+        """
+        Test error getting sources using a client without the correct scope
+        """
+        oauth2_header = self._get_oauth_header(client_index=0)
+
+        res = self.client.get('/v1/sources/', **oauth2_header)
+        self.assertEquals(res.status_code, 403)
+
+    def test_get_sources_not_authorized(self):
+        """
+        Test getting sources
+        """
+        res = self.client.get('/v1/sources/')
+        self.assertEquals(res.status_code, 401)
 
     def test_create_connector_oauth2_source_fails_connector_unreachable(self):
         """
@@ -365,7 +383,7 @@ class TestHGWBackendAPI(TestCase):
         }
 
         oauth2_header = self._get_oauth_header()
-        source_id = RESTClient.objects.get().source.source_id
+        source_id = RESTClient.objects.get(pk=1).source.source_id
         with patch('hgw_backend.views.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
             
@@ -388,7 +406,7 @@ class TestHGWBackendAPI(TestCase):
         }
 
         oauth2_header = self._get_oauth_header()
-        source_id = RESTClient.objects.get().source.source_id
+        source_id = RESTClient.objects.get(pk=1).source.source_id
         with patch('hgw_backend.views.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 

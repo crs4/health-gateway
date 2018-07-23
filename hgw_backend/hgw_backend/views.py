@@ -42,6 +42,8 @@ def home(request):
 
 
 class Sources(ViewSet):
+    permission_classes = (TokenHasResourceDetailedScope,)
+    required_scopes = ['sources']
 
     def get_object(self, source_id):
         try:
