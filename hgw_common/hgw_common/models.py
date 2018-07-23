@@ -19,6 +19,8 @@
 from django.db import models
 from django.utils.crypto import get_random_string
 
+from hgw_common.fields import JSONValidator
+
 
 def generate_id():
     return get_random_string(32)
@@ -27,7 +29,10 @@ def generate_id():
 class Profile(models.Model):
     code = models.CharField(max_length=10, blank=False, null=False)
     version = models.CharField(max_length=30, blank=False, null=False)
-    payload = models.CharField(max_length=1000, blank=False, null=False)
+    payload = models.CharField(max_length=1000, blank=False, null=False, validators=[JSONValidator])
+
+    def __str__(self):
+        return self.code
 
     class Meta:
         unique_together = ('code', 'version')

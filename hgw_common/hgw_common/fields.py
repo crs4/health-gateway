@@ -16,15 +16,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from rest_framework import serializers
+import json
+from django.core.exceptions import ValidationError
+from json import JSONDecodeError
 
-from hgw_backend.models import Source
-from hgw_common.serializers import ProfileSerializer
 
-
-class SourceSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer(many=False)
-
-    class Meta:
-        model = Source
-        fields = ('source_id', 'name', 'profile')
+def JSONValidator(value):
+    try:
+        json.loads(value)
+    except JSONDecodeError:
+        raise ValidationError("The value is not a valid JSON value")

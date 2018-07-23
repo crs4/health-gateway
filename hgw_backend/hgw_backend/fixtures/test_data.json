@@ -18,12 +18,31 @@
     }
   },
   {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+      "code": "PROF_001",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+    }
+  },
+  {
+    "model": "hgw_common.profile",
+    "pk": 2,
+    "fields": {
+      "code": "PROF_002",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Radiology\"}]"
+    }
+  },
+  {
     "model": "hgw_backend.source",
     "pk": 1,
     "fields": {
       "source_id": "6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC",
       "name": "cert_source",
       "url": "http://localhost:40000/v1/connectors/",
+      "profile": 1,
       "content_type": 13,
       "object_id": 1
     }
@@ -35,6 +54,7 @@
       "source_id": "LD2j7v35BvUlzWDe8G89JGzz4SOincB7",
       "name": "oauth2_source",
       "url": "http://localhost:40001/v1/connectors/",
+      "profile": 2,
       "content_type": 14,
       "object_id": 1
     }

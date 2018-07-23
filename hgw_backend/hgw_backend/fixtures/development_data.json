@@ -18,6 +18,15 @@
     }
   },
   {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+      "code": "PROF_001",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+    }
+  },
+  {
     "model": "hgw_backend.source",
     "pk": 1,
     "fields": {
