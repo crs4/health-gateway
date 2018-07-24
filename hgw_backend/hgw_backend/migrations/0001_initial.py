@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(blank=True, max_length=255)),
                 ('skip_authorization', models.BooleanField(default=False)),
                 ('client_role', models.CharField(choices=[('ST', 'STANDARD'), ('SU', 'SUPER')], default='STANDARD', max_length=2)),
-                ('scopes', models.CharField(default='messages:write', help_text='Space separated scopes to assign to the REST client', max_length=100)),
+                ('scopes', models.CharField(default='messages:write source:read', help_text='Space separated scopes to assign to the REST client', max_length=100)),
             ],
             options={
                 'abstract': False,

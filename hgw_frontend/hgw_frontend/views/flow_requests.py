@@ -75,46 +75,6 @@ class FlowRequestView(ViewSet):
         except FlowRequest.DoesNotExist:
             raise Http404
 
-    @swagger_auto_schema(
-        operation_description='Return the list of flow requests',
-        security=[{'flow_request': ['flow_request:read']}],
-        responses={
-            200: openapi.Response('Success - The list of flow requests', openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'flow_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                  description='The id assigned to the flow request by the '
-                                                              'destination'),
-                        'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id assigned to the flow request by the '
-                                                                 'Health Gateway'),
-                        'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The status of the flow request',
-                                                 enum=[sc[0] for sc in FlowRequest.STATUS_CHOICES]),
-                        'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                  properties={
-                                                      'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                             description='A code identifying the profile'),
-                                                      'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='The version of the profile'),
-                                                      'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='A json encoded string that'
-                                                                                            'describe the profile')
-                                                  }),
-                        'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         format=openapi.FORMAT_DATETIME,
-                                                         description='The start date validity of the flow request'),
-                        'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                          format=openapi.FORMAT_DATETIME,
-                                                          description='The end date validity of the flow request')
-                    }
-                )
-            )),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-        })
     def list(self, request):
         if request.auth.application.is_super_client():
             flow_requests = FlowRequest.objects.all()
@@ -123,55 +83,6 @@ class FlowRequestView(ViewSet):
         serializer = hgw_frontend.serializers.FlowRequestSerializer(flow_requests, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        operation_description='Create a new flow request which will be set in a pending status until the user '
-                              'confirms it. To do that the user needs to go to the `/flow_request/confirm` url '
-                              'using as query parameter the confirmation_id returned by this operation',
-        security=[{'flow_request': ['flow_request:write']}],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'flow_id': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='The id assigned to the flow request by the destination'),
-                'profile': openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                               description='A code identifying the profile'),
-                        'version': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description='The version of the profile'),
-                        'payload': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description='A json encoded string that'
-                                        'describe the profile')
-                    }),
-                'start_validity': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_DATETIME,
-                    description='The start date validity of the flow request'),
-                'expire_validity': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_DATETIME,
-                    description='The end date validity of the flow request'),
-            }),
-        responses={
-            201: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         description='the id that identifies the flow request in '
-                                                                     'the health gateway. The client must maintain '
-                                                                     'the mapping between the process_id and the '
-                                                                     'flow_id to be used in subsequent process'),
-                            'confirmation_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                              description='the id to send to the confirmation '
-                                                                          'url to activate the flow request')}
-            ),
-            400: openapi.Response('Bad Request - Missing or wrong parameters'),
-            401: openapi.Response('Unathorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-        })
     def create(self, request):
         logger.debug(request.scheme)
         if 'flow_id' not in request.data or 'profile' not in request.data or \
@@ -223,94 +134,12 @@ class FlowRequestView(ViewSet):
 
         return Response(res, status=status.HTTP_202_ACCEPTED)
 
-    @swagger_auto_schema(
-        operation_description='Returns the flow request specified by the process_id parameter',
-        security=[{'flow_request': ['flow_request:read']}],
-        manual_parameters=[
-            openapi.Parameter('process_id', openapi.IN_QUERY, type=openapi.TYPE_STRING,
-                              description='The process_id identifying the requested flow request'),
-        ],
-        responses={
-            200: openapi.Response('The flow request identified by the process_id in input', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'flow_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                              description='The id assigned to the flow request by the '
-                                                          'destination'),
-                    'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id assigned to the flow request by the '
-                                                             'Health Gateway'),
-                    'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description='The status of the flow request',
-                                             enum=[sc[0] for sc in FlowRequest.STATUS_CHOICES]),
-                    'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                              properties={
-                                                  'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                         description='A code identifying the profile'),
-                                                  'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The version of the profile'),
-                                                  'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='A json encoded string that'
-                                                                                        'describe the profile')
-                                              }),
-                    'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     format=openapi.FORMAT_DATETIME,
-                                                     description='The start date validity of the flow request'),
-                    'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                      format=openapi.FORMAT_DATETIME,
-                                                      description='The end date validity of the flow request')
-                }
-            )),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-            404: openapi.Response('Not Found - The flow request has not been found')
-        })
     def retrieve(self, request, process_id, format=None):
         fr = self.get_flow_request(request, process_id)
         serializer = hgw_frontend.serializers.FlowRequestSerializer(fr)
         res = {k: v for k, v in six.iteritems(serializer.data) if k != 'destination'}
         return Response(res)
 
-    @swagger_auto_schema(
-        operation_description='Seaech for flow request by channel_id',
-        security=[{'flow_request': ['flow_request:read', 'flow_request:query']}],
-        manual_parameters=[
-            openapi.Parameter('channel_id', openapi.IN_QUERY, type=openapi.TYPE_STRING),
-        ],
-        responses={
-            200: openapi.Response('The flow request corresponding to the channel_id in input', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'flow_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                              description='The id assigned to the flow request by the destination'),
-                    'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id assigned to the flow request by the '
-                                                             'Health Gateway'),
-                    'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description='The status of the flow request',
-                                             enum=[sc[0] for sc in FlowRequest.STATUS_CHOICES]),
-                    'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                              properties={
-                                                  'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                         description='A code identifying the profile'),
-                                                  'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The version of the profile'),
-                                                  'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='A json encoded string that'
-                                                                                        'describe the profile')
-                                              }),
-                    'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     format=openapi.FORMAT_DATETIME,
-                                                     description='The start date validity of the flow request'),
-                    'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                      format=openapi.FORMAT_DATETIME,
-                                                      description='The end date validity of the flow request')
-                }
-            )),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-            404: openapi.Response('Not Found - The flow request has not been found')
-        })
     def search(self, request):
         if 'channel_id' in request.GET:
             try:

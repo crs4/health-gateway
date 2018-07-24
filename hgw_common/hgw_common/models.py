@@ -14,12 +14,18 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+import copy
+from datetime import datetime
 
 from django.db import models
 from django.utils.crypto import get_random_string
+from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError, MissingTokenError, TokenExpiredError
+from requests_oauthlib import OAuth2Session
 
 from hgw_common.fields import JSONValidator
+from hgw_common.utils import get_logger
+
+logger = get_logger('hgw_common')
 
 
 def generate_id():
@@ -44,3 +50,82 @@ class Channel(models.Model):
     destination_id = models.CharField(max_length=32, blank=False, null=False)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     person_id = models.CharField(max_length=100, blank=False, null=False)
+
+
+class AccessToken(models.Model):
+    token_url = models.CharField(max_length=200, null=False, blank=False, unique=True)
+    access_token = models.CharField(max_length=1024, null=False, blank=False)
+    token_type = models.CharField(max_length=10, null=False, blank=False)
+    expires_in = models.IntegerField()
+    expires_at = models.DateTimeField()
+    scope = models.CharField(max_length=30)
+
+    def to_python(self):
+        return {
+            'access_token': self.access_token,
+            'token_type': self.token_type,
+            'expires_in': self.expires_in,
+            'expires_at': self.expires_at.timestamp(),
+            'scope': self.scope.split(" ")
+        }
+
+
+class OAuth2SessionProxy(object):
+    """
+    This class can be used to access an OAuth2 protected resources. It reuses an AccessToken until the token. It handles
+    automatic creation and refresh of a token
+    """
+
+    def __init__(self, token_url, client_id, client_secret):
+        self.token_url = token_url
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.session = self._get_session()  # Fetch the token for the first time
+
+    def get(self, url):
+        try:
+            res = self.session.get(url)
+            if res.status_code == 401:
+                raise TokenExpiredError
+        except TokenExpiredError:
+            logger.debug("Token for the source expired. Getting a new one")
+            self._fetch_token(self.session)
+            logger.debug("Creating connector with the new token")
+            res = self.session.get(url)
+        except ConnectionError:
+            logger.debug("Connection error creating the connector")
+            res = None
+        except MissingTokenError:
+            logger.debug("Missing token for the source endpoint")
+            res = None
+        return res
+
+    def _get_session(self):
+        client = BackendApplicationClient(self.client_id)
+        try:
+            access_token = AccessToken.objects.get(token_url=self.token_url)
+        except AccessToken.DoesNotExist:
+            oauth_session = OAuth2Session(client=client)
+            self._fetch_token(oauth_session)
+        else:
+            oauth_session = OAuth2Session(client=client, token=access_token)
+
+        return oauth_session
+
+    def _fetch_token(self, oauth_session):
+        oauth_session.fetch_token(token_url=self.token_url,
+                                  client_id=self.client_id,
+                                  client_secret=self.client_secret)
+
+        token_data = copy.copy(oauth_session.token)
+        token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
+        token_data['scope'] = " ".join(token_data['scope'])
+        try:
+            access_token = AccessToken.objects.get(token_url=self.token_url)
+        except AccessToken.DoesNotExist:
+            AccessToken.objects.create(token_url=self.token_url, **token_data)
+        else:
+            for k, v in token_data.items():
+                setattr(access_token, k, v)
+            access_token.save()
+

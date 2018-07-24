@@ -113,7 +113,6 @@ REST_FRAMEWORK = {
     'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION + 1)]
 }
 
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -252,6 +251,12 @@ CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
 CONSENT_MANAGER_CLIENT_ID = cfg['consent_manager']['client_id']
 CONSENT_MANAGER_CLIENT_SECRET = cfg['consent_manager']['client_secret']
 CONSENT_MANAGER_CONFIRMATION_PAGE = '{}/confirm_consents/'.format(CONSENT_MANAGER_URI)
+
+# SERVICES CONFIGURATION
+print(cfg['hgw_backend'])
+HGW_BACKEND_URI = cfg['hgw_backend']['uri']
+HGW_BACKEND_CLIENT_ID = cfg['hgw_backend']['client_id']
+HGW_BACKEND_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'

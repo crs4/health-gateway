@@ -134,6 +134,7 @@ class TestHGWBackendAPI(TestCase):
 
     def _get_oauth_header(self, client_index=0):
         res = self._get_oauth_token(client_index)
+        print(res)
         return {'Authorization': 'Bearer {}'.format(res['access_token'])}
 
     @staticmethod

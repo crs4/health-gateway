@@ -509,7 +509,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
-        redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
+        redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_Zback_url,
                                                               c.flow_request.process_id)
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
         fr = c.flow_request.id
