@@ -1,17 +1,8 @@
 version: '3.0'
 services:
-  tscns_mysql:
-    build: ../../images/common/tscns_mysql
-    image: crs4/tscns_mysql
-    ports:
-      - 3306:3306
-    environment:
-      - TZ=CET
-      - MYSQL_ROOT_PASSWORD=shibboleth
-
-  tscns_shibboleth:
-    build: ../../images/common/tscns_shibboleth
-    image: crs4/tscns_shibboleth
+  tscns:
+    build: ../../images/common/tscns
+    image: crs4/tscns
     ports:
       - 443:443
     environment:
@@ -32,10 +23,6 @@ services:
       - ../../../certs/ca/web/certs/tscns/idp-signing.key:/opt/shibboleth-idp/credentials/idp-signing.key
       - ../../../certs/ca/web/certs/tscns/idp-encryption.crt:/opt/shibboleth-idp/credentials/idp-encryption.crt
       - ../../../certs/ca/web/certs/tscns/idp-encryption.key:/opt/shibboleth-idp/credentials/idp-encryption.key
-    networks:
-      default:
-        aliases:
-          - tscns
 
   hgw_frontend:
     build:

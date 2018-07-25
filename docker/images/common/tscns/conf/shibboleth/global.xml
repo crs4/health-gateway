@@ -49,35 +49,4 @@
     </util:map>
     -->
     <!-- A DataSource bean suitable for use in the idp.persistentId.dataSource property. -->
-<bean id="MyDataSource" class="org.apache.commons.dbcp.BasicDataSource"
-      p:driverClassName="com.mysql.jdbc.Driver"
-      p:url="jdbc:mysql://tscns_mysql:3306/shibboleth?autoReconnect=true"
-      p:username="hgw"
-      p:password="hgwpwd"
-      p:maxActive="10"
-      p:maxIdle="5"
-      p:maxWait="15000"
-      p:testOnBorrow="true"
-      p:validationQuery="select 1"
-      p:validationQueryTimeout="5" />
-
-<bean id="shibboleth.JPAStorageService" class="org.opensaml.storage.impl.JPAStorageService"
-      p:cleanupInterval="%{idp.storage.cleanupInterval:PT10M}"
-      c:factory-ref="shibboleth.JPAStorageService.entityManagerFactory"/>
-
-<bean id="shibboleth.JPAStorageService.entityManagerFactory"
-      class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-      <property name="packagesToScan" value="org.opensaml.storage.impl"/>
-      <property name="dataSource" ref="MyDataSource"/>
-      <property name="jpaVendorAdapter" ref="shibboleth.JPAStorageService.JPAVendorAdapter"/>
-      <property name="jpaDialect">
-        <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
-      </property>
-</bean>
-
-<bean id="shibboleth.JPAStorageService.JPAVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-        <property name="database" value="MYSQL" />
-</bean>
-    
-    
 </beans>

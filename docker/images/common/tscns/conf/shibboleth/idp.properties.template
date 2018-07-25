@@ -196,7 +196,8 @@ idp.ui.fallbackLanguages= en,fr,de
 #idp.fticks.salt=somethingsecret
 #idp.fticks.loghost=localhost
 #idp.fticks.logport=514
-idp.session.StorageService = shibboleth.JPAStorageService
-idp.consent.StorageService = shibboleth.JPAStorageService
-idp.replayCache.StorageService = shibboleth.JPAStorageService
-idp.artifact.StorageService = shibboleth.JPAStorageService
+
+#idp.session.StorageService = shibboleth.JPAStorageService
+#idp.consent.StorageService = shibboleth.JPAStorageService
+#idp.replayCache.StorageService = shibboleth.JPAStorageService
+#idp.artifact.StorageService = shibboleth.JPAStorageService

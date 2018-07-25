@@ -3,7 +3,7 @@ current_dir=$(pwd)
 VERSION=$1
 if [ ! -d health_gateway ]; then
     cd ../../../
-    git archive --prefix=health_gateway/ -o ${current_dir}/health_gateway.tar ${VERSION} 2>/dev/null
+    git archive --prefix=health_gateway/ -o ${current_dir}/health_gateway.tar HEAD 2>/dev/null
     if [ ! "$?" == "0" ]; then
         echo "Version not found"
         exit 1

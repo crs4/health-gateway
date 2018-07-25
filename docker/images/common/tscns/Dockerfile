@@ -11,8 +11,7 @@ ENV ANT_OPTS="-Didp.src.dir=/usr/local/src/shibboleth-identity-provider-3.3.1 \
 -Didp.scope=healthgateway.it -Didp.uri.subject.alt.name=https://changeit/idp/shibboleth"
 
 # Install packages
-RUN apt-get -y install ca-certificates openssl apache2 ntp wget less net-tools iputils-ping \
-libmysql-java libcommons-dbcp-java libcommons-pool-java gettext-base
+RUN apt-get -y install ca-certificates openssl apache2 ntp wget less net-tools iputils-ping gettext-base
 
 # Install Oracle Java
 RUN apt-get update && \
@@ -34,8 +33,6 @@ COPY conf/tomcat/idp.xml /etc/tomcat8/Catalina/localhost/idp.xml
 COPY conf/tomcat/tomcat-context.xml /etc/tomcat8/context.xml
 COPY conf/tomcat/tomcat-default /etc/default/tomcat8
 WORKDIR /usr/share/tomcat8/lib/
-RUN ln -s ../../java/mysql.jar mysql-connector-java.jar
-RUN ln -s ../../java/tomcat-jbcp.jar tomcat-jbcp.jar
 
 # Apache configuration
 COPY conf/apache/idp.conf /etc/apache2/sites-available/idp.conf
@@ -68,8 +65,6 @@ COPY web_gui/attribute-release.vm /opt/shibboleth-idp/views/intercept/attribute-
 
 WORKDIR /opt/shibboleth-idp
 RUN ./bin/build.sh
-COPY conf/shibboleth/saml-nameid.xml /opt/shibboleth-idp/conf/saml-nameid.xml
-COPY conf/shibboleth/saml-nameid.properties /opt/shibboleth-idp/conf/saml-nameid.properties
 COPY conf/shibboleth/subject-c14n.xml /opt/shibboleth-idp/conf/c14n/subject-c14n.xml
 COPY conf/shibboleth/global.xml /opt/shibboleth-idp/conf/global.xml
 COPY conf/shibboleth/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
@@ -80,8 +75,6 @@ COPY conf/shibboleth/idp.properties.template /opt/shibboleth-idp/conf/idp.proper
 COPY conf/shibboleth/logback.xml /opt/shibboleth-idp/conf/logback.xml
 
 COPY metadata/idp-metadata.xml.template /opt/shibboleth-idp/metadata/idp-metadata.xml.template
-#COPY metadata/sp-metadata-hgw-frontend.xml /opt/shibboleth-idp/metadata/sp-metadata-hgw-frontend.xml
-#COPY metadata/sp-metadata-consent-manager.xml /opt/shibboleth-idp/metadata/sp-metadata-consent-manager.xml
 
 # Copy certificates. TODO: This will be volumes
 RUN mkdir /root/certificates
