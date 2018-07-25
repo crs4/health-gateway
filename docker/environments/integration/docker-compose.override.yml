@@ -77,13 +77,9 @@ services:
 
   hgw_frontend:
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "spid-testenv-identityserver:9443", "--", "/docker-entrypoint.sh"]
-    volumes:
-      - ../../../tests/integration_tests/fixtures/hgw_frontend/:/container/fixtures
 
   hgw_backend:
     entrypoint: ["/docker-entrypoint.sh"]
-    volumes:
-      - ../../../tests/integration_tests/fixtures/hgw_backend/:/container/fixtures
 
   kafka:
     environment:

@@ -25,12 +25,16 @@ if [ ! -e "$INITIALIZED" ]; then
     FIXTURES_DIR=/container/fixtures
 
     if [ -d ${FIXTURES_DIR} ]; then
-        for fixture in `ls ${FIXTURES_DIR}/*.json`; do
-            python3 manage.py loaddata ${fixture}
-        done
+        if [ -z ${ENVIRONMENT} ] || [ "${ENVIRONMENT}" == "DEVELOPMENT"  ]; then
+            python3 manage.py loaddata development_data.json
+        elif [[ "${ENVIRONMENT}" == "STAGE" ]]; then
+            python3 manage.py loaddata stage_data.json
+        elif [[ "${ENVIRONMENT}" == "PRODUCTION" ]]; then
+            python3 manage.py loaddata production_data.json
+        fi
     fi
 
-    if [[ ! -z ${DEVELOPMENT} ]]; then
+    if [[ ! -z ${TEST} ]]; then
         TEST_FIXTURES_DIR=/container/test_fixtures
         if [ -d ${TEST_FIXTURES_DIR} ]; then
             for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
