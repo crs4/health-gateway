@@ -1,7 +1,5 @@
 build:
-	../../images/common/base/build.sh
-	docker build -t crs4/web_base ../../images/common/web_base/
-	docker-compose build
+	bash ../../images/generate_images.sh
 
 run:
 	docker-compose up

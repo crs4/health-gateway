@@ -1,8 +1,7 @@
 version: '3.0'
 services:
   spid-testenv-identityserver:
-    build: ../../images/common/spid_testenv_identityserver/
-    image: crs4/spid-testenv-identityserver
+    image: crs4/spid-testenv-identityserver:latest
     ports:
       - "9443:9443"
     extra_hosts:
@@ -13,8 +12,7 @@ services:
           - spid-testenv-identityserver
 
   spid-testenv-backoffice:
-    build: ../../images/common/spid_testenv_backoffice/
-    image: crs4/spid-testenv-backoffice
+    image: crs4/spid-testenv-backoffice:latest
     ports:
       - "8080:8080"
     environment:
@@ -28,10 +26,6 @@ services:
           - spid-testenv-backoffice
 
   hgw_frontend:
-    build:
-      context: ../../images/production/hgw_frontend
-      args:
-        HTTP_PORT: 8000
     image: crs4/hgw_frontend:latest
     ports:
       - 8000:8000
@@ -51,8 +45,6 @@ services:
           - hgwfrontend
 
   hgw_backend:
-    build:
-      context: ../../images/production/hgw_backend
     image: crs4/hgw_backend:latest
     depends_on:
       - kafka
@@ -80,8 +72,6 @@ services:
           - hgwbackend
 
   consent_manager:
-    build:
-      context: ../../images/production/consent_manager
     image: crs4/consent_manager:latest
     environment:
       - TZ=CET
@@ -101,7 +91,6 @@ services:
           - consentmanager
 
   kafka:
-    build: ../../images/common/kafka
     image: crs4/kafka:latest
     environment:
       - KAFKA_BROKER_ID=1
@@ -122,7 +111,6 @@ services:
           - kafka
 
   hgw_dispatcher:
-    build: ../../images/production/hgw_dispatcher
     image: crs4/hgw_dispatcher:latest
     depends_on:
       - kafka
