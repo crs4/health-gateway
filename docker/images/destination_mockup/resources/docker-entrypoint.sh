@@ -47,6 +47,10 @@ if [ "$?" == "0" ]; then
     echo "Started"
 fi
 
-envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
-nginx
-gunicorn_start.sh
+if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
+    envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
+    nginx
+    gunicorn_start.sh sockfile
+else
+    gunicorn_start.sh http
+fi
