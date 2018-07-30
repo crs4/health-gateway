@@ -29,9 +29,10 @@ ADD resources/docker-entrypoint.sh /custom_entrypoint/
 ADD service /container/service
 RUN chmod +x /custom_entrypoint/wait-for-it.sh
 RUN chmod +x /custom_entrypoint/docker-entrypoint.sh
-
+RUN mkdir /container/devservice/
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 VOLUME ${CERTS_DIR}
+VOLUME /container/devservice
 
 WORKDIR ${CONTAINER_DIR}
