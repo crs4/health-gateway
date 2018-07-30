@@ -17,8 +17,13 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+if [ "$1" == "sockfile" ]; then
+    SOCKFILE=/var/run/gunicorn.sock    # we will communicte using this unix socket
+    BIND=unix:${SOCKFILE}
+else
+    BIND=0.0.0.0:${HTTP_PORT}
+fi
 
-SOCKFILE=/var/run/gunicorn.sock    # we will communicte using this unix socket
 USER=root  # the user to run as
 GROUP=($(id -g -n ${USER}))  # the group to run as
 NUM_WORKERS=3  # how many worker processes should Gunicorn spawn
@@ -37,7 +42,7 @@ exec gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name ${DJANGO_APP_NAME} \
   --workers ${NUM_WORKERS} \
   --user=${USER} --group=${GROUP} \
-  --bind=unix:${SOCKFILE} \
+  --bind=${BIND} \
   --log-level=debug \
   --log-file=-
 
