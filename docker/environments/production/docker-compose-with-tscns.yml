@@ -32,7 +32,7 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -58,8 +58,6 @@ services:
     ports:
       - 8003:8003
     volumes:
-      - ../../../hgw_backend/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
       - ./config_files/hgw_backend_config.yml:/etc/hgw_service/hgw_backend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
@@ -84,9 +82,7 @@ services:
     ports:
       - 8002:8002
     volumes:
-      - ../../../consent_manager/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/consent_manager_config.yml:/etc/hgw_service/consent_manager_config.yml
+      - ./config_files/consent_manager_config.tscns.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -124,7 +120,6 @@ services:
       - kafka
       - consent_manager
     volumes:
-      - ../../../hgw_dispatcher/:/container/service
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

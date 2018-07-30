@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
 VERSION=$1
 if [ ! -d health_gateway ]; then
-    cd ../../../
-    git archive --prefix=health_gateway/ -o ${DIR}/health_gateway.tar HEAD 2>/dev/null
-    if [ ! "$?" == "0" ]; then
+    cd ${DIR}/../../
+    git archive --prefix=health_gateway/ -o ${DIR}/health_gateway.tar HEAD
+    res=$?
+    if [ ! "$res" == "0" ]; then
+        echo ${res}
         echo "Version not found"
         exit 1
     fi

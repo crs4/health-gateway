@@ -19,13 +19,12 @@
 # It checks if there are files in the development directory (1 because ls -l print at least the number of files)
 if [ `ls -l ${DEV_DJANGO_DIR} | wc -l` == 1 ]; then
     echo "USING PROD DIR"
-    cd ${DJANGO_DIR}
-    export BASE_SERVICE_DIR=${DEV_DJANGO_DIR}
+    export BASE_SERVICE_DIR=${DJANGO_DIR}
 else
     echo "USING DEV DIR"
-    cd ${DEV_DJANGO_DIR}
     export BASE_SERVICE_DIR=${DEV_DJANGO_DIR}
 fi
+cd ${BASE_SERVICE_DIR}
 
 echo "Starting kafka consumer"
 /launch-kafka.sh &
