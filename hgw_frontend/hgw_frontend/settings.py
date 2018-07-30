@@ -151,6 +151,9 @@ AUTH_USER_MODEL = 'hgw_frontend.HGWFrontendUser'
 USER_ID_FIELD = 'fiscalNumber'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (
+    ('hgw_frontend', os.path.abspath(os.path.join(BASE_DIR, '../static/'))),
+)
 LOGIN_URL = '/saml2/login/'
 
 SESSION_COOKIE_NAME = 'hgw_frontend'

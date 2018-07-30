@@ -134,6 +134,9 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static/'))
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (
+    ('hgw_backend', os.path.abspath(os.path.join(BASE_DIR, '../static/'))),
+)
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../media/'))
 
