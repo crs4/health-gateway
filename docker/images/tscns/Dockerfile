@@ -38,8 +38,8 @@ WORKDIR /usr/share/tomcat8/lib/
 COPY conf/apache/idp.conf /etc/apache2/sites-available/idp.conf
 COPY conf/apache/shibboleth-virtual-host.dev.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf.template
 COPY conf/apache/shibboleth-virtual-host.prod.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf.template
-COPY conf/apache/shibboleth-virtual-host.dev.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.dev-ssl.conf.template
-COPY conf/apache/shibboleth-virtual-host.prod.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.prod-ssl.conf.template
+COPY conf/apache/shibboleth-virtual-host.dev-ssl.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.dev-ssl.conf.template
+COPY conf/apache/shibboleth-virtual-host.prod-ssl.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.prod-ssl.conf.template
 COPY conf/apache/ports.conf /etc/apache2/ports.conf
 RUN a2enmod ssl headers proxy_ajp
 RUN a2ensite idp.conf

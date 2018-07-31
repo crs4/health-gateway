@@ -52,7 +52,7 @@ else
     if [[ -z ${SSL} ]]; then
         envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf
     else
-        envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.dev-ssl.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf
+        envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.dev-ssl.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf
     fi
     a2ensite shibboleth-virtual-host.dev.conf
 fi
