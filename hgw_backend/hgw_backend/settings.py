@@ -50,11 +50,11 @@ BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
 
-HOSTNAME = cfg['django']['hostname']
 
 DEBUG = cfg['django']['debug']
 
-ALLOWED_HOSTS = [HOSTNAME]
+ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
+HOSTNAME = ALLOWED_HOSTS[0]
 
 MAX_API_VERSION = 1
 

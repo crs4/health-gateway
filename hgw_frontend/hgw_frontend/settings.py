@@ -54,11 +54,11 @@ BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
 
-HOSTNAME = cfg['django']['hostname']
+ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
+HOSTNAME = ALLOWED_HOSTS[0]
 
 DEBUG = cfg['django']['debug']
 
-ALLOWED_HOSTS = [HOSTNAME]
 
 MAX_API_VERSION = 1
 
@@ -79,8 +79,10 @@ INSTALLED_APPS = [
     'drf_yasg'
 ]
 
-
-ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
+if 'port' in cfg['django']:
+    ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
+else:
+    ROOT_URL = 'https://{}'.format(HOSTNAME)
 
 ROOT_URLCONF = 'hgw_frontend.urls'
 
