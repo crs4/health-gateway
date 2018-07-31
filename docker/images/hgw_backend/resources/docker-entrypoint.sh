@@ -37,11 +37,11 @@ if [ ! -e "$INITIALIZED" ]; then
 
     if [ -d ${FIXTURES_DIR} ]; then
         if [ -z ${ENVIRONMENT} ] || [ "${ENVIRONMENT}" == "DEVELOPMENT"  ]; then
-            python3 manage.py loaddata development_data.json
+            python3 manage.py loaddata ${FIXTURES_DIR}/development_data.json
         elif [[ "${ENVIRONMENT}" == "STAGE" ]]; then
-            python3 manage.py loaddata stage_data.json
+            python3 manage.py loaddata ${FIXTURES_DIR}/stage_data.json
         elif [[ "${ENVIRONMENT}" == "PRODUCTION" ]]; then
-            python3 manage.py loaddata production_data.json
+            python3 manage.py loaddata ${FIXTURES_DIR}/production_data.json
         fi
     fi
 
