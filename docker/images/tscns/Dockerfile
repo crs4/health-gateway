@@ -86,7 +86,7 @@ COPY scripts/entrypoint.sh /container/entrypoint.sh
 RUN chmod +x /container/replace_certs.sh
 RUN chmod +x /container/entrypoint.sh
 
-EXPOSE 443
+EXPOSE 80 443
 
 VOLUME /opt/shibboleth-idp/credentials/
 VOLUME /root/certificates/
