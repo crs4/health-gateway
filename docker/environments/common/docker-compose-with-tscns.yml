@@ -8,6 +8,7 @@ services:
     environment:
       - TZ=CET
       - DEVELOPMENT=true
+      - SSL=true
       - SERVER_NAME=tscns
       - HGW_FRONTEND_ADDR=hgwfrontend:8000
       - CONSENT_MANAGER_ADDR=consentmanager:8002
