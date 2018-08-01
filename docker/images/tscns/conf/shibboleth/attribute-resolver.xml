@@ -29,7 +29,6 @@
 <DataConnector id="ScriptedAttributeConnector" xsi:type="ScriptedDataConnector">
     <Script><![CDATA[
                 logger = Java.type("org.slf4j.LoggerFactory").getLogger("net.shibboleth.idp.attribute");
-
                 var IdPAttribute = Java.type("net.shibboleth.idp.attribute.IdPAttribute");
                 var HashSet = Java.type("java.util.HashSet");
                 var StringAttributeValue = Java.type("net.shibboleth.idp.attribute.StringAttributeValue");
@@ -40,19 +39,17 @@
                 var iterator = principals.iterator();
                 var certificateData = new String();
                 while (iterator.hasNext()) {
-                       var principal = (iterator.next()).toString();
-                       if (principal.contains("CN")){
-                            logger.info("CERTIFICATE DATA:"+principal);
-                            certificateData = principal;
-
-                       }
+                    var principal = (iterator.next()).toString();
+                    if (principal.contains("CN")) {
+                        logger.info("CERTIFICATE DATA: " + principal);
+                        certificateData = principal;
+                    }
                 }
                 var certDataArray = certificateData.split(",");
                 var cn = certDataArray[0].split("=")[1];
-                logger.info("CN:"+cn);
+                logger.info("CN:" + cn);
                 var fiscalNumber = certDataArray[2].split("=")[1].substring(1,17);
-                logger.info("FISCAL NUMBER:"+fiscalNumber);
-
+                logger.info("FISCAL NUMBER: " + fiscalNumber);
 
                 var attr = new IdPAttribute("fiscalNumber");
                 var set = new HashSet();
@@ -61,7 +58,7 @@
                 connectorResults.add(attr);
                 attr = new IdPAttribute("uid");
                 set = new HashSet();
-                set.add(new StringAttributeValue(cn+"_user"));
+                set.add(new StringAttributeValue(cn + "_user"));
                 attr.setValues(set);
                 connectorResults.add(attr);
                 attr = new IdPAttribute("cn");
@@ -69,7 +66,6 @@
                 set.add(new StringAttributeValue(cn));
                 attr.setValues(set);
                 connectorResults.add(attr);
-
     ]]></Script>
 </DataConnector>
 
