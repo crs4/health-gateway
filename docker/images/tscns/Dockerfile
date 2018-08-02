@@ -73,7 +73,7 @@ COPY conf/shibboleth/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-r
 COPY conf/shibboleth/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
 COPY conf/shibboleth/metadata-providers.xml.template /opt/shibboleth-idp/conf/metadata-providers.xml.template
 COPY conf/shibboleth/idp.properties.template /opt/shibboleth-idp/conf/idp.properties.template
-#COPY conf/shibboleth/web.xml /opt/shibboleth-idp/webapp/WEB-INF/web.xml
+COPY conf/shibboleth/web.xml /opt/shibboleth-idp/webapp/WEB-INF/web.xml
 #Disable this in production - too noise log levels
 COPY conf/shibboleth/logback.xml /opt/shibboleth-idp/conf/logback.xml
 
