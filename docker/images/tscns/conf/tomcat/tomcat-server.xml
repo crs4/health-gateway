@@ -146,10 +146,10 @@
 
             </Host>
 
-                <Valve className="org.apache.catalina.valves.RemoteIpValve"
-                       remoteIpHeader="x-forwarded-for"
-                       protocolHeader="x-forwarded-proto"
-                       protocolHeaderHttpsValue="https" />
+            <Valve className="org.apache.catalina.valves.RemoteIpValve"
+                   remoteIpHeader="x-forwarded-for"
+                   protocolHeader="x-forwarded-proto"
+                   protocolHeaderHttpsValue="https"/>
         </Engine>
     </Service>
 </Server>
