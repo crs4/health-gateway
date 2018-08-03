@@ -43,7 +43,7 @@ function create_cert() {
     echo "/C=IT/GN=${NAME}/SN=${SURNAME}/CN=${ID}//0000000000000000.oXPnbQvnvQANlkxAg"
     openssl genrsa -des3 -out ${CLIENT_KEY} 4096
     openssl req -new -key ${CLIENT_KEY} -out ${CLIENT_CSR} \
-        -subj /C=IT/CN="${ID}\/0000000000000000.oXPnbQvnvQANlkxAg"/GN=${NAME}/SN=${SURNAME}
+        -subj /C=IT/CN="\"${ID}\/0000000000000000.oXPnbQvnvQANlkxAg\""/GN=${NAME}/SN=${SURNAME}
 
     echo "Signing the client certificate with the CA key"
 
