@@ -147,8 +147,10 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 
+RUN addgroup -S gunicorn && adduser -D -S -s /sbin/nologin -G gunicorn gunicorn
+
 RUN ln -sf /usr/bin/python3 /usr/bin/python
-RUN mkdir ${DJANGO_DIR}
+RUN mkdir ${DJANGO_DIR} && chown -R gunicorn:gunicorn ${DJANGO_DIR}
 RUN mkdir ${CERT_DIR}
 RUN mkdir ${DEV_DJANGO_DIR}
 RUN echo hgwpwd > /etc/nginx/passw
@@ -160,10 +162,6 @@ ADD resources/wait-for-it.sh /custom_entrypoint/
 ADD resources/nginx_https.template /etc/nginx/conf.d/nginx_https.template
 ADD resources/gunicorn_start.sh /usr/local/bin
 
-RUN addgroup -S gunicorn && adduser -D -S -s /sbin/nologin -G gunicorn gunicorn
-
-VOLUME "${DJANGO_DIR}/"
-VOLUME "${DJANGO_DIR}/hgw_common/"
 VOLUME "${DEV_DJANGO_DIR}/"
 VOLUME "${CONTAINER_DIR}/web_certs/"
 VOLUME "${CONTAINER_DIR}/certs/"

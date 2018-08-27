@@ -21,44 +21,47 @@
 if [ `ls -l ${DEV_DJANGO_DIR} | wc -l` == 1 ]; then
     echo "USING PROD DIR"
     export BASE_SERVICE_DIR=${DJANGO_DIR}
+    USER=gunicorn
+    cd ${BASE_SERVICE_DIR}
+
+    INITIALIZED="/container/initialized"
+
+    if [ ! -e "$INITIALIZED" ]; then
+        python3 manage.py migrate
+        FIXTURES_DIR=/container/fixtures
+
+        if [ -d ${FIXTURES_DIR} ]; then
+            if [ -z ${ENVIRONMENT} ] || [ "${ENVIRONMENT}" == "DEVELOPMENT"  ]; then
+                python3 manage.py loaddata ${FIXTURES_DIR}/development_data.json
+            elif [[ "${ENVIRONMENT}" == "STAGE" ]]; then
+                python3 manage.py loaddata ${FIXTURES_DIR}/stage_data.json
+            elif [[ "${ENVIRONMENT}" == "PRODUCTION" ]]; then
+                python3 manage.py loaddata ${FIXTURES_DIR}/production_data.json
+            fi
+        fi
+
+        if [[ ! -z ${TEST} ]]; then
+            TEST_FIXTURES_DIR=/container/test_fixtures
+            if [ -d ${TEST_FIXTURES_DIR} ]; then
+                for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
+                    python3 manage.py loaddata ${fixture}
+                done
+            fi
+        fi
+
+        touch ${INITIALIZED}
+    fi
 else
     echo "USING DEV DIR"
+    USER=root
     export BASE_SERVICE_DIR=${DEV_DJANGO_DIR}
-fi
-cd ${BASE_SERVICE_DIR}
-
-INITIALIZED="/container/initialized"
-
-if [ ! -e "$INITIALIZED" ]; then
-    python3 manage.py migrate
-    FIXTURES_DIR=/container/fixtures
-
-    if [ -d ${FIXTURES_DIR} ]; then
-        if [ -z ${ENVIRONMENT} ] || [ "${ENVIRONMENT}" == "DEVELOPMENT"  ]; then
-            python3 manage.py loaddata ${FIXTURES_DIR}/development_data.json
-        elif [[ "${ENVIRONMENT}" == "STAGE" ]]; then
-            python3 manage.py loaddata ${FIXTURES_DIR}/stage_data.json
-        elif [[ "${ENVIRONMENT}" == "PRODUCTION" ]]; then
-            python3 manage.py loaddata ${FIXTURES_DIR}/production_data.json
-        fi
-    fi
-
-    if [[ ! -z ${TEST} ]]; then
-        TEST_FIXTURES_DIR=/container/test_fixtures
-        if [ -d ${TEST_FIXTURES_DIR} ]; then
-            for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
-                python3 manage.py loaddata ${fixture}
-            done
-        fi
-    fi
-
-    touch ${INITIALIZED}
+    cd ${BASE_SERVICE_DIR}
 fi
 
 if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
     envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
     nginx
-    gunicorn_start.sh sockfile
+    gunicorn_start.sh sockfile $USER
 else
-    gunicorn_start.sh http
+    gunicorn_start.sh http $USER
 fi

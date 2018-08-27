@@ -20,18 +20,21 @@
 if [ `ls -l ${DEV_DJANGO_DIR} | wc -l` == 1 ]; then
     echo "USING PROD DIR"
     export BASE_SERVICE_DIR=${DJANGO_DIR}
+
+    cd ${BASE_SERVICE_DIR}
+
+    INITIALIZED="/container/initialized"
+
+    if [ ! -e "$INITIALIZED" ]; then
+        python3 manage.py migrate
+        touch ${INITIALIZED}
+
+    fi
 else
     echo "USING DEV DIR"
     export BASE_SERVICE_DIR=${DEV_DJANGO_DIR}
-fi
-cd ${BASE_SERVICE_DIR}
 
-INITIALIZED="/container/initialized"
-
-if [ ! -e "$INITIALIZED" ]; then
-	python3 manage.py migrate
-	touch ${INITIALIZED}
-
+    cd ${BASE_SERVICE_DIR}
 fi
 
 CONSUMER_TYPE=$1
@@ -50,7 +53,7 @@ fi
 if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
     envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
     nginx
-    gunicorn_start.sh sockfile
+    gunicorn_start.sh sockfile root
 else
-    gunicorn_start.sh http
+    gunicorn_start.sh http root
 fi

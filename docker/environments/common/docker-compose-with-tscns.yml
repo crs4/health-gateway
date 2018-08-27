@@ -3,7 +3,6 @@ services:
   tscns:
     image: crs4/tscns:latest
     ports:
-      - 80:80
       - 443:443
     environment:
       - TZ=CET

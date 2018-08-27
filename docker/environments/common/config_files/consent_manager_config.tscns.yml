@@ -9,7 +9,7 @@ django:
 
 saml:
   service: tscns
-  idp_url: http://tscns/idp/shibboleth
+  idp_url: https://tscns/idp/shibboleth
   sp_name: Consent Manager Service Provider
   sp_cert: /container/devservice/saml2/saml2.cert.pem
   sp_key: /container/devservice/saml2/saml2.key.pem
