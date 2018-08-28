@@ -70,5 +70,21 @@
       "client_role": "ST",
       "scopes": "messages:write"
     }
+  },
+  {
+    "model": "hgw_backend.restclient",
+    "pk": 1,
+    "fields": {
+      "client_id": "Z3p4Q2La14DItTBz9fxFBY4vflHPYMLLeXoUltOt",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "ptyQgSdx9r0QZNntI3q1F1ZwT9fZU0aijGkZqRkAyibEF5qNaSIxwIFEsYV1L0rBD9a1ALCmVqC6ERw7sK4qcfk57oUrkFOOhUs5JUHnIcQ2A6rJ5c2tcIQUsJLfcQLI",
+      "name": "HGW FRONTEND",
+      "skip_authorization": true,
+      "scopes": "sources:read",
+      "client_role": "SU"
+    }
   }
 ]
