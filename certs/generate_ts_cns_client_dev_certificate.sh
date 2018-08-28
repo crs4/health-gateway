@@ -40,9 +40,10 @@ function create_cert() {
     CLIENT_CSR=${CLIENT_BASE_DIR}/csr.pem
     CLIENT_P12=${CLIENT_BASE_DIR}/cert.p12
 
+    echo "/C=IT/GN=${NAME}/SN=${SURNAME}/CN=${ID}//0000000000000000.oXPnbQvnvQANlkxAg"
     openssl genrsa -des3 -out ${CLIENT_KEY} 4096
     openssl req -new -key ${CLIENT_KEY} -out ${CLIENT_CSR} \
-        -subj /C=IT/CN=${ID}\/0000000000000000.oXPnbQvnvQANlkxAg/GN=${NAME}/SN=${SURNAME}
+        -subj /C=IT/CN="\"${ID}\/0000000000000000.oXPnbQvnvQANlkxAg\""/GN=${NAME}/SN=${SURNAME}
 
     echo "Signing the client certificate with the CA key"
 
@@ -53,6 +54,5 @@ function create_cert() {
 }
 create_cert "garibaldi" "Giuseppe" "Garibaldi" "GRBGPP87L04L741X"
 create_cert "cesare" "Giulio" "Cesare" "CSRGGL44L13H501E"
-create_cert "lovelace" "Ada" "Lovelace" "LVLDAA85T50G702B"
 create_cert "darco" "Giovanna" "D'Arco" "DRCGNN12A46A326K"
 

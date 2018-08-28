@@ -1,5 +1,40 @@
 [
   {
+    "model": "hgw_frontend.hgwfrontenduser",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$xQh4BaoMLy8i$WLlErGChzsMR8KpOlWqbpPy750V+fRlKnbpUO9jTbyU=",
+      "last_login": "2017-05-22T15:10:25.916Z",
+      "is_superuser": true,
+      "username": "admin",
+      "first_name": "",
+      "last_name": "",
+      "email": "admin@ad.it",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2017-05-19T15:03:42.962Z",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "hgw_frontend.restclient",
+    "pk": 1,
+    "fields": {
+      "client_id": "VCDkhstCfeJUP3uJMWusiOrA0LkVe4rJWy7WQDHO",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "H4ZsGYIPx9jo0B6C2Wgfa4Y8kI5sGQTPDHDwTmfBUiAgjJJTL4GO5gVsh6DCNs8yFjgb5m4tnTUEyx6rBLb3Vv7A3NAZZDvnVPbsKLa1fPMWShnGcILZhpEOdwCGA856",
+      "name": "Health Gateway Dispatcher",
+      "skip_authorization": true,
+      "destination": null,
+      "scopes": "flow_request:read flow_request:query",
+      "client_role": "SU"
+    }
+  },
+  {
     "model": "hgw_frontend.destination",
     "pk": 1,
     "fields": {
@@ -24,6 +59,32 @@
       "destination": 1,
       "scopes": "flow_request:read flow_request:write messages:read",
       "client_role": "ST"
+    }
+  },
+    {
+    "model": "hgw_frontend.destination",
+    "pk": 2,
+    "fields": {
+      "destination_id": "3okDHOMPQ2OpyFrPpNNVn05EmDCvvVUw",
+      "rest_or_kafka": "R",
+      "name": "REST DESTINATION",
+      "kafka_public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkQzZzM/bVgtBUIpYdJAz\n0Hdnm3WgdoFg9or4hUz1lknQQpawv8z2R2IPHOcsvjbmvTPivc3zJJetnndOiM6v\nN35idgnSHAeyGttIgNTR0e6vd4RcMfwe3MCiM0bem/vkCj7Gb2ALCrIe797du7oc\nBt/k2eGKdXDtIE+/mUUNg17WbIewoOJZBXTcnkRx7mZ5xd9994taV5Fj9/LDiahb\noEc0C0uRP6D5XftXZiH89Tw3oAteraYecWKnpzbcYhasKR+ii//gzueikV4+wuql\nW1EyTpcfgwbY/8dJSwHjjLmBPpcgs8ZkS55mur57wvnNUxJRJUYsGqfn9fPmeM5w\nOQIDAQAB\n-----END PUBLIC KEY-----"
+    }
+  },
+  {
+    "model": "hgw_frontend.restclient",
+    "pk": 3,
+    "fields": {
+      "client_id": "P8apkL3OmeaRZTlpAoxjXF1YGbfc37TJ",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "UxyYqwUOnklM417D78Xy4j82eTJLSbRMCpugAEcYRguEN3TtZyrLNc2Ba5nuSsOVStlGwgF2KqOmFI7Tlht29bMkr4inA3hUY1YJPmeR3X8r1NGX21H1URyKtk9Ag843",
+      "name": "REST DESTINATION",
+      "skip_authorization": true,
+      "destination": 2,
+      "scopes": "flow_request:read flow_request:write messages:read"
     }
   }
 ]

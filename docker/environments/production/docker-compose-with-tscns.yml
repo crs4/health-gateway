@@ -1,17 +1,8 @@
 version: '3.0'
 services:
-  tscns_mysql:
-    build: ../../images/common/tscns_mysql
-    image: crs4/tscns_mysql
-    ports:
-      - 3306:3306
-    environment:
-      - TZ=CET
-      - MYSQL_ROOT_PASSWORD=shibboleth
-
-  tscns_shibboleth:
-    build: ../../images/common/tscns_shibboleth
-    image: crs4/tscns_shibboleth
+  tscns:
+    build: ../../images/common/tscns
+    image: crs4/tscns
     ports:
       - 443:443
     environment:
@@ -31,10 +22,6 @@ services:
       - ../../../certs/ca/web/certs/tscns/idp-signing.key:/opt/shibboleth-idp/credentials/idp-signing.key
       - ../../../certs/ca/web/certs/tscns/idp-encryption.crt:/opt/shibboleth-idp/credentials/idp-encryption.crt
       - ../../../certs/ca/web/certs/tscns/idp-encryption.key:/opt/shibboleth-idp/credentials/idp-encryption.key
-    networks:
-      default:
-        aliases:
-          - tscns
 
   hgw_frontend:
     build:
@@ -45,7 +32,7 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -71,8 +58,6 @@ services:
     ports:
       - 8003:8003
     volumes:
-      - ../../../hgw_backend/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
       - ./config_files/hgw_backend_config.yml:/etc/hgw_service/hgw_backend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
@@ -97,9 +82,7 @@ services:
     ports:
       - 8002:8002
     volumes:
-      - ../../../consent_manager/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/consent_manager_config.yml:/etc/hgw_service/consent_manager_config.yml
+      - ./config_files/consent_manager_config.tscns.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -137,7 +120,6 @@ services:
       - kafka
       - consent_manager
     volumes:
-      - ../../../hgw_dispatcher/:/container/service
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

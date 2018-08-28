@@ -1,0 +1,15 @@
+<VirtualHost *:80>
+  ServerName ${SERVER_NAME}:80
+  DocumentRoot /var/www/html
+
+  # Enable HTTP Strict Transport Security with a 2 year duration
+  Header always set Strict-Transport-Security "max-age=63072000;includeSubDomains"
+
+  SSLCACertificateFile  /root/certificates/ca-development.crt
+
+  <Location /idp/Authn/X509>
+    SSLVerifyClient require
+    SSLOptions +ExportCertData +StdEnvVars
+    SSLVerifyDepth 4
+  </Location>
+</VirtualHost>

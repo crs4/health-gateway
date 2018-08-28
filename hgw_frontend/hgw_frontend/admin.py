@@ -17,8 +17,14 @@
 
 
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from hgw_frontend.models import HGWFrontendUser, Destination
 
-admin.site.register(HGWFrontendUser)
+
+class HGWFrontendUserAdmin(UserAdmin):
+    pass
+
+
+admin.site.register(HGWFrontendUser, HGWFrontendUserAdmin)
 admin.site.register(Destination)

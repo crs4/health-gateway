@@ -1,5 +1,55 @@
 [
   {
+    "model": "consent_manager.consentmanageruser",
+    "pk": 1,
+    "fields": {
+      "password": "pbkdf2_sha256$36000$xQh4BaoMLy8i$WLlErGChzsMR8KpOlWqbpPy750V+fRlKnbpUO9jTbyU=",
+      "last_login": "2017-05-22T15:10:25.916+02:00",
+      "is_superuser": true,
+      "username": "admin",
+      "first_name": "",
+      "last_name": "",
+      "email": "",
+      "is_staff": true,
+      "is_active": true,
+      "date_joined": "2017-05-19T15:03:42.962+02:00",
+      "groups": [],
+      "user_permissions": []
+    }
+  },
+  {
+    "model": "consent_manager.restclient",
+    "pk": 1,
+    "fields": {
+      "client_id": "04hpKQ1RPdbQAI0TYZ4A162r0IBlPH8WS6cZ5BMR",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "NrRetjwS3n9By6FhqWKbkuGLTvuQWtbQq3QwnKc8CgHoJg02MeQI4Mitj2fISJXv4DQieaIhdyWLy5Klf30i37mP7P0Vh3acOGJZFaHhKuBI3QYlRJBGipm50bBR3zfD",
+      "name": "HGW FRONTEND",
+      "skip_authorization": true,
+      "scopes": "consent:read consent:write",
+      "client_role": "SU"
+    }
+  },
+  {
+    "model": "consent_manager.restclient",
+    "pk": 2,
+    "fields": {
+      "client_id": "qe5HzZoKocWjGDYyfZsUBC5jpvZ3C7BWbgbKGsnW",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "lbfIiCIZOG8tN6L5LKdCjxPN4tHimmZZ4W1d9eMX2sKMrPdNea8MY5rVyWmeLGvj1QNpn1Tlj2fifpGFRj0TV0W8UiKXW0GA9LPD7IOyF3zMEtXCBq8UORvprKdQk7RU",
+      "name": "HGW DISPATCHER",
+      "skip_authorization": true,
+      "scopes": "consent:read",
+      "client_role": "SU"
+    }
+  },
+  {
     "model": "consent_manager.restclient",
     "pk": 3,
     "fields": {
