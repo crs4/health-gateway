@@ -21,13 +21,12 @@ import json
 import logging
 import requests
 import six
+from dateutil.tz import gettz
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from kafka import KafkaProducer
 from oauthlib.oauth2 import BackendApplicationClient
 from operator import xor
@@ -37,13 +36,14 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 import hgw_frontend.serializers
+from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination
 from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
     KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CRT, KAFKA_CA_CERT, \
-    CONSENT_MANAGER_CONFIRMATION_PAGE
+    CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE
 
 logger = logging.getLogger('hgw_frontend')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -97,8 +97,8 @@ class FlowRequestView(ViewSet):
         }
         if 'start_validity' not in request.data and 'expire_validity' not in request.data:
             # Assign default values for the validity range: current datetime + 6 months
-            start_datetime = datetime.datetime.now()
-            expire_datetime = start_datetime + datetime.timedelta(6 * 30)
+            start_datetime = datetime.datetime.now(gettz(TIME_ZONE))
+            expire_datetime = start_datetime + datetime.timedelta(days=180)
             data['start_validity'] = start_datetime.strftime(TIME_FORMAT)
             data['expire_validity'] = expire_datetime.strftime(TIME_FORMAT)
         else:
@@ -120,7 +120,7 @@ class FlowRequestView(ViewSet):
 
             return Response(res, status=status.HTTP_201_CREATED)
         else:
-            logger.error("Error adding Flow Request. Details {}".format(fr_serializer.errors))
+            logger.error("Error adding Flow Request with data {}. Details {}".format(data, fr_serializer.errors))
         return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, process_id, format=None):
@@ -181,11 +181,13 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
     }
 
     destination = flow_request.destination
-
-    res = requests.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+    oauth_backend_session = OAuth2SessionProxy('{}/oauth2/token/'.format(HGW_BACKEND_URI),
+                                               HGW_BACKEND_CLIENT_ID,
+                                               HGW_BACKEND_CLIENT_SECRET, )
+    res = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
 
     confirm_ids = []
-    oauth_session, access_token_header = _get_consent_oauth_token()
+    oauth_consent_session, access_token_header = _get_consent_oauth_token()
     for source_data in res.json():
         channel_data = {
             'source': {
@@ -202,8 +204,8 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
 
-        res = oauth_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI),
-                                 headers=access_token_header, json=channel_data)
+        res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI),
+                                         headers=access_token_header, json=channel_data)
         if res.status_code == 201:
             json_res = res.json()
             ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],

@@ -105,10 +105,15 @@ services:
     depends_on:
       - kafka
       - consent_manager
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
-      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
+      - hgw_frontend
+      - hgw_backend
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "hgw_frontend:8000", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
     volumes:
       - ../../../hgw_dispatcher/:/container/devservice
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

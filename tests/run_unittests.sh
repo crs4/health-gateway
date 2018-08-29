@@ -39,10 +39,11 @@ for module in  consent_manager hgw_frontend hgw_backend; do
     cd ${DIR}
 done
 
-cd ../hgw_common/hgw_common/test
+cd ../hgw_common/hgw_common
 echo $'\n*********************'
 echo "Testing hgw_common"
-PYTHONPATH=../.. ${PYTHON} -m unittest discover
+#PYTHONPATH=../.. ${PYTHON} -m unittest discover
+${PYTHON} manage.py test hgw_common.test
 
 cd ${DIR}
 

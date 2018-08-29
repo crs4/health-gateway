@@ -72,8 +72,8 @@ class AccessToken(models.Model):
 
 class OAuth2SessionProxy(object):
     """
-    This class can be used to access an OAuth2 protected resources. It reuses an AccessToken until the token. It handles
-    automatic creation and refresh of a token
+    This class can be used to access an OAuth2 protected resources. It reuses an AccessToken until the token expires.
+    It handles automatic creation and refresh of a token
     """
 
     def __init__(self, token_url, client_id, client_secret):

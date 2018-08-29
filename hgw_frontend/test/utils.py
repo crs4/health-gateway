@@ -28,15 +28,23 @@ from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CO
 
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
+    """
+    Consent manager mockup
+    """
+
     CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(CORRECT_CONSENT_ID, CORRECT_CONSENT_ID2))
     WRONG_CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(WRONG_CONSENT_ID, WRONG_CONSENT_ID2))
     CONSENTS_PATTERN = re.compile(r'/v1/consents/')
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
 
     def do_POST(self):
-        if re.search(self.CONSENTS_PATTERN, self.path):
+        if self._path_match(self.CONSENTS_PATTERN):
+            # Mock the consent creation. The behaviour is: if the person is TEST_PERSON1_ID the consent is created.
+            # Otherwise the consent is not created and a 400 status code is returned
             length = int(self.headers['content-length'])
-            if TEST_PERSON1_ID.encode('utf-8') in self.rfile.read(length):
+            consent_data = json.loads(self.rfile.read(length))
+
+            if TEST_PERSON1_ID == consent_data['person_id']:
                 payload = {"consent_id": get_random_string(32),
                            "confirm_id": get_random_string(32),
                            "status": "PE"}
@@ -44,7 +52,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
             else:
                 payload = []
                 status_code = 400
-        elif re.search(self.OAUTH2_PATTERN, self.path):
+        elif self._path_match(self.OAUTH2_PATTERN):
             payload = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
                        'token_type': 'Bearer',
                        'expires_in': 36000,
@@ -111,16 +119,17 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
 class MockBackendRequestHandler(MockRequestHandler):
     SINGLE_SOURCE_PATTERN = re.compile(r'/v1/sources/\w+')
     SOURCES_PATTERN = re.compile(r'/v1/sources/\w*')
+    OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
 
     def do_GET(self):
         source = {
-              "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-              "name": "SOURCE_ENDPOINT_MOCKUP",
-              "url": "https://source_endpoint_mockup:8444/v1/connectors/"
-            }
+            "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+            "name": "SOURCE_ENDPOINT_MOCKUP",
+            "url": "https://source_endpoint_mockup:8444/v1/connectors/"
+        }
+
         if self._path_match(self.SOURCES_PATTERN):
             payload = [source]
-
         elif self._path_match(self.SINGLE_SOURCE_PATTERN):
             payload = source
         else:

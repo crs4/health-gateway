@@ -253,7 +253,6 @@ CONSENT_MANAGER_CLIENT_SECRET = cfg['consent_manager']['client_secret']
 CONSENT_MANAGER_CONFIRMATION_PAGE = '{}/confirm_consents/'.format(CONSENT_MANAGER_URI)
 
 # SERVICES CONFIGURATION
-print(cfg['hgw_backend'])
 HGW_BACKEND_URI = cfg['hgw_backend']['uri']
 HGW_BACKEND_CLIENT_ID = cfg['hgw_backend']['client_id']
 HGW_BACKEND_CLIENT_SECRET = cfg['hgw_backend']['client_secret']

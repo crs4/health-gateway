@@ -81,7 +81,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.CONSENT_MANAGER_OAUTH_CLIENT_ID', UNKNOWN_OAUTH_CLIENT)
     def test_fail_wrong_consent_oauth_client(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that, when the dispatcher exits when it cannot get an oauth token from the consent manager because of
+        Tests that, the dispatcher exits when it cannot get an oauth token from the consent manager because of
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
@@ -130,20 +130,35 @@ class TestDispatcher(TestCase):
         with self.assertRaises(SystemExit) as se:
             Dispatcher('kafka:9093', None, None, None)
         self.assertEqual(se.exception.code, 1)
-    #
-    # @patch('dispatcher.KafkaProducer')
-    # @patch('dispatcher.KafkaConsumer')
-    # @patch('dispatcher.HGW_BACKEND_URI', 'http://127.0.0.2')
-    # @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
-    # @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    # def test_fail_hgw_backend_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
-    #     """
-    #     Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
-    #     wrong client id
-    #     """
-    #     with self.assertRaises(SystemExit) as se:
-    #         Dispatcher('kafka:9093', None, None, None)
-    #     self.assertEqual(se.exception.code, 1)
+
+    @patch('dispatcher.KafkaProducer')
+    @patch('dispatcher.KafkaConsumer')
+    @patch('dispatcher.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
+    @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    @patch('dispatcher.HGW_BACKEND_OAUTH_CLIENT_ID', UNKNOWN_OAUTH_CLIENT)
+    def test_fail_hgw_backend_oauth2_client(self, mocked_kafka_consumer, mocked_kafka_producer):
+        """
+        Tests that the dispatcher exits when it cannot get an oauth token from the hgw_backend because of
+        wrong client id
+        """
+        with self.assertRaises(SystemExit) as se:
+            Dispatcher('kafka:9093', None, None, None)
+        self.assertEqual(se.exception.code, 1)
+
+    @patch('dispatcher.KafkaProducer')
+    @patch('dispatcher.KafkaConsumer')
+    @patch('dispatcher.HGW_BACKEND_URI', 'http://127.0.0.2')
+    @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
+    @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    def test_fail_hgw_frontend_oauth_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
+        """
+        Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
+        wrong client id
+        """
+        with self.assertRaises(SystemExit) as se:
+            Dispatcher('kafka:9093', None, None, None)
+        self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')

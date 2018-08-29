@@ -40,9 +40,9 @@ class MockMessage(object):
 
 class MockRequestHandler(BaseHTTPRequestHandler):
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
-
+    OAUTH2_TOKEN = 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3'
     def _handle_oauth(self):
-        payload = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
+        payload = {'access_token': self.OAUTH2_TOKEN,
                    'token_type': 'Bearer',
                    'expires_in': 1800,
                    'expires_at': time.time() + 1800,
