@@ -80,18 +80,18 @@ class OAuth2SessionProxy(object):
         self.token_url = token_url
         self.client_id = client_id
         self.client_secret = client_secret
-        self.session = self._get_session()  # Fetch the token for the first time
+        self._session = self.create_session()
 
     def get(self, url):
         try:
-            res = self.session.get(url)
+            res = self._session.get(url)
             if res.status_code == 401:
                 raise TokenExpiredError
         except TokenExpiredError:
             logger.debug("Token for the source expired. Getting a new one")
-            self._fetch_token(self.session)
+            self._fetch_token(self._session)
             logger.debug("Creating connector with the new token")
-            res = self.session.get(url)
+            res = self._session.get(url)
         except ConnectionError:
             logger.debug("Connection error creating the connector")
             res = None
@@ -100,11 +100,13 @@ class OAuth2SessionProxy(object):
             res = None
         return res
 
-    def _get_session(self):
+    def create_session(self):
         client = BackendApplicationClient(self.client_id)
         try:
+            logger.debug("Querying db to check for a previuos token for url: {}".format(self.token_url))
             access_token = AccessToken.objects.get(token_url=self.token_url)
         except AccessToken.DoesNotExist:
+            logger.debug("No token found in the db. Asking for a new one")
             oauth_session = OAuth2Session(client=client)
             self._fetch_token(oauth_session)
         else:

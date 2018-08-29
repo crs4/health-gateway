@@ -5,7 +5,7 @@ import os
 from django.test import TestCase
 from django.utils.crypto import get_random_string
 from mock import patch, Mock, MagicMock, call
-from oauthlib.oauth2 import TokenExpiredError
+from oauthlib.oauth2 import TokenExpiredError, InvalidClientError
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'hgw_common.test.settings'
 
@@ -14,7 +14,7 @@ from hgw_common.models import OAuth2SessionProxy, AccessToken
 
 class MockOAuth2Session(MagicMock):
     RESPONSES = []
-
+    RAISES = None
     def __init__(self, *args, **kwargs):
         super(MockOAuth2Session, self).__init__(*args, **kwargs)
         self.token = None
@@ -23,14 +23,17 @@ class MockOAuth2Session(MagicMock):
         self._get_counter = 0
 
     def _fetch_token(self, **kwargs):
-        self.token = {
-            'access_token': get_random_string(30),
-            'token_type': 'Bearer',
-            'expires_in': 36000,
-            'expires_at': time.time() + 36000,
-            'scope': ['read', 'write']
-        }
-        return self.token
+        if self.RAISES is None:
+            self.token = {
+                'access_token': get_random_string(30),
+                'token_type': 'Bearer',
+                'expires_in': 36000,
+                'expires_at': time.time() + 36000,
+                'scope': ['read', 'write']
+            }
+            return self.token
+        else:
+            raise self.RAISES()
 
     def _get(self, url, *args, **kwargs):
         res = self.RESPONSES[self._get_counter % len(self.RESPONSES)]
@@ -73,6 +76,12 @@ class OAuthProxyTest(TestCase):
             self.assertEquals(AccessToken.objects.count(), 1)
             self.assertDictEqual(AccessToken.objects.first().to_python(), mock().token)
 
+    def test_access_token_creation_fail(self):
+        with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
+            MockOAuth2Session.RAISES = InvalidClientError
+            self.assertRaises(InvalidClientError, OAuth2SessionProxy, self.service_url,
+                              self.client_id, self.client_secret)
+
     def test_access_token_reused(self):
         """
         Tests that, if the token has already been created and two subsequent calls returns 200, it is used the same token
@@ -81,7 +90,7 @@ class OAuthProxyTest(TestCase):
         with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
             MockOAuth2Session.RESPONSES = [200, 200]
             proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
-            m = proxy.session
+            m = proxy._session
             first_token = m.token['access_token']
             proxy.get("/fake_url/1/")
             second_token = m.token['access_token']
@@ -100,7 +109,7 @@ class OAuthProxyTest(TestCase):
         with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
             MockOAuth2Session.RESPONSES = [401]
             proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
-            m = proxy.session
+            m = proxy._session
             first_token = m.token['access_token']
             proxy.get("/fake_url/1/")
             second_token = m.token['access_token']
@@ -117,7 +126,7 @@ class OAuthProxyTest(TestCase):
         with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
             MockOAuth2Session.RESPONSES = [TokenExpiredError(), 200]
             proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
-            m = proxy.session
+            m = proxy._session
             first_token = m.token['access_token']
             # m.token['expires_at'] = m.token['expires_at'] - 36001
             proxy.get("/fake_url/1/")

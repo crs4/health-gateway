@@ -30,5 +30,9 @@ ERRORS_MESSAGE = {
     'INVALID_CONSENT_STATUS': 'Invalid consent status',
     'UNKNOWN_CONSENT': 'Unknown consent',
     'INVALID_DATA': 'Invalid parameters',
-    'MISSING_PERSON_ID': 'Missing person id'
+    'MISSING_PERSON_ID': 'Missing person id',
+    'INVALID_CONSENT_CLIENT': 'Error creating consents in consent manager',
+    'CANNOT_CONTACT_CONSENT': 'Cannot contact consent manager',
+    'INVALID_BACKEND_CLIENT': 'Error getting source from backend',
+    'CANNOT_CONTACT_BACKEND': 'Cannot contact backend'
 }

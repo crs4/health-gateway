@@ -128,6 +128,47 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEquals(Destination.objects.all().count(), 2)
         self.assertEquals(FlowRequest.objects.all().count(), 2)
 
+    def test_create_oauth2_token(self):
+        """
+        Tests correct oauth2 token creation
+        """
+        c_id, c_secret = self._get_client_data()
+        params = {
+            'grant_type': 'client_credentials',
+            'client_id': c_id,
+            'client_secret': c_secret
+        }
+        res = self.client.post('/oauth2/token/', data=params)
+        self.assertEquals(res.status_code, 200)
+        self.assertIn('access_token', res.json())
+
+    def test_create_oauth2_token_unauthorized(self):
+        """
+        Tests oauth2 token creation fails when unknown client data are sent
+        """
+        params = {
+            'grant_type': 'client_credentials',
+            'client_id': 'unkn_client_id',
+            'client_secret': 'unkn_client_secret'
+        }
+        res = self.client.post('/oauth2/token/', data=params)
+        self.assertEquals(res.status_code, 401)
+        self.assertDictEqual(res.json(), {'error': 'invalid_client'})
+
+    def test_create_oauth2_token_wrong_grant_type(self):
+        """
+        Tests oauth2 token creation fails when the grant type is wrong
+        """
+        c_id, c_secret = self._get_client_data()
+        params = {
+            'grant_type': 'wrong',
+            'client_id': c_id,
+            'client_secret': c_secret
+        }
+        res = self.client.post('/oauth2/token/', data=params)
+        self.assertEquals(res.status_code, 400)
+        self.assertDictEqual(res.json(), {'error': 'unsupported_grant_type'})
+
     def test_oauth_flow_request_not_authorized(self):
         res = self.client.get('/v1/flow_requests/search/', content_type='application/json')
         self.assertEquals(res.status_code, 401)
@@ -369,7 +410,7 @@ class TestHGWFrontendAPI(TestCase):
             confirm_id, callback_url))
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content.decode('utf-8'), 'All available consents already inserted')
+        self.assertEqual(res.json(), {'error': 'All available consents already present'})
 
     def test_confirm_redirect(self):
         """
@@ -532,6 +573,69 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
         self.assertEquals(res.status_code, 400)
         self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PERSON_ID'])
+
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
+    def test_confirm_fail_backend_oauth_token(self):
+        # First perform an add request that creates the flow request with status 'PENDING'
+        res = self._add_flow_request()
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        # Then confirm the request. This will cause a redirect to consent manager
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
+            confirm_id, callback_url))
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT'])
+
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
+    def test_confirm_cannot_contact_backend(self):
+        # First perform an add request that creates the flow request with status 'PENDING'
+        res = self._add_flow_request()
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        # Then confirm the request. This will cause a redirect to consent manager
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
+            confirm_id, callback_url))
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['CANNOT_CONTACT_BACKEND'])
+
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_CLIENT_ID', 'wrong_client_id')
+    def test_confirm_fail_consent_oauth_token(self):
+        # First perform an add request that creates the flow request with status 'PENDING'
+        res = self._add_flow_request()
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        # Then confirm the request. This will cause a redirect to consent manager
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
+            confirm_id, callback_url))
+        print (res.content)
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT'])
+
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', 'https://localhost')
+    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_confirm_cannot_contact_consent(self):
+        # First perform an add request that creates the flow request with status 'PENDING'
+        res = self._add_flow_request()
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        # Then confirm the request. This will cause a redirect to consent manager
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
+            confirm_id, callback_url))
+        self.assertEquals(res.status_code, 200)
+        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['CANNOT_CONTACT_CONSENT'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)

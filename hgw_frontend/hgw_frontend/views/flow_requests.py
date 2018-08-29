@@ -28,7 +28,7 @@ from django.http import HttpResponse, Http404, HttpResponseBadRequest, HttpRespo
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
 from kafka import KafkaProducer
-from oauthlib.oauth2 import BackendApplicationClient
+from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError
 from operator import xor
 from requests_oauthlib import OAuth2Session
 from rest_framework import status
@@ -36,7 +36,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 import hgw_frontend.serializers
-from hgw_common.models import OAuth2SessionProxy
+from hgw_common.models import OAuth2SessionProxy, AccessToken
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
@@ -181,13 +181,25 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
     }
 
     destination = flow_request.destination
-    oauth_backend_session = OAuth2SessionProxy('{}/oauth2/token/'.format(HGW_BACKEND_URI),
-                                               HGW_BACKEND_CLIENT_ID,
-                                               HGW_BACKEND_CLIENT_SECRET, )
-    res = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+    try:
+        oauth_backend_session = OAuth2SessionProxy('{}/oauth2/token/'.format(HGW_BACKEND_URI),
+                                                   HGW_BACKEND_CLIENT_ID,
+                                                   HGW_BACKEND_CLIENT_SECRET)
+    except InvalidClientError:
+        return [], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']
+    except requests.exceptions.ConnectionError:
+        return [], ERRORS_MESSAGE['CANNOT_CONTACT_BACKEND']
+    else:
+        res = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+
+    try:
+        oauth_consent_session, access_token_header = _get_consent_oauth_token()
+    except InvalidClientError:
+        return [], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']
+    except requests.exceptions.ConnectionError:
+        return [], ERRORS_MESSAGE['CANNOT_CONTACT_CONSENT']
 
     confirm_ids = []
-    oauth_consent_session, access_token_header = _get_consent_oauth_token()
     for source_data in res.json():
         channel_data = {
             'source': {
@@ -212,8 +224,10 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
                                                confirmation_id=json_res['confirm_id'],
                                                destination_endpoint_callback_url=destination_endpoint_callback_url)
             confirm_ids.append(json_res['confirm_id'])
-
-    return confirm_ids
+    if not confirm_ids:
+        return confirm_ids, "All available consents already present"
+    else:
+        return confirm_ids, None
 
 
 def _get_consent(confirm_id):
@@ -244,9 +258,9 @@ def _get_callback_url(request):
 
 
 def _ask_consent(request, flow_request, callback_url):
-    consents = _create_consent(flow_request, callback_url, request.user)
+    consents, status = _create_consent(flow_request, callback_url, request.user)
     if not consents:
-        return HttpResponse("All available consents already inserted")
+        return HttpResponse(json.dumps({'error': status}), content_type='application/json')
     logger.debug("Created consent")
     consent_callback_url = _get_callback_url(request)
     return HttpResponseRedirect('{}?{}&callback_url={}'.

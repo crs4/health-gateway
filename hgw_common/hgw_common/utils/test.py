@@ -41,6 +41,7 @@ class MockMessage(object):
 class MockRequestHandler(BaseHTTPRequestHandler):
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
     OAUTH2_TOKEN = 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3'
+
     def _handle_oauth(self):
         payload = {'access_token': self.OAUTH2_TOKEN,
                    'token_type': 'Bearer',
@@ -66,6 +67,13 @@ class MockRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         response = json.dumps(payload)
         self.wfile.write(response.encode('utf-8'))
+
+    def _content_data(self):
+        length = int(self.headers['content-length'])
+        return self.rfile.read(length).decode('utf-8')
+
+    def _json_data(self):
+        return json.loads(self._content_data())
 
     def do_GET(self):
         raise NotImplemented
