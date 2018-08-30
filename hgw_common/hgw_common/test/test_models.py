@@ -15,6 +15,7 @@ from hgw_common.models import OAuth2SessionProxy, AccessToken
 class MockOAuth2Session(MagicMock):
     RESPONSES = []
     RAISES = None
+
     def __init__(self, *args, **kwargs):
         super(MockOAuth2Session, self).__init__(*args, **kwargs)
         self.token = None
@@ -47,14 +48,6 @@ class MockOAuth2Session(MagicMock):
             return response
 
 
-def _mock_token():
-    return {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
-            'token_type': 'Bearer',
-            'expires_in': 36000,
-            'expires_at': time.time() + 36000,
-            'scope': ['read', 'writes']}
-
-
 class OAuthProxyTest(TestCase):
 
     def setUp(self):
@@ -66,6 +59,7 @@ class OAuthProxyTest(TestCase):
         """
         Tests that when the proxy is instantiated a token is created.
         """
+
         with patch('hgw_common.models.OAuth2Session', new_callable=MockOAuth2Session) as mock:
             m = mock(200)
             OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
@@ -73,7 +67,7 @@ class OAuthProxyTest(TestCase):
             # This precision is irrelevant in this case but we need to modify the original value
             m.token['expires_at'] = datetime.fromtimestamp(m.token['expires_at']).timestamp()
             mock.assert_called()
-            self.assertEquals(AccessToken.objects.count(), 1)
+            self.assertEqual(AccessToken.objects.count(), 1)
             self.assertDictEqual(AccessToken.objects.first().to_python(), mock().token)
 
     def test_access_token_creation_fail(self):
@@ -82,6 +76,27 @@ class OAuthProxyTest(TestCase):
             self.assertRaises(InvalidClientError, OAuth2SessionProxy, self.service_url,
                               self.client_id, self.client_secret)
             MockOAuth2Session.RAISES = None
+
+    def test_access_token_from_db(self):
+        """
+        Tests that, when the proxy is instantiated and an access token is found in the db, the db token is used
+        :return:
+        """
+        token_data = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
+                      'token_type': 'Bearer',
+                      'expires_in': 36000,
+                      'expires_at': (datetime.now() + timedelta(hours=10)).isoformat(),
+                      'scope': 'read write'}
+        AccessToken.objects.create(token_url=self.service_url, **token_data)
+        with patch('hgw_common.models.OAuth2Session', new_callable=MockOAuth2Session) as mock:
+            mock(200)
+            OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
+            # The datetime object has a precision to 10e-6 seconds while the timestamp 10e-7.
+            # This precision is irrelevant in this case but we need to modify the original value
+            # m.token['expires_at'] = datetime.fromtimestamp(m.token['expires_at']).timestamp()
+            mock.assert_called()
+            self.assertEqual(AccessToken.objects.count(), 1)
+            self.assertEqual(AccessToken.objects.first().access_token, token_data['access_token'])
 
     def test_access_token_reused(self):
         """
@@ -100,8 +115,8 @@ class OAuthProxyTest(TestCase):
             self.assertEqual(len(m.get.call_args_list), 2)  # Number of calls
             m.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/2/')])
             m.fetch_token.assert_called_once()
-            self.assertEquals(AccessToken.objects.count(), 1)
-            self.assertEquals(first_token, second_token, third_token)
+            self.assertEqual(AccessToken.objects.count(), 1)
+            self.assertEqual(first_token, second_token, third_token)
 
     def test_access_token_refreshed_for_401_response(self):
         """
@@ -117,7 +132,7 @@ class OAuthProxyTest(TestCase):
             self.assertEqual(len(m.get.call_args_list), 2)  # Number of calls
             self.assertEqual(len(m.fetch_token.call_args_list), 2)  # Number of calls
             m.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
-            self.assertEquals(AccessToken.objects.count(), 1)
+            self.assertEqual(AccessToken.objects.count(), 1)
             self.assertNotEquals(first_token, second_token)
 
     def test_access_token_refreshed_for_token_expired(self):
@@ -135,5 +150,5 @@ class OAuthProxyTest(TestCase):
             self.assertEqual(len(m.get.call_args_list), 2)  # Number of calls
             self.assertEqual(len(m.fetch_token.call_args_list), 2)  # Number of calls
             m.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
-            self.assertEquals(AccessToken.objects.count(), 1)
+            self.assertEqual(AccessToken.objects.count(), 1)
             self.assertNotEquals(first_token, second_token)

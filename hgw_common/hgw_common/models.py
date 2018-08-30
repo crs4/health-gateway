@@ -110,7 +110,7 @@ class OAuth2SessionProxy(object):
             oauth_session = OAuth2Session(client=client)
             self._fetch_token(oauth_session)
         else:
-            oauth_session = OAuth2Session(client=client, token=access_token)
+            oauth_session = OAuth2Session(client=client, token=access_token.to_python())
 
         return oauth_session
 
