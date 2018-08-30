@@ -175,32 +175,32 @@ class TestHGWFrontendAPI(TestCase):
     def test_oauth_flow_request_not_authorized(self):
         res = self.client.get('/v1/flow_requests/search/', content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
         for m in ('post', 'get'):
             met = getattr(self.client, m)
             res = met('/v1/flow_requests/', content_type='application/json')
             self.assertEqual(res.status_code, 401)
-            self.assertEqual(res.json(), {'error': 'not_authenticated'})
+            self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
         for m in ('put', 'get', 'delete'):
             met = getattr(self.client, m)
             res = met('/v1/flow_requests/1/')
             self.assertEqual(res.status_code, 401)
-            self.assertEqual(res.json(), {'error': 'not_authenticated'})
+            self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
     def test_oauth_messages_not_authorized(self):
         res = self.client.get('/v1/messages/', content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
         res = self.client.get('/v1/messages/info/', content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
         res = self.client.get('/v1/messages/1/', content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
     def test_get_all_flow_requests_for_a_destination(self):
         """
@@ -270,7 +270,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_index=self.DEST_1_IDX)
         res = self.client.get('/v1/flow_requests/09876/', **headers)
         self.assertEqual(res.status_code, 404)
-        expected = {'error': 'not_found'}
+        expected = {'errors': ['not_found']}
         self.assertDictEqual(res.json(), expected)
 
     def test_add_flow_requests(self):
@@ -413,7 +413,7 @@ class TestHGWFrontendAPI(TestCase):
             confirm_id, callback_url))
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), {'error': 'All available consents already present'})
+        self.assertEqual(res.json(), {'errors': ['All available consents already present']})
 
     def test_confirm_redirect(self):
         """
@@ -591,7 +591,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT'])
+        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
@@ -606,7 +606,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR'])
+        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -623,7 +623,7 @@ class TestHGWFrontendAPI(TestCase):
             confirm_id, callback_url))
         print (res.content)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT'])
+        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', 'https://localhost')
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -638,7 +638,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR'])
+        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR']])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -942,7 +942,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         res = self.client.get('/v1/sources/')
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_sources_forbidden(self):
@@ -952,7 +952,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
         res = self.client.get('/v1/sources/', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'error': 'forbidden'})
+        self.assertEqual(res.json(), {'errors': ['forbidden']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
@@ -963,7 +963,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/sources/', **headers)
         self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'error': 'invalid_backend_client'})
+        self.assertEqual(res.json(), {'errors': ['invalid_backend_client']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
     def test_get_sources_fail_backend_connection_error(self):
@@ -973,7 +973,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/sources/', **headers)
         self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'error': 'backend_connection_error'})
+        self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_source(self):
@@ -992,7 +992,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']))
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_source_forbidden(self):
@@ -1002,7 +1002,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'error': 'forbidden'})
+        self.assertEqual(res.json(), {'errors': ['forbidden']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
@@ -1013,7 +1013,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
         self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'error': 'invalid_backend_client'})
+        self.assertEqual(res.json(), {'errors': ['invalid_backend_client']})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
     def test_get_source_fail_backend_connection_error(self):
@@ -1023,4 +1023,4 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
         self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'error': 'backend_connection_error'})
+        self.assertEqual(res.json(), {'errors': ['backend_connection_error']})

@@ -20,13 +20,14 @@ class Sources(ViewSet):
                                                        HGW_BACKEND_CLIENT_ID,
                                                        HGW_BACKEND_CLIENT_SECRET)
         except InvalidClientError:
-            return Response({'error': ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']},
+            return Response({'errors': [ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']]},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except requests.exceptions.ConnectionError:
-            return Response({'error': ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']},
+            return Response({'errors': [ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']]},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             res = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+
         return Response(res.json(), content_type='application/json')
 
     def retrieve(self, request, source_id):
@@ -35,11 +36,12 @@ class Sources(ViewSet):
                                                        HGW_BACKEND_CLIENT_ID,
                                                        HGW_BACKEND_CLIENT_SECRET)
         except InvalidClientError:
-            return Response({'error': ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']},
+            return Response({'errors': [ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']]},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except requests.exceptions.ConnectionError:
-            return Response({'error': ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']},
+            return Response({'errors': [ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']]},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             res = oauth_backend_session.get('{}/v1/sources/{}/'.format(HGW_BACKEND_URI, source_id))
+
         return Response(res.json(), content_type='application/json')

@@ -141,11 +141,11 @@ class ERRORS:
 
 def custom_exception_handler(exc, context):
     if isinstance(exc, Http404):
-        response = Response({'error': ERRORS.NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+        response = Response({'errors': [ERRORS.NOT_FOUND]}, status=status.HTTP_404_NOT_FOUND)
     elif isinstance(exc, NotAuthenticated):
-        response = Response({'error': ERRORS.NOT_AUTHENTICATED}, status=status.HTTP_401_UNAUTHORIZED)
+        response = Response({'errors': [ERRORS.NOT_AUTHENTICATED]}, status=status.HTTP_401_UNAUTHORIZED)
     elif isinstance(exc, PermissionDenied):
-        response = Response({'error': ERRORS.FORBIDDEN}, status=status.HTTP_403_FORBIDDEN)
+        response = Response({'errors': [ERRORS.FORBIDDEN]}, status=status.HTTP_403_FORBIDDEN)
     else:
         response = exception_handler(exc, context)
 

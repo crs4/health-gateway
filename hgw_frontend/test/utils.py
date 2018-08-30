@@ -28,15 +28,23 @@ from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
     TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2
 
-SOURCES_DATA = [{
-    "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-    "name": "SOURCE_1",
-    "url": "https://source_1/v1/connectors/"
-}, {
-    "source_id": "TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS",
-    "name": "SOURCE_2",
-    "url": "https://source_2/v1/connectors/"
-}]
+SOURCES_DATA = [
+    {
+        'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
+        'name': 'source_1',
+        'profile': {
+            'code': 'PROF_001',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Laboratory"}]'}
+    }, {
+        'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS',
+        'name': 'oauth2_source',
+        'profile': {
+            'code': 'PROF_002',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Radiology"}]'
+        }
+    }]
 
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
@@ -159,6 +167,7 @@ class MockBackendRequestHandler(MockRequestHandler):
         else:
             payload = ""
             status_code = 400
+        print(payload, status_code)
         return self._send_response(payload, status_code)
 
     def do_GET(self):

@@ -81,6 +81,7 @@ class OAuthProxyTest(TestCase):
             MockOAuth2Session.RAISES = InvalidClientError
             self.assertRaises(InvalidClientError, OAuth2SessionProxy, self.service_url,
                               self.client_id, self.client_secret)
+            MockOAuth2Session.RAISES = None
 
     def test_access_token_reused(self):
         """

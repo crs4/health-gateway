@@ -260,7 +260,7 @@ def _get_callback_url(request):
 def _ask_consent(request, flow_request, callback_url):
     consents, status = _create_consent(flow_request, callback_url, request.user)
     if not consents:
-        return HttpResponse(json.dumps({'error': status}), content_type='application/json')
+        return HttpResponse(json.dumps({'errors': [status]}), content_type='application/json')
     logger.debug("Created consent")
     consent_callback_url = _get_callback_url(request)
     return HttpResponseRedirect('{}?{}&callback_url={}'.
