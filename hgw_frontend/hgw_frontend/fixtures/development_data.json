@@ -57,7 +57,7 @@
       "name": "KAFKA DESTINATION",
       "skip_authorization": true,
       "destination": 1,
-      "scopes": "flow_request:read flow_request:write messages:read",
+      "scopes": "flow_request:read flow_request:write messages:read sources:read",
       "client_role": "ST"
     }
   },
@@ -84,7 +84,7 @@
       "name": "REST DESTINATION",
       "skip_authorization": true,
       "destination": 2,
-      "scopes": "flow_request:read flow_request:write messages:read"
+      "scopes": "flow_request:read flow_request:write messages:read sources:read"
     }
   }
 ]

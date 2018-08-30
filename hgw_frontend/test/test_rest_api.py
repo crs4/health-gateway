@@ -31,7 +31,7 @@ from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmati
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \
     TEST_PERSON1_ID
-from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler
+from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler, SOURCES_DATA
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -92,6 +92,9 @@ class TestHGWFrontendAPI(TestCase):
             'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
+
+        self.sources_data = SOURCES_DATA
+
         self.encypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
@@ -124,9 +127,9 @@ class TestHGWFrontendAPI(TestCase):
         return {"Authorization": "Bearer {}".format(access_token)}
 
     def test_init_fixtures(self):
-        self.assertEquals(RESTClient.objects.all().count(), 3)
-        self.assertEquals(Destination.objects.all().count(), 2)
-        self.assertEquals(FlowRequest.objects.all().count(), 2)
+        self.assertEqual(RESTClient.objects.all().count(), 3)
+        self.assertEqual(Destination.objects.all().count(), 2)
+        self.assertEqual(FlowRequest.objects.all().count(), 2)
 
     def test_create_oauth2_token(self):
         """
@@ -139,7 +142,7 @@ class TestHGWFrontendAPI(TestCase):
             'client_secret': c_secret
         }
         res = self.client.post('/oauth2/token/', data=params)
-        self.assertEquals(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         self.assertIn('access_token', res.json())
 
     def test_create_oauth2_token_unauthorized(self):
@@ -152,7 +155,7 @@ class TestHGWFrontendAPI(TestCase):
             'client_secret': 'unkn_client_secret'
         }
         res = self.client.post('/oauth2/token/', data=params)
-        self.assertEquals(res.status_code, 401)
+        self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'error': 'invalid_client'})
 
     def test_create_oauth2_token_wrong_grant_type(self):
@@ -166,38 +169,38 @@ class TestHGWFrontendAPI(TestCase):
             'client_secret': c_secret
         }
         res = self.client.post('/oauth2/token/', data=params)
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), {'error': 'unsupported_grant_type'})
 
     def test_oauth_flow_request_not_authorized(self):
         res = self.client.get('/v1/flow_requests/search/', content_type='application/json')
-        self.assertEquals(res.status_code, 401)
-        self.assertEquals(res.json(), {"detail": "Authentication credentials were not provided."})
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'not_authenticated'})
 
         for m in ('post', 'get'):
             met = getattr(self.client, m)
             res = met('/v1/flow_requests/', content_type='application/json')
-            self.assertEquals(res.status_code, 401)
-            self.assertEquals(res.json(), {"detail": "Authentication credentials were not provided."})
+            self.assertEqual(res.status_code, 401)
+            self.assertEqual(res.json(), {'error': 'not_authenticated'})
 
         for m in ('put', 'get', 'delete'):
             met = getattr(self.client, m)
             res = met('/v1/flow_requests/1/')
-            self.assertEquals(res.status_code, 401)
-            self.assertEquals(res.json(), {"detail": "Authentication credentials were not provided."})
+            self.assertEqual(res.status_code, 401)
+            self.assertEqual(res.json(), {'error': 'not_authenticated'})
 
     def test_oauth_messages_not_authorized(self):
         res = self.client.get('/v1/messages/', content_type='application/json')
-        self.assertEquals(res.status_code, 401)
-        self.assertEquals(res.json(), {"detail": "Authentication credentials were not provided."})
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'not_authenticated'})
 
         res = self.client.get('/v1/messages/info/', content_type='application/json')
-        self.assertEquals(res.status_code, 401)
-        self.assertEquals(res.json(), {"detail": "Authentication credentials were not provided."})
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'not_authenticated'})
 
         res = self.client.get('/v1/messages/1/', content_type='application/json')
-        self.assertEquals(res.status_code, 401)
-        self.assertEquals(res.json(), {"detail": "Authentication credentials were not provided."})
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'not_authenticated'})
 
     def test_get_all_flow_requests_for_a_destination(self):
         """
@@ -206,8 +209,8 @@ class TestHGWFrontendAPI(TestCase):
         # The flow requests are already present in test data
         headers = self._get_oauth_header()
         res = self.client.get('/v1/flow_requests/', **headers)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()), 1)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()), 1)
 
     def test_get_one_flow_request_for_a_destination(self):
         """
@@ -215,7 +218,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         headers = self._get_oauth_header()
         res = self.client.get('/v1/flow_requests/54321/', **headers)
-        self.assertEquals(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         expected = {'flow_id': '12345',
                     'process_id': '54321',
                     'status': 'PE',
@@ -236,8 +239,8 @@ class TestHGWFrontendAPI(TestCase):
         # The flow requests are already present in test data
         headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
         res = self.client.get('/v1/flow_requests/', **headers)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()), 2)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()), 2)
 
     def test_get_one_flow_requests_as_super_client(self):
         """
@@ -245,7 +248,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
         res = self.client.get('/v1/flow_requests/54321/', **headers)
-        self.assertEquals(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         expected = {'flow_id': '12345',
                     'process_id': '54321',
                     'status': 'PE',
@@ -266,8 +269,8 @@ class TestHGWFrontendAPI(TestCase):
         # the flow request belongs to DEST_2
         headers = self._get_oauth_header(client_index=self.DEST_1_IDX)
         res = self.client.get('/v1/flow_requests/09876/', **headers)
-        self.assertEquals(res.status_code, 404)
-        expected = {'detail': 'Not found.'}
+        self.assertEqual(res.status_code, 404)
+        expected = {'error': 'not_found'}
         self.assertDictEqual(res.json(), expected)
 
     def test_add_flow_requests(self):
@@ -275,16 +278,16 @@ class TestHGWFrontendAPI(TestCase):
         Tests adding a flow request. It tests that the request is added but its status is set to PENDING
         """
         res = self._add_flow_request()
-        self.assertEquals(res.status_code, 201)
+        self.assertEqual(res.status_code, 201)
 
         fr = res.json()
         destination = Destination.objects.get(name='Destination 1')
-        self.assertEquals(fr['flow_id'], self.flow_request_data['flow_id'])
-        self.assertEquals(fr['status'], 'PE')
+        self.assertEqual(fr['flow_id'], self.flow_request_data['flow_id'])
+        self.assertEqual(fr['status'], 'PE')
         self.assertDictEqual(fr['profile'], self.flow_request_data['profile'])
-        self.assertEquals(FlowRequest.objects.all().count(), 3)
-        self.assertEquals(ConfirmationCode.objects.all().count(), 1)
-        self.assertEquals(FlowRequest.objects.get(flow_id=fr['flow_id']).destination, destination)
+        self.assertEqual(FlowRequest.objects.all().count(), 3)
+        self.assertEqual(ConfirmationCode.objects.all().count(), 1)
+        self.assertEqual(FlowRequest.objects.get(flow_id=fr['flow_id']).destination, destination)
 
     def test_add_flow_requests_unauthorized(self):
         """
@@ -294,7 +297,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.post('/v1/flow_requests/', data=self.flow_request_json_data,
                                content_type='application/json')
 
-        self.assertEquals(res.status_code, 401)
+        self.assertEqual(res.status_code, 401)
 
     def test_add_flow_requests_forbidden(self):
         """
@@ -303,7 +306,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         # The dispatcher in test data doesn't have the flow_request:write authorization
         res = self._add_flow_request(client_index=self.DISPATCHER_IDX)
-        self.assertEquals(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
 
     def test_add_duplicated_profile_requests(self):
         """
@@ -342,11 +345,11 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.post('/v1/flow_requests/', data=json.dumps(data),
                                content_type='application/json', **headers)
 
-        self.assertEquals(res.status_code, 201)
+        self.assertEqual(res.status_code, 201)
         start_validity = parse(res.json()['start_validity'])
         expire_validity = parse(res.json()['expire_validity'])
         dt = expire_validity - start_validity
-        self.assertEquals(dt.days, 180)
+        self.assertEqual(dt.days, 180)
 
     def test_add_flow_request_only_one_validity_date_provided(self):
         """
@@ -358,12 +361,12 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.post('/v1/flow_requests/', data=json.dumps(data),
                                content_type='application/json', **headers)
 
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         data = self.flow_request_data.copy()
         del data['expire_validity']
         res = self.client.post('/v1/flow_requests/', data=json.dumps(data),
                                content_type='application/json', **headers)
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
 
     def test_add_flow_requests_wrong_content_type(self):
         """
@@ -371,7 +374,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         headers = self._get_oauth_header()
         res = self.client.post('/v1/flow_requests/', data=self.flow_request_data, **headers)
-        self.assertEquals(res.status_code, 415)
+        self.assertEqual(res.status_code, 415)
 
     def test_add_flow_requests_forcing_status(self):
         """
@@ -383,13 +386,13 @@ class TestHGWFrontendAPI(TestCase):
         self.flow_request_data.update({'process_id': '22222', 'status': FlowRequest.ACTIVE})
         json_data = json.dumps(self.flow_request_data)
         res = self.client.post('/v1/flow_requests/', data=json_data, content_type='application/json', **headers)
-        self.assertEquals(res.status_code, 201)
+        self.assertEqual(res.status_code, 201)
         fr = res.json()
-        self.assertEquals(fr['flow_id'], self.flow_request_data['flow_id'])
+        self.assertEqual(fr['flow_id'], self.flow_request_data['flow_id'])
         self.assertNotEquals(fr['process_id'], self.flow_request_data['process_id'])
-        self.assertEquals(fr['status'], 'PE')
+        self.assertEqual(fr['status'], 'PE')
         self.assertDictEqual(fr['profile'], self.flow_request_data['profile'])
-        self.assertEquals(FlowRequest.objects.all().count(), 3)
+        self.assertEqual(FlowRequest.objects.all().count(), 3)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -427,7 +430,7 @@ class TestHGWFrontendAPI(TestCase):
         for m in ('post', 'put', 'head', 'options', 'delete', 'trace'):
             met = getattr(self.client, m)
             res = met('/v1/flow_requests/confirm/')
-            self.assertEquals(res.status_code, 405)
+            self.assertEqual(res.status_code, 405)
 
     def test_confirm_invalid_action(self):
         """
@@ -445,8 +448,8 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=NOT_VALID'.format(
             confirm_id, callback_url))
 
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['UNKNOWN_ACTION'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['UNKNOWN_ACTION'])
 
     def test_confirm_missing_parameters(self):
         """
@@ -462,21 +465,21 @@ class TestHGWFrontendAPI(TestCase):
 
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/')
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
 
         res = self.client.get(
             '/v1/flow_requests/confirm/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
 
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&action=delete'.format(confirm_id))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
 
         res = self.client.get('/v1/flow_requests/confirm/?callback_url={}&action=delete'.format(confirm_id))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
 
     def test_confirm_invalid_confirmation_code(self):
         """
@@ -491,8 +494,8 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id=invalid&callback_url={}&action=delete'.format(
             callback_url,
         ))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
 
     def test_confirm_add_wrong_flow_request_state(self):
         """
@@ -524,8 +527,8 @@ class TestHGWFrontendAPI(TestCase):
                 cc.code,
                 callback_url
             ))
-            self.assertEquals(res.status_code, 400)
-            self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_FR_STATUS'])
+            self.assertEqual(res.status_code, 400)
+            self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_FR_STATUS'])
 
     def test_confirm_delete_wrong_flow_request_state(self):
         """
@@ -559,8 +562,8 @@ class TestHGWFrontendAPI(TestCase):
                 cc.code,
                 callback_url
             ))
-            self.assertEquals(res.status_code, 400)
-            self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_FR_STATUS'])
+            self.assertEqual(res.status_code, 400)
+            self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_FR_STATUS'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
@@ -571,8 +574,8 @@ class TestHGWFrontendAPI(TestCase):
         """
         self.client.login(username='admin', password='admin')
         res = self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PERSON_ID'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PERSON_ID'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -587,8 +590,8 @@ class TestHGWFrontendAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT'])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
@@ -602,8 +605,8 @@ class TestHGWFrontendAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['CANNOT_CONTACT_BACKEND'])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -619,8 +622,8 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
         print (res.content)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT'])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', 'https://localhost')
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -634,8 +637,8 @@ class TestHGWFrontendAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res.json()['error'], ERRORS_MESSAGE['CANNOT_CONTACT_CONSENT'])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['error'], ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -654,14 +657,15 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
 
-        self.assertEquals(res.status_code, 302)
-        self.assertEquals(ConsentConfirmation.objects.count(), previous_consent_confirmation_count + 1)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(ConsentConfirmation.objects.count(), previous_consent_confirmation_count + 2)
         fr = ConfirmationCode.objects.get(code=confirm_id).flow_request
-        self.assertEquals(fr.person_id, '100001')
-        consent_confirm_id = ConsentConfirmation.objects.last().confirmation_id
+        self.assertEqual(fr.person_id, '100001')
+        consent_confirm_ids = [c.confirmation_id for c in list(ConsentConfirmation.objects.all())[-2:]]
         consent_callback_url = 'http://testserver/v1/flow_requests/consents_confirmed/'
-        self.assertRedirects(res, '{}?confirm_id={}&callback_url={}'.
-                             format(CONSENT_MANAGER_CONFIRMATION_PAGE, consent_confirm_id, consent_callback_url),
+        self.assertRedirects(res, '{}?confirm_id={}&confirm_id={}&callback_url={}'.
+                             format(CONSENT_MANAGER_CONFIRMATION_PAGE, consent_confirm_ids[0], consent_confirm_ids[1],
+                                    consent_callback_url),
                              fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
@@ -681,7 +685,7 @@ class TestHGWFrontendAPI(TestCase):
                                                               c.flow_request.process_id)
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
         fr = c.flow_request
-        self.assertEquals(fr.status, FlowRequest.ACTIVE)
+        self.assertEqual(fr.status, FlowRequest.ACTIVE)
 
         destination = fr.destination
         kafka_data = {
@@ -694,7 +698,7 @@ class TestHGWFrontendAPI(TestCase):
             'profile': self.profile,
             'person_id': TEST_PERSON1_ID
         }
-        self.assertEquals(mocked_kafka_producer().send.call_args_list[0][0][0], 'control')
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], 'control')
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode()), kafka_data)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
@@ -709,12 +713,12 @@ class TestHGWFrontendAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}'.format(WRONG_CONFIRM_ID))
-        self.assertEquals(res.status_code, 302)
+        self.assertEqual(res.status_code, 302)
         c = ConsentConfirmation.objects.get(confirmation_id=WRONG_CONFIRM_ID)
         redirect_url = '{}?process_id={}&success=false'.format(c.destination_endpoint_callback_url,
                                                                c.flow_request.process_id)
         fr = FlowRequest.objects.get(flow_id='12345')
-        self.assertEquals(fr.status, FlowRequest.PENDING)
+        self.assertEqual(fr.status, FlowRequest.PENDING)
 
     # @patch('hgw_frontend.views.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     # @patch('hgw_frontend.views.KafkaProducer')
@@ -725,10 +729,10 @@ class TestHGWFrontendAPI(TestCase):
     #     """
     #     self.client.login(username='duck', password='duck')
     #     res = self.client.get('/v1/flow_requests/consents_confirmed/')
-    #     self.assertEquals(res.status_code, 400)
-    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
+    #     self.assertEqual(res.status_code, 400)
+    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
     #     fr = FlowRequest.objects.get(flow_id='12345')
-    #     self.assertEquals(fr.status, FlowRequest.PENDING)
+    #     self.assertEqual(fr.status, FlowRequest.PENDING)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
@@ -739,11 +743,11 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}&consent_confirm_id={}'.format(
                 *confirms_id))
-        self.assertEquals(res.status_code, 302)
+        self.assertEqual(res.status_code, 302)
 
         for confirm_id in confirms_id:
             c = ConsentConfirmation.objects.get(confirmation_id=confirm_id)
-            self.assertEquals(c.flow_request.status, FlowRequest.ACTIVE)
+            self.assertEqual(c.flow_request.status, FlowRequest.ACTIVE)
 
         redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)
@@ -759,17 +763,17 @@ class TestHGWFrontendAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}'.format('aaaaa'))
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
 
     def test_delete_flow_requests(self):
         headers = self._get_oauth_header()
 
         res = self.client.delete('/v1/flow_requests/54321/', **headers)
-        self.assertEquals(res.status_code, 202)
+        self.assertEqual(res.status_code, 202)
         self.assertTrue('confirm_id' in res.json())
-        self.assertEquals(FlowRequest.objects.all().count(), 2)
-        self.assertEquals(FlowRequest.objects.get(process_id='54321').status, FlowRequest.DELETE_REQUESTED)
+        self.assertEqual(FlowRequest.objects.all().count(), 2)
+        self.assertEqual(FlowRequest.objects.get(process_id='54321').status, FlowRequest.DELETE_REQUESTED)
 
     def test_confirm_delete_flow_requests(self):
         headers = self._get_oauth_header()
@@ -920,3 +924,103 @@ class TestHGWFrontendAPI(TestCase):
             self.assertEqual(res.status_code, 403)
             res = self.client.get('/v1/messages/info/', **headers)
             self.assertEqual(res.status_code, 403)
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_sources(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/sources/', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), SOURCES_DATA)
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_sources_unauthorized(self):
+        """
+        Tests get sources endpoint
+        """
+        res = self.client.get('/v1/sources/')
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_sources_forbidden(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        res = self.client.get('/v1/sources/', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.json(), {'error': 'forbidden'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
+    def test_get_sources_fail_backend_access_token(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/sources/', **headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), {'error': 'invalid_backend_client'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
+    def test_get_sources_fail_backend_connection_error(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/sources/', **headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), {'error': 'backend_connection_error'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_source(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header(client_index=0)
+        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), SOURCES_DATA[0])
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_source_unauthorized(self):
+        """
+        Tests get sources endpoint
+        """
+        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']))
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'not_authenticated'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_source_forbidden(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.json(), {'error': 'forbidden'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
+    def test_get_source_fail_backend_access_token(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), {'error': 'invalid_backend_client'})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
+    def test_get_source_fail_backend_connection_error(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), {'error': 'backend_connection_error'})

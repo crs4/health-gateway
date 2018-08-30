@@ -188,7 +188,7 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
     except InvalidClientError:
         return [], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']
     except requests.exceptions.ConnectionError:
-        return [], ERRORS_MESSAGE['CANNOT_CONTACT_BACKEND']
+        return [], ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']
     else:
         res = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
 
@@ -197,7 +197,7 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
     except InvalidClientError:
         return [], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']
     except requests.exceptions.ConnectionError:
-        return [], ERRORS_MESSAGE['CANNOT_CONTACT_CONSENT']
+        return [], ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR']
 
     confirm_ids = []
     for source_data in res.json():

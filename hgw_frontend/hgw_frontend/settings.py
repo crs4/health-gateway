@@ -110,7 +110,9 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_PARSER_CLASSES': ('rest_framework.parsers.JSONParser',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-    'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION + 1)]
+    'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION + 1)],
+    'EXCEPTION_HANDLER': 'hgw_common.utils.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'generic_errors',
 }
 
 TEMPLATES = [
@@ -192,6 +194,9 @@ FLOW_REQUESTS_SCOPES = {
 MESSAGES_SCOPES = {
     'messages:read': 'Read messages for a Destination'
 }
+SOURCES_SCOPES = {
+    'sources:read': 'Read sources'
+}
 SCOPES = {**FLOW_REQUESTS_SCOPES, **MESSAGES_SCOPES}
 
 DEFAULT_SCOPES = ['flow_request:read', 'flow_request:write']
@@ -262,5 +267,3 @@ KAFKA_TOPIC = 'control'
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CRT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
-
-HGW_BACKEND_URI = cfg['hgw_backend']['uri']

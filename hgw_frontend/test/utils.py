@@ -28,6 +28,16 @@ from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
     TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2
 
+SOURCES_DATA = [{
+    "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+    "name": "SOURCE_1",
+    "url": "https://source_1/v1/connectors/"
+}, {
+    "source_id": "TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS",
+    "name": "SOURCE_2",
+    "url": "https://source_2/v1/connectors/"
+}]
+
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
     """
@@ -126,8 +136,8 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
 
 
 class MockBackendRequestHandler(MockRequestHandler):
-    SINGLE_SOURCE_PATTERN = re.compile(r'/v1/sources/\w+')
-    SOURCES_PATTERN = re.compile(r'/v1/sources/\w*')
+    SINGLE_SOURCE_PATTERN = re.compile(r'/v1/sources/(\w+)')
+    SOURCES_PATTERN = re.compile(r'/v1/sources/$')
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
 
     def do_POST(self):
@@ -152,16 +162,14 @@ class MockBackendRequestHandler(MockRequestHandler):
         return self._send_response(payload, status_code)
 
     def do_GET(self):
-        source = {
-            "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-            "name": "SOURCE_ENDPOINT_MOCKUP",
-            "url": "https://source_endpoint_mockup:8444/v1/connectors/"
-        }
-        print(self.headers['Authorization'])
+
         if self._path_match(self.SOURCES_PATTERN):
-            payload = [source]
-        elif self._path_match(self.SINGLE_SOURCE_PATTERN):
-            payload = source
+            payload = SOURCES_DATA
         else:
-            payload = {}
+            match = self._path_match(self.SINGLE_SOURCE_PATTERN)
+            if match:
+                source = list(filter(lambda item: item['source_id'] == match.groups()[0], SOURCES_DATA))
+                payload = source[0] if len(source) == 1 else None
+            else:
+                payload = {}
         return self._send_response(payload)
