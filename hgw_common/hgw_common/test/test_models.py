@@ -1,51 +1,14 @@
-import time
-from datetime import datetime, timedelta
-
 import os
+from datetime import datetime, timedelta
 from django.test import TestCase
-from django.utils.crypto import get_random_string
-from mock import patch, Mock, MagicMock, call
+from mock import patch, call
 from oauthlib.oauth2 import TokenExpiredError, InvalidClientError
+
+from hgw_common.utils.mocks import MockOAuth2Session
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'hgw_common.test.settings'
 
 from hgw_common.models import OAuth2SessionProxy, AccessToken
-
-
-class MockOAuth2Session(MagicMock):
-    RESPONSES = []
-    RAISES = None
-
-    def __init__(self, *args, **kwargs):
-        super(MockOAuth2Session, self).__init__(*args, **kwargs)
-        self.token = None
-        self.fetch_token = Mock(side_effect=self._fetch_token)
-        self.get = Mock(side_effect=self._get)
-        self._get_counter = 0
-
-    def _fetch_token(self, **kwargs):
-        if self.RAISES is None:
-            self.token = {
-                'access_token': get_random_string(30),
-                'token_type': 'Bearer',
-                'expires_in': 36000,
-                'expires_at': time.time() + 36000,
-                'scope': ['read', 'write']
-            }
-            return self.token
-        else:
-            raise self.RAISES()
-
-    def _get(self, url, *args, **kwargs):
-        res = self.RESPONSES[self._get_counter % len(self.RESPONSES)]
-        self._get_counter += 1
-
-        if isinstance(res, Exception):
-            raise res
-        else:
-            response = Mock()
-            response.status_code = res
-            return response
 
 
 class OAuthProxyTest(TestCase):

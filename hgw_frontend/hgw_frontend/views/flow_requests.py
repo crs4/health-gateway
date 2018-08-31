@@ -35,12 +35,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-import hgw_frontend.serializers
-from hgw_common.models import OAuth2SessionProxy, AccessToken
+from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination
+from hgw_frontend.serializers import FlowRequestSerializer
 from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
     KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CRT, KAFKA_CA_CERT, \
     CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE
@@ -80,7 +80,7 @@ class FlowRequestView(ViewSet):
             flow_requests = FlowRequest.objects.all()
         else:
             flow_requests = FlowRequest.objects.filter(destination=request.auth.application.destination)
-        serializer = hgw_frontend.serializers.FlowRequestSerializer(flow_requests, many=True)
+        serializer = FlowRequestSerializer(flow_requests, many=True)
         return Response(serializer.data)
 
     def create(self, request):
@@ -105,7 +105,7 @@ class FlowRequestView(ViewSet):
             data['start_validity'] = request.data['start_validity']
             data['expire_validity'] = request.data['expire_validity']
 
-        fr_serializer = hgw_frontend.serializers.FlowRequestSerializer(data=data)
+        fr_serializer = FlowRequestSerializer(data=data)
 
         if fr_serializer.is_valid():
             try:
@@ -136,7 +136,7 @@ class FlowRequestView(ViewSet):
 
     def retrieve(self, request, process_id, format=None):
         fr = self.get_flow_request(request, process_id)
-        serializer = hgw_frontend.serializers.FlowRequestSerializer(fr)
+        serializer = FlowRequestSerializer(fr)
         res = {k: v for k, v in six.iteritems(serializer.data) if k != 'destination'}
         return Response(res)
 
@@ -145,7 +145,7 @@ class FlowRequestView(ViewSet):
             try:
                 consent_confirmation = ConsentConfirmation.objects.get(consent_id=request.GET['channel_id'])
                 flow_request = consent_confirmation.flow_request
-                serializer = hgw_frontend.serializers.FlowRequestSerializer(instance=flow_request)
+                serializer = FlowRequestSerializer(instance=flow_request)
             except ConsentConfirmation.DoesNotExist:
                 return Response({}, status.HTTP_404_NOT_FOUND)
             return Response(serializer.data)
@@ -153,54 +153,38 @@ class FlowRequestView(ViewSet):
             return Response({}, status.HTTP_400_BAD_REQUEST)
 
 
-def _get_consent_oauth_token():
-    client = BackendApplicationClient(CONSENT_MANAGER_CLIENT_ID)
-    oauth_session = OAuth2Session(client=client)
-    token_url = '{}/oauth2/token/'.format(CONSENT_MANAGER_URI)
-    access_token = oauth_session.fetch_token(token_url=token_url, client_id=CONSENT_MANAGER_CLIENT_ID,
-                                             client_secret=CONSENT_MANAGER_CLIENT_SECRET)
+def _get_backend_session():
+    return OAuth2SessionProxy('{}/oauth2/token/'.format(HGW_BACKEND_URI),
+                              HGW_BACKEND_CLIENT_ID,
+                              HGW_BACKEND_CLIENT_SECRET)
 
-    access_token = access_token["access_token"]
-    access_token_header = {"Authorization": "Bearer {}".format(access_token)}
-    return oauth_session, access_token_header
+
+def _get_consent_session():
+    return OAuth2SessionProxy('{}/oauth2/token/'.format(CONSENT_MANAGER_URI),
+                              CONSENT_MANAGER_CLIENT_ID,
+                              CONSENT_MANAGER_CLIENT_SECRET)
 
 
 def _create_consent(flow_request, destination_endpoint_callback_url, user):
-    profile_payload = [{'clinical_domain': 'Laboratory',
-                        'filters': [{'includes': 'Immunochemistry', 'excludes': 'HDL'}]},
-                       {'clinical_domain': 'Radiology',
-                        'filters': [{'includes': 'Tomography', 'excludes': 'Radiology'}]},
-                       {'clinical_domain': 'Emergency',
-                        'filters': [{'includes': '', 'excludes': ''}]},
-                       {'clinical_domain': 'Prescription',
-                        'filters': [{'includes': '', 'excludes': ''}]}]
-    profile_data = {
-        'code': 'PROF002',
-        'version': 'hgw.document.profile.v0',
-        'payload': json.dumps(profile_payload)
-    }
-
     destination = flow_request.destination
     try:
-        oauth_backend_session = OAuth2SessionProxy('{}/oauth2/token/'.format(HGW_BACKEND_URI),
-                                                   HGW_BACKEND_CLIENT_ID,
-                                                   HGW_BACKEND_CLIENT_SECRET)
+        oauth_backend_session = _get_backend_session()
     except InvalidClientError:
         return [], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']
     except requests.exceptions.ConnectionError:
         return [], ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']
     else:
-        res = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+        sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
 
     try:
-        oauth_consent_session, access_token_header = _get_consent_oauth_token()
+        oauth_consent_session = _get_consent_session()
     except InvalidClientError:
         return [], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']
     except requests.exceptions.ConnectionError:
         return [], ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR']
 
     confirm_ids = []
-    for source_data in res.json():
+    for source_data in sources.json():
         channel_data = {
             'source': {
                 'id': source_data['source_id'],
@@ -210,16 +194,15 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
                 'id': destination.destination_id,
                 'name': destination.name
             },
-            'profile': profile_data,
+            'profile': source_data['profile'],
             'person_id': user.fiscalNumber,
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
 
-        res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI),
-                                         headers=access_token_header, json=channel_data)
-        if res.status_code == 201:
-            json_res = res.json()
+        consent = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=channel_data)
+        if consent.status_code == 201:
+            json_res = consent.json()
             ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
                                                confirmation_id=json_res['confirm_id'],
                                                destination_endpoint_callback_url=destination_endpoint_callback_url)
@@ -241,8 +224,8 @@ def _get_consent(confirm_id):
     except ConsentConfirmation.DoesNotExist:
         raise UnknownConsentConfirmation()
     consent_id = consent_confirmation.consent_id
-    oauth_session, access_token_header = _get_consent_oauth_token()
-    res = oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, consent_id))
+    oauth_consent_session = _get_consent_session()
+    res = oauth_consent_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, consent_id))
     return consent_confirmation, res.json()
 
 

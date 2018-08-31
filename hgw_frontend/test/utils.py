@@ -21,7 +21,7 @@ import re
 
 from django.utils.crypto import get_random_string
 
-from hgw_common.utils.test import MockRequestHandler
+from hgw_common.utils.mocks import MockRequestHandler
 from hgw_frontend.models import FlowRequest
 from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_ID
 
@@ -167,7 +167,6 @@ class MockBackendRequestHandler(MockRequestHandler):
         else:
             payload = ""
             status_code = 400
-        print(payload, status_code)
         return self._send_response(payload, status_code)
 
     def do_GET(self):

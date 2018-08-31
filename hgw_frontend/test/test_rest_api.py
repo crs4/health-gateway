@@ -14,7 +14,6 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-import datetime
 import json
 import logging
 import os
@@ -25,7 +24,7 @@ from mock import patch
 
 from hgw_common.cipher import Cipher
 from hgw_common.models import Profile
-from hgw_common.utils.test import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
+from hgw_common.utils.mocks import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
@@ -621,7 +620,6 @@ class TestHGWFrontendAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        print (res.content)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']])
 
@@ -646,6 +644,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         Tests that confirmation of flow request, when the user is logged in, redirect to consent manager
         """
+        # TODO: We should check that the post call to consent_manager is performed with the correct params
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']

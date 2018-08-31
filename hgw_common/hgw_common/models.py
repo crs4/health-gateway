@@ -82,9 +82,12 @@ class OAuth2SessionProxy(object):
         self.client_secret = client_secret
         self._session = self.create_session()
 
-    def get(self, url):
+    def request(self, method, url, **kwargs):
         try:
-            res = self._session.get(url)
+            if method == 'POST':
+                res = self._session.post(url, **kwargs)
+            else:
+                res = self._session.get(url, **kwargs)
             if res.status_code == 401:
                 raise TokenExpiredError
         except TokenExpiredError:
@@ -99,6 +102,12 @@ class OAuth2SessionProxy(object):
             logger.debug("Missing token for the source endpoint")
             res = None
         return res
+
+    def get(self, url, **kwargs):
+        return self.request('GET', url, **kwargs)
+
+    def post(self, url, **kwargs):
+        return self.request('POST', url, **kwargs)
 
     def create_session(self):
         client = BackendApplicationClient(self.client_id)

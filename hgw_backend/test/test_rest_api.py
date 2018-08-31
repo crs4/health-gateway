@@ -33,7 +33,7 @@ from hgw_backend import settings
 from hgw_backend.models import RESTClient, OAuth2Authentication, Source, AccessToken
 from hgw_backend.serializers import SourceSerializer
 from hgw_common.cipher import Cipher
-from hgw_common.utils.test import start_mock_server, MockMessage
+from hgw_common.utils.mocks import start_mock_server, MockMessage
 from test.utils import MockSourceEndpointHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))

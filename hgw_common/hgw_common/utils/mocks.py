@@ -23,11 +23,49 @@ import json
 import re
 import socket
 import time
+
+from django.utils.crypto import get_random_string
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
 import requests
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
+
+
+class MockOAuth2Session(MagicMock):
+    RESPONSES = []
+    RAISES = None
+
+    def __init__(self, *args, **kwargs):
+        super(MockOAuth2Session, self).__init__(*args, **kwargs)
+        self.token = None
+        self.fetch_token = Mock(side_effect=self._fetch_token)
+        self.get = Mock(side_effect=self._get)
+        self._get_counter = 0
+
+    def _fetch_token(self, **kwargs):
+        if self.RAISES is None:
+            self.token = {
+                'access_token': get_random_string(30),
+                'token_type': 'Bearer',
+                'expires_in': 36000,
+                'expires_at': time.time() + 36000,
+                'scope': ['read', 'write']
+            }
+            return self.token
+        else:
+            raise self.RAISES()
+
+    def _get(self, url, *args, **kwargs):
+        res = self.RESPONSES[self._get_counter % len(self.RESPONSES)]
+        self._get_counter += 1
+
+        if isinstance(res, Exception):
+            raise res
+        else:
+            response = Mock()
+            response.status_code = res
+            return response
 
 
 class MockMessage(object):
