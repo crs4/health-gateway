@@ -5,7 +5,6 @@ services:
     environment:
       - HTTP_PORT=8000
       - DJANGO_APP_NAME=hgw_frontend
-      - GUNICORN=true
     ports:
       - 8000:8000
     extra_hosts:
@@ -13,7 +12,7 @@ services:
     volumes:
       - ../../../hgw_frontend/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
-      - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./config_files/hgw_frontend_config.spid.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -35,7 +34,6 @@ services:
       - HTTP_PORT=8003
       - DJANGO_APP_NAME=hgw_backend
       - TZ=CET
-      - GUNICORN=true
     ports:
       - 8003:8003
     volumes:
@@ -62,7 +60,6 @@ services:
       - HTTP_PORT=8002
       - DJANGO_APP_NAME=consent_manager
       - TZ=CET
-      - GUNICORN=true
     ports:
       - 8002:8002
     extra_hosts:
@@ -70,7 +67,7 @@ services:
     volumes:
       - ../../../consent_manager/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
-      - ./config_files/consent_manager_config.tscns.yml:/etc/hgw_service/consent_manager_config.yml
+      - ./config_files/consent_manager_config.spid.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -105,10 +102,15 @@ services:
     depends_on:
       - kafka
       - consent_manager
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
-      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
+      - hgw_frontend
+      - hgw_backend
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "hgw_frontend:8000", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
     volumes:
       - ../../../hgw_dispatcher/:/container/devservice
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

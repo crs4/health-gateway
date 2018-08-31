@@ -15,6 +15,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from _ssl import SSLError
+
+from rest_framework.viewsets import ViewSet
 from traceback import format_exc
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -39,7 +41,9 @@ def home(request):
     return HttpResponse('<a href="/admin/">Click here to access admin page</a>')
 
 
-class SourcesList(APIView):
+class Sources(ViewSet):
+    permission_classes = (TokenHasResourceDetailedScope,)
+    required_scopes = ['sources']
 
     def get_object(self, source_id):
         try:
@@ -47,13 +51,14 @@ class SourcesList(APIView):
         except Source.DoesNotExist:
             raise Http404
 
-    def get(self, request, source_id=None, format=None):
-        if source_id:
-            source = self.get_object(source_id)
-            serializer = SourceSerializer(source)
-        else:
-            sources = Source.objects.all()
-            serializer = SourceSerializer(sources, many=True)
+    def list(self, request):
+        sources = Source.objects.all()
+        serializer = SourceSerializer(sources, many=True)
+        return Response(serializer.data, content_type='application/json')
+
+    def retrieve(self, request, source_id):
+        source = self.get_object(source_id)
+        serializer = SourceSerializer(source)
         return Response(serializer.data, content_type='application/json')
 
 

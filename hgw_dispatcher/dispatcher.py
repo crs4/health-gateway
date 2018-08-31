@@ -31,6 +31,8 @@ from kafka.errors import KafkaError
 from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError, TokenExpiredError
 from requests_oauthlib import OAuth2Session
 
+# from hgw_common.models import OAuth2SessionProxy
+
 logger = logging.getLogger('dispatcher')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler = logging.StreamHandler()
@@ -73,6 +75,9 @@ HGW_FRONTEND_OAUTH_CLIENT_ID = cfg['hgw_frontend']['client_id']
 HGW_FRONTEND_OAUTH_CLIENT_SECRET = cfg['hgw_frontend']['client_secret']
 
 HGW_BACKEND_URI = cfg['hgw_backend']['uri']
+HGW_BACKEND_TOKEN_URL = "{}/oauth2/token/".format(cfg['hgw_backend']['uri'])
+HGW_BACKEND_OAUTH_CLIENT_ID = cfg['hgw_backend']['client_id']
+HGW_BACKEND_OAUTH_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
@@ -82,6 +87,11 @@ KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
 class Dispatcher(object):
     def __init__(self, broker_url, ca_cert, client_cert, client_key):
+        self._obtain_hgw_backend_oauth_token()
+        # self.backend_session = OAuth2SessionProxy(HGW_BACKEND_TOKEN_URL,
+        #                                           HGW_BACKEND_OAUTH_CLIENT_ID,
+        #                                           HGW_BACKEND_OAUTH_CLIENT_SECRET)
+
         logger.debug("Querying for sources")
         self.consumer_topics = self._get_sources()
         logger.debug("Found {} sources: ".format(len(self.consumer_topics)))
@@ -119,16 +129,15 @@ class Dispatcher(object):
         self._obtain_consent_oauth_token()
         self._obtain_hgw_frontend_oauth_token()
 
-    @staticmethod
-    def _get_sources(loop=True):
+    def _get_sources(self, loop=True):
         try:
-            res = requests.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+            res = self.hgw_backend_oauth_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
             return [d['source_id'] for d in res.json()]
         except Exception as ex:
             if loop:
                 logger.exception(ex)
                 time.sleep(2)
-                return Dispatcher._get_sources()
+                return self._get_sources()
             raise ex
 
     @staticmethod
@@ -141,8 +150,10 @@ class Dispatcher(object):
             res = oauth_session.fetch_token(token_url=token_url, client_id=client_id,
                                             client_secret=client_secret)
         except InvalidClientError:
+            logger.error("Cannot obtain the token from {}. Invalid client".format(url))
             return None
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
+            logger.error("Cannot obtain the token from {}. Connection error".format(url))
             return None
 
         if 'access_token' in res:
@@ -151,6 +162,13 @@ class Dispatcher(object):
         else:
             logger.debug('Error obtaining token')
             return None
+
+    def _obtain_hgw_backend_oauth_token(self):
+        self.hgw_backend_oauth_session = self._obtain_oauth_token(HGW_BACKEND_URI,
+                                                                  HGW_BACKEND_OAUTH_CLIENT_ID,
+                                                                  HGW_BACKEND_OAUTH_CLIENT_SECRET)
+        if self.hgw_backend_oauth_session is None:
+            sys.exit(1)
 
     def _obtain_hgw_frontend_oauth_token(self):
         self.hgw_frontend_oauth_session = self._obtain_oauth_token(HGW_FRONTEND_URI,

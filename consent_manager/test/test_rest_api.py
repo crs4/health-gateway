@@ -9,7 +9,7 @@ from django.test import TestCase, client
 from consent_manager.models import Consent, ConfirmationCode, RESTClient
 from consent_manager.serializers import ConsentSerializer
 from hgw_common.utils import ERRORS
-from hgw_common.utils.test import get_free_port
+from hgw_common.utils.mocks import get_free_port
 
 PORT = get_free_port()
 

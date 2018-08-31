@@ -30,8 +30,8 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    url(r'^{}/sources/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
-    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
+    url(r'^{}/sources/$'.format(VERSION_REGEX), views.Sources.as_view({'get': 'list'})),
+    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), views.Sources.as_view({'get': 'retrieve'})),
     url(r'^{}/messages/$'.format(VERSION_REGEX), views.Messages.as_view()),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

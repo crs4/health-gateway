@@ -31,8 +31,9 @@ from oauth2_provider.settings import oauth2_settings
 
 from hgw_backend import settings
 from hgw_backend.models import RESTClient, OAuth2Authentication, Source, AccessToken
+from hgw_backend.serializers import SourceSerializer
 from hgw_common.cipher import Cipher
-from hgw_common.utils.test import start_mock_server, MockMessage
+from hgw_common.utils.mocks import start_mock_server, MockMessage
 from test.utils import MockSourceEndpointHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -53,7 +54,15 @@ PROFILE = {
     }
 
 PERSON_ID = 'AAAABBBBCCCCDDDD'
-DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\nkCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\nMOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\nBe9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\nXQIDAQAB\n-----END PUBLIC KEY-----'
+DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
+                  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n' \
+                  '8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\n' \
+                  'kCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\n' \
+                  'MOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\n' \
+                  'Be9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n' \
+                  '8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\n' \
+                  'XQIDAQAB\n' \
+                  '-----END PUBLIC KEY-----'
 
 CHANNEL_MESSAGE = {
     'channel_id': 'KKa8QqqTBGePJStJpQMbspEvvV4LJJCY',
@@ -87,26 +96,13 @@ class TestHGWBackendAPI(TestCase):
         start_mock_server('certs', MockSourceEndpointHandler, CERT_SOURCE_PORT)
 
     def setUp(self):
+        self.maxDiff = None
         self.messages_source_oauth = []
         self.client = client.Client()
-        payload = [{'clinical_domain': 'Laboratory',
-                    'filters': [{'includes': 'immunochemistry', 'excludes': 'HDL'}]},
-                   {'clinical_domain': 'Radiology',
-                    'filters': [{'includes': 'Tomography', 'excludes': 'Radiology'}]},
-                   {'clinical_domain': 'Emergency',
-                    'filters': [{'includes': '', 'excludes': ''}]},
-                   {'clinical_domain': 'Prescription',
-                    'filters': [{'includes': '', 'excludes': ''}]}]
-        self.profile_data = {
-            'code': 'PROF002',
-            'version': 'hgw.document.profile.v0',
-            'start_time_validity': '2017-06-23T10:13:39+02:00',
-            'end_time_validity': '2018-06-23T23:59:59+02:00',
-            'payload': json.dumps(payload)
-        }
         with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/fixtures/test_data.json'))) as fixtures_file:
             self.fixtures = json.load(fixtures_file)
-        self.sources = [obj for obj in self.fixtures if obj['model'] == 'hgw_backend.source']
+        self.profiles = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_common.profile']
+        self.sources = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_backend.source']
         self.encypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
 
     @staticmethod
@@ -203,10 +199,34 @@ class TestHGWBackendAPI(TestCase):
         """
         Test getting sources
         """
-        res = self.client.get('/v1/sources/')
+        oauth2_header = self._get_oauth_header(client_index=1)
+
+        res = self.client.get('/v1/sources/', **oauth2_header)
         self.assertEquals(res.status_code, 200)
         self.assertEquals(res['Content-Type'], 'application/json')
         self.assertEquals(len(res.json()), 2)
+
+        for i, s in enumerate(self.sources):
+            ret_source = res.json()[i]
+            req_source = {k: s[k] for k in SourceSerializer.Meta.fields}
+            req_source['profile'] = self.profiles[int(s['profile']-1)]
+            self.assertEquals(ret_source, req_source)
+
+    def test_get_sources_forbidden(self):
+        """
+        Test error getting sources using a client without the correct scope
+        """
+        oauth2_header = self._get_oauth_header(client_index=0)
+
+        res = self.client.get('/v1/sources/', **oauth2_header)
+        self.assertEquals(res.status_code, 403)
+
+    def test_get_sources_not_authorized(self):
+        """
+        Test getting sources
+        """
+        res = self.client.get('/v1/sources/')
+        self.assertEquals(res.status_code, 401)
 
     def test_create_connector_oauth2_source_fails_connector_unreachable(self):
         """
@@ -363,7 +383,7 @@ class TestHGWBackendAPI(TestCase):
         }
 
         oauth2_header = self._get_oauth_header()
-        source_id = RESTClient.objects.get().source.source_id
+        source_id = RESTClient.objects.get(pk=1).source.source_id
         with patch('hgw_backend.views.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
             
@@ -386,7 +406,7 @@ class TestHGWBackendAPI(TestCase):
         }
 
         oauth2_header = self._get_oauth_header()
-        source_id = RESTClient.objects.get().source.source_id
+        source_id = RESTClient.objects.get(pk=1).source.source_id
         with patch('hgw_backend.views.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 

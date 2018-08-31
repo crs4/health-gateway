@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright (c) 2017-2018 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -16,23 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-CONFIRM_ACTIONS = (
-    'add',
-    'delete'
-)
+import os
+import sys
 
-ERRORS_MESSAGE = {
-    'MISSING_PARAM': 'Missing parameters',
-    'UNKNOWN_ACTION': 'Unknown action',
-    'INVALID_CONFIRMATION_CODE': 'Confirmation code not valid',
-    'INVALID_FR_STATUS': 'Invalid flow request status',
-    'EXPIRED_CONFIRMATION_ID': 'Confirmation code expired',
-    'INVALID_CONSENT_STATUS': 'Invalid consent status',
-    'UNKNOWN_CONSENT': 'Unknown consent',
-    'INVALID_DATA': 'Invalid parameters',
-    'MISSING_PERSON_ID': 'Missing person id',
-    'INVALID_CONSENT_CLIENT': 'invalid_consent_client',
-    'CONSENT_CONNECTION_ERROR': 'consent_connection_error',
-    'INVALID_BACKEND_CLIENT': 'invalid_backend_client',
-    'BACKEND_CONNECTION_ERROR': 'backend_connection_error'
-}
+if __name__ == "__main__":
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hgw_common.test.settings")
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError:
+        # The above import may fail for some other reason. Ensure that the
+        # issue is really that Django is missing to avoid masking other
+        # exceptions on Python 2.
+        try:
+            import django
+        except ImportError:
+            raise ImportError(
+                "Couldn't import Django. Are you sure it's installed and "
+                "available on your PYTHONPATH environment variable? Did you "
+                "forget to activate a virtual environment?"
+            )
+        raise
+    execute_from_command_line(sys.argv)

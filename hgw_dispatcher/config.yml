@@ -10,6 +10,8 @@ consent_manager:
 
 hgw_backend:
   uri: https://hgwbackend:8003
+  client_id: zv9i2i7aXgBDrUcvYErNx1REQSHasWuPd6Y7Z5TT
+  client_secret: DlU06svrUxgo3XFvj8V4fddOzWUuSFe2C6kea80kJTeiHUkCOU0n6Sg3kQDjKKLNYKLnyl1UslKYlfB5OvqqXxROrnefYXE5eiWLJLbhm7FsE08tN424f58sMiwR0xBR
 
 kafka:
   uri: kafka:9093

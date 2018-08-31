@@ -18,13 +18,23 @@
     }
   },
   {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+      "code": "PROF_001",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+    }
+  },
+  {
     "model": "hgw_backend.source",
     "pk": 1,
     "fields": {
       "source_id": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
       "name": "SOURCE_ENDPOINT_MOCKUP",
       "url": "https://source-endpoint-mockup:8004/v1/connectors/",
-      "content_type": 14,
+      "profile": 1,
+      "content_type": 15,
       "object_id": 1
     }
   },
@@ -60,6 +70,38 @@
       "source": 1,
       "client_role": "ST",
       "scopes": "messages:write"
+    }
+  },
+  {
+    "model": "hgw_backend.restclient",
+    "pk": 2,
+    "fields": {
+      "client_id": "Z3p4Q2La14DItTBz9fxFBY4vflHPYMLLeXoUltOt",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "ptyQgSdx9r0QZNntI3q1F1ZwT9fZU0aijGkZqRkAyibEF5qNaSIxwIFEsYV1L0rBD9a1ALCmVqC6ERw7sK4qcfk57oUrkFOOhUs5JUHnIcQ2A6rJ5c2tcIQUsJLfcQLI",
+      "name": "HGW FRONTEND",
+      "skip_authorization": true,
+      "scopes": "sources:read",
+      "client_role": "SU"
+    }
+  },
+  {
+    "model": "hgw_backend.restclient",
+    "pk": 3,
+    "fields": {
+      "client_id": "zv9i2i7aXgBDrUcvYErNx1REQSHasWuPd6Y7Z5TT",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "DlU06svrUxgo3XFvj8V4fddOzWUuSFe2C6kea80kJTeiHUkCOU0n6Sg3kQDjKKLNYKLnyl1UslKYlfB5OvqqXxROrnefYXE5eiWLJLbhm7FsE08tN424f58sMiwR0xBR",
+      "name": "HGW DISPATCHER",
+      "skip_authorization": true,
+      "scopes": "sources:read",
+      "client_role": "SU"
     }
   }
 ]

@@ -18,13 +18,32 @@
     }
   },
   {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+      "code": "PROF_001",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+    }
+  },
+  {
+    "model": "hgw_common.profile",
+    "pk": 2,
+    "fields": {
+      "code": "PROF_002",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Radiology\"}]"
+    }
+  },
+  {
     "model": "hgw_backend.source",
     "pk": 1,
     "fields": {
       "source_id": "6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC",
       "name": "cert_source",
       "url": "http://localhost:40000/v1/connectors/",
-      "content_type": 13,
+      "profile": 1,
+      "content_type": 14,
       "object_id": 1
     }
   },
@@ -35,7 +54,8 @@
       "source_id": "LD2j7v35BvUlzWDe8G89JGzz4SOincB7",
       "name": "oauth2_source",
       "url": "http://localhost:40001/v1/connectors/",
-      "content_type": 14,
+      "profile": 2,
+      "content_type": 15,
       "object_id": 1
     }
   },
@@ -71,6 +91,23 @@
       "source": 1,
       "client_role": "ST",
       "scopes": "messages:write"
+    }
+  },
+  {
+    "model": "hgw_backend.restclient",
+    "pk": 2,
+    "fields": {
+      "client_id": "pXtdSCoiQlKhkR59y9rPlyP1q78GtTu1L7xVqYXC",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "taslHiyo5xbLxTxv7tMfVI1j2GbePaqYubAYCQJC7CzF6nhP7NWr4HHjRZ23KakSZwsjpGUDwmveZQJrVPBBTaRPGOfRIsG65c9HDxVUzCERo0jtkiSo5QyKTYwnEDKc",
+      "name": "HGW FRONTEND",
+      "skip_authorization": false,
+      "source": null,
+      "client_role": "ST",
+      "scopes": "sources:read"
     }
   }
 ]

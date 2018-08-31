@@ -16,23 +16,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-CONFIRM_ACTIONS = (
-    'add',
-    'delete'
-)
+import json
+from django.core.exceptions import ValidationError
+from json import JSONDecodeError
 
-ERRORS_MESSAGE = {
-    'MISSING_PARAM': 'Missing parameters',
-    'UNKNOWN_ACTION': 'Unknown action',
-    'INVALID_CONFIRMATION_CODE': 'Confirmation code not valid',
-    'INVALID_FR_STATUS': 'Invalid flow request status',
-    'EXPIRED_CONFIRMATION_ID': 'Confirmation code expired',
-    'INVALID_CONSENT_STATUS': 'Invalid consent status',
-    'UNKNOWN_CONSENT': 'Unknown consent',
-    'INVALID_DATA': 'Invalid parameters',
-    'MISSING_PERSON_ID': 'Missing person id',
-    'INVALID_CONSENT_CLIENT': 'invalid_consent_client',
-    'CONSENT_CONNECTION_ERROR': 'consent_connection_error',
-    'INVALID_BACKEND_CLIENT': 'invalid_backend_client',
-    'BACKEND_CONNECTION_ERROR': 'backend_connection_error'
-}
+
+def JSONValidator(value):
+    try:
+        json.loads(value)
+    except JSONDecodeError:
+        raise ValidationError("The value is not a valid JSON value")

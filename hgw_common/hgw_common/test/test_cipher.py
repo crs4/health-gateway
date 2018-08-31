@@ -14,13 +14,16 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+import os
 
 import unittest
 
 from Cryptodome.PublicKey import RSA
 
 from hgw_common.cipher import Cipher, NotEncryptedMessage
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class CipherTest(unittest.TestCase):
@@ -54,7 +57,7 @@ class CipherTest(unittest.TestCase):
         self.assertRaises(NotEncryptedMessage, self.cipher.decrypt, 'not_encrypted_message')
 
     def test_decrypt_msg_from_java(self):
-        with open('rsa_privatekey_2048', 'rb') as f:
+        with open(os.path.join(BASE_DIR, 'rsa_privatekey_2048'), 'rb') as f:
             pri_rsa_key = f.read()
         rsa_pri_key = RSA.importKey(pri_rsa_key)
 

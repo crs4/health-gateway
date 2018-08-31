@@ -23,11 +23,49 @@ import json
 import re
 import socket
 import time
+
+from django.utils.crypto import get_random_string
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
 import requests
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
+
+
+class MockOAuth2Session(MagicMock):
+    RESPONSES = []
+    RAISES = None
+
+    def __init__(self, *args, **kwargs):
+        super(MockOAuth2Session, self).__init__(*args, **kwargs)
+        self.token = None
+        self.fetch_token = Mock(side_effect=self._fetch_token)
+        self.get = Mock(side_effect=self._get)
+        self._get_counter = 0
+
+    def _fetch_token(self, **kwargs):
+        if self.RAISES is None:
+            self.token = {
+                'access_token': get_random_string(30),
+                'token_type': 'Bearer',
+                'expires_in': 36000,
+                'expires_at': time.time() + 36000,
+                'scope': ['read', 'write']
+            }
+            return self.token
+        else:
+            raise self.RAISES()
+
+    def _get(self, url, *args, **kwargs):
+        res = self.RESPONSES[self._get_counter % len(self.RESPONSES)]
+        self._get_counter += 1
+
+        if isinstance(res, Exception):
+            raise res
+        else:
+            response = Mock()
+            response.status_code = res
+            return response
 
 
 class MockMessage(object):
@@ -40,9 +78,10 @@ class MockMessage(object):
 
 class MockRequestHandler(BaseHTTPRequestHandler):
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
+    OAUTH2_TOKEN = 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3'
 
     def _handle_oauth(self):
-        payload = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
+        payload = {'access_token': self.OAUTH2_TOKEN,
                    'token_type': 'Bearer',
                    'expires_in': 1800,
                    'expires_at': time.time() + 1800,
@@ -66,6 +105,13 @@ class MockRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         response = json.dumps(payload)
         self.wfile.write(response.encode('utf-8'))
+
+    def _content_data(self):
+        length = int(self.headers['content-length'])
+        return self.rfile.read(length).decode('utf-8')
+
+    def _json_data(self):
+        return json.loads(self._content_data())
 
     def do_GET(self):
         raise NotImplemented

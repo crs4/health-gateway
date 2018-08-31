@@ -145,7 +145,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # OAUTH2 CONFIGURATIONS
 SCOPES = {
-    'messages:write': 'Write messages'
+    'messages:write': 'Write messages',
+    'source:read': 'Read Source data'
 }
 DEFAULT_SCOPES = SCOPES
 

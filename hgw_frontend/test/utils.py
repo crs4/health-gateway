@@ -21,22 +21,49 @@ import re
 
 from django.utils.crypto import get_random_string
 
-from hgw_common.utils.test import MockRequestHandler
+from hgw_common.utils.mocks import MockRequestHandler
 from hgw_frontend.models import FlowRequest
+from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_ID
+
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
     TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2
 
+SOURCES_DATA = [
+    {
+        'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
+        'name': 'source_1',
+        'profile': {
+            'code': 'PROF_001',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Laboratory"}]'}
+    }, {
+        'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS',
+        'name': 'oauth2_source',
+        'profile': {
+            'code': 'PROF_002',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Radiology"}]'
+        }
+    }]
+
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
+    """
+    Consent manager mockup
+    """
+
     CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(CORRECT_CONSENT_ID, CORRECT_CONSENT_ID2))
     WRONG_CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(WRONG_CONSENT_ID, WRONG_CONSENT_ID2))
     CONSENTS_PATTERN = re.compile(r'/v1/consents/')
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
 
     def do_POST(self):
-        if re.search(self.CONSENTS_PATTERN, self.path):
-            length = int(self.headers['content-length'])
-            if TEST_PERSON1_ID.encode('utf-8') in self.rfile.read(length):
+        if self._path_match(self.CONSENTS_PATTERN):
+            # Mock the consent creation. The behaviour is: if the person is TEST_PERSON1_ID the consent is created.
+            # Otherwise the consent is not created and a 400 status code is returned
+            consent_data = self._json_data()
+
+            if TEST_PERSON1_ID == consent_data['person_id']:
                 payload = {"consent_id": get_random_string(32),
                            "confirm_id": get_random_string(32),
                            "status": "PE"}
@@ -44,13 +71,21 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
             else:
                 payload = []
                 status_code = 400
-        elif re.search(self.OAUTH2_PATTERN, self.path):
-            payload = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
-                       'token_type': 'Bearer',
-                       'expires_in': 36000,
-                       'expires_at': 1499976952.401335,
-                       'scope': ['read', 'write']}
-            status_code = 201
+        elif self._path_match(self.OAUTH2_PATTERN):
+            client_data = self._content_data()
+            if CONSENT_MANAGER_CLIENT_ID in client_data:
+                payload = {'access_token': get_random_string(30),
+                           'token_type': 'Bearer',
+                           'expires_in': 36000,
+                           'expires_at': 1499976952.401335,
+                           'scope': ['read', 'write']}
+                status_code = 201
+            elif 'wrong_client_id' in client_data:
+                status_code = 401
+                payload = {'error': 'invalid_client'}
+            else:
+                status_code = 400
+                payload = {'error': 'invalid_grant_type'}
         else:
             payload = {}
             status_code = 200
@@ -109,20 +144,40 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
 
 
 class MockBackendRequestHandler(MockRequestHandler):
-    SINGLE_SOURCE_PATTERN = re.compile(r'/v1/sources/\w+')
-    SOURCES_PATTERN = re.compile(r'/v1/sources/\w*')
+    SINGLE_SOURCE_PATTERN = re.compile(r'/v1/sources/(\w+)')
+    SOURCES_PATTERN = re.compile(r'/v1/sources/$')
+    OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
+
+    def do_POST(self):
+        if self._path_match(self.OAUTH2_PATTERN):
+            client_data = self._content_data()
+            if HGW_BACKEND_CLIENT_ID in client_data:
+                payload = {'access_token': get_random_string(30),
+                           'token_type': 'Bearer',
+                           'expires_in': 36000,
+                           'expires_at': 1499976952.401335,
+                           'scope': ['read', 'write']}
+                status_code = 201
+            elif 'wrong_client_id' in client_data:
+                status_code = 401
+                payload = {'error': 'invalid_client'}
+            else:
+                status_code = 400
+                payload = {'error': 'invalid_grant_type'}
+        else:
+            payload = ""
+            status_code = 400
+        return self._send_response(payload, status_code)
 
     def do_GET(self):
-        source = {
-              "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-              "name": "SOURCE_ENDPOINT_MOCKUP",
-              "url": "https://source_endpoint_mockup:8444/v1/connectors/"
-            }
-        if self._path_match(self.SOURCES_PATTERN):
-            payload = [source]
 
-        elif self._path_match(self.SINGLE_SOURCE_PATTERN):
-            payload = source
+        if self._path_match(self.SOURCES_PATTERN):
+            payload = SOURCES_DATA
         else:
-            payload = {}
+            match = self._path_match(self.SINGLE_SOURCE_PATTERN)
+            if match:
+                source = list(filter(lambda item: item['source_id'] == match.groups()[0], SOURCES_DATA))
+                payload = source[0] if len(source) == 1 else None
+            else:
+                payload = {}
         return self._send_response(payload)

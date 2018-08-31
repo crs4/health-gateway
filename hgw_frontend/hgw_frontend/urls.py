@@ -19,11 +19,11 @@
 from django.conf.urls import url, include
 from django.conf.urls.static import static
 from django.contrib import admin
-from rest_framework import routers, permissions
+from rest_framework import routers
 
 from hgw_common.settings import VERSION_REGEX
 from hgw_frontend import settings
-from .views import view_profile, confirm_request, consents_confirmed, FlowRequestView, Messages
+from .views import view_profile, confirm_request, consents_confirmed, FlowRequestView, Messages, Sources
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
@@ -47,4 +47,6 @@ urlpatterns = [
     url(r'^{}/messages/$'.format(VERSION_REGEX), Messages.as_view({'get': 'list'})),
     url(r'^{}/messages/info/$'.format(VERSION_REGEX), Messages.as_view({'get': 'info'})),
     url(r'^{}/messages/(?P<message_id>\d+)/?$'.format(VERSION_REGEX), Messages.as_view({'get': 'retrieve'})),
+    url(r'^{}/sources/$'.format(VERSION_REGEX), Sources.as_view({'get': 'list'})),
+    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), Sources.as_view({'get': 'retrieve'})),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

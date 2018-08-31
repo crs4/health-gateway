@@ -21,29 +21,29 @@ import json
 import logging
 import requests
 import six
+from dateutil.tz import gettz
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from kafka import KafkaProducer
-from oauthlib.oauth2 import BackendApplicationClient
+from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError
 from operator import xor
 from requests_oauthlib import OAuth2Session
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-import hgw_frontend.serializers
+from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination
+from hgw_frontend.serializers import FlowRequestSerializer
 from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
     KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CRT, KAFKA_CA_CERT, \
-    CONSENT_MANAGER_CONFIRMATION_PAGE
+    CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE
 
 logger = logging.getLogger('hgw_frontend')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -75,132 +75,42 @@ class FlowRequestView(ViewSet):
         except FlowRequest.DoesNotExist:
             raise Http404
 
-    @swagger_auto_schema(
-        operation_description='Return the list of flow requests',
-        security=[{'flow_request': ['flow_request:read']}],
-        responses={
-            200: openapi.Response('Success - The list of flow requests', openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'flow_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                  description='The id assigned to the flow request by the '
-                                                              'destination'),
-                        'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id assigned to the flow request by the '
-                                                                 'Health Gateway'),
-                        'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The status of the flow request',
-                                                 enum=[sc[0] for sc in FlowRequest.STATUS_CHOICES]),
-                        'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                  properties={
-                                                      'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                             description='A code identifying the profile'),
-                                                      'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='The version of the profile'),
-                                                      'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='A json encoded string that'
-                                                                                            'describe the profile')
-                                                  }),
-                        'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         format=openapi.FORMAT_DATETIME,
-                                                         description='The start date validity of the flow request'),
-                        'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                          format=openapi.FORMAT_DATETIME,
-                                                          description='The end date validity of the flow request')
-                    }
-                )
-            )),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-        })
     def list(self, request):
         if request.auth.application.is_super_client():
             flow_requests = FlowRequest.objects.all()
         else:
             flow_requests = FlowRequest.objects.filter(destination=request.auth.application.destination)
-        serializer = hgw_frontend.serializers.FlowRequestSerializer(flow_requests, many=True)
+        serializer = FlowRequestSerializer(flow_requests, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(
-        operation_description='Create a new flow request which will be set in a pending status until the user '
-                              'confirms it. To do that the user needs to go to the `/flow_request/confirm` url '
-                              'using as query parameter the confirmation_id returned by this operation',
-        security=[{'flow_request': ['flow_request:write']}],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'flow_id': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='The id assigned to the flow request by the destination'),
-                'profile': openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                               description='A code identifying the profile'),
-                        'version': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description='The version of the profile'),
-                        'payload': openapi.Schema(
-                            type=openapi.TYPE_STRING,
-                            description='A json encoded string that'
-                                        'describe the profile')
-                    }),
-                'start_validity': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_DATETIME,
-                    description='The start date validity of the flow request'),
-                'expire_validity': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    format=openapi.FORMAT_DATETIME,
-                    description='The end date validity of the flow request'),
-            }),
-        responses={
-            201: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         description='the id that identifies the flow request in '
-                                                                     'the health gateway. The client must maintain '
-                                                                     'the mapping between the process_id and the '
-                                                                     'flow_id to be used in subsequent process'),
-                            'confirmation_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                              description='the id to send to the confirmation '
-                                                                          'url to activate the flow request')}
-            ),
-            400: openapi.Response('Bad Request - Missing or wrong parameters'),
-            401: openapi.Response('Unathorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-        })
     def create(self, request):
         logger.debug(request.scheme)
-        if 'flow_id' not in request.data or 'profile' not in request.data or \
+        if 'flow_id' not in request.data or \
                 xor(('start_validity' not in request.data), ('expire_validity' not in request.data)):
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
         data = {
             'flow_id': request.data['flow_id'],
             'process_id': get_random_string(32),
             'status': FlowRequest.PENDING,
-            'profile': request.data['profile'],
+            'profile': request.data['profile'] if 'profile' in request.data else None,
             'destination': request.auth.application.destination.pk
         }
         if 'start_validity' not in request.data and 'expire_validity' not in request.data:
             # Assign default values for the validity range: current datetime + 6 months
-            start_datetime = datetime.datetime.now()
-            expire_datetime = start_datetime + datetime.timedelta(6 * 30)
+            start_datetime = datetime.datetime.now(gettz(TIME_ZONE))
+            expire_datetime = start_datetime + datetime.timedelta(days=180)
             data['start_validity'] = start_datetime.strftime(TIME_FORMAT)
             data['expire_validity'] = expire_datetime.strftime(TIME_FORMAT)
         else:
             data['start_validity'] = request.data['start_validity']
             data['expire_validity'] = request.data['expire_validity']
 
-        fr_serializer = hgw_frontend.serializers.FlowRequestSerializer(data=data)
-
+        fr_serializer = FlowRequestSerializer(data=data)
         if fr_serializer.is_valid():
             try:
                 fr = fr_serializer.save()
             except IntegrityError as e:
-                logger.debug(fr_serializer.data)
+                logger.debug("Integrity error adding FR with data: {}\nDetails: {}".format(fr_serializer.data, e))
                 return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
             cc = ConfirmationCode.objects.create(flow_request=fr)
             cc.save()
@@ -209,7 +119,7 @@ class FlowRequestView(ViewSet):
 
             return Response(res, status=status.HTTP_201_CREATED)
         else:
-            logger.error("Error adding Flow Request. Details {}".format(fr_serializer.errors))
+            logger.error("Error adding Flow Request with data {}. Details {}".format(data, fr_serializer.errors))
         return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, process_id, format=None):
@@ -223,100 +133,18 @@ class FlowRequestView(ViewSet):
 
         return Response(res, status=status.HTTP_202_ACCEPTED)
 
-    @swagger_auto_schema(
-        operation_description='Returns the flow request specified by the process_id parameter',
-        security=[{'flow_request': ['flow_request:read']}],
-        manual_parameters=[
-            openapi.Parameter('process_id', openapi.IN_QUERY, type=openapi.TYPE_STRING,
-                              description='The process_id identifying the requested flow request'),
-        ],
-        responses={
-            200: openapi.Response('The flow request identified by the process_id in input', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'flow_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                              description='The id assigned to the flow request by the '
-                                                          'destination'),
-                    'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id assigned to the flow request by the '
-                                                             'Health Gateway'),
-                    'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description='The status of the flow request',
-                                             enum=[sc[0] for sc in FlowRequest.STATUS_CHOICES]),
-                    'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                              properties={
-                                                  'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                         description='A code identifying the profile'),
-                                                  'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The version of the profile'),
-                                                  'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='A json encoded string that'
-                                                                                        'describe the profile')
-                                              }),
-                    'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     format=openapi.FORMAT_DATETIME,
-                                                     description='The start date validity of the flow request'),
-                    'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                      format=openapi.FORMAT_DATETIME,
-                                                      description='The end date validity of the flow request')
-                }
-            )),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-            404: openapi.Response('Not Found - The flow request has not been found')
-        })
     def retrieve(self, request, process_id, format=None):
         fr = self.get_flow_request(request, process_id)
-        serializer = hgw_frontend.serializers.FlowRequestSerializer(fr)
+        serializer = FlowRequestSerializer(fr)
         res = {k: v for k, v in six.iteritems(serializer.data) if k != 'destination'}
         return Response(res)
 
-    @swagger_auto_schema(
-        operation_description='Seaech for flow request by channel_id',
-        security=[{'flow_request': ['flow_request:read', 'flow_request:query']}],
-        manual_parameters=[
-            openapi.Parameter('channel_id', openapi.IN_QUERY, type=openapi.TYPE_STRING),
-        ],
-        responses={
-            200: openapi.Response('The flow request corresponding to the channel_id in input', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'flow_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                              description='The id assigned to the flow request by the destination'),
-                    'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id assigned to the flow request by the '
-                                                             'Health Gateway'),
-                    'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description='The status of the flow request',
-                                             enum=[sc[0] for sc in FlowRequest.STATUS_CHOICES]),
-                    'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                              properties={
-                                                  'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                         description='A code identifying the profile'),
-                                                  'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The version of the profile'),
-                                                  'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='A json encoded string that'
-                                                                                        'describe the profile')
-                                              }),
-                    'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     format=openapi.FORMAT_DATETIME,
-                                                     description='The start date validity of the flow request'),
-                    'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                      format=openapi.FORMAT_DATETIME,
-                                                      description='The end date validity of the flow request')
-                }
-            )),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-            404: openapi.Response('Not Found - The flow request has not been found')
-        })
     def search(self, request):
         if 'channel_id' in request.GET:
             try:
                 consent_confirmation = ConsentConfirmation.objects.get(consent_id=request.GET['channel_id'])
                 flow_request = consent_confirmation.flow_request
-                serializer = hgw_frontend.serializers.FlowRequestSerializer(instance=flow_request)
+                serializer = FlowRequestSerializer(instance=flow_request)
             except ConsentConfirmation.DoesNotExist:
                 return Response({}, status.HTTP_404_NOT_FOUND)
             return Response(serializer.data)
@@ -324,40 +152,38 @@ class FlowRequestView(ViewSet):
             return Response({}, status.HTTP_400_BAD_REQUEST)
 
 
-def _get_consent_oauth_token():
-    client = BackendApplicationClient(CONSENT_MANAGER_CLIENT_ID)
-    oauth_session = OAuth2Session(client=client)
-    token_url = '{}/oauth2/token/'.format(CONSENT_MANAGER_URI)
-    access_token = oauth_session.fetch_token(token_url=token_url, client_id=CONSENT_MANAGER_CLIENT_ID,
-                                             client_secret=CONSENT_MANAGER_CLIENT_SECRET)
+def _get_backend_session():
+    return OAuth2SessionProxy('{}/oauth2/token/'.format(HGW_BACKEND_URI),
+                              HGW_BACKEND_CLIENT_ID,
+                              HGW_BACKEND_CLIENT_SECRET)
 
-    access_token = access_token["access_token"]
-    access_token_header = {"Authorization": "Bearer {}".format(access_token)}
-    return oauth_session, access_token_header
+
+def _get_consent_session():
+    return OAuth2SessionProxy('{}/oauth2/token/'.format(CONSENT_MANAGER_URI),
+                              CONSENT_MANAGER_CLIENT_ID,
+                              CONSENT_MANAGER_CLIENT_SECRET)
 
 
 def _create_consent(flow_request, destination_endpoint_callback_url, user):
-    profile_payload = [{'clinical_domain': 'Laboratory',
-                        'filters': [{'includes': 'Immunochemistry', 'excludes': 'HDL'}]},
-                       {'clinical_domain': 'Radiology',
-                        'filters': [{'includes': 'Tomography', 'excludes': 'Radiology'}]},
-                       {'clinical_domain': 'Emergency',
-                        'filters': [{'includes': '', 'excludes': ''}]},
-                       {'clinical_domain': 'Prescription',
-                        'filters': [{'includes': '', 'excludes': ''}]}]
-    profile_data = {
-        'code': 'PROF002',
-        'version': 'hgw.document.profile.v0',
-        'payload': json.dumps(profile_payload)
-    }
-
     destination = flow_request.destination
+    try:
+        oauth_backend_session = _get_backend_session()
+    except InvalidClientError:
+        return [], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']
+    except requests.exceptions.ConnectionError:
+        return [], ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']
+    else:
+        sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
 
-    res = requests.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+    try:
+        oauth_consent_session = _get_consent_session()
+    except InvalidClientError:
+        return [], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']
+    except requests.exceptions.ConnectionError:
+        return [], ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR']
 
     confirm_ids = []
-    oauth_session, access_token_header = _get_consent_oauth_token()
-    for source_data in res.json():
+    for source_data in sources.json():
         channel_data = {
             'source': {
                 'id': source_data['source_id'],
@@ -367,22 +193,23 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
                 'id': destination.destination_id,
                 'name': destination.name
             },
-            'profile': profile_data,
+            'profile': source_data['profile'],
             'person_id': user.fiscalNumber,
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
 
-        res = oauth_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI),
-                                 headers=access_token_header, json=channel_data)
-        if res.status_code == 201:
-            json_res = res.json()
+        consent = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=channel_data)
+        if consent.status_code == 201:
+            json_res = consent.json()
             ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
                                                confirmation_id=json_res['confirm_id'],
                                                destination_endpoint_callback_url=destination_endpoint_callback_url)
             confirm_ids.append(json_res['confirm_id'])
-
-    return confirm_ids
+    if not confirm_ids:
+        return confirm_ids, "All available consents already present"
+    else:
+        return confirm_ids, None
 
 
 def _get_consent(confirm_id):
@@ -396,8 +223,8 @@ def _get_consent(confirm_id):
     except ConsentConfirmation.DoesNotExist:
         raise UnknownConsentConfirmation()
     consent_id = consent_confirmation.consent_id
-    oauth_session, access_token_header = _get_consent_oauth_token()
-    res = oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, consent_id))
+    oauth_consent_session = _get_consent_session()
+    res = oauth_consent_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, consent_id))
     return consent_confirmation, res.json()
 
 
@@ -413,9 +240,9 @@ def _get_callback_url(request):
 
 
 def _ask_consent(request, flow_request, callback_url):
-    consents = _create_consent(flow_request, callback_url, request.user)
+    consents, status = _create_consent(flow_request, callback_url, request.user)
     if not consents:
-        return HttpResponse("All available consents already inserted")
+        return HttpResponse(json.dumps({'errors': [status]}), content_type='application/json')
     logger.debug("Created consent")
     consent_callback_url = _get_callback_url(request)
     return HttpResponseRedirect('{}?{}&callback_url={}'.
