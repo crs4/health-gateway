@@ -30,7 +30,7 @@ from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmati
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \
     TEST_PERSON1_ID
-from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler, SOURCES_DATA
+from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler, SOURCES_DATA, PROFILES_DATA
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -1016,6 +1016,56 @@ class TestHGWFrontendAPI(TestCase):
         """
         headers = self._get_oauth_header()
         res = self.client.get('/v1/sources/', **headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_profiles(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/profiles/', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), PROFILES_DATA)
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_profiles_unauthorized(self):
+        """
+        Tests get sources endpoint
+        """
+        res = self.client.get('/v1/profiles/')
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_profiles_forbidden(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        res = self.client.get('/v1/profiles/', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.json(), {'errors': ['forbidden']})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
+    def test_get_profiles_fail_backend_access_token(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/profiles/', **headers)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), {'errors': ['invalid_backend_client']})
+
+    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
+    def test_get_profiles_fail_backend_connection_error(self):
+        """
+        Tests get sources endpoint
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/profiles/', **headers)
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
 

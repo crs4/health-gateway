@@ -23,6 +23,7 @@ from rest_framework import routers
 
 from hgw_common.settings import VERSION_REGEX
 from hgw_frontend import settings
+from hgw_frontend.views import Profiles
 from .views import view_profile, confirm_request, consents_confirmed, FlowRequestView, Messages, Sources
 
 # Routers provide an easy way of automatically determining the URL conf
@@ -49,4 +50,5 @@ urlpatterns = [
     url(r'^{}/messages/(?P<message_id>\d+)/?$'.format(VERSION_REGEX), Messages.as_view({'get': 'retrieve'})),
     url(r'^{}/sources/$'.format(VERSION_REGEX), Sources.as_view({'get': 'list'})),
     url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), Sources.as_view({'get': 'retrieve'})),
+    url(r'^{}/profiles/$'.format(VERSION_REGEX), Profiles.as_view({'get': 'list'})),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

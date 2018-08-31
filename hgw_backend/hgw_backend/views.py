@@ -30,6 +30,8 @@ from rest_framework.views import APIView
 
 from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT
 from hgw_common.cipher import is_encrypted
+from hgw_common.models import Profile
+from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
 from .models import Source
 from .serializers import SourceSerializer
@@ -60,6 +62,34 @@ class Sources(ViewSet):
         source = self.get_object(source_id)
         serializer = SourceSerializer(source)
         return Response(serializer.data, content_type='application/json')
+
+
+class Profiles(ViewSet):
+    permission_classes = (TokenHasResourceDetailedScope,)
+    required_scopes = ['sources']
+
+    def get_object(self, source_id):
+        try:
+            return Profile.objects.get(source_id=source_id)
+        except Source.DoesNotExist:
+            raise Http404
+
+    def list(self, request):
+        profiles = Profile.objects.all()
+        profiles_ser = ProfileSerializer(profiles, many=True)
+        profiles_data = profiles_ser.data
+        for i, p in enumerate(profiles):
+            sources = Source.objects.filter(profile=p)
+            source_serializer = SourceSerializer(sources, many=True)
+            profiles_data[i]['sources'] = [{'source_id': s['source_id'], 'name': s['name']}
+                                           for s in source_serializer.data]
+
+        return Response(profiles_data, content_type='application/json')
+    #
+    # def retrieve(self, request, source_id):
+    #     source = self.get_object(source_id)
+    #     serializer = SourceSerializer(source)
+    #     return Response(serializer.data, content_type='application/json')
 
 
 class Messages(APIView):

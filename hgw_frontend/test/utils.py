@@ -38,13 +38,33 @@ SOURCES_DATA = [
             'payload': '[{"clinical_domain": "Laboratory"}]'}
     }, {
         'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS',
-        'name': 'oauth2_source',
+        'name': 'source_2',
         'profile': {
             'code': 'PROF_002',
             'version': 'v0',
             'payload': '[{"clinical_domain": "Radiology"}]'
         }
     }]
+
+PROFILES_DATA = [
+    {
+        'code': 'PROF_001',
+        'version': 'v0',
+        'payload': '[{"clinical_domain": "Laboratory"}]',
+        'sources': [{
+            'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
+            'name': 'source_1'
+        }]
+    }, {
+        'code': 'PROF_002',
+        'version': 'v0',
+        'payload': '[{"clinical_domain": "Radiology"}]',
+        'sources': [{
+            'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS',
+            'name': 'source_2'
+        }]
+    }
+]
 
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
@@ -146,6 +166,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
 class MockBackendRequestHandler(MockRequestHandler):
     SINGLE_SOURCE_PATTERN = re.compile(r'/v1/sources/(\w+)')
     SOURCES_PATTERN = re.compile(r'/v1/sources/$')
+    PROFILES_PATTERN = re.compile(r'/v1/profiles/$')
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
 
     def do_POST(self):
@@ -173,6 +194,8 @@ class MockBackendRequestHandler(MockRequestHandler):
 
         if self._path_match(self.SOURCES_PATTERN):
             payload = SOURCES_DATA
+        elif self._path_match(self.PROFILES_PATTERN):
+            payload = PROFILES_DATA
         else:
             match = self._path_match(self.SINGLE_SOURCE_PATTERN)
             if match:
