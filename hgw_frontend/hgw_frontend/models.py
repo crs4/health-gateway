@@ -43,7 +43,7 @@ class FlowRequest(models.Model):
     process_id = models.CharField(max_length=32, blank=False)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False, default=PENDING)
     person_id = models.CharField(max_length=20, blank=True, null=True)
-    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE)
+    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=True)
     destination = models.ForeignKey('Destination')
     start_validity = models.DateTimeField(null=False)
     expire_validity = models.DateTimeField(null=False)

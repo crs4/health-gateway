@@ -288,6 +288,51 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=fr['flow_id']).destination, destination)
 
+    def test_add_flow_requests_with_null_profile(self):
+        """
+        Tests adding a flow request with null profile. It tests that the request is added but its status is set to PENDING
+        """
+        self.flow_request_data = {
+            'flow_id': '11111',
+            'profile': None,
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
+        }
+        self.flow_request_json_data = json.dumps(self.flow_request_data)
+        res = self._add_flow_request()
+        self.assertEqual(res.status_code, 201)
+
+        fr = res.json()
+        destination = Destination.objects.get(name='Destination 1')
+        self.assertEqual(fr['flow_id'], self.flow_request_data['flow_id'])
+        self.assertEqual(fr['status'], 'PE')
+        self.assertEqual(fr['profile'], None)
+        self.assertEqual(FlowRequest.objects.all().count(), 3)
+        self.assertEqual(ConfirmationCode.objects.all().count(), 1)
+        self.assertEqual(FlowRequest.objects.get(flow_id=fr['flow_id']).destination, destination)
+
+    def test_add_flow_requests_without_profile(self):
+        """
+        Tests adding a flow request without profile. It tests that the request is added but its status is set to PENDING
+        """
+        self.flow_request_data = {
+            'flow_id': '11111',
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
+        }
+        self.flow_request_json_data = json.dumps(self.flow_request_data)
+        res = self._add_flow_request()
+        self.assertEqual(res.status_code, 201)
+
+        fr = res.json()
+        destination = Destination.objects.get(name='Destination 1')
+        self.assertEqual(fr['flow_id'], self.flow_request_data['flow_id'])
+        self.assertEqual(fr['status'], 'PE')
+        self.assertEqual(fr['profile'], None)
+        self.assertEqual(FlowRequest.objects.all().count(), 3)
+        self.assertEqual(ConfirmationCode.objects.all().count(), 1)
+        self.assertEqual(FlowRequest.objects.get(flow_id=fr['flow_id']).destination, destination)
+
     def test_add_flow_requests_unauthorized(self):
         """
         Tests failure when adding flow request with a client not authenticated (i.e., the request doesn't include

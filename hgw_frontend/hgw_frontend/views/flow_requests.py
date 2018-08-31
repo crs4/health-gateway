@@ -85,14 +85,14 @@ class FlowRequestView(ViewSet):
 
     def create(self, request):
         logger.debug(request.scheme)
-        if 'flow_id' not in request.data or 'profile' not in request.data or \
+        if 'flow_id' not in request.data or \
                 xor(('start_validity' not in request.data), ('expire_validity' not in request.data)):
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
         data = {
             'flow_id': request.data['flow_id'],
             'process_id': get_random_string(32),
             'status': FlowRequest.PENDING,
-            'profile': request.data['profile'],
+            'profile': request.data['profile'] if 'profile' in request.data else None,
             'destination': request.auth.application.destination.pk
         }
         if 'start_validity' not in request.data and 'expire_validity' not in request.data:
@@ -106,12 +106,11 @@ class FlowRequestView(ViewSet):
             data['expire_validity'] = request.data['expire_validity']
 
         fr_serializer = FlowRequestSerializer(data=data)
-
         if fr_serializer.is_valid():
             try:
                 fr = fr_serializer.save()
             except IntegrityError as e:
-                logger.debug(fr_serializer.data)
+                logger.debug("Integrity error adding FR with data: {}\nDetails: {}".format(fr_serializer.data, e))
                 return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
             cc = ConfirmationCode.objects.create(flow_request=fr)
             cc.save()
