@@ -246,9 +246,9 @@ class Dispatcher(object):
 
     def run(self):
         # partition = TopicPartition(self.consumer_topics[0], 0)
+        logger.debug("Starting to consume messages")
         for msg in self.consumer:
-            # logger.debug("Reading offset {}. Last offset is {}".format(msg.offset, self.consumer.highwater(partition)))
-            # logger.debug(self.consumer.assignment())
+            logger.debug("Read message: {}".format(msg.key))
             if msg.key:
                 channel_id = msg.key.decode('utf-8')
                 logger.debug('Received message from {} for channel {}'.format(msg.topic, channel_id))
