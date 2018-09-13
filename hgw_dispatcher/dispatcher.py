@@ -25,6 +25,7 @@ import sys
 
 import time
 
+import traceback
 import yaml
 from kafka import KafkaConsumer, TopicPartition, KafkaProducer
 from kafka.errors import KafkaError
@@ -152,7 +153,8 @@ class Dispatcher(object):
         except InvalidClientError:
             logger.error("Cannot obtain the token from {}. Invalid client".format(url))
             return None
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            logger.error(traceback.format_exc(e))
             logger.error("Cannot obtain the token from {}. Connection error".format(url))
             return None
 
