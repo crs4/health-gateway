@@ -234,7 +234,7 @@ def _get_callback_url(request):
     :param request:
     :return:
     """
-    callback_url = '{}://{}/v1/flow_requests/consents_confirmed/'.format(request.scheme, request.get_host())
+    callback_url = '{}://{}/v1/flow_requests/consents_confirmed/'.format('https', request.get_host())
     logger.debug("Callback url {}".format(callback_url))
     return callback_url
 
