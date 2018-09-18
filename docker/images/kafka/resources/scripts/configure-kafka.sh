@@ -33,8 +33,8 @@ if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
     if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
         # Start zookeeper locally.
         echo "Configuring Zookeeper..."
-        export ZOOKEEPER_PORT=2181
-        export ZOOKEEPER_DATA=/tmp/zookeeper
+#        export ZOOKEEPER_PORT=2181
+#        export ZOOKEEPER_DATA=/tmp/zookeeper
         zookeeper-server-start.sh config/zookeeper.properties &
         # wait for zookeeper to start
       	while ! nc -z localhost 2181
