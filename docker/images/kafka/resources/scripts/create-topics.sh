@@ -9,7 +9,7 @@ fi
 KAFKA_PORT=${KAFKA_PORT:-9092}
 KAFKA_SSL_PORT=${KAFKA_SSL_PORT:-9092}
 if [ -z "$KAFKA_ZOOKEEPER_CONNECT" ]; then
-    KAFKA_ZOOKEEPER_CONNECT=localhost:2181/kafka
+    KAFKA_ZOOKEEPER_CONNECT=localhost:2181
 fi
 
 start_timeout_exceeded=false
