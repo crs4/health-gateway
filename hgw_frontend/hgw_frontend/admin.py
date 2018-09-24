@@ -19,7 +19,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from hgw_frontend.models import HGWFrontendUser, Destination
+from hgw_frontend.models import HGWFrontendUser, Destination, FlowRequest, ConsentConfirmation, ConfirmationCode
 
 
 class HGWFrontendUserAdmin(UserAdmin):
@@ -28,3 +28,6 @@ class HGWFrontendUserAdmin(UserAdmin):
 
 admin.site.register(HGWFrontendUser, HGWFrontendUserAdmin)
 admin.site.register(Destination)
+admin.site.register(FlowRequest)
+admin.site.register(ConfirmationCode)
+admin.site.register(ConsentConfirmation)

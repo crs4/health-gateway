@@ -19,11 +19,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from consent_manager.models import ConsentManagerUser
+from consent_manager.models import ConsentManagerUser, ConfirmationCode, Consent
 
 
-class HGWFrontendUserAdmin(UserAdmin):
+class ConsentManagerUserAdmin(UserAdmin):
     pass
 
 
-admin.site.register(ConsentManagerUser, HGWFrontendUserAdmin)
+admin.site.register(ConsentManagerUser, ConsentManagerUserAdmin)
+admin.site.register(Consent)
+admin.site.register(ConfirmationCode)

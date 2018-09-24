@@ -706,7 +706,7 @@ class TestHGWFrontendAPI(TestCase):
         fr = ConfirmationCode.objects.get(code=confirm_id).flow_request
         self.assertEqual(fr.person_id, '100001')
         consent_confirm_ids = [c.confirmation_id for c in list(ConsentConfirmation.objects.all())[-2:]]
-        consent_callback_url = 'http://testserver/v1/flow_requests/consents_confirmed/'
+        consent_callback_url = 'https://testserver/v1/flow_requests/consents_confirmed/'
         self.assertRedirects(res, '{}?confirm_id={}&confirm_id={}&callback_url={}'.
                              format(CONSENT_MANAGER_CONFIRMATION_PAGE, consent_confirm_ids[0], consent_confirm_ids[1],
                                     consent_callback_url),
