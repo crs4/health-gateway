@@ -24,6 +24,7 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from oauth2_provider.models import AbstractApplication
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError, InvalidClientError, MissingTokenError
+from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
 from requests_oauthlib import OAuth2Session
 
@@ -88,6 +89,9 @@ class OAuth2Authentication(models.Model):
     token_url = models.CharField(max_length=100, blank=False, null=False)
     client_id = models.CharField(max_length=40, blank=False, null=False)
     client_secret = models.CharField(max_length=128, blank=False, null=False)
+    auth_username = models.CharField(max_length=40, null=True)
+    auth_password = models.CharField(max_length=128, null=True)
+    basic_auth = models.BooleanField(default=False, null=False)
 
     def _get_token(self):
         try:
@@ -97,9 +101,16 @@ class OAuth2Authentication(models.Model):
         return ac.to_python()
 
     def _fetch_token(self, oauth_session):
-        oauth_session.fetch_token(token_url=self.token_url,
-                                  client_id=self.client_id,
-                                  client_secret=self.client_secret)
+        if self.basic_auth is True:
+            auth = HTTPBasicAuth(self.auth_username, self.auth_password)
+            oauth_session.fetch_token(token_url=self.token_url,
+                                      client_id=self.client_id,
+                                      client_secret=self.client_secret,
+                                      auth=auth)
+        else:
+            oauth_session.fetch_token(token_url=self.token_url,
+                                      client_id=self.client_id,
+                                      client_secret=self.client_secret)
 
         self._save_token(oauth_session.token)
 
