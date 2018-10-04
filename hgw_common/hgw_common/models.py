@@ -128,9 +128,16 @@ class OAuth2SessionProxy(object):
                                   client_id=self.client_id,
                                   client_secret=self.client_secret)
 
-        token_data = copy.copy(oauth_session.token)
-        token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
-        token_data['scope'] = " ".join(token_data['scope'])
+        token_data = {
+            'access_token': oauth_session.token['access_token'],
+            'token_type': oauth_session.token['token_type'],
+            'expires_in': oauth_session.token['expires_in'],
+            'expires_at': datetime.fromtimestamp(oauth_session.token['expires_at']),
+            'scope': ' '.join(oauth_session.token['scope'])
+        }
+        # token_data = copy.copy(oauth_session.token)
+        # token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
+        # token_data['scope'] = " ".join(token_data['scope'])
         try:
             access_token = AccessToken.objects.get(token_url=self.token_url)
         except AccessToken.DoesNotExist:
