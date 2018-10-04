@@ -154,7 +154,7 @@ class Dispatcher(object):
             logger.error("Cannot obtain the token from {}. Invalid client".format(url))
             return None
         except requests.exceptions.ConnectionError as e:
-            logger.error(traceback.format_exc(e))
+            logger.error(traceback.format_exc())
             logger.error("Cannot obtain the token from {}. Connection error".format(url))
             return None
 
