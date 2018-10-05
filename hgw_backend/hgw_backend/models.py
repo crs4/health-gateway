@@ -115,12 +115,17 @@ class OAuth2Authentication(models.Model):
         self._save_token(oauth_session.token)
 
     def _save_token(self, token_data):
-        token_data = copy.copy(token_data)
-        token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
+        new_token_data = {
+            'access_token': token_data['access_token'],
+            'token_type': token_data['token_type'],
+            'expires_in': token_data['expires_in'],
+            'expires_at': datetime.fromtimestamp(token_data['expires_at']),
+            'scope': ' '.join(token_data['scope'])
+        }
         try:
             access_token = AccessToken.objects.get(oauth2_authentication=self)
         except AccessToken.DoesNotExist:
-            AccessToken.objects.create(oauth2_authentication=self, **token_data)
+            AccessToken.objects.create(oauth2_authentication=self, **new_token_data)
         else:
             for k, v in token_data.items():
                 setattr(access_token, k, v)
