@@ -58,7 +58,7 @@
                 connectorResults.add(attr);
                 attr = new IdPAttribute("uid");
                 set = new HashSet();
-                set.add(new StringAttributeValue(cn + "_user"));
+                set.add(new StringAttributeValue(fiscalNumber));
                 attr.setValues(set);
                 connectorResults.add(attr);
                 attr = new IdPAttribute("cn");
