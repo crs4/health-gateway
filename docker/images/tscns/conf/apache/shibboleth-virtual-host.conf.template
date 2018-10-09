@@ -17,7 +17,7 @@
   
   SSLCertificateFile /root/certificates/idp_server.cert.pem
   SSLCertificateKeyFile /root/certificates/idp_server.key.pem
-  SSLCACertificatePath  /root/certificates/ca_certs/
+  SSLCACertificateFile  /root/certificates/ca_certs/ca-CNS-bundle.crt
 
   <Location /idp/Authn/X509>
     SSLVerifyClient require
