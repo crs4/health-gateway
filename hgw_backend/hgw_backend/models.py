@@ -127,7 +127,7 @@ class OAuth2Authentication(models.Model):
         except AccessToken.DoesNotExist:
             AccessToken.objects.create(oauth2_authentication=self, **new_token_data)
         else:
-            for k, v in token_data.items():
+            for k, v in new_token_data.items():
                 setattr(access_token, k, v)
             access_token.save()
 

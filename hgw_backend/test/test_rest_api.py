@@ -359,17 +359,16 @@ class TestHGWBackendAPI(TestCase):
         the client still needs to refresh the token
         """
         # Create an expired token in the db
-        auth_obj = OAuth2Authentication.objects.first()
-        AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='expired',
-                                   token_type='Bearer', expires_in=3600,
-                                   expires_at=datetime.now() + timedelta(3600))
-
         auth = OAuth2Authentication.objects.first()
+        AccessToken.objects.create(oauth2_authentication=auth, access_token='expired',
+                                   token_type='Bearer', expires_in=3600,
+                                   expires_at=datetime.now() - timedelta(seconds=3600))
+
         source = self._get_source_from_auth_obj(auth)
         res = auth.create_connector(source, CONNECTOR)
         token = AccessToken.objects.get(oauth2_authentication=auth)
         self.assertIsNotNone(token)
-        self.assertNotEquals(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
+        self.assertNotEquals(AccessToken.objects.get(oauth2_authentication=auth).access_token,
                              'expired')
 
         self.assertIsNotNone(res)
