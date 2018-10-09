@@ -31,8 +31,7 @@ router = routers.DefaultRouter()
 
 
 urlpatterns = [
-    url(r'^$', view_profile, name='home'),
-    url(r'^admin/', admin.site.urls),
+    url(r'^', admin.site.urls),
     url(r'^saml2/', include('djangosaml2.urls')),
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
