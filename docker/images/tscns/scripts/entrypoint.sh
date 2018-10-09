@@ -41,21 +41,8 @@ done
 
 envsubst '${HGW_FRONTEND_ADDR} ${CONSENT_MANAGER_ADDR}' < /opt/shibboleth-idp/conf/metadata-providers.xml.template > /opt/shibboleth-idp/conf/metadata-providers.xml
 
-if [[ -z ${DEVELOPMENT} ]]; then
-#    if [[ -z ${SSL} ]]; then
-#        envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf
-#    else
-    envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.prod-ssl.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.prod.conf
-#    fi
-    a2ensite shibboleth-virtual-host.prod.conf
-else
-#    if [[ -z ${SSL} ]]; then
-#        envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf
-#    else
-    envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.dev-ssl.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.dev.conf
-#    fi
-    a2ensite shibboleth-virtual-host.dev.conf
-fi
+envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.conf
+a2ensite shibboleth-virtual-host.conf
 apache2ctl start
 
 envsubst '${SERVER_NAME}' < /opt/shibboleth-idp/conf/idp.properties.template > /opt/shibboleth-idp/conf/idp.properties
