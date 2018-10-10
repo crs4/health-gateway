@@ -76,9 +76,10 @@ COPY conf/shibboleth/logback.xml /opt/shibboleth-idp/conf/logback.xml
 
 COPY metadata/idp-metadata.xml.template /opt/shibboleth-idp/metadata/idp-metadata.xml.template
 
-# Copy certificates. TODO: This will be volumes
-RUN mkdir -p /root/certificates/ca_certs/
-COPY certs/ca-CNS-bundle.crt /root/certificates/ca_certs/
+# Copy certificates.
+ENV CA_CERTS_DIR=/root/certificates/ca_certs
+RUN mkdir -p ${CA_CERTS_DIR}
+COPY certs/ca-CNS-bundle.crt ${CA_CERTS_DIR}
 
 RUN mkdir /container/
 COPY scripts/replace_certs.sh /container/

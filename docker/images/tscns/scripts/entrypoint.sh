@@ -39,9 +39,15 @@ done
 
 /container/replace_certs.sh
 
-envsubst '${HGW_FRONTEND_ADDR} ${CONSENT_MANAGER_ADDR}' < /opt/shibboleth-idp/conf/metadata-providers.xml.template > /opt/shibboleth-idp/conf/metadata-providers.xml
+if [ -f ${CA_CERTS_DIR}/ca-development.crt ]; then
+    cat ${CA_CERTS_DIR}/ca-CNS-bundle.crt ${CA_CERTS_DIR}/ca-development.crt > ${CA_CERTS_DIR}/cas.crt
+else
+    cp ${CA_CERTS_DIR}ca-CNS-bundle.crt ${CA_CERTS_DIR}/cas.crt
+fi
 
+envsubst '${HGW_FRONTEND_ADDR} ${CONSENT_MANAGER_ADDR}' < /opt/shibboleth-idp/conf/metadata-providers.xml.template > /opt/shibboleth-idp/conf/metadata-providers.xml
 envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.conf
+
 a2ensite shibboleth-virtual-host.conf
 apache2ctl start
 
