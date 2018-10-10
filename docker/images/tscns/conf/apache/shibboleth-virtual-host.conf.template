@@ -20,8 +20,11 @@
   SSLCACertificateFile  /root/certificates/ca_certs/cas.crt
 
   <Location /idp/Authn/X509>
-    SSLVerifyClient require
+    SSLVerifyClient optional
     SSLOptions +ExportCertData +StdEnvVars
     SSLVerifyDepth 4
-  </Location> 
+    RewriteEngine On
+    RewriteCond %{SSL:SSL_CLIENT_VERIFY} !^SUCCESS$
+    RewriteRule .* "/nocert.html" [L]
+  </Location>
 </VirtualHost>

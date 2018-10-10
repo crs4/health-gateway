@@ -38,7 +38,7 @@ WORKDIR /usr/share/tomcat8/lib/
 COPY conf/apache/idp.conf /etc/apache2/sites-available/idp.conf
 COPY conf/apache/shibboleth-virtual-host.conf.template /etc/apache2/sites-available/shibboleth-virtual-host.conf.template
 COPY conf/apache/ports.conf /etc/apache2/ports.conf
-RUN a2enmod ssl headers proxy_ajp
+RUN a2enmod ssl headers proxy_ajp rewrite
 RUN a2ensite idp.conf
 RUN a2dissite 000-default.conf
 
@@ -61,6 +61,7 @@ RUN chown -R tomcat8 /opt/shibboleth-idp/metadata/
 RUN chown -R tomcat8 /opt/shibboleth-idp/credentials/
 RUN chown -R tomcat8 /opt/shibboleth-idp/conf
 COPY web_gui/attribute-release.vm /opt/shibboleth-idp/views/intercept/attribute-release.vm
+COPY web_gui/nocert.html /var/www/html/
 
 WORKDIR /opt/shibboleth-idp
 RUN ./bin/build.sh
