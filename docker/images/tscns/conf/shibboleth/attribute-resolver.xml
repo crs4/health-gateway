@@ -47,9 +47,11 @@
                 }
             }
 
-            var fiscalNumber = null;
+            var fiscalNumber = "";
+            var cn = "";
             var certDataArray = certificateData.split(",");
             for (i = 0; i < certDataArray.length; i++) {
+                logger.info(certDataArray[i])
                 if (certDataArray[i].indexOf("CN=") != -1) {
                     keyValue = certDataArray[i].split("=");
                     if (keyValue[1].indexOf("\"") == -1) {
@@ -59,18 +61,25 @@
                         fiscalNumber = keyValue[1].substring(1,17)
                     }
                 }
+                else if (certDataArray[i].indexOf("SURNAME=") != -1 || certDataArray[i].indexOf("SN=") != -1) {
+                    keyValue = certDataArray[i].split("=");
+                    cn = keyValue[1]
+                }
             }
-
+            logger.info("CN:" + cn);
+            logger.info("FISCAL_NUMBER:" + fiscalNumber);
             var attr = new IdPAttribute("fiscalNumber");
             var set = new HashSet();
             set.add(new StringAttributeValue(fiscalNumber));
             attr.setValues(set);
             connectorResults.add(attr);
+
             attr = new IdPAttribute("uid");
             set = new HashSet();
             set.add(new StringAttributeValue(fiscalNumber));
             attr.setValues(set);
             connectorResults.add(attr);
+
             attr = new IdPAttribute("cn");
             set = new HashSet();
             set.add(new StringAttributeValue(cn));
