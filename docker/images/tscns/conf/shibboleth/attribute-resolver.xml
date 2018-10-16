@@ -1,73 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <AttributeResolver
-        xmlns="urn:mace:shibboleth:2.0:resolver"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-        xsi:schemaLocation="urn:mace:shibboleth:2.0:resolver http://shibboleth.net/schema/idp/shibboleth-attribute-resolver.xsd">
+    xmlns="urn:mace:shibboleth:2.0:resolver"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:mace:shibboleth:2.0:resolver http://shibboleth.net/schema/idp/shibboleth-attribute-resolver.xsd">
 
     <AttributeDefinition id="uid" xsi:type="Simple" sourceAttributeID="uid">
-        <Dependency ref="ScriptedAttributeConnector" />
-        <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:uid" encodeType="false" />
-        <AttributeEncoder xsi:type="SAML2String" name="urn:oid:0.9.2342.19200300.100.1.1" friendlyName="uid" encodeType="false" />
+        <Dependency ref="ScriptedAttributeConnector"/>
+        <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:uid" encodeType="false"/>
+        <AttributeEncoder xsi:type="SAML2String" name="urn:oid:0.9.2342.19200300.100.1.1" friendlyName="uid"
+                          encodeType="false"/>
     </AttributeDefinition>
 
     <AttributeDefinition id="cn" xsi:type="Simple" sourceAttributeID="cn">
-        <Dependency ref="ScriptedAttributeConnector" />
-        <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:cn" encodeType="false" />
-        <AttributeEncoder xsi:type="SAML2String" name="urn:oid:2.5.4.3" friendlyName="cn" encodeType="false" />
+        <Dependency ref="ScriptedAttributeConnector"/>
+        <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:cn" encodeType="false"/>
+        <AttributeEncoder xsi:type="SAML2String" name="urn:oid:2.5.4.3" friendlyName="cn" encodeType="false"/>
     </AttributeDefinition>
 
     <!--TODO: note that this urn:oid is fake! fiscalNumber doesn't have one that we found-->
 
     <AttributeDefinition id="fiscalNumber" xsi:type="Simple" sourceAttributeID="fiscalNumber">
-        <Dependency ref="ScriptedAttributeConnector" />
-        <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:fiscalNumber" encodeType="false" />
-        <AttributeEncoder xsi:type="SAML2String" name="urn:mace:dir:attribute-def:fiscalNumber" friendlyName="fiscalNumber" encodeType="false" />
+        <Dependency ref="ScriptedAttributeConnector"/>
+        <AttributeEncoder xsi:type="SAML1String" name="urn:mace:dir:attribute-def:fiscalNumber" encodeType="false"/>
+        <AttributeEncoder xsi:type="SAML2String" name="urn:mace:dir:attribute-def:fiscalNumber"
+                          friendlyName="fiscalNumber" encodeType="false"/>
     </AttributeDefinition>
 
 
-<DataConnector id="ScriptedAttributeConnector" xsi:type="ScriptedDataConnector">
-    <Script><![CDATA[
-                logger = Java.type("org.slf4j.LoggerFactory").getLogger("net.shibboleth.idp.attribute");
-                var IdPAttribute = Java.type("net.shibboleth.idp.attribute.IdPAttribute");
-                var HashSet = Java.type("java.util.HashSet");
-                var StringAttributeValue = Java.type("net.shibboleth.idp.attribute.StringAttributeValue");
-                logger.info(subjects.length);
-                var subject = subjects[0];
-                var principals = subject.getPrincipals();
-                logger.info(principals);
-                var iterator = principals.iterator();
-                var certificateData = new String();
-                while (iterator.hasNext()) {
-                    var principal = (iterator.next()).toString();
-                    if (principal.contains("CN")) {
-                        logger.info("CERTIFICATE DATA: " + principal);
-                        certificateData = principal;
+    <DataConnector id="ScriptedAttributeConnector" xsi:type="ScriptedDataConnector">
+        <Script><![CDATA[
+            logger = Java.type("org.slf4j.LoggerFactory").getLogger("net.shibboleth.idp.attribute");
+            var IdPAttribute = Java.type("net.shibboleth.idp.attribute.IdPAttribute");
+            var HashSet = Java.type("java.util.HashSet");
+            var StringAttributeValue = Java.type("net.shibboleth.idp.attribute.StringAttributeValue");
+            var subject = subjects[0];
+            var principals = subject.getPrincipals();
+            var iterator = principals.iterator();
+            var certificateData = new String();
+
+            while (iterator.hasNext()) {
+                var principal = (iterator.next()).toString();
+                if (principal.contains("CN")) {
+                    logger.info("CERTIFICATE DATA: " + principal);
+                    certificateData = principal;
+                }
+            }
+
+            var fiscalNumber = null;
+            var certDataArray = certificateData.split(",");
+            for (i = 0; i < certDataArray.length; i++) {
+                if (certDataArray[i].indexOf("CN=") != -1) {
+                    keyValue = certDataArray[i].split("=");
+                    if (keyValue[1].indexOf("\"") == -1) {
+                        fiscalNumber = keyValue[1].substring(0,16);
+                    }
+                    else {
+                        fiscalNumber = keyValue[1].substring(1,17)
                     }
                 }
-                var certDataArray = certificateData.split(",");
-                var cn = certDataArray[0].split("=")[1];
-                logger.info("CN:" + cn);
-                var fiscalNumber = certDataArray[2].split("=")[1].substring(1,17);
-                logger.info("FISCAL NUMBER: " + fiscalNumber);
+            }
 
-                var attr = new IdPAttribute("fiscalNumber");
-                var set = new HashSet();
-                set.add(new StringAttributeValue(fiscalNumber));
-                attr.setValues(set);
-                connectorResults.add(attr);
-                attr = new IdPAttribute("uid");
-                set = new HashSet();
-                set.add(new StringAttributeValue(fiscalNumber));
-                attr.setValues(set);
-                connectorResults.add(attr);
-                attr = new IdPAttribute("cn");
-                set = new HashSet();
-                set.add(new StringAttributeValue(cn));
-                attr.setValues(set);
-                connectorResults.add(attr);
+            var attr = new IdPAttribute("fiscalNumber");
+            var set = new HashSet();
+            set.add(new StringAttributeValue(fiscalNumber));
+            attr.setValues(set);
+            connectorResults.add(attr);
+            attr = new IdPAttribute("uid");
+            set = new HashSet();
+            set.add(new StringAttributeValue(fiscalNumber));
+            attr.setValues(set);
+            connectorResults.add(attr);
+            attr = new IdPAttribute("cn");
+            set = new HashSet();
+            set.add(new StringAttributeValue(cn));
+            attr.setValues(set);
+            connectorResults.add(attr);
     ]]></Script>
-</DataConnector>
+    </DataConnector>
 
 
 </AttributeResolver>
