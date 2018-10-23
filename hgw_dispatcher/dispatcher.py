@@ -131,12 +131,20 @@ class Dispatcher(object):
 
         logger.debug("Subscribed to {} source topics".format(len(subscriptions)))
 
-        self.producer = KafkaProducer(bootstrap_servers=broker_url,
-                                      security_protocol='SSL',
-                                      ssl_check_hostname=True,
-                                      ssl_cafile=ca_cert,
-                                      ssl_certfile=client_cert,
-                                      ssl_keyfile=client_key)
+        if use_ssl:
+            producer_params = {
+                'bootstrap_servers': broker_url,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': ca_cert,
+                'ssl_certfile': client_cert,
+                'ssl_keyfile': client_key
+            }
+        else:
+            producer_params = {
+                'bootstrap_servers': broker_url
+            }
+        self.producer = KafkaProducer(**producer_params)
         self._obtain_consent_oauth_token()
         self._obtain_hgw_frontend_oauth_token()
 

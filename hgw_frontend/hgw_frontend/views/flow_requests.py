@@ -262,7 +262,7 @@ def _confirm(request, consent_confirm_id):
     if consent['status'] == 'AC':
         logger.debug("Consent status is AC. Sending message to KAFKA")
         if KAFKA_SSL:
-            consumer_params = {
+            producer_params = {
                 'bootstrap_servers': KAFKA_BROKER,
                 'security_protocol': 'SSL',
                 'ssl_check_hostname': True,
@@ -271,10 +271,10 @@ def _confirm(request, consent_confirm_id):
                 'ssl_keyfile': KAFKA_CLIENT_KEY
             }
         else:
-            consumer_params = {
+            producer_params = {
                 'bootstrap_servers': KAFKA_BROKER
             }
-        kp = KafkaProducer(**consumer_params)
+        kp = KafkaProducer(**producer_params)
 
         destination = Destination.objects.get(destination_id=consent['destination']['id'])
         profile_ser = ProfileSerializer(consent_confirmation.flow_request.profile)
