@@ -81,13 +81,14 @@ HGW_BACKEND_OAUTH_CLIENT_ID = cfg['hgw_backend']['client_id']
 HGW_BACKEND_OAUTH_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 
 KAFKA_BROKER = cfg['kafka']['uri']
+KAFKA_SSL = cfg['kafka']['ssl']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
 
 class Dispatcher(object):
-    def __init__(self, broker_url, ca_cert, client_cert, client_key):
+    def __init__(self, broker_url, ca_cert, client_cert, client_key, use_ssl):
         self._obtain_hgw_backend_oauth_token()
         # self.backend_session = OAuth2SessionProxy(HGW_BACKEND_TOKEN_URL,
         #                                           HGW_BACKEND_OAUTH_CLIENT_ID,
@@ -98,13 +99,22 @@ class Dispatcher(object):
         logger.debug("Found {} sources: ".format(len(self.consumer_topics)))
         logger.debug("Sources ids are: {}".format(self.consumer_topics))
         logger.debug("broker_url: {}".format(broker_url))
-        self.consumer = KafkaConsumer(bootstrap_servers=broker_url,
-                                      security_protocol='SSL',
-                                      ssl_check_hostname=True,
-                                      ssl_cafile=ca_cert,
-                                      ssl_certfile=client_cert,
-                                      ssl_keyfile=client_key,
-                                      group_id='DISPATCHER')
+        if use_ssl:
+            consumer_params = {
+                'bootstrap_servers': broker_url,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': ca_cert,
+                'ssl_certfile': client_cert,
+                'ssl_keyfile': client_key,
+                'group_id': 'DISPATCHER'
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': broker_url,
+                'group_id': 'DISPATCHER'
+            }
+        self.consumer = KafkaConsumer(**consumer_params)
 
         subscriptions = []
         for source_id in self.consumer_topics:
@@ -272,6 +282,7 @@ if __name__ == '__main__':
     kafka_ca_cert = args.kafka_server or KAFKA_CA_CERT
     kafka_client_cert = args.kafka_server or KAFKA_CLIENT_CERT
     kafka_client_key = args.kafka_server or KAFKA_CLIENT_KEY
+    kafka_ssl = args.kafka_server or KAFKA_SSL
 
-    disp = Dispatcher(kafka_server, kafka_ca_cert, kafka_client_cert, kafka_client_key)
+    disp = Dispatcher(kafka_server, kafka_ca_cert, kafka_client_cert, kafka_client_key, kafka_ssl)
     disp.run()

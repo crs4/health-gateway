@@ -26,7 +26,7 @@ from rest_framework.viewsets import ViewSet
 
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend.models import Destination
-from hgw_frontend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_CRT, KAFKA_CLIENT_KEY
+from hgw_frontend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY, KAFKA_SSL
 
 DEFAULT_LIMIT = 5
 MAX_LIMIT = 10
@@ -47,13 +47,20 @@ class Messages(ViewSet):
 
     def _get_kafka_consumer(self, request):
         topic = request.auth.application.destination.destination_id
-        kc = KafkaConsumer(bootstrap_servers=KAFKA_BROKER,
-                           client_id=topic,
-                           security_protocol='SSL',
-                           ssl_check_hostname=True,
-                           ssl_cafile=KAFKA_CA_CERT,
-                           ssl_certfile=KAFKA_CLIENT_CRT,
-                           ssl_keyfile=KAFKA_CLIENT_KEY)
+        if KAFKA_SSL:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': KAFKA_CA_CERT,
+                'ssl_certfile': KAFKA_CLIENT_CERT,
+                'ssl_keyfile': KAFKA_CLIENT_KEY
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER
+            }
+        kc = KafkaConsumer(**consumer_params)
         tp = TopicPartition(topic, 0)
         kc.assign([tp])
         return kc, tp

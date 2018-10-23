@@ -9,6 +9,7 @@ django:
 
 kafka:
   uri: kafka:9093
+  ssl: true
   ca_cert: /container/client_certs/kafka.chain.cert.pem
   client_cert: /container/client_certs/cert.pem
   client_key: /container/client_certs/key.pem

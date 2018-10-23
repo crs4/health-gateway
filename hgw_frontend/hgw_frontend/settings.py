@@ -264,6 +264,7 @@ HGW_BACKEND_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'
+KAFKA_SSL = cfg['kafka']['ssl']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
-KAFKA_CLIENT_CRT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
+KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])

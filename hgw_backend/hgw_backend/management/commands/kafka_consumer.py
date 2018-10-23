@@ -30,12 +30,20 @@ class Command(BaseCommand):
     help = 'Launch a KafkaConsumer'
 
     def handle(self, *args, **options):
-        kc = KafkaConsumer(bootstrap_servers=settings.KAFKA_BROKER,
-                           security_protocol='SSL',
-                           ssl_check_hostname=True,
-                           ssl_cafile=settings.KAFKA_CA_CERT,
-                           ssl_certfile=settings.KAFKA_CLIENT_CERT,
-                           ssl_keyfile=settings.KAFKA_CLIENT_KEY)
+        if settings.KAFKA_SSL:
+            consumer_params = {
+                'bootstrap_servers': settings.KAFKA_BROKER,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': settings.KAFKA_CA_CERT,
+                'ssl_certfile': settings.KAFKA_CLIENT_CERT,
+                'ssl_keyfile': settings.KAFKA_CLIENT_KEY
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': settings.KAFKA_BROKER
+            }
+        kc = KafkaConsumer(**consumer_params)
 
         kc.assign([TopicPartition(settings.KAFKA_TOPIC, 0)])
         kc.seek_to_beginning(TopicPartition(settings.KAFKA_TOPIC, 0))

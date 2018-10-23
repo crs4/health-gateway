@@ -28,7 +28,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT
+from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT, KAFKA_SSL
 from hgw_common.cipher import is_encrypted
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
@@ -99,12 +99,20 @@ class Messages(APIView):
 
     @staticmethod
     def _get_kafka_producer():
-        kp = KafkaProducer(bootstrap_servers=KAFKA_BROKER,
-                           security_protocol='SSL',
-                           ssl_check_hostname=True,
-                           ssl_cafile=KAFKA_CA_CERT,
-                           ssl_certfile=KAFKA_CLIENT_CERT,
-                           ssl_keyfile=KAFKA_CLIENT_KEY)
+        if KAFKA_SSL:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': KAFKA_CA_CERT,
+                'ssl_certfile': KAFKA_CLIENT_CERT,
+                'ssl_keyfile': KAFKA_CLIENT_KEY
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER
+            }
+        kp = KafkaProducer(**consumer_params)
 
         return kp
 

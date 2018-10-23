@@ -70,7 +70,7 @@ class TestDispatcher(TestCase):
         """
         mocked_kafka_consumer().partitions_for_topic = MagicMock(return_value=None)
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 2)
 
     @patch('dispatcher.KafkaProducer')
@@ -85,7 +85,7 @@ class TestDispatcher(TestCase):
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
@@ -99,7 +99,7 @@ class TestDispatcher(TestCase):
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
@@ -114,7 +114,7 @@ class TestDispatcher(TestCase):
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
@@ -128,7 +128,7 @@ class TestDispatcher(TestCase):
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
@@ -143,7 +143,7 @@ class TestDispatcher(TestCase):
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
@@ -157,7 +157,7 @@ class TestDispatcher(TestCase):
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
         self.assertEqual(se.exception.code, 1)
 
     @patch('dispatcher.KafkaProducer')
@@ -195,7 +195,7 @@ class TestDispatcher(TestCase):
                 res.status_code = 200
             return res
 
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         with patch.object(OAuth2Session, 'fetch_token', return_value=token_res) as fetch_token, \
                 patch.object(OAuth2Session, 'get', get_url):
             # NOTE: the first fetch_token calls (one to the consent manager and the second to the
@@ -250,7 +250,7 @@ class TestDispatcher(TestCase):
                     }
             return res
 
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         with patch.object(OAuth2Session, 'fetch_token', return_value=token_res) as fetch_token, \
                 patch.object(OAuth2Session, 'get', get_url):
             # NOTE: the first fetch_token calls (one to the consent manager and the second to the
@@ -275,7 +275,7 @@ class TestDispatcher(TestCase):
         """
         mocked_kafka_consumer().partitions_for_topic = MagicMock(return_value=None)
         with self.assertRaises(SystemExit):
-            Dispatcher('kafka:9093', None, None, None)
+            Dispatcher('kafka:9093', None, None, None, True)
             sources_id = [s['source_id'] for s in SOURCES]
 
             mocked_kafka_consumer().partitions_for_topic.assert_has_calls([call(s) for s in sources_id])
@@ -291,7 +291,7 @@ class TestDispatcher(TestCase):
         Tests that the consumer is subscribed to the topic
         :return:
         """
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         sources_id = [s['source_id'] for s in SOURCES]
 
@@ -314,7 +314,7 @@ class TestDispatcher(TestCase):
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         for m in messages:
             mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], m.value, key=PROCESS_ID.encode('utf-8'))
@@ -335,9 +335,10 @@ class TestDispatcher(TestCase):
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         mocked_kafka_producer().send.assert_not_called()
+
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')
@@ -355,7 +356,7 @@ class TestDispatcher(TestCase):
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         mock_oauth2_session = MagicMock()
         mock_oauth2_session.get.side_effect = requests.exceptions.ConnectionError()
 
@@ -379,7 +380,7 @@ class TestDispatcher(TestCase):
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         mocked_kafka_producer().send.assert_not_called()
 
@@ -399,7 +400,7 @@ class TestDispatcher(TestCase):
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         mock_oauth2_session = MagicMock()
         mock_oauth2_session.get.side_effect = requests.exceptions.ConnectionError()
 
@@ -423,7 +424,7 @@ class TestDispatcher(TestCase):
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
-        d = Dispatcher('kafka:9093', None, None, None)
+        d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         mocked_kafka_producer().send.assert_not_called()
 

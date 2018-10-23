@@ -42,8 +42,8 @@ from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination
 from hgw_frontend.serializers import FlowRequestSerializer
 from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
-    KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CRT, KAFKA_CA_CERT, \
-    CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE
+    KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT, KAFKA_CA_CERT, \
+    CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE, KAFKA_SSL
 
 logger = logging.getLogger('hgw_frontend')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -261,12 +261,21 @@ def _confirm(request, consent_confirm_id):
 
     if consent['status'] == 'AC':
         logger.debug("Consent status is AC. Sending message to KAFKA")
-        kp = KafkaProducer(bootstrap_servers=KAFKA_BROKER,
-                           security_protocol='SSL',
-                           ssl_check_hostname=True,
-                           ssl_cafile=KAFKA_CA_CERT,
-                           ssl_certfile=KAFKA_CLIENT_CRT,
-                           ssl_keyfile=KAFKA_CLIENT_KEY)
+        if KAFKA_SSL:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': KAFKA_CA_CERT,
+                'ssl_certfile': KAFKA_CLIENT_CERT,
+                'ssl_keyfile': KAFKA_CLIENT_KEY
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER
+            }
+        kp = KafkaProducer(**consumer_params)
+
         destination = Destination.objects.get(destination_id=consent['destination']['id'])
         profile_ser = ProfileSerializer(consent_confirmation.flow_request.profile)
         channel = {
