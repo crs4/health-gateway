@@ -56,6 +56,13 @@ class Consent(models.Model):
     def save(self, *args, **kwargs):
         super(Consent, self).save(*args, **kwargs)
 
+    def __unicode__(self):
+        return 'Consent ID: {} - Status {}'.\
+            format(self.consent_id, self.status)
+
+    def __str__(self):
+        return self.__unicode__()
+
 
 def get_validity():
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)
@@ -72,6 +79,12 @@ class ConfirmationCode(models.Model):
 
 class ConsentManagerUser(AbstractUser):
     fiscalNumber = models.CharField(max_length=16, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.fiscalNumber
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 class Endpoint(models.Model):
