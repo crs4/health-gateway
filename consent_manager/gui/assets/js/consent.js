@@ -80,7 +80,7 @@ class ConfirmConsents extends React.Component {
                         <td className="stack-table-cell" data-title="Data Profile">
                             <Profile data={c.profile}/>
                         </td>
-                        <td className="stack-table-cell" data-title="Start Validity">
+                        <td className="stack-table-cell" data-title="Data Transfer Starting">
                             <DatePicker
                                 minDate={moment(c.start_validity)}
                                 maxDate={moment(c.expire_validity)}
@@ -88,7 +88,7 @@ class ConfirmConsents extends React.Component {
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'S')}
                             />
                         </td>
-                        <td className="stack-table-cell" data-title="End Validity">
+                        <td className="stack-table-cell" data-title="Data Transfer Ending">
                             <DatePicker
                                 minDate={moment(c.start_validity)}
                                 selected={moment(c.expire_validity)}
@@ -142,16 +142,16 @@ class ConfirmConsents extends React.Component {
                 <Button id='btn-confirm-consents'
                         color='primary'
                         onClick={this.toggle.bind(this)}
-                        disabled={!this.canSubmit()}>Confirm Consents</Button>
+                        disabled={!this.canSubmit()}>Accept Conditions for Selected Consent(s)</Button>
                 <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
-                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure</ModalHeader>
+                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure?</ModalHeader>
                     <ModalBody>
-                        Are you sure you want to authorize data transfer from the source to the selected
-                        destinations?
+                        Are you sure you want to authorize data transfer to the destination from the selected
+                        sources?
                     </ModalBody>
                     <ModalFooter>
                         <Button color="primary" id="btn-modal-confirm-consents"
-                                onClick={this.sendConfirmed.bind(this)}>Confirm</Button>{' '}
+                                onClick={this.sendConfirmed.bind(this)}>Authorize</Button>{' '}
                         <Button color="secondary" id="btn-modal-cancel-consents"
                                 onClick={this.toggle.bind(this)}>Cancel</Button>
                     </ModalFooter>
