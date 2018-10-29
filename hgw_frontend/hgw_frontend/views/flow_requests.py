@@ -206,6 +206,8 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
                                                confirmation_id=json_res['confirm_id'],
                                                destination_endpoint_callback_url=destination_endpoint_callback_url)
             confirm_ids.append(json_res['confirm_id'])
+        else:
+            logger.info('Consent not created. Response is: {}, {}'.format(consent.status_code, consent.content))
     if not confirm_ids:
         return confirm_ids, "All available consents already present"
     else:

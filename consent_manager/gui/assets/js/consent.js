@@ -121,9 +121,9 @@ class ConfirmConsents extends React.Component {
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile
                         </th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Validity
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Transfer Date
                         </th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Validity
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Date
                         </th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Legal notice
                         </th>
@@ -272,10 +272,10 @@ class ConsentsViewer extends React.Component {
                     <td className="stack-table-cell" data-title="Data Profile">
                         <Profile data={c.profile}/>
                     </td>
-                    <td className="stack-table-cell" data-title="Start Validity">
+                    <td className="stack-table-cell" data-title="Start Transfer Date">
                         {moment(c.start_validity).format('L')}
                     </td>
-                    <td className="stack-table-cell" data-title="End Validity">
+                    <td className="stack-table-cell" data-title="End Transfer Date">
                         {moment(c.expire_validity).format('L')}
                     </td>
                     <td className="stack-table-cell stack-table-cell-modify"
@@ -295,8 +295,8 @@ class ConsentsViewer extends React.Component {
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Status</th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Validity</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Validity</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Transfer Date</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Date</th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col"/>
                     </tr>
                     </thead>
