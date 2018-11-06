@@ -54,11 +54,11 @@ BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
 
-HOSTNAME = cfg['django']['hostname']
+ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
+HOSTNAME = ALLOWED_HOSTS[0]
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
-ALLOWED_HOSTS = [HOSTNAME]
 
 MAX_API_VERSION = 1
 
@@ -79,10 +79,10 @@ INSTALLED_APPS = [
     'drf_yasg'
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
-
-ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
+if 'port' in cfg['django']:
+    ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
+else:
+    ROOT_URL = 'https://{}'.format(HOSTNAME)
 
 ROOT_URLCONF = 'hgw_frontend.urls'
 
@@ -110,9 +110,10 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_PARSER_CLASSES': ('rest_framework.parsers.JSONParser',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
-    'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION + 1)]
+    'ALLOWED_VERSIONS': ['v{}'.format(version) for version in range(1, MAX_API_VERSION + 1)],
+    'EXCEPTION_HANDLER': 'hgw_common.utils.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'generic_errors',
 }
-
 
 TEMPLATES = [
     {
@@ -144,28 +145,42 @@ AUTH_PASSWORD_VALIDATORS = []
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'hgw_frontend.HGWFrontendUser'
+USER_ID_FIELD = 'fiscalNumber'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (
+    ('hgw_frontend', os.path.abspath(os.path.join(BASE_DIR, '../static/'))),
+)
 LOGIN_URL = '/saml2/login/'
 
 SESSION_COOKIE_NAME = 'hgw_frontend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # SAML CONFIGURATIONS
+SAML_SERVICE = cfg['saml']['service']
 SAML_SP_NAME = cfg['saml']['sp_name']
+SAML_IDP_URL = cfg['saml']['idp_url']
 SAML_SP_KEY_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_key'])
 SAML_SP_CRT_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_cert'])
-SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
-SAML_ATTRIBUTE_MAPPING = {
-    'spidCode': ('username',),
-    'fiscalNumber': ('fiscalNumber',)
-}
+SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH, SAML_SERVICE,
+                              SAML_IDP_URL)
+if SAML_SERVICE == 'spid':
+    SAML_ATTRIBUTE_MAPPING = {
+       'spidCode': ('username',),
+       'fiscalNumber': ('fiscalNumber',)
+    }
+else:
+    SAML_ATTRIBUTE_MAPPING = {
+        'uid': ('username', ),
+        'fiscalNumber': ('fiscalNumber', )
+    }
+
 SAML_AUTHN_CUSTOM_ARGS = {
     'attribute_consuming_service_index': '1'
 }
@@ -178,6 +193,9 @@ FLOW_REQUESTS_SCOPES = {
 }
 MESSAGES_SCOPES = {
     'messages:read': 'Read messages for a Destination'
+}
+SOURCES_SCOPES = {
+    'sources:read': 'Read sources'
 }
 SCOPES = {**FLOW_REQUESTS_SCOPES, **MESSAGES_SCOPES}
 
@@ -214,7 +232,7 @@ OAUTH2_PROVIDER = {
     'DEFAULT_SCOPES': DEFAULT_SCOPES
 }
 
-REQUEST_VALIDITY_SECONDS = 60
+REQUEST_VALIDITY_SECONDS = cfg['django']['request_validity_seconds']
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
@@ -237,11 +255,16 @@ SWAGGER_SETTINGS = {
 CONSENT_MANAGER_URI = cfg['consent_manager']['uri']
 CONSENT_MANAGER_CLIENT_ID = cfg['consent_manager']['client_id']
 CONSENT_MANAGER_CLIENT_SECRET = cfg['consent_manager']['client_secret']
+CONSENT_MANAGER_CONFIRMATION_PAGE = '{}/confirm_consents/'.format(CONSENT_MANAGER_URI)
+
+# SERVICES CONFIGURATION
+HGW_BACKEND_URI = cfg['hgw_backend']['uri']
+HGW_BACKEND_CLIENT_ID = cfg['hgw_backend']['client_id']
+HGW_BACKEND_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'
+KAFKA_SSL = cfg['kafka']['ssl']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
-KAFKA_CLIENT_CRT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
+KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
-
-HGW_BACKEND_URI = cfg['hgw_backend']['uri']

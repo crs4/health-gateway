@@ -27,4 +27,4 @@ class ProtocolVersion(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request):
-        return Response([i for i in xrange(1, MAX_API_VERSION + 1)])
+        return Response([i for i in range(1, MAX_API_VERSION + 1)])

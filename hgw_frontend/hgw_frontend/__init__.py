@@ -30,5 +30,9 @@ ERRORS_MESSAGE = {
     'INVALID_CONSENT_STATUS': 'Invalid consent status',
     'UNKNOWN_CONSENT': 'Unknown consent',
     'INVALID_DATA': 'Invalid parameters',
-    'MISSING_PERSON_ID': 'Missing person id'
+    'MISSING_PERSON_ID': 'Missing person id',
+    'INVALID_CONSENT_CLIENT': 'invalid_consent_client',
+    'CONSENT_CONNECTION_ERROR': 'consent_connection_error',
+    'INVALID_BACKEND_CLIENT': 'invalid_backend_client',
+    'BACKEND_CONNECTION_ERROR': 'backend_connection_error'
 }

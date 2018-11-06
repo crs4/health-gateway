@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+
+<md:EntityDescriptor xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+                     xmlns:ns1="urn:oasis:names:tc:SAML:metadata:algsupport"
+                     entityID="https://consentmanager:8002/saml2/metadata/" validUntil="2019-05-08T13:50:35Z">
+    <md:Extensions>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#md5"/>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#ripemd160"/>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha224"/>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#sha384"/>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/>
+        <ns1:SigningMethod Algorithm="http,//www.w3.org/2000/09/xmldsig#dsa-sha1"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2009/xmldsig11#dsa-sha256"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-md5"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-ripemd160"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha224"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"/>
+        <ns1:SigningMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"/>
+    </md:Extensions>
+    <md:SPSSODescriptor AuthnRequestsSigned="true" WantAssertionsSigned="true"
+                        protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>MIIF8TCCA9mgAwIBAgICEAcwDQYJKoZIhvcNAQELBQAwgZsxCzAJBgNVBAYTAklU
+                        MQ4wDAYDVQQIDAVJdGFseTEnMCUGA1UECgweRmFrZSBDZXJ0aWZpY2F0aW9uIElu
+                        c3RpdHV0aW9uMSUwIwYDVQQLDBxGYWtlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5
+                        MSwwKgYDVQQDDCNGYWtlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5IFdlYiBDQTAe
+                        Fw0xODAzMjEwOTQ0MjVaFw0xOTAzMjEwOTQ0MjVaMFwxCzAJBgNVBAYTAklUMQ4w
+                        DAYDVQQIDAVJdGFseTERMA8GA1UEBwwIQ2FnbGlhcmkxDDAKBgNVBAoMA0hHVzEc
+                        MBoGA1UEAwwTY29uc2VudG1hbmFnZXJfc3BpZDCCASIwDQYJKoZIhvcNAQEBBQAD
+                        ggEPADCCAQoCggEBAN4jdwlYiMgoyRM+RnLmkMe0yJ80KLjyJC9vdckhCoD70CXm
+                        y4SlDRV3oqbd9xsAeQBO4ctYBYfe/pU2D1YSRotCmpeHoHXHB+bI5mc+0RP1RjyV
+                        WzV4uGE+EydMKn+cHnb9+JNZkAYxmGrD9k1MovyqTYyLUQMAzyylFeOjG1RLIcmQ
+                        tuf1ltapvbeBexRzyISCOF4zjGzrMCkEEU3NKdh0nMpXWzI+GRYMvzDR7Xb5Do0r
+                        JI1FEK2dZpEA8bWdp0rYmDGSIPSBMYuhFxbdrXNObQkERq4zx2hYUQt1KiIFq+U1
+                        qjxn+pKqVBtYuw74xlV2xwLqabCqg82kojC+1dECAwEAAaOCAXswggF3MAkGA1Ud
+                        EwQCMAAwEQYJYIZIAYb4QgEBBAQDAgZAMDMGCWCGSAGG+EIBDQQmFiRPcGVuU1NM
+                        IEdlbmVyYXRlZCBTZXJ2ZXIgQ2VydGlmaWNhdGUwHQYDVR0OBBYEFHbXWKaJwZrB
+                        Adir2DgZf1dGHW02MIHdBgNVHSMEgdUwgdKAFPyAzVrRxAp3jPeHVngYPmDzxv5a
+                        oYG1pIGyMIGvMQswCQYDVQQGEwJJVDEOMAwGA1UECAwFSXRhbHkxETAPBgNVBAcM
+                        CENhZ2xpYXJpMScwJQYDVQQKDB5GYWtlIENlcnRpZmljYXRpb24gSW5zdGl0dXRp
+                        b24xJTAjBgNVBAsMHEZha2UgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxLTArBgNV
+                        BAMMJEZha2UgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgUm9vdCBDQYICEAAwDgYD
+                        VR0PAQH/BAQDAgWgMBMGA1UdJQQMMAoGCCsGAQUFBwMBMA0GCSqGSIb3DQEBCwUA
+                        A4ICAQBfB2xyYELH0yP3XSNUJRBvibxlk2Am1vqeil5RBf4GL7doOCHYO0g53aiB
+                        xQFVj7AXOwdv5Db83PRaPkwllT+Eaqd7JkikifZn+D6rWFdli5w+rX+LR0ZLSDg8
+                        cYMb0F7M2ShnxEpUxP/lDbOQPMM+mr2CipskcqrHxfcnquPIWBigfkjTrGtJWauh
+                        AddD8BcYOWA6cExzwXlC4p5lGTcv+OuIw9+l4QQuYnBx03GwmloArKSTTa2lNGfq
+                        4W0198rmDpUvZuSghR/4PLzWQksdsjy2Qt51iXpgklrrsob54GxjEZCjqjwmT5EW
+                        ad1CZdgxLL4tEveKHVbhxYR91OIHSZbch14Vj+HRL5U7/Rd1Fxj9z8RM8FLQojj0
+                        r7wl8hZolWsFMSH7BcchxqMllBJswfloMq7k72GWzPhDBtx9dHcxePM9uLjf0Gap
+                        8UGTYJMXLhbbxEwPXyGR6JeK8mCWxV7/X4vV0KPzEO8JQurYVNgsUt7QwF77diqF
+                        7mYcsRopCvkNUJU//tWT6QqyrYDXTXwQrgCGxRPBF92xTo4KjbDd9+DMSpkQTbgr
+                        1T6Rnt+BxdReaHi1hNk9jp9FkHE5B2zvjigugPEjWFGuSPrANdiioFp9hMP64TPy
+                        WQpfICALFvThc1Nm5iR1gfehc3MoqXjX69gurXqOywaZ0R31QQ==
+                    </ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                Location="https://consentmanager:8002/saml2/ls/"/>
+        <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                Location="https://consentmanager:8002/saml2/ls/post/"/>
+        <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                     Location="https://consentmanager:8002/saml2/acs/" index="1"/>
+        <md:AttributeConsumingService index="1">
+            <md:ServiceName xml:lang="en"/>
+            <md:RequestedAttribute FriendlyName="uid" Name="urn:oid:0.9.2342.19200300.100.1.1"
+                                   NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" isRequired="true"/>
+            <md:RequestedAttribute FriendlyName="fiscalNumber" Name="urn:mace:dir:attribute-def:fiscalNumber"
+                                   NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" isRequired="true"/>
+        </md:AttributeConsumingService>
+    </md:SPSSODescriptor>
+</md:EntityDescriptor>

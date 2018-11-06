@@ -1,9 +1,0 @@
-#!/usr/bin/expect -f
-
-spawn "/usr/local/bin/launch_python_development.sh"
-
-expect "Enter PEM pass phrase:"
-send -- "hgwpwd\r"
-send -- "\r"
-
-# interact

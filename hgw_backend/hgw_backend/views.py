@@ -15,6 +15,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from _ssl import SSLError
+
+from rest_framework.viewsets import ViewSet
 from traceback import format_exc
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -26,8 +28,10 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT
+from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT, KAFKA_SSL
 from hgw_common.cipher import is_encrypted
+from hgw_common.models import Profile
+from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
 from .models import Source
 from .serializers import SourceSerializer
@@ -39,7 +43,9 @@ def home(request):
     return HttpResponse('<a href="/admin/">Click here to access admin page</a>')
 
 
-class SourcesList(APIView):
+class Sources(ViewSet):
+    permission_classes = (TokenHasResourceDetailedScope,)
+    required_scopes = ['sources']
 
     def get_object(self, source_id):
         try:
@@ -47,14 +53,43 @@ class SourcesList(APIView):
         except Source.DoesNotExist:
             raise Http404
 
-    def get(self, request, source_id=None, format=None):
-        if source_id:
-            source = self.get_object(source_id)
-            serializer = SourceSerializer(source)
-        else:
-            sources = Source.objects.all()
-            serializer = SourceSerializer(sources, many=True)
+    def list(self, request):
+        sources = Source.objects.all()
+        serializer = SourceSerializer(sources, many=True)
         return Response(serializer.data, content_type='application/json')
+
+    def retrieve(self, request, source_id):
+        source = self.get_object(source_id)
+        serializer = SourceSerializer(source)
+        return Response(serializer.data, content_type='application/json')
+
+
+class Profiles(ViewSet):
+    permission_classes = (TokenHasResourceDetailedScope,)
+    required_scopes = ['sources']
+
+    def get_object(self, source_id):
+        try:
+            return Profile.objects.get(source_id=source_id)
+        except Source.DoesNotExist:
+            raise Http404
+
+    def list(self, request):
+        profiles = Profile.objects.all()
+        profiles_ser = ProfileSerializer(profiles, many=True)
+        profiles_data = profiles_ser.data
+        for i, p in enumerate(profiles):
+            sources = Source.objects.filter(profile=p)
+            source_serializer = SourceSerializer(sources, many=True)
+            profiles_data[i]['sources'] = [{'source_id': s['source_id'], 'name': s['name']}
+                                           for s in source_serializer.data]
+
+        return Response(profiles_data, content_type='application/json')
+    #
+    # def retrieve(self, request, source_id):
+    #     source = self.get_object(source_id)
+    #     serializer = SourceSerializer(source)
+    #     return Response(serializer.data, content_type='application/json')
 
 
 class Messages(APIView):
@@ -64,12 +99,20 @@ class Messages(APIView):
 
     @staticmethod
     def _get_kafka_producer():
-        kp = KafkaProducer(bootstrap_servers=KAFKA_BROKER,
-                           security_protocol='SSL',
-                           ssl_check_hostname=True,
-                           ssl_cafile=KAFKA_CA_CERT,
-                           ssl_certfile=KAFKA_CLIENT_CERT,
-                           ssl_keyfile=KAFKA_CLIENT_KEY)
+        if KAFKA_SSL:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': KAFKA_CA_CERT,
+                'ssl_certfile': KAFKA_CLIENT_CERT,
+                'ssl_keyfile': KAFKA_CLIENT_KEY
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': KAFKA_BROKER
+            }
+        kp = KafkaProducer(**consumer_params)
 
         return kp
 

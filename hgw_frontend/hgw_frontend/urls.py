@@ -17,35 +17,22 @@
 
 
 from django.conf.urls import url, include
+from django.conf.urls.static import static
 from django.contrib import admin
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
-from rest_framework import routers, permissions
+from rest_framework import routers
 
 from hgw_common.settings import VERSION_REGEX
-from .views import view_profile, confirm_request, consents_confirmed, FlowRequestView, Messages
+from hgw_frontend import settings
+from hgw_frontend.views import Profiles
+from .views import view_profile, confirm_request, consents_confirmed, FlowRequestView, Messages, Sources
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
 
-schema_view = get_schema_view(
-   openapi.Info(
-      title='HGW Frontend API',
-      default_version='v1',
-      description='REST API of the Health Gateway Frontend',
-      contact=openapi.Contact(email="vittorio.meloni@crs4.it"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
-)
-
 
 urlpatterns = [
-    url(r'^$', view_profile, name='home'),
-    url(r'^admin/', admin.site.urls),
+    url(r'^', admin.site.urls),
     url(r'^saml2/', include('djangosaml2.urls')),
-    url(r'^swagger(?P<format>.json|.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
-    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-ui'),
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^{}/flow_requests/confirm/$'.format(VERSION_REGEX), confirm_request),
@@ -60,4 +47,7 @@ urlpatterns = [
     url(r'^{}/messages/$'.format(VERSION_REGEX), Messages.as_view({'get': 'list'})),
     url(r'^{}/messages/info/$'.format(VERSION_REGEX), Messages.as_view({'get': 'info'})),
     url(r'^{}/messages/(?P<message_id>\d+)/?$'.format(VERSION_REGEX), Messages.as_view({'get': 'retrieve'})),
-]
+    url(r'^{}/sources/$'.format(VERSION_REGEX), Sources.as_view({'get': 'list'})),
+    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), Sources.as_view({'get': 'retrieve'})),
+    url(r'^{}/profiles/$'.format(VERSION_REGEX), Profiles.as_view({'get': 'list'})),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

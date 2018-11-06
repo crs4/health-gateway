@@ -20,7 +20,7 @@ import time
 
 import cgi
 
-from hgw_common.utils.test import MockRequestHandler
+from hgw_common.utils.mocks import MockRequestHandler
 
 
 class MockSourceEndpointHandler(MockRequestHandler):

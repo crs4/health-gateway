@@ -2,6 +2,7 @@ django:
   secret_key: 2l*pdnd)r!je2*#blenx17ivei9^50qom)eh8&h%o-lkibinle
   hostname: source-endpoint-mockup
   port: 8004
+  timezone: Europe/Rome
   database:
     name: ../source-endpoint-mockup.sqlite3
 

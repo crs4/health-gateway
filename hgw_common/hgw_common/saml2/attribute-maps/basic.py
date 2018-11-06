@@ -16,7 +16,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-
 MAP = {
     "identifier": "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
     "fro": {
@@ -82,6 +81,7 @@ MAP = {
         'urn:mace:dir:attribute-def:favouriteDrink': 'favouriteDrink',
         'urn:mace:dir:attribute-def:fax': 'fax',
         'urn:mace:dir:attribute-def:federationFeideSchemaVersion': 'federationFeideSchemaVersion',
+        'urn:mace:dir:attribute-def:fiscalNumber': 'fiscalNumber',
         'urn:mace:dir:attribute-def:friendlyCountryName': 'friendlyCountryName',
         'urn:mace:dir:attribute-def:generationQualifier': 'generationQualifier',
         'urn:mace:dir:attribute-def:givenName': 'givenName',
@@ -154,6 +154,7 @@ MAP = {
         'urn:mace:dir:attribute-def:serialNumber': 'serialNumber',
         'urn:mace:dir:attribute-def:singleLevelQuality': 'singleLevelQuality',
         'urn:mace:dir:attribute-def:sn': 'sn',
+        'urn:mace:dir:attribute-def:spidCode': 'spidCode',
         'urn:mace:dir:attribute-def:st': 'st',
         'urn:mace:dir:attribute-def:stateOrProvinceName': 'stateOrProvinceName',
         'urn:mace:dir:attribute-def:street': 'street',
@@ -179,8 +180,6 @@ MAP = {
         'urn:mace:dir:attribute-def:userid': 'userid',
         'urn:mace:dir:attribute-def:x121Address': 'x121Address',
         'urn:mace:dir:attribute-def:x500UniqueIdentifier': 'x500UniqueIdentifier',
-        'fiscalNumber': 'fiscalNumber',
-        'spidCode': 'spidCode',
         },
     "to": {
         'aRecord': 'urn:mace:dir:attribute-def:aRecord',
@@ -245,6 +244,7 @@ MAP = {
         'favouriteDrink': 'urn:mace:dir:attribute-def:favouriteDrink',
         'fax': 'urn:mace:dir:attribute-def:fax',
         'federationFeideSchemaVersion': 'urn:mace:dir:attribute-def:federationFeideSchemaVersion',
+        'fiscalNumber': 'urn:mace:dir:attribute-def:fiscalNumber',
         'friendlyCountryName': 'urn:mace:dir:attribute-def:friendlyCountryName',
         'generationQualifier': 'urn:mace:dir:attribute-def:generationQualifier',
         'givenName': 'urn:mace:dir:attribute-def:givenName',
@@ -317,6 +317,7 @@ MAP = {
         'serialNumber': 'urn:mace:dir:attribute-def:serialNumber',
         'singleLevelQuality': 'urn:mace:dir:attribute-def:singleLevelQuality',
         'sn': 'urn:mace:dir:attribute-def:sn',
+        'spidCode': 'urn:mace:dir:attribute-def:spidCode',
         'st': 'urn:mace:dir:attribute-def:st',
         'stateOrProvinceName': 'urn:mace:dir:attribute-def:stateOrProvinceName',
         'street': 'urn:mace:dir:attribute-def:street',
@@ -342,7 +343,5 @@ MAP = {
         'userid': 'urn:mace:dir:attribute-def:userid',
         'x121Address': 'urn:mace:dir:attribute-def:x121Address',
         'x500UniqueIdentifier': 'urn:mace:dir:attribute-def:x500UniqueIdentifier',
-        'fiscalNumber': 'fiscalNumber',
-        'spidCode': 'spidCode',
     }
 }

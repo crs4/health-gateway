@@ -54,11 +54,12 @@ BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
 
-HOSTNAME = cfg['django']['hostname']
+ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
+HOSTNAME = ALLOWED_HOSTS[0]
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
-ALLOWED_HOSTS = [HOSTNAME]
+ALLOWED_HOSTS = ['*']
 
 MAX_API_VERSION = 1
 
@@ -73,16 +74,18 @@ INSTALLED_APPS = [
     'djangosaml2',
     'oauth2_provider',
     'rest_framework',
-    'consent_manager',
     'hgw_common',
     'corsheaders',
-    'drf_yasg'
+    'drf_yasg',
+    'webpack_loader',
+    'consent_manager',
+    'gui'
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
-
-ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
+if 'port' in cfg['django']:
+    ROOT_URL = 'https://{}:{}'.format(HOSTNAME, cfg['django']['port'])
+else:
+    ROOT_URL = 'https://{}'.format(HOSTNAME)
 
 ROOT_URLCONF = 'consent_manager.urls'
 
@@ -105,16 +108,20 @@ MIDDLEWARE = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',),
+    'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',
+                                       'rest_framework.authentication.SessionAuthentication'),
     'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
     'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'EXCEPTION_HANDLER': 'hgw_common.utils.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'generic_errors',
 }
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, '../templates')],
+        'DIRS': [os.path.join(BASE_DIR, '../templates'),
+                 os.path.join(BASE_DIR, '../gui/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,28 +148,53 @@ AUTH_PASSWORD_VALIDATORS = []
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'consent_manager.ConsentManagerUser'
-STATIC_ROOT = os.path.join(BASE_DIR, './static/')
+USER_ID_FIELD = 'fiscalNumber'
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
+STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
+STATICFILES_DIRS = (
+    ('gui', os.path.join(BASE_DIR, '../gui/assets/')),
+)
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': 'gui/bundles/',  # must end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, '../gui/webpack-stats.json'),
+        'POLL_INTERVAL': 0.1,
+        'TIMEOUT': None,
+        'IGNORE': ['.+\.hot-update.js', '.+\.map']
+    }
+}
 
 SESSION_COOKIE_NAME = 'consent_manager'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # SAML CONFIGURATIONS
+SAML_SERVICE = cfg['saml']['service']
 SAML_SP_NAME = cfg['saml']['sp_name']
+SAML_IDP_URL = cfg['saml']['idp_url']
 SAML_SP_KEY_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_key'])
 SAML_SP_CRT_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_cert'])
-SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH)
-SAML_ATTRIBUTE_MAPPING = {
-    'spidCode': ('username',),
-    'fiscalNumber': ('fiscalNumber',)
-}
+SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH, SAML_SERVICE,
+                              SAML_IDP_URL)
+if SAML_SERVICE == 'spid':
+    SAML_ATTRIBUTE_MAPPING = {
+       'spidCode': ('username',),
+       'fiscalNumber': ('fiscalNumber',)
+    }
+else:
+    SAML_ATTRIBUTE_MAPPING = {
+        'uid': ('username', ),
+        'fiscalNumber': ('fiscalNumber', )
+    }
+
 SAML_AUTHN_CUSTOM_ARGS = {
     'attribute_consuming_service_index': '1'
 }
@@ -198,7 +230,7 @@ OAUTH2_PROVIDER = {
     'DEFAULT_SCOPES': DEFAULT_SCOPES
 }
 
-REQUEST_VALIDITY_SECONDS = 60
+REQUEST_VALIDITY_SECONDS = 36000
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {

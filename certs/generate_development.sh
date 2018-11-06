@@ -21,3 +21,4 @@
 
 # Creates the hgwbackend client cert for the source_endpoint_mockup
 ./generate_web_certs.sh hgwbackend_client ca/web/certs/hgwbackend/source_endpoint_mockup_client true
+./generate_web_certs.sh tscns ca/web/certs/tscns/idp_server true

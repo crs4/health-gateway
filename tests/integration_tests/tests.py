@@ -67,12 +67,14 @@ class TestFlowRequest(unittest.TestCase):
             while not driver.current_url.startswith('https://consent'):
                 time.sleep(1)
 
-            driver.find_element_by_id('SOURCE_ENDPOINT_MOCKUP')
-            driver.find_element_by_id('SOURCE_ENDPOINT_MOCKUP').click()
-
-            confirm = driver.find_element_by_id('confirm')
-            confirm.click()
-            self.assertTrue(driver.find_element_by_id('operation-completed').text.startswith('The required operation has been completed'))
+            driver.find_element_by_name('confirm_list').click()
+            time.sleep(1)
+            confirm_btn = driver.find_element_by_id('btn-confirm-consents')
+            confirm_btn.click()
+            time.sleep(1)
+            driver.find_element_by_id('btn-modal-confirm-consents').click()
+            self.assertTrue(driver.find_element_by_id('operation-completed').
+                            text.startswith('The required operation has been completed'))
             close = driver.find_element_by_id('close')
             close.click()
             driver.switch_to.window(driver.window_handles[0])

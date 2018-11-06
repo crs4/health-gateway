@@ -1,0 +1,13 @@
+/* Show it is fixed to the top */
+body {
+  min-height: 75rem;
+  padding-top: 4.5rem;
+}
+
+.navbar-narrow {
+  padding: 0.5rem 1rem
+}
+
+.jumbotron {
+  padding: 2rem 2rem;
+}

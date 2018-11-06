@@ -1,0 +1,30 @@
+version: '3.0'
+services:
+  tscns:
+    build: ../../images/tscns
+    image: crs4/tscns
+    ports:
+      - 443:443
+    environment:
+      - TZ=CET
+      - DEVELOPMENT=true
+      - SERVER_NAME=tscns
+      - HGW_FRONTEND_ADDR=hgwfrontend:8000
+      - CONSENT_MANAGER_ADDR=consentmanager:8002
+    volumes:
+      - ../../../hgw_frontend/saml2/metadata.xml:/root/metadata/hgw-frontend-metadata.xml
+      - ../../../consent_manager/saml2/metadata.xml:/root/metadata/consent-manager-metadata.xml
+      - ../../../certs/ca/web/certs/tscns/idp_server.cert.pem:/root/certificates/idp_server.cert.pem
+      - ../../../certs/ca/web/certs/tscns/idp_server.key.pem:/root/certificates/idp_server.key.pem
+      - ../../../certs/ca/web/certs/ca/web.chain.cert.pem:/root/certificates/ca_certs/ca-development.crt
+      - ../../../certs/ca/web/certs/tscns/idp-backchannel.crt:/opt/shibboleth-idp/credentials/idp-backchannel.crt
+      - ../../../certs/ca/web/certs/tscns/idp-backchannel.p12:/opt/shibboleth-idp/credentials/idp-backchannel.p12
+      - ../../../certs/ca/web/certs/tscns/idp-signing.crt:/opt/shibboleth-idp/credentials/idp-signing.crt
+      - ../../../certs/ca/web/certs/tscns/idp-signing.key:/opt/shibboleth-idp/credentials/idp-signing.key
+      - ../../../certs/ca/web/certs/tscns/idp-encryption.crt:/opt/shibboleth-idp/credentials/idp-encryption.crt
+      - ../../../certs/ca/web/certs/tscns/idp-encryption.key:/opt/shibboleth-idp/credentials/idp-encryption.key
+    networks:
+      default:
+        aliases:
+          - tscns
+

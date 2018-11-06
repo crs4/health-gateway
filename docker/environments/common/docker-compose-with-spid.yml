@@ -1,8 +1,7 @@
 version: '3.0'
 services:
   spid-testenv-identityserver:
-    build: ../../images/common/spid_testenv_identityserver/
-    image: crs4/spid-testenv-identityserver
+    image: crs4/spid-testenv-identityserver:latest
     ports:
       - "9443:9443"
     extra_hosts:
@@ -13,8 +12,7 @@ services:
           - spid-testenv-identityserver
 
   spid-testenv-backoffice:
-    build: ../../images/common/spid_testenv_backoffice/
-    image: crs4/spid-testenv-backoffice
+    image: crs4/spid-testenv-backoffice:latest
     ports:
       - "8080:8080"
     environment:
@@ -28,20 +26,16 @@ services:
           - spid-testenv-backoffice
 
   hgw_frontend:
-    build:
-      context: ../../images/development/hgw_frontend
-      args:
-        HTTP_PORT: 8000
-    image: crs4/hgw_frontend:development
+    image: crs4/hgw_frontend:latest
     environment:
       - HTTP_PORT=8000
       - DJANGO_APP_NAME=hgw_frontend
     ports:
       - 8000:8000
     volumes:
-      - ../../../hgw_frontend/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ../../../hgw_frontend/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
+      - ./config_files/hgw_frontend_config.spid.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -55,11 +49,7 @@ services:
           - hgwfrontend
 
   hgw_backend:
-    build:
-      context: ../../images/development/hgw_backend
-      args:
-        HTTP_PORT: 8003
-    image: crs4/hgw_backend:development
+    image: crs4/hgw_backend:latest
     depends_on:
       - kafka
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
@@ -70,8 +60,8 @@ services:
     ports:
       - 8003:8003
     volumes:
-      - ../../../hgw_backend/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../hgw_backend/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_backend_config.yml:/etc/hgw_service/hgw_backend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
@@ -80,19 +70,15 @@ services:
       - ../../../certs/ca/kafka/certs/hgwbackend/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/hgwbackend/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
-      - ../../../certs/ca/web/certs/hgwbackend/source_endpoint_mockup_client.cert.pem:/container/service/media/source_endpoint_mockup_client.cert.pem
-      - ../../../certs/ca/web/certs/hgwbackend/source_endpoint_mockup_client.key.pem:/container/service/media/source_endpoint_mockup_client.key.pem
+      - ../../../certs/ca/web/certs/hgwbackend/source_endpoint_mockup_client.cert.pem:/container/devservice/media/source_endpoint_mockup_client.cert.pem
+      - ../../../certs/ca/web/certs/hgwbackend/source_endpoint_mockup_client.key.pem:/container/devservice/media/source_endpoint_mockup_client.key.pem
     networks:
       default:
         aliases:
           - hgwbackend
 
   consent_manager:
-    build:
-      context: ../../images/development/consent_manager
-      args:
-        HTTP_PORT: 8002
-    image: crs4/consent_manager:development
+    image: crs4/consent_manager:latest
     environment:
       - HTTP_PORT=8002
       - DJANGO_APP_NAME=consent_manager
@@ -100,9 +86,9 @@ services:
     ports:
       - 8002:8002
     volumes:
-      - ../../../consent_manager/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/consent_manager_config.yml:/etc/hgw_service/consent_manager_config.yml
+      - ../../../consent_manager/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
+      - ./config_files/consent_manager_config.spid.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -113,8 +99,7 @@ services:
           - consentmanager
 
   kafka:
-    build: ../../images/common/kafka
-    image: crs4/kafka
+    image: crs4/kafka:latest
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_PORT=9092
@@ -134,15 +119,18 @@ services:
           - kafka
 
   hgw_dispatcher:
-    build: ../../images/development/hgw_dispatcher
-    image: crs4/hgw_dispatcher:development
+    image: crs4/hgw_dispatcher:latest
     depends_on:
       - kafka
       - consent_manager
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
-      "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
+      - hgw_frontend
+      - hgw_backend
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "hgw_frontend:8000", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "consent_manager:8002", "--",
+                 "/custom_entrypoint/wait-for-it.sh", "hgw_backend:8003", "--", "/docker-entrypoint.sh"]
     volumes:
-      - ../../../hgw_dispatcher/:/container/service
+      - ../../../hgw_dispatcher/:/container/devservice
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

@@ -1,0 +1,3 @@
+TOMCAT8_USER=tomcat8
+TOMCAT8_GROUP=tomcat8
+JAVA_OPTS="-Djava.awt.headless=true -XX:+DisableExplicitGC -XX:+UseParallelOldGC -Xms256m -Xmx2g -Djava.security.egd=file:/dev/./urandom"

@@ -50,11 +50,11 @@ BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
 
-HOSTNAME = cfg['django']['hostname']
 
-DEBUG = True
+DEBUG = cfg['django']['debug']
 
-ALLOWED_HOSTS = [HOSTNAME]
+ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
+HOSTNAME = ALLOWED_HOSTS[0]
 
 MAX_API_VERSION = 1
 
@@ -72,8 +72,6 @@ INSTALLED_APPS = [
     'hgw_backend',
 ]
 
-if DEBUG is True:
-    INSTALLED_APPS.append('sslserver')
 
 AUTHENTICATION_BACKENDS = [
     'oauth2_provider.backends.OAuth2Backend',
@@ -129,12 +127,12 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../static/'))
+STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, '../media/'))
@@ -144,7 +142,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # OAUTH2 CONFIGURATIONS
 SCOPES = {
-    'messages:write': 'Write messages'
+    'messages:write': 'Write messages',
+    'source:read': 'Read Source data'
 }
 DEFAULT_SCOPES = SCOPES
 
@@ -183,6 +182,7 @@ REQUEST_VALIDITY_SECONDS = 60
 
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_TOPIC = 'control'
+KAFKA_SSL = cfg['kafka']['ssl']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])

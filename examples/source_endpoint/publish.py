@@ -67,26 +67,26 @@ class FHIRBasePublisher(BasePublisher):
         if resource_type != 'Observation':
             raise UnsupportedResource('{} is not supported'.format(resource_type))
 
-        person_id = data['subject']['reference'].split('/')[-1]
-        connectors = Connector.objects.filter(person_identifier=person_id)
-        print("Connector.objects.all().count()", Connector.objects.all().count())
+        connectors = Connector.objects.all()
         if connectors.count() < 1:
-            raise NoConnectorAvailable('No connector for person_id = {}'.format(person_id))
+            raise NoConnectorAvailable('No connector found')
+        print("Connector.objects.all().count()", Connector.objects.all().count())
 
         for connector in connectors:
-            if person_id == connector.person_identifier:
-                value = json.dumps(data)
-                if cipher:
-                    if connector.channel_id not in self.ciphers:
-                        self.ciphers[connector.channel_id] = Cipher(
-                            public_key=RSA.importKey(connector.dest_public_key)
-                        )
-                    value = self.ciphers[connector.channel_id].encrypt(value)
-                else:
-                    value = value.encode()
-                print('sending data to ', settings.SOURCE_ID)
-                print(len(value))
-                self.producer.send(settings.SOURCE_ID, key=connector.channel_id.encode(), value=value)
+            person_id = connector.person_identifier
+            data['subject']['reference'] = data['subject']['reference'].format(person_id=person_id)
+            value = json.dumps(data)
+            if cipher:
+                if connector.channel_id not in self.ciphers:
+                    self.ciphers[connector.channel_id] = Cipher(
+                        public_key=RSA.importKey(connector.dest_public_key)
+                    )
+                value = self.ciphers[connector.channel_id].encrypt(value)
+            else:
+                value = value.encode()
+            print('sending data to ', settings.SOURCE_ID)
+            print(len(value))
+            self.producer.send(settings.SOURCE_ID, key=connector.channel_id.encode(), value=value)
 
 
 if __name__ == '__main__':

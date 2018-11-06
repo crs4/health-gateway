@@ -31,11 +31,12 @@ from hgw_frontend.models import FlowRequest, Destination
 
 
 class FlowRequestSerializer(serializers.ModelSerializer):
-    profile = ProfileSerializer(many=False)
+    profile = ProfileSerializer(many=False, allow_null=True)
 
     def create(self, validated_data):
-        pr, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
-        validated_data['profile'] = pr
+        if validated_data['profile'] is not None:
+            pr, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
+            validated_data['profile'] = pr
         fr = FlowRequest.objects.create(**validated_data)
         return fr
 

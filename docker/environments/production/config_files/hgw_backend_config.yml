@@ -1,0 +1,14 @@
+django:
+  debug: true
+  secret_key: 5ed9#sef91*#bn+etd6ug*ty6)iysxmcnl%qv3c+i&-1ec1644
+  hostname: hgwbackend
+  port: 8003
+  timezone: Europe/Rome
+  database:
+    name: /container/service/hgw_backend_db.sqlite3
+
+kafka:
+  uri: kafka:9093
+  ca_cert: /container/client_certs/kafka.chain.cert.pem
+  client_cert: /container/client_certs/cert.pem
+  client_key: /container/client_certs/key.pem

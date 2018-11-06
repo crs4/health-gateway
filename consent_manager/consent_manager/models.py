@@ -24,7 +24,9 @@ from django.utils import timezone
 from oauth2_provider.models import AbstractApplication
 
 from consent_manager.settings import REQUEST_VALIDITY_SECONDS, DEFAULT_SCOPES
-from hgw_common.utils import generate_id
+from hgw_common.utils import generate_id, get_logger
+
+logger = get_logger('consent_manager')
 
 
 class Consent(models.Model):
@@ -54,8 +56,12 @@ class Consent(models.Model):
     def save(self, *args, **kwargs):
         super(Consent, self).save(*args, **kwargs)
 
-    # class Meta:
-    #     unique_together = ('source', 'destination', 'person_id', 'profile', 'status')
+    def __unicode__(self):
+        return 'Consent ID: {} - Status {}'.\
+            format(self.consent_id, self.status)
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 def get_validity():
@@ -73,6 +79,12 @@ class ConfirmationCode(models.Model):
 
 class ConsentManagerUser(AbstractUser):
     fiscalNumber = models.CharField(max_length=16, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.fiscalNumber
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 class Endpoint(models.Model):

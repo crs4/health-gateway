@@ -25,11 +25,14 @@ import sys
 
 import time
 
+import traceback
 import yaml
 from kafka import KafkaConsumer, TopicPartition, KafkaProducer
 from kafka.errors import KafkaError
 from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError, TokenExpiredError
 from requests_oauthlib import OAuth2Session
+
+# from hgw_common.models import OAuth2SessionProxy
 
 logger = logging.getLogger('dispatcher')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -73,27 +76,45 @@ HGW_FRONTEND_OAUTH_CLIENT_ID = cfg['hgw_frontend']['client_id']
 HGW_FRONTEND_OAUTH_CLIENT_SECRET = cfg['hgw_frontend']['client_secret']
 
 HGW_BACKEND_URI = cfg['hgw_backend']['uri']
+HGW_BACKEND_TOKEN_URL = "{}/oauth2/token/".format(cfg['hgw_backend']['uri'])
+HGW_BACKEND_OAUTH_CLIENT_ID = cfg['hgw_backend']['client_id']
+HGW_BACKEND_OAUTH_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 
 KAFKA_BROKER = cfg['kafka']['uri']
+KAFKA_SSL = cfg['kafka']['ssl']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
 
 class Dispatcher(object):
-    def __init__(self, broker_url, ca_cert, client_cert, client_key):
+    def __init__(self, broker_url, ca_cert, client_cert, client_key, use_ssl):
+        self._obtain_hgw_backend_oauth_token()
+        # self.backend_session = OAuth2SessionProxy(HGW_BACKEND_TOKEN_URL,
+        #                                           HGW_BACKEND_OAUTH_CLIENT_ID,
+        #                                           HGW_BACKEND_OAUTH_CLIENT_SECRET)
+
         logger.debug("Querying for sources")
         self.consumer_topics = self._get_sources()
         logger.debug("Found {} sources: ".format(len(self.consumer_topics)))
         logger.debug("Sources ids are: {}".format(self.consumer_topics))
         logger.debug("broker_url: {}".format(broker_url))
-        self.consumer = KafkaConsumer(bootstrap_servers=broker_url,
-                                      security_protocol='SSL',
-                                      ssl_check_hostname=True,
-                                      ssl_cafile=ca_cert,
-                                      ssl_certfile=client_cert,
-                                      ssl_keyfile=client_key,
-                                      group_id='DISPATCHER')
+        if use_ssl:
+            consumer_params = {
+                'bootstrap_servers': broker_url,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': ca_cert,
+                'ssl_certfile': client_cert,
+                'ssl_keyfile': client_key,
+                'group_id': 'DISPATCHER'
+            }
+        else:
+            consumer_params = {
+                'bootstrap_servers': broker_url,
+                'group_id': 'DISPATCHER'
+            }
+        self.consumer = KafkaConsumer(**consumer_params)
 
         subscriptions = []
         for source_id in self.consumer_topics:
@@ -110,25 +131,32 @@ class Dispatcher(object):
 
         logger.debug("Subscribed to {} source topics".format(len(subscriptions)))
 
-        self.producer = KafkaProducer(bootstrap_servers=broker_url,
-                                      security_protocol='SSL',
-                                      ssl_check_hostname=True,
-                                      ssl_cafile=ca_cert,
-                                      ssl_certfile=client_cert,
-                                      ssl_keyfile=client_key)
+        if use_ssl:
+            producer_params = {
+                'bootstrap_servers': broker_url,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': ca_cert,
+                'ssl_certfile': client_cert,
+                'ssl_keyfile': client_key
+            }
+        else:
+            producer_params = {
+                'bootstrap_servers': broker_url
+            }
+        self.producer = KafkaProducer(**producer_params)
         self._obtain_consent_oauth_token()
         self._obtain_hgw_frontend_oauth_token()
 
-    @staticmethod
-    def _get_sources(loop=True):
+    def _get_sources(self, loop=True):
         try:
-            res = requests.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+            res = self.hgw_backend_oauth_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
             return [d['source_id'] for d in res.json()]
         except Exception as ex:
             if loop:
                 logger.exception(ex)
                 time.sleep(2)
-                return Dispatcher._get_sources()
+                return self._get_sources()
             raise ex
 
     @staticmethod
@@ -141,8 +169,11 @@ class Dispatcher(object):
             res = oauth_session.fetch_token(token_url=token_url, client_id=client_id,
                                             client_secret=client_secret)
         except InvalidClientError:
+            logger.error("Cannot obtain the token from {}. Invalid client".format(url))
             return None
         except requests.exceptions.ConnectionError as e:
+            logger.error(traceback.format_exc())
+            logger.error("Cannot obtain the token from {}. Connection error".format(url))
             return None
 
         if 'access_token' in res:
@@ -151,6 +182,13 @@ class Dispatcher(object):
         else:
             logger.debug('Error obtaining token')
             return None
+
+    def _obtain_hgw_backend_oauth_token(self):
+        self.hgw_backend_oauth_session = self._obtain_oauth_token(HGW_BACKEND_URI,
+                                                                  HGW_BACKEND_OAUTH_CLIENT_ID,
+                                                                  HGW_BACKEND_OAUTH_CLIENT_SECRET)
+        if self.hgw_backend_oauth_session is None:
+            sys.exit(1)
 
     def _obtain_hgw_frontend_oauth_token(self):
         self.hgw_frontend_oauth_session = self._obtain_oauth_token(HGW_FRONTEND_URI,
@@ -228,9 +266,9 @@ class Dispatcher(object):
 
     def run(self):
         # partition = TopicPartition(self.consumer_topics[0], 0)
+        logger.debug("Starting to consume messages")
         for msg in self.consumer:
-            # logger.debug("Reading offset {}. Last offset is {}".format(msg.offset, self.consumer.highwater(partition)))
-            # logger.debug(self.consumer.assignment())
+            logger.debug("Read message: {}".format(msg.key))
             if msg.key:
                 channel_id = msg.key.decode('utf-8')
                 logger.debug('Received message from {} for channel {}'.format(msg.topic, channel_id))
@@ -252,6 +290,7 @@ if __name__ == '__main__':
     kafka_ca_cert = args.kafka_server or KAFKA_CA_CERT
     kafka_client_cert = args.kafka_server or KAFKA_CLIENT_CERT
     kafka_client_key = args.kafka_server or KAFKA_CLIENT_KEY
+    kafka_ssl = args.kafka_server or KAFKA_SSL
 
-    disp = Dispatcher(kafka_server, kafka_ca_cert, kafka_client_cert, kafka_client_key)
+    disp = Dispatcher(kafka_server, kafka_ca_cert, kafka_client_cert, kafka_client_key, kafka_ssl)
     disp.run()

@@ -109,6 +109,7 @@ MAP = {
         X500ATTR+'29': 'presentationAddress',
         EDUPERSON_OID+'3': 'eduPersonOrgDN',
         NOREDUPERSON_OID+'3': 'norEduPersonBirthDate',
+        'urn:mace:dir:attribute-def:fiscalNumber': 'fiscalNumber',
     },
     "to":{
         'roleOccupant': X500ATTR+'33',
@@ -206,5 +207,6 @@ MAP = {
         'sn': X500ATTR+'4',
         'cn': X500ATTR+'3',
         'domainComponent': UCL_DIR_PILOT+'25',
+        'fiscalNumber': 'urn:mace:dir:attribute-def:fiscalNumber',
     }
 }

@@ -2,11 +2,7 @@ version: '3.0'
 
 services:
   kafka_destination_mockup:
-    build:
-      context: ../../images/development/destination_mockup
-      args:
-        HTTP_PORT: 8001
-    image: crs4/destination_mockup:development
+    image: crs4/destination_mockup:latest
     depends_on:
       - kafka
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh", "kafka"]
@@ -20,17 +16,13 @@ services:
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../destination_mockup/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../destination_mockup/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
       - ../../../certs/:/container/certs/
 
   rest_destination_mockup:
-    build:
-      context: ../../images/development/destination_mockup
-      args:
-        HTTP_PORT: 8001
-    image: crs4/destination_mockup:development
+    image: crs4/destination_mockup:latest
     depends_on:
       - kafka
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh",
@@ -45,17 +37,16 @@ services:
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../examples/integration_rest_destination/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../examples/integration_rest_destination/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
       - ../../../certs/:/container/certs/
-      - ../../../destination_mockup/destination_mockup/:/container/service/destination_mockup/
-      - ../../../destination_mockup/templates/:/container/service/destination_mockup/templates
-      - ../../../destination_mockup/static/:/container/service/static
+      - ../../../destination_mockup/destination_mockup/:/container/devservice/destination_mockup/
+      - ../../../destination_mockup/templates/:/container/devservice/destination_mockup/templates
+      - ../../../destination_mockup/static/:/container/devservice/static
 
   source_endpoint_mockup:
-    build: ../../images/development/source_endpoint_mockup
-    image: crs4/source_endpoint_mockup:development
+    image: crs4/source_endpoint_mockup:latest
     ports:
       - 8004:8004
     environment:
@@ -66,8 +57,8 @@ services:
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../examples/source_endpoint/:/container/service
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../examples/source_endpoint/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ../../../certs/ca/web/certs/source-endpoint-mockup/:/container/web_certs/
       - ../../../certs/:/container/certs/
     networks:
@@ -77,13 +68,9 @@ services:
 
   hgw_frontend:
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "spid-testenv-identityserver:9443", "--", "/docker-entrypoint.sh"]
-    volumes:
-      - ../../../tests/integration_tests/fixtures/hgw_frontend/:/container/fixtures
 
   hgw_backend:
-    entrypoint: ["/docker-entrypoint.sh"]
-    volumes:
-      - ../../../tests/integration_tests/fixtures/hgw_backend/:/container/fixtures
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
 
   kafka:
     environment:

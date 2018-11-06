@@ -43,10 +43,17 @@ class FlowRequest(models.Model):
     process_id = models.CharField(max_length=32, blank=False)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False, default=PENDING)
     person_id = models.CharField(max_length=20, blank=True, null=True)
-    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE)
+    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=True)
     destination = models.ForeignKey('Destination')
     start_validity = models.DateTimeField(null=False)
     expire_validity = models.DateTimeField(null=False)
+
+    def __unicode__(self):
+        return 'Destination: {} - Process ID {} - Status: {}'.\
+            format(self.destination, self.process_id, self.status)
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 def get_validity():
@@ -65,6 +72,13 @@ class ConfirmationCode(models.Model):
     def check_validity(self):
         return timezone.now() < self.validity
 
+    def __unicode__(self):
+        return 'Code {} - Validity: {}'.\
+            format(self.code, self.validity)
+
+    def __str__(self):
+        return self.__unicode__()
+
 
 class ConsentConfirmation(models.Model):
     flow_request = models.ForeignKey('FlowRequest', on_delete=models.CASCADE)
@@ -72,9 +86,22 @@ class ConsentConfirmation(models.Model):
     confirmation_id = models.CharField(max_length=32, blank=False, null=False)
     destination_endpoint_callback_url = models.CharField(max_length=100, blank=False, null=False)
 
+    def __unicode__(self):
+        return 'Consent {} - Confirmation: {}'.\
+            format(self.flow_request, self.consent_id, self.confirmation_id)
+
+    def __str__(self):
+        return self.__unicode__()
+
 
 class HGWFrontendUser(AbstractUser):
     fiscalNumber = models.CharField(max_length=16, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.fiscalNumber
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 class Destination(models.Model):
@@ -114,3 +141,9 @@ class RESTClient(AbstractApplication):
 
     def has_scope(self, scope):
         return scope in self.scopes
+
+    def __unicode__(self):
+        return 'Destination: {}'.format(self.destination)
+
+    def __str__(self):
+        return self.__unicode__()

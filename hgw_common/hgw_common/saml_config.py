@@ -25,17 +25,57 @@ from os import path
 from saml2 import saml
 import saml2
 
-IDP_META_PATH = path.join(path.dirname(__file__), './saml2/idp_metadata.xml')
+SAML_SERVICE_SPID = 'spid'
+SAML_SERVICE_TS_CNS = 'tscns'
+
+IDP_META_PATH = {
+    SAML_SERVICE_SPID: path.join(path.dirname(__file__), './saml2/spid_idp_metadata.xml'),
+}
+
+REQ_ATTRIBUTES = {
+    SAML_SERVICE_SPID: [{
+        'name': 'spidCode',
+        'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
+    }, {
+        'name': 'fiscalNumber',
+        'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
+    }],
+    SAML_SERVICE_TS_CNS: [{
+        'name': 'uid',
+        'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
+    }, {
+        'name': 'fiscalNumber',
+        'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
+    }]
+}
+
 ATTRIB_MAP_DIR_PATH = path.join(path.dirname(__file__), './saml2/attribute-maps')
 
 
-def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
+def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file, saml_service, idp_url):
+    assert saml_service in (SAML_SERVICE_SPID, SAML_SERVICE_TS_CNS)
+
+    if saml_service == SAML_SERVICE_SPID:
+        metadata = {
+            'local': [IDP_META_PATH[SAML_SERVICE_SPID]],
+        }
+    else:
+        metadata = {
+            'remote': [
+                {
+                    'url': idp_url
+                }
+            ]
+        }
+
     return {
+
         # full path to the xmlsec1 binary programm
         'xmlsec_binary': '/usr/bin/xmlsec1',
 
         # your entity id, usually your subdomain plus the url to the metadata view
         'entityid': urljoin(root_url, '/saml2/metadata/'),
+        'allow_unknown_attributes': True,
 
         # directory with attribute mapping
         'attribute_map_dir': ATTRIB_MAP_DIR_PATH,
@@ -43,6 +83,7 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
         'service': {
             # we are just a lonely SP
             'sp': {
+
                 # fixme!
                 'allow_unsolicited': True,
                 'logout_requests_signed': True,
@@ -50,14 +91,8 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
                 'want_response_signed': True,
                 'name': sp_name,
                 'name_id_format': saml.NAMEID_FORMAT_TRANSIENT,
-                'requested_attributes': [{
-                    'name': 'spidCode',
-                    'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
-                }, {
-                    'name': 'fiscalNumber',
-                    'name_format': 'urn:oasis:names:tc:SAML:2.0:attrname-format:basic'
-                }],
-                'required_attributes': ['spidCode', 'fiscalNumber'],
+                'requested_attributes': REQ_ATTRIBUTES[saml_service],
+                'required_attributes': [attr['name'] for attr in REQ_ATTRIBUTES[saml_service]],
                 'endpoints': {
                     # url and binding to the assetion consumer service view
                     # do not change the binding or service name
@@ -72,30 +107,10 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file):
                     ],
                 },
 
-            },
-            # 'idp': {
-            #     # we do not need a WAYF service since there is
-            #     # only an IdP defined here. This IdP should be
-            #     # present in our metadata
-            #     'sign_assertion': False,
-            #     'sign_response': False,
-            #     # the keys of this dictionary are entity ids
-            #     'https://spid-testenv-identityserver:9443': {
-            #         'single_sign_on_service': {
-            #             saml2.BINDING_HTTP_REDIRECT: 'https://spid-testenv-identityserver:9443/samlsso',
-            #             saml2.BINDING_HTTP_POST: 'https://spid-testenv-identityserver:9443/samlsso',
-            #         },
-            #         'single_logout_service': {
-            #             saml2.BINDING_HTTP_REDIRECT: 'https://spid-testenv-identityserver:9443/samlsso',
-            #             saml2.BINDING_HTTP_POST: 'https://spid-testenv-identityserver:9443/samlsso',
-            #         },
-            #     },
-            # },
+            }
         },
         # where the remote metadata is stored
-        'metadata': {
-            'local': [IDP_META_PATH],
-        },
+        'metadata': metadata,
         # set to 1 to output debugging information
         'debug': 1,
         'timeslack': 5000,

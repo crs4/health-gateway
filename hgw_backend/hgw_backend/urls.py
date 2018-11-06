@@ -17,19 +17,21 @@
 
 
 from django.conf.urls import url, include
+from django.conf.urls.static import static
 from django.contrib import admin
 
-from hgw_backend import views
+from hgw_backend import views, settings
 from hgw_common.settings import VERSION_REGEX
 
 admin.autodiscover()
 
 urlpatterns = [
-    url(r'^$', views.home),
-    url(r'^admin/', admin.site.urls),
+    url(r'^', admin.site.urls),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    url(r'^{}/sources/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
-    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), views.SourcesList.as_view()),
+    url(r'^{}/sources/$'.format(VERSION_REGEX), views.Sources.as_view({'get': 'list'})),
+    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), views.Sources.as_view({'get': 'retrieve'})),
+    url(r'^{}/profiles/$'.format(VERSION_REGEX), views.Profiles.as_view({'get': 'list'})),
     url(r'^{}/messages/$'.format(VERSION_REGEX), views.Messages.as_view()),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+

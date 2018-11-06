@@ -15,23 +15,20 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import copy
-import re
-import time
-from datetime import datetime
-
 import requests
-from requests.exceptions import ConnectionError
+from datetime import datetime
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import URLValidator, _lazy_re_compile
 from django.db import models
-from django.forms import URLField as URLFormField
 from django.utils.crypto import get_random_string
 from oauth2_provider.models import AbstractApplication
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError, InvalidClientError, MissingTokenError
+from requests.auth import HTTPBasicAuth
+from requests.exceptions import ConnectionError
 from requests_oauthlib import OAuth2Session
 
+from hgw_backend.fields import HostnameURLField
 from hgw_common.utils import get_logger
 
 logger = get_logger('hgw_backend')
@@ -41,54 +38,16 @@ def get_source_id():
     return get_random_string(32)
 
 
-class CustomURLValidator(URLValidator):
-    """
-    Custom URL Validator that support the presence of only the hostname (e.g.: "https://hostname/" is a valid value)
-    """
-    tld_re = (
-            r'(\.'  # dot
-            r'(?!-)'  # can't start with a dash
-            r'(?:[a-z' + URLValidator.ul + '-]{2,63}'  # domain label
-                                           r'|xn--[a-z0-9]{1,59})'  # or punycode label
-                                           r'(?<!-)'  # can't end with a dash
-                                           r'\.?)*'  # may have a trailing dot
-    )
-    host_re = '(' + URLValidator.hostname_re + URLValidator.domain_re + tld_re + '|localhost)'
-
-    regex = _lazy_re_compile(
-        r'^(?:[a-z0-9\.\-\+]*)://'  # scheme is validated separately
-        r'(?:\S+(?::\S*)?@)?'  # user:pass authentication
-        r'(?:' + URLValidator.ipv4_re + '|' + URLValidator.ipv6_re + '|' + host_re + ')'
-                                                                                     r'(?::\d{2,5})?'  # port
-                                                                                     r'(?:[/?#][^\s]*)?'  # resource path
-                                                                                     r'\Z', re.IGNORECASE)
-
-
-class CustomURLFormField(URLFormField):
-    """
-    Form field that uses CustomURLValidator
-    """
-    default_validators = [CustomURLValidator]
-
-
-class CustomURLField(models.URLField):
-    """
-    Model field that uses CustomURLValidator and CustomURLFormField
-    """
-    default_validators = [CustomURLValidator]
-
-    def formfield(self, **kwargs):
-        defaults = {
-            'form_class': CustomURLFormField,
-        }
-        defaults.update(kwargs)
-        return super(CustomURLField, self).formfield(**defaults)
-
-
 class Source(models.Model):
+    """
+    Model that represent a Source. A Source is registered with an unique id, a name, a url, which is the rest endpoint
+    to use to open a Connector in the Source, a Profile and a triple that identifies the authentication method to use
+    with that Source. Available authentication methods are Certificates authentication and oAuth2 authentication.
+    """
     source_id = models.CharField(max_length=32, blank=False, null=False, default=get_source_id, unique=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
-    url = CustomURLField(blank=False, null=False)
+    url = HostnameURLField(blank=False, null=False)
+    profile = models.ForeignKey('hgw_common.Profile', blank=False, null=False, on_delete=models.DO_NOTHING)
 
     # Below the mandatory fields for generic relation
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -130,6 +89,9 @@ class OAuth2Authentication(models.Model):
     token_url = models.CharField(max_length=100, blank=False, null=False)
     client_id = models.CharField(max_length=40, blank=False, null=False)
     client_secret = models.CharField(max_length=128, blank=False, null=False)
+    auth_username = models.CharField(max_length=40, null=True)
+    auth_password = models.CharField(max_length=128, null=True)
+    basic_auth = models.BooleanField(default=False, null=False)
 
     def _get_token(self):
         try:
@@ -139,21 +101,33 @@ class OAuth2Authentication(models.Model):
         return ac.to_python()
 
     def _fetch_token(self, oauth_session):
-        oauth_session.fetch_token(token_url=self.token_url,
-                                  client_id=self.client_id,
-                                  client_secret=self.client_secret)
+        if self.basic_auth is True:
+            auth = HTTPBasicAuth(self.auth_username, self.auth_password)
+            oauth_session.fetch_token(token_url=self.token_url,
+                                      client_id=self.client_id,
+                                      client_secret=self.client_secret,
+                                      auth=auth)
+        else:
+            oauth_session.fetch_token(token_url=self.token_url,
+                                      client_id=self.client_id,
+                                      client_secret=self.client_secret)
 
         self._save_token(oauth_session.token)
 
     def _save_token(self, token_data):
-        token_data = copy.copy(token_data)
-        token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
+        new_token_data = {
+            'access_token': token_data['access_token'],
+            'token_type': token_data['token_type'],
+            'expires_in': token_data['expires_in'],
+            'expires_at': datetime.fromtimestamp(token_data['expires_at']),
+            'scope': ' '.join(token_data['scope'])
+        }
         try:
             access_token = AccessToken.objects.get(oauth2_authentication=self)
         except AccessToken.DoesNotExist:
-            AccessToken.objects.create(oauth2_authentication=self, **token_data)
+            AccessToken.objects.create(oauth2_authentication=self, **new_token_data)
         else:
-            for k, v in token_data.items():
+            for k, v in new_token_data.items():
                 setattr(access_token, k, v)
             access_token.save()
 

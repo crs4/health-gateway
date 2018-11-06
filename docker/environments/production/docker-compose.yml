@@ -1,15 +1,11 @@
 version: '3.0'
 services:
   hgw_frontend:
-    build:
-      context: ../../images/production/hgw_frontend
-      args:
-        HTTP_PORT: 8000
     image: crs4/hgw_frontend:latest
     ports:
       - 8000:8000
     volumes:
-      - ./config_files/hgw_frontend_config.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -24,8 +20,6 @@ services:
           - hgwfrontend
 
   hgw_backend:
-    build:
-      context: ../../images/production/hgw_backend
     image: crs4/hgw_backend:latest
     depends_on:
       - kafka
@@ -51,17 +45,13 @@ services:
           - hgwbackend
 
   consent_manager:
-    build:
-      context: ../../images/production/consent_manager
     image: crs4/consent_manager:latest
     environment:
       - TZ=CET
     ports:
       - 8002:8002
     volumes:
-      - ../../../consent_manager/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ./config_files/consent_manager_config.yml:/etc/hgw_service/consent_manager_config.yml
+      - ./config_files/consent_manager_config.tscns.yml:/etc/hgw_service/consent_manager_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -72,7 +62,6 @@ services:
           - consentmanager
 
   kafka:
-    build: ../../images/common/kafka
     image: crs4/kafka:latest
     environment:
       - KAFKA_BROKER_ID=1
@@ -94,13 +83,11 @@ services:
           - kafka
 
   hgw_dispatcher:
-    build: ../../images/production/hgw_dispatcher
     image: crs4/hgw_dispatcher:latest
     depends_on:
       - kafka
       - consent_manager
     volumes:
-      - ../../../hgw_dispatcher/:/container/service
       - ./config_files/hgw_dispatcher_config.yml:/etc/hgw_service/hgw_dispatcher_config.yml
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem

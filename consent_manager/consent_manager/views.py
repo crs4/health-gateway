@@ -16,85 +16,49 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-import json
 from datetime import datetime
-
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
+from rest_framework import status as http_status
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from consent_manager import serializers, ERRORS_MESSAGE
+from consent_manager import serializers
 from consent_manager.models import Consent, ConfirmationCode
-from hgw_common.utils import TokenHasResourceDetailedScope
+from consent_manager.settings import USER_ID_FIELD
+from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
+from hgw_common.utils import ERRORS
+
+logger = get_logger('consent_manager')
 
 
 class ConsentView(ViewSet):
-    permission_classes = (TokenHasResourceDetailedScope,)
+    permission_classes = (IsAuthenticatedOrTokenHasResourceDetailedScope,)
+    oauth_views = ['list', 'create', 'retrieve']
     required_scopes = ['consent']
 
     @staticmethod
-    def get_consent(consent_id):
-        try:
-            return Consent.objects.get(consent_id=consent_id)
-        except Consent.DoesNotExist:
-            raise Http404
+    def _get_consent(consent_id):
+        return get_object_or_404(Consent, consent_id=consent_id)
 
-    @swagger_auto_schema(
-        operation_description='Get the list of consents',
-        security=[{'consents': ['consent:read']}],
-        responses={
-            200: openapi.Response('The list of consents', openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id of the consent'),
-                        'person_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The id of the person'),
-                        'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The status of the consent',
-                                                 enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
-                        'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                  properties={
-                                                      'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                             description='A code identifying the profile'),
-                                                      'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='The version of the profile'),
-                                                      'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                                description='A json encoded string that'
-                                                                                            'describe the profile')
-                                                  }),
-                        'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         format=openapi.FORMAT_DATETIME,
-                                                         description='The start date validity of the consent'),
-                        'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                          format=openapi.FORMAT_DATETIME,
-                                                          description='The end date validity of the consent'),
-                        'source': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                 properties={
-                                                     'id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                          description='The id of the source'),
-                                                     'name': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The name of the source'),
-                                                 })
-                    }
-                ))
-                                  ),
-            401: openapi.Response('The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('The token provided has not the right scope for the operation')
-        })
+    @staticmethod
+    def _get_person_id(request):
+        return getattr(request.user, USER_ID_FIELD)
+
     def list(self, request):
-        consents = Consent.objects.all()
+        if request.user is not None:
+            person_id = self._get_person_id(request)
+            consents = Consent.objects.filter(person_id=person_id,
+                                              status__in=(Consent.ACTIVE, Consent.REVOKED))
+            logger.info('Found {} consents for user {}'.format(len(consents), person_id))
+        else:
+            consents = Consent.objects.all()
         serializer = serializers.ConsentSerializer(consents, many=True)
-        if request.auth.application.is_super_client():
+        if request.user is not None or request.auth.application.is_super_client():
             return Response(serializer.data)
         else:
             res = []
@@ -108,22 +72,8 @@ class ConsentView(ViewSet):
                 })
             return Response(res)
 
-    @swagger_auto_schema(
-        operation_description='Creates a new consent which is set in a PENDING status until the user confirms it',
-        security=[{'consents': ['consent:write']}],
-        responses={
-            201: openapi.Response('The consent has been created successfully', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                         description='the id of the newly created consent'),
-                            'confirmation_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                              description='the id to send to the confirmation '
-                                                                          'url to activate the consent')}
-            )),
-            401: openapi.Response('The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('The token provided has not the right scope for the operation')
-        })
     def create(self, request):
+        logger.debug(request.scheme)
         request.data.update({
             'consent_id': get_random_string(32),
             'status': Consent.PENDING
@@ -136,62 +86,35 @@ class ConsentView(ViewSet):
             res = {'confirm_id': cc.code,
                    'consent_id': co.consent_id}
 
-            return Response(res, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(res, status=http_status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        operation_description='Get the consent identified by the consent id',
-        security=[{'consents': ['consent:read']}],
-        manual_parameters=[
-            openapi.Parameter('consents_id', openapi.IN_QUERY, type=openapi.TYPE_STRING,
-                              description='The id of the consents to retrieve')
-        ],
-        responses={
-            200: openapi.Response('The consent object', openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'consent_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id of the consent'),
-                    'person_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The id of the person'),
-                    'status': openapi.Schema(type=openapi.TYPE_STRING,
-                                             description='The status of the consent',
-                                             enum=[sc[0] for sc in Consent.STATUS_CHOICES]),
-                    'profile': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                              properties={
-                                                  'code': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                         description='A code identifying the profile'),
-                                                  'version': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='The version of the profile'),
-                                                  'payload': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                            description='A json encoded string that'
-                                                                                        'describe the profile')
-                                              }),
-                    'start_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     format=openapi.FORMAT_DATETIME,
-                                                     description='The start date validity of the flow request'),
-                    'expire_validity': openapi.Schema(type=openapi.TYPE_STRING,
-                                                      format=openapi.FORMAT_DATETIME,
-                                                      description='The end date validity of the flow request'),
-                    'source': openapi.Schema(type=openapi.TYPE_OBJECT,
-                                             properties={
-                                                 'id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                      description='The id of the source'),
-                                                 'name': openapi.Schema(type=openapi.TYPE_STRING,
-                                                                        description='The name of the source'),
-                                             })
-                }
-            )),
-            401: openapi.Response('The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('The token provided has not the right scope for the operation')
-        })
+    def update(self, request, consent_id):
+        logger.info('Received update request for consent with id {}'.format(consent_id))
+        consent = self._get_consent(consent_id)
+        if consent.status != Consent.ACTIVE:
+            logger.info('Consent is not ACTIVE. Not revoked')
+            return Response({'errors': ['wrong_consent_status']}, status=http_status.HTTP_400_BAD_REQUEST)
+        elif consent.person_id != self._get_person_id(request):
+            logger.warn('Consent doesn\'t belong to the logged in person so it is not revoked')
+            return Response({'errors': ['wrong_person']}, status=http_status.HTTP_400_BAD_REQUEST)
+
+        logger.info('Update data: {}'.format(request.data))
+        serializer = serializers.ConsentSerializer(consent, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            logger.info('Update data are not valid. Errors are: {}'.format(serializer.errors))
+            return Response({'errors': serializer.errors}, status=http_status.HTTP_400_BAD_REQUEST)
+        return Response({}, status=http_status.HTTP_200_OK)
+
     def retrieve(self, request, consent_id, format=None):
-        consent = self.get_consent(consent_id)
+        consent = self._get_consent(consent_id)
         serializer = serializers.ConsentSerializer(consent)
         if request.auth.application.is_super_client():
-            print(request)
             return Response(serializer.data)
         else:
+            logger.info(serializer.data)
             res = {
                 'consent_id': serializer.data['consent_id'],
                 'source': serializer.data['source'],
@@ -201,108 +124,122 @@ class ConsentView(ViewSet):
             }
             return Response(res)
 
+    def _revoke_consent(self, consent_id, person_id, raise_exc=False):
+        try:
+            c = self._get_consent(consent_id)
+        except Http404:
+            if raise_exc:
+                raise
+            else:
+                return http_status.HTTP_404_NOT_FOUND, {'errors': ['wrong_consent_status']}
+        if c.status != Consent.ACTIVE:
+            logger.info('Consent is not ACTIVE. Not revoked')
+            return http_status.HTTP_400_BAD_REQUEST, {'errors': ['wrong_consent_status']}
+        elif c.person_id != person_id:
+            logger.warn('Consent not of the logged in person so it is not revoked')
+            return http_status.HTTP_400_BAD_REQUEST, {'errors': ['wrong_person']}
+        else:
+            logger.info('Consent revoked')
+            c.status = Consent.REVOKED
+            c.save()
+            return http_status.HTTP_200_OK, {}
+
+    def revoke_list(self, request):
+        try:
+            consents = request.data['consents']
+        except KeyError:
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
+        logger.info('Received consents revoke request for consents {}'.format(', '.join(consents)))
+
+        revoked = []
+        failed = []
+        person_id = self._get_person_id(request)
+        for consent_id in consents:
+            logger.info('Revoking consent {}'.format(consent_id))
+            status, res = self._revoke_consent(consent_id, person_id)
+            if status == http_status.HTTP_200_OK:
+                revoked.append(consent_id)
+            else:
+                failed.append(consent_id)
+        return Response({'revoked': revoked, 'failed': failed}, status=http_status.HTTP_200_OK)
+
+    def revoke(self, request, consent_id):
+        logger.info('Received consent revoke request for consent {}'.format(consent_id))
+        status, res = self._revoke_consent(consent_id, self._get_person_id(request), raise_exc=True)
+        return Response(res, status)
+
+    def find(self, request):
+        """
+        Method to find consent. The only supported query parameter is by confirmation_id
+        :param request:
+        :return:
+        """
+        if 'confirm_id' not in request.query_params:
+            logger.debug('confirm_id paramater not present')
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
+
+        confirm_ids = request.GET.getlist('confirm_id')
+        logger.info('Called /v1/consents/find/ with query paramaters {}'.format(request.query_params))
+        ccs = ConfirmationCode.objects.filter(code__in=confirm_ids, consent__status=Consent.PENDING)
+        if not ccs:
+            return Response({}, http_status.HTTP_404_NOT_FOUND)
+        logger.debug('Found {} consents'.format(len(ccs)))
+        logger.debug('Checking validity'.format(len(ccs)))
+        consents = []
+        for cc in ccs:
+            if cc.check_validity():
+                serializer = serializers.ConsentSerializer(cc.consent)
+                consent_data = serializer.data.copy()
+                consent_data.update({'confirm_id': cc.code})
+                del consent_data['consent_id']
+                consents.append(consent_data)
+        logger.info('Found {} valid consents'.format(len(consents)))
+        return Response(consents, status=http_status.HTTP_200_OK)
+
+    def confirm(self, request):
+        logger.info('Received consent confirmation request')
+        if 'consents' not in request.data:
+            logger.info('Missing the consents query params. Returning error')
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
+
+        consents = request.data['consents']
+        logger.info('Specified the following consents: {}'.format(', '.join(consents.keys())))
+
+        confirmed = []
+        failed = []
+        for confirm_id, consent_data in consents.items():
+            try:
+                cc = ConfirmationCode.objects.get(code=confirm_id)
+            except ConfirmationCode.DoesNotExist:
+                logger.info('Consent associated to confirm_id {} not found'.format(confirm_id))
+                failed.append(confirm_id)
+            else:
+                if not cc.check_validity():
+                    logger.info('Confirmation expired'.format(confirm_id))
+                    failed.append(confirm_id)
+                else:
+                    c = cc.consent
+                    logger.info('consent_id is {}'.format(c.consent_id))
+                    if c.status != Consent.PENDING:
+                        logger.info('consent not in PENDING http_status. Cannot confirm it')
+                        failed.append(confirm_id)
+                    elif c.person_id != self._get_person_id(request):
+                        logger.info('consent found but it is not of the logged user. Cannot confirm it')
+                        failed.append(confirm_id)
+                    else:
+                        c.status = Consent.ACTIVE
+                        c.confirmed = datetime.now()
+                        if 'start_validity' in consent_data:
+                            c.start_validity = consent_data['start_validity']
+                        if 'expire_validity' in consent_data:
+                            c.expire_validity = consent_data['expire_validity']
+                        c.save()
+                        confirmed.append(confirm_id)
+                        logger.info('consent with id {} confirmed'.format(c))
+        return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
+
 
 @require_http_methods(["GET", "POST"])
 @login_required
 def confirm_consent(request):
-    try:
-        if request.method == 'GET':
-            confirm_ids = request.GET.getlist('confirm_id')
-            callback_url = request.GET['callback_url']
-        else:
-            confirm_ids = request.POST.getlist('confirm_id')
-            callback_url = request.POST['callback_url']
-    except KeyError:
-        return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
-    else:
-        if not confirm_ids:
-            return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
-
-        ccs = ConfirmationCode.objects.filter(code__in=confirm_ids)
-        if not ccs:
-            return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_CONFIRMATION_CODE'])
-
-        if request.method == 'GET':
-            consent = ccs[0].consent
-            payload = json.loads(consent.profile.payload)
-            destination_name = consent.destination.name
-
-            ctx = {
-                'callback_url': callback_url,
-                'destination_name': destination_name,
-                'profile_payload': payload,
-                'consents': [],
-                'errors': []
-            }
-
-            for cc in ccs:
-                if cc.consent.status == Consent.PENDING and cc.check_validity():
-                    ctx['consents'].append({
-                        'confirm_id': cc.code,
-                        'source': cc.consent.source.name,
-                        'is_valid': cc.check_validity(),
-                        'status': cc.consent.status,
-                        'start_validity': consent.start_validity.strftime('%Y-%m-%dT%H:%M:%S'),
-                        'expire_validity': consent.expire_validity.strftime('%Y-%m-%dT%H:%M:%S')
-                    })
-                else:
-                    ctx['errors'].append(cc.code)
-
-            return render(request, 'confirm_consent.html', context=ctx)
-        else:
-            success = False
-            for cc in ccs:
-                if cc.check_validity() and cc.consent.status == Consent.PENDING:
-                    cc.consent.status = Consent.ACTIVE
-                    cc.consent.confirmed = datetime.now()
-                    cc.consent.save()
-                    if not success:
-                        success = True
-
-            return HttpResponseRedirect(
-                '{}?{}{}'.format(callback_url,
-                                 'success={}&'.format(json.dumps(success)),
-                                 '&'.join(['consent_confirm_id={}'.format(confirm_id) for confirm_id in
-                                           confirm_ids]),
-                                 )
-            )
-
-
-@require_http_methods(["GET", "POST"])
-@login_required
-def revoke_consents(request):
-    page_status = {
-        'REVOKING': 0,
-        'REVOKED': 1
-    }
-    if request.method == 'GET':
-        consents = Consent.objects.filter(person_id=request.user.fiscalNumber)
-        consent_list = []
-        for c in consents:
-            if c.status == 'AC':
-                consent_list.append({
-                    'source_name': c.source.name,
-                    'destination_name': c.destination.name,
-                    'status': c.status,
-                    'profile': json.loads(c.profile.payload),
-                    'id': c.id
-                })
-        context = {'status': page_status['REVOKING'], 'consents': consent_list}
-    else:
-        revoke_list = request.POST.getlist('revoke_list')
-        revoked = []
-        for consent in revoke_list:
-            try:
-                c = Consent.objects.get(id=consent, status=Consent.ACTIVE, person_id=request.user.fiscalNumber)
-            except Consent.DoesNotExist:
-                pass
-            else:
-                c.status = Consent.REVOKED
-                c.save()
-                revoked.append({
-                    'source_name': c.source.name,
-                    'destination_name': c.destination.name,
-                    'profile': json.loads(c.profile.payload),
-                })
-        context = {'status': page_status['REVOKED'], 'consents': revoked}
-    return render(request, 'revoke_consent.html', context=context)
+    return render(request, 'index.html', context={'nav_bar': True})

@@ -19,9 +19,12 @@
 from rest_framework import serializers
 
 from hgw_backend.models import Source
+from hgw_common.serializers import ProfileSerializer
 
 
 class SourceSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(many=False)
+
     class Meta:
         model = Source
-        fields = ('source_id', 'name')
+        fields = ('source_id', 'name', 'profile')
