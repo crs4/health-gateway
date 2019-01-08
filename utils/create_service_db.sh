@@ -31,8 +31,8 @@ else
 fi
 
 parent_dir="$(dirname -- "$(realpath -- "$0")")"
-export PYTHONPATH=${parent_dir}/../hgw_common/
-for d in consent_manager destination_mockup hgw_backend hgw_frontend examples/source_endpoint; do
+export PYTHONPATH=${parent_dir}/../hgw_common/:${parent_dir}/../destination_mockup
+for d in consent_manager destination_mockup hgw_backend hgw_frontend examples/source_endpoint integration_rest_destination; do
     echo "Recreating db for service ${d}"
     cd ../${d}
     rm -f *.sqlite3

@@ -14,6 +14,8 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+from datetime import timedelta
+
 import json
 import logging
 import os
@@ -390,10 +392,10 @@ class TestHGWFrontendAPI(TestCase):
                                content_type='application/json', **headers)
 
         self.assertEqual(res.status_code, 201)
-        start_validity = parse(res.json()['start_validity'])
-        expire_validity = parse(res.json()['expire_validity'])
-        dt = expire_validity - start_validity
-        self.assertEqual(dt.days, 180)
+        start_validity = parse(res.json()['start_validity'], ignoretz=True)
+        expire_validity = parse(res.json()['expire_validity'], ignoretz=True)
+
+        self.assertEqual(expire_validity, start_validity + timedelta(days=180))
 
     def test_add_flow_request_only_one_validity_date_provided(self):
         """
