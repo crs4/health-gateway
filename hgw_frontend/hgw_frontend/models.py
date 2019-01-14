@@ -56,6 +56,15 @@ class FlowRequest(models.Model):
         return self.__unicode__()
 
 
+class Channel(models.Model):
+    channel_id = models.CharField(max_length=32, blank=False)
+    flow_request = models.ForeignKey('hgw_frontend.FlowRequest', null=False)
+    source_id = models.CharField(max_length=32, null=False, unique=False)
+
+    class Meta:
+        unique_together = ('flow_request', 'source_id')
+
+
 def get_validity():
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)
 

@@ -16,18 +16,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from django.db import IntegrityError
 from rest_framework import serializers
 
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_frontend.models import FlowRequest, Destination
-
-
-# class DestinationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Destination
-#         fields = ('destination_id',)
+from hgw_frontend.models import FlowRequest, Channel
 
 
 class FlowRequestSerializer(serializers.ModelSerializer):
@@ -37,9 +30,35 @@ class FlowRequestSerializer(serializers.ModelSerializer):
         if validated_data['profile'] is not None:
             pr, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
             validated_data['profile'] = pr
+        print(validated_data)
         fr = FlowRequest.objects.create(**validated_data)
         return fr
 
     class Meta:
         model = FlowRequest
         fields = ('flow_id', 'process_id', 'status', 'profile', 'destination', 'start_validity', 'expire_validity')
+
+
+class ChannelSerializer(serializers.ModelSerializer):
+
+    destination_id = serializers.SerializerMethodField()
+    person_id = serializers.SerializerMethodField()
+    profile = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Channel
+        fields = ('channel_id', 'destination_id', 'source_id', 'person_id', 'profile')
+
+    @staticmethod
+    def get_destination_id(obj):
+        return obj.flow_request.destination.destination_id
+
+    @staticmethod
+    def get_person_id(obj):
+        return obj.flow_request.person_id
+
+    @staticmethod
+    def get_profile(obj):
+        return ProfileSerializer(obj.flow_request.profile).data
+
+

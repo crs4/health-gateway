@@ -20,3 +20,4 @@ from .flow_requests import FlowRequestView, confirm_request, consents_confirmed
 from .site import view_profile, api_root
 from .messages import Messages
 from .sources import Sources, Profiles
+from .channels import ChannelView

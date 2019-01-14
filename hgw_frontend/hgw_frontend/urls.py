@@ -24,7 +24,7 @@ from rest_framework import routers
 from hgw_common.settings import VERSION_REGEX
 from hgw_frontend import settings
 from hgw_frontend.views import Profiles
-from .views import view_profile, confirm_request, consents_confirmed, FlowRequestView, Messages, Sources
+from .views import confirm_request, consents_confirmed, FlowRequestView, Messages, Sources, ChannelView
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
@@ -44,6 +44,8 @@ urlpatterns = [
     url(r'^{}/flow_requests/(?P<process_id>\w+)/$'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'retrieve',
                                                                                                    'delete': 'delete'}),
         name='flow_requests_detail'),
+    url(r'^{}/channels/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'list'})),
+    url(r'^{}/channels/(?P<channel_id>\w+)/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'retrieve'})),
     url(r'^{}/messages/$'.format(VERSION_REGEX), Messages.as_view({'get': 'list'})),
     url(r'^{}/messages/info/$'.format(VERSION_REGEX), Messages.as_view({'get': 'info'})),
     url(r'^{}/messages/(?P<message_id>\d+)/?$'.format(VERSION_REGEX), Messages.as_view({'get': 'retrieve'})),

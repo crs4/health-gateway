@@ -65,28 +65,6 @@ class Messages(ViewSet):
         kc.assign([tp])
         return kc, tp
 
-    @swagger_auto_schema(
-        operation_description='Gets a list of messages for a specific Destination. If `start` query parameter is '
-                              'specified the list starts from the message with `start` as id. '
-                              'If the `limit` parameter is specified the list will have that amount of items.',
-        manual_parameters=[
-            openapi.Parameter('message_id', openapi.IN_PATH, type=openapi.TYPE_INTEGER,
-                              description='The id of the required message')],
-        security=[{'messages': ['messages:read']}],
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                 description='The process_id of the flow request the message '
-                                                             'belongs to'),
-                    'message_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='The id of the message'),
-                    'data': openapi.Schema(type=openapi.TYPE_STRING, description='The data')
-                }
-            ),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-        })
     @check_destination
     def retrieve(self, request, message_id):
         message_id = int(message_id)
@@ -108,37 +86,6 @@ class Messages(ViewSet):
                             content_type='application/json')
         return Response(response, content_type='application/json')
 
-    @swagger_auto_schema(
-        operation_description='Gets a list of messages for a specific Destination. If `start` query parameter is '
-                              'specified the list starts from the message with `start` as id. '
-                              'If the `limit` parameter is specified the list will have that amount of items.',
-        manual_parameters=[
-            openapi.Parameter('start', openapi.IN_QUERY,
-                              type=openapi.TYPE_INTEGER, description='The id of the first message required'),
-            openapi.Parameter('limit', openapi.IN_QUERY, type=openapi.TYPE_INTEGER,
-                              description='The maximum number of messages required. It must be lower or equal'
-                                          ' than {max_limit}. If it\'s higher, {max_limit} of messages is '
-                                          'returned'.format(max_limit=MAX_LIMIT))
-
-        ],
-        security=[{'messages': ['messages:read']}],
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'process_id': openapi.Schema(type=openapi.TYPE_STRING,
-                                                     description='The process_id of the flow request the message '
-                                                                 'belongs to'),
-                        'message_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='The id of the message'),
-                        'data': openapi.Schema(type=openapi.TYPE_STRING, description='The data')
-                    }
-                )
-            ),
-            401: openapi.Response('Unauthorized - The client has not provide a valid token or the token has expired'),
-            403: openapi.Response('Forbidden - The client token has not the right scope for the operation'),
-        })
     @check_destination
     def list(self, request):
         kc, tp = self._get_kafka_consumer(request)

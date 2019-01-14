@@ -26,6 +26,7 @@ from rest_framework.reverse import reverse
 def view_profile(request):
     return HttpResponse("Home sweet home")
 
+
 @api_view(['GET'])
 def api_root(request, format=None):
     return Response({
