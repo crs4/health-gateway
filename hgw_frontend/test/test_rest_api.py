@@ -20,6 +20,7 @@ import json
 import logging
 import os
 from Cryptodome.PublicKey import RSA
+from datetime import timedelta
 from dateutil.parser import parse
 from django.test import TestCase, client
 from mock import patch
@@ -28,11 +29,13 @@ from hgw_common.cipher import Cipher
 from hgw_common.models import Profile
 from hgw_common.utils.mocks import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
 from hgw_frontend import ERRORS_MESSAGE
-from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient
+from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient, Channel
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \
     TEST_PERSON1_ID
 from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler, SOURCES_DATA, PROFILES_DATA
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -52,13 +55,14 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
                   'XQIDAQAB\n' \
                   '-----END PUBLIC KEY-----'
 
+DEST_1_ID = 'Destination 1'
+DEST_2_ID = 'Destination 2'
+DISPATCHER_ID = 'Health Gateway Dispatcher'
+POWERLESS_ID = 'Powerless Client'
+
 
 class TestHGWFrontendAPI(TestCase):
     fixtures = ['test_data.json']
-
-    DEST_1_IDX = 0
-    DEST_2_IDX = 1
-    DISPATCHER_IDX = 2
 
     @classmethod
     def setUpClass(cls):
@@ -96,28 +100,47 @@ class TestHGWFrontendAPI(TestCase):
 
         self.sources_data = SOURCES_DATA
 
-        self.encypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
+        self.encrypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
+
+        with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_frontend/fixtures/test_data.json'))) as fixtures_file:
+            self.fixtures = json.load(fixtures_file)
+
+        self.destinations = {obj['pk']: obj['fields'] for obj in self.fixtures
+                             if obj['model'] == 'hgw_frontend.destination'}
+        self.profiles = {obj['pk']: obj['fields'] for obj in self.fixtures
+                         if obj['model'] == 'hgw_common.profile'}
+        self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
+                              if obj['model'] == 'hgw_frontend.flowrequest'}
+        self.channels = {obj['pk']:
+            {
+                'channel_id': obj['fields']['channel_id'],
+                'source_id': obj['fields']['source_id'],
+                'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+                'person_id': self.flow_requests[obj['fields']['flow_request']]['person_id'],
+                'destination_id':
+                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id']
+            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
         mock_kc_klass.END = 33
-        message = self.encypter.encrypt(1000000 * 'a')
+        message = self.encrypter.encrypt(1000000 * 'a')
         mock_kc_klass.MESSAGES = {i: MockMessage(key="09876".encode('utf-8'), offset=i,
                                                  topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
                                                  value=message) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
 
     @staticmethod
-    def _get_client_data(client_index=0):
-        app = RESTClient.objects.all()[client_index]
+    def _get_client_data(client_name=DEST_1_ID):
+        app = RESTClient.objects.get(name=client_name)
         return app.client_id, app.client_secret
 
-    def _add_flow_request(self, client_index=0):
-        headers = self._get_oauth_header(client_index)
+    def _add_flow_request(self, client_name=DEST_1_ID):
+        headers = self._get_oauth_header(client_name)
         return self.client.post('/v1/flow_requests/', data=self.flow_request_json_data,
                                 content_type='application/json', **headers)
 
-    def _get_oauth_header(self, client_index=0):
-        c_id, c_secret = self._get_client_data(client_index)
+    def _get_oauth_header(self, client_name=DEST_1_ID):
+        c_id, c_secret = self._get_client_data(client_name)
         params = {
             'grant_type': 'client_credentials',
             'client_id': c_id,
@@ -128,7 +151,7 @@ class TestHGWFrontendAPI(TestCase):
         return {"Authorization": "Bearer {}".format(access_token)}
 
     def test_init_fixtures(self):
-        self.assertEqual(RESTClient.objects.all().count(), 3)
+        self.assertEqual(RESTClient.objects.all().count(), 4)
         self.assertEqual(Destination.objects.all().count(), 2)
         self.assertEqual(FlowRequest.objects.all().count(), 2)
 
@@ -238,7 +261,7 @@ class TestHGWFrontendAPI(TestCase):
         Tests get all flow requests from a client with super role. It returns all the flow requests
         """
         # The flow requests are already present in test data
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
         res = self.client.get('/v1/flow_requests/', **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()), 2)
@@ -247,7 +270,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         Tests get all flow requests from from a client with super role. It returns all the flow requests
         """
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
         res = self.client.get('/v1/flow_requests/54321/', **headers)
         self.assertEqual(res.status_code, 200)
         expected = {'flow_id': '12345',
@@ -268,7 +291,7 @@ class TestHGWFrontendAPI(TestCase):
         Tests that when getting a flow request from the destination that doesn't own it, it returns an error
         """
         # the flow request belongs to DEST_2
-        headers = self._get_oauth_header(client_index=self.DEST_1_IDX)
+        headers = self._get_oauth_header(client_name=DEST_1_ID)
         res = self.client.get('/v1/flow_requests/09876/', **headers)
         self.assertEqual(res.status_code, 404)
         expected = {'errors': ['not_found']}
@@ -302,6 +325,7 @@ class TestHGWFrontendAPI(TestCase):
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
         res = self._add_flow_request()
+        print(res.json())
         self.assertEqual(res.status_code, 201)
 
         fr = res.json()
@@ -351,7 +375,7 @@ class TestHGWFrontendAPI(TestCase):
         oauth2 scope)
         """
         # The dispatcher in test data doesn't have the flow_request:write authorization
-        res = self._add_flow_request(client_index=self.DISPATCHER_IDX)
+        res = self._add_flow_request(client_name=POWERLESS_ID)
         self.assertEqual(res.status_code, 403)
 
     def test_add_duplicated_profile_requests(self):
@@ -707,6 +731,11 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(ConsentConfirmation.objects.count(), previous_consent_confirmation_count + 2)
         fr = ConfirmationCode.objects.get(code=confirm_id).flow_request
         self.assertEqual(fr.person_id, '100001')
+
+        channels = Channel.objects.filter(flow_request=fr)
+        for ch in channels:
+            self.assertIn(ch.source_id, [s['source_id'] for s in self.sources_data])
+
         consent_confirm_ids = [c.confirmation_id for c in list(ConsentConfirmation.objects.all())[-2:]]
         consent_callback_url = 'https://testserver/v1/flow_requests/consents_confirmed/'
         self.assertRedirects(res, '{}?confirm_id={}&confirm_id={}&callback_url={}'.
@@ -846,7 +875,7 @@ class TestHGWFrontendAPI(TestCase):
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
         self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
         res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.consent_id), **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['process_id'], '54321')
@@ -868,7 +897,7 @@ class TestHGWFrontendAPI(TestCase):
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
         self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
         res = self.client.get('/v1/flow_requests/search/?channel_id=unknown'.format(c.consent_id), **headers)
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {})
@@ -876,7 +905,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_get_message(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=0)
+            headers = self._get_oauth_header(client_name=DEST_1_ID)
             res = self.client.get('/v1/messages/3/', **headers)
             self.assertEqual(res.status_code, 200)
             self.assertEqual(res.json()['message_id'], 3)
@@ -890,7 +919,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_get_messages(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=0)
+            headers = self._get_oauth_header(client_name=DEST_1_ID)
             res = self.client.get('/v1/messages/', **headers)
             self.assertEqual(res.status_code, 200)
             self.assertEqual(res['X-Total-Count'], '30')
@@ -909,7 +938,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_get_messages_max_limit(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=0)
+            headers = self._get_oauth_header(client_name=DEST_1_ID)
             res = self.client.get('/v1/messages/?start=3&limit=11', **headers)
             self.assertEqual(res.status_code, 200)
             self.assertEqual(len(res.json()), 10)
@@ -921,7 +950,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_get_message_not_found(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=0)
+            headers = self._get_oauth_header(client_name=DEST_1_ID)
             res = self.client.get('/v1/messages/33/', **headers)
             self.assertEqual(res.status_code, 404)
             self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
@@ -933,7 +962,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_get_messages_not_found(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=0)
+            headers = self._get_oauth_header(client_name=DEST_1_ID)
             res = self.client.get('/v1/messages/?start=30&limit=5', **headers)
             self.assertEqual(res.status_code, 200)
             self.assertEqual(len(res.json()), 3)
@@ -947,7 +976,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_get_messages_info(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=0)
+            headers = self._get_oauth_header(client_name=DEST_1_ID)
             res = self.client.get('/v1/messages/info/', **headers)
             self.assertEqual(res.status_code, 200)
             self.assertEqual(res.json(), {
@@ -963,7 +992,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_index=self.DEST_2_IDX)
+            headers = self._get_oauth_header(client_name=POWERLESS_ID)
             res = self.client.get('/v1/messages/3/', **headers)
             self.assertEqual(res.status_code, 403)
             res = self.client.get('/v1/messages/', **headers)
@@ -995,7 +1024,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         Tests get sources endpoint
         """
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=POWERLESS_ID)
         res = self.client.get('/v1/sources/', **headers)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
@@ -1045,7 +1074,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         Tests get sources endpoint
         """
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=POWERLESS_ID)
         res = self.client.get('/v1/profiles/', **headers)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
@@ -1076,7 +1105,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         Tests get sources endpoint
         """
-        headers = self._get_oauth_header(client_index=0)
+        headers = self._get_oauth_header(client_name=DEST_1_ID)
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), SOURCES_DATA[0])
@@ -1095,7 +1124,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         Tests get sources endpoint
         """
-        headers = self._get_oauth_header(client_index=self.DISPATCHER_IDX)
+        headers = self._get_oauth_header(client_name=POWERLESS_ID)
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
@@ -1120,3 +1149,96 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
+
+    def test_get_channels(self):
+        """
+        Tests getting channels
+        """
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/channels/', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()
+                                      if ch_fi['destination_id'] == 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'])
+
+    def test_get_channels_by_superuser(self):
+        """
+        Tests getting all channels from a superuser
+        """
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
+        res = self.client.get('/v1/channels/', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()])
+
+    def test_get_channels_unauthorized(self):
+        """
+        Tests get channels unauthorized
+        """
+        res = self.client.get('/v1/channels/')
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
+
+    def test_get_channels_forbidden(self):
+        """
+        Tests get channels forbidden
+        """
+        headers = self._get_oauth_header(client_name=POWERLESS_ID)
+        res = self.client.get('/v1/channels/', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.json(), {'errors': ['forbidden']})
+
+    def test_get_channel(self):
+        """
+        Tests getting channels
+        """
+        target_channel = self.channels[1]
+        headers = self._get_oauth_header()
+        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), target_channel)
+
+    def test_get_channel_unauthorized(self):
+        """
+        Tests get channel unauthorized
+        """
+        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/')
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
+
+    def test_get_channel_forbidden(self):
+        """
+        Tests get channels forbidden
+        """
+        headers = self._get_oauth_header(client_name=POWERLESS_ID)
+        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.json(), {'errors': ['forbidden']})
+
+    def test_get_channel_by_superuser(self):
+        """
+        Tests get channels forbidden
+        """
+        target_channel = self.channels[1]
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
+        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), target_channel)
+
+    def test_get_channel_not_found(self):
+        """
+        Tests get channels not found. It tests not found for superclient, for nonexistent channel and for a channel
+        that belongs to another destination
+        """
+        headers = self._get_oauth_header(client_name=DISPATCHER_ID)
+        res = self.client.get('/v1/channels/nonexistent_channel/', **headers)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json(), {'errors': ['not_found']})
+
+        headers = self._get_oauth_header(client_name=DEST_1_ID)
+        res = self.client.get('/v1/channels/nonexistent_channel/', **headers)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json(), {'errors': ['not_found']})
+
+        headers = self._get_oauth_header(client_name=DEST_2_ID)
+        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json(), {'errors': ['not_found']})

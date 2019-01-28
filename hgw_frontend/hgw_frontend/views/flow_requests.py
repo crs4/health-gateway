@@ -28,9 +28,8 @@ from django.http import HttpResponse, Http404, HttpResponseBadRequest, HttpRespo
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
 from kafka import KafkaProducer
-from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError
+from oauthlib.oauth2 import InvalidClientError
 from operator import xor
-from requests_oauthlib import OAuth2Session
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -39,8 +38,8 @@ from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
-from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination
-from hgw_frontend.serializers import FlowRequestSerializer
+from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, Channel
+from hgw_frontend.serializers import FlowRequestSerializer, ChannelSerializer
 from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
     KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT, KAFKA_CA_CERT, \
     CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE, KAFKA_SSL
@@ -110,6 +109,8 @@ class FlowRequestView(ViewSet):
             try:
                 fr = fr_serializer.save()
             except IntegrityError as e:
+                import traceback
+                traceback.print_exc()
                 logger.debug("Integrity error adding FR with data: {}\nDetails: {}".format(fr_serializer.data, e))
                 return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
             cc = ConfirmationCode.objects.create(flow_request=fr)
@@ -164,8 +165,9 @@ def _get_consent_session():
                               CONSENT_MANAGER_CLIENT_SECRET)
 
 
-def _create_consent(flow_request, destination_endpoint_callback_url, user):
+def _create_channels(flow_request, destination_endpoint_callback_url, user):
     destination = flow_request.destination
+
     try:
         oauth_backend_session = _get_backend_session()
     except InvalidClientError:
@@ -184,7 +186,11 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
 
     confirm_ids = []
     for source_data in sources.json():
-        channel_data = {
+        channel = Channel.objects.create(channel_id=get_random_string(32), flow_request=flow_request,
+                                         source_id=source_data['source_id'])
+        channel.save()
+
+        consent_data = {
             'source': {
                 'id': source_data['source_id'],
                 'name': source_data['name']
@@ -199,7 +205,7 @@ def _create_consent(flow_request, destination_endpoint_callback_url, user):
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
 
-        consent = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=channel_data)
+        consent = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
         if consent.status_code == 201:
             json_res = consent.json()
             ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
@@ -242,7 +248,7 @@ def _get_callback_url(request):
 
 
 def _ask_consent(request, flow_request, callback_url):
-    consents, status = _create_consent(flow_request, callback_url, request.user)
+    consents, status = _create_channels(flow_request, callback_url, request.user)
     if not consents:
         return HttpResponse(json.dumps({'errors': [status]}), content_type='application/json')
     logger.debug("Created consent")

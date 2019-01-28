@@ -127,6 +127,23 @@
     }
   },
   {
+    "model": "hgw_frontend.restclient",
+    "pk": 4,
+    "fields": {
+      "client_id": "m00nj7v86APWQNwoJZw9bQmLbfny9MME3N1CduGe",
+      "user": null,
+      "redirect_uris": "",
+      "client_type": "confidential",
+      "authorization_grant_type": "client-credentials",
+      "client_secret": "Cz2v7BTV2Sreeqa7wkEXBFcGuLWTzPXKouXKxa2nInITZjh6QjlD8bx0fuA0QjluUgclDhaAXxVgJgg5KRaiSLJ0nBO3q6noLLfoRLNvnPSnuR4Jkx0a3J3axUb1cTYd",
+      "name": "Powerless Client",
+      "skip_authorization": true,
+      "destination": null,
+      "scopes": "useless:read",
+      "client_role": "ST"
+    }
+  },
+  {
     "model": "hgw_common.profile",
     "pk": 1,
     "fields": {
@@ -145,7 +162,8 @@
       "profile": 1,
       "destination": 1,
       "start_validity" : "2017-10-23T10:00:00.000+02:00",
-      "expire_validity" : "2018-10-23T10:00:00.000+02:00"
+      "expire_validity" : "2018-10-23T10:00:00.000+02:00",
+      "person_id": "100001"
     }
   },
   {
@@ -158,7 +176,8 @@
       "profile": 1,
       "destination": 2,
       "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00"
+      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "person_id": "100001"
     }
   },
   {
@@ -199,6 +218,23 @@
       "consent_id": "consent2",
       "confirmation_id": "confirmed2",
       "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.channel",
+    "pk": 1,
+    "fields": {
+      "channel_id": "nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b",
+      "flow_request": 1,
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT"
+    }
+  }, {
+    "model": "hgw_frontend.channel",
+    "pk": 2,
+    "fields": {
+      "channel_id": "kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh",
+      "flow_request": 2,
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT"
     }
   }
 ]
