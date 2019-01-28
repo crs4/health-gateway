@@ -36,7 +36,7 @@ from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import TokenHasResourceDetailedScope
+from hgw_common.utils import TokenHasResourceDetailedScope, ERRORS
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, Channel
 from hgw_frontend.serializers import FlowRequestSerializer, ChannelSerializer
@@ -205,19 +205,17 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
 
-        consent = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
-        if consent.status_code == 201:
-            json_res = consent.json()
+        res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
+        json_res = res.json()
+        if res.status_code == 201:
             ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
                                                confirmation_id=json_res['confirm_id'],
                                                destination_endpoint_callback_url=destination_endpoint_callback_url)
             confirm_ids.append(json_res['confirm_id'])
         else:
-            logger.info('Consent not created. Response is: {}, {}'.format(consent.status_code, consent.content))
-    if not confirm_ids:
-        return confirm_ids, "All available consents already present"
-    else:
-        return confirm_ids, None
+            logger.info('Consent not created. Response is: {}, {}'.format(res.status_code, res.content))
+
+    return confirm_ids
 
 
 def _get_consent(confirm_id):
@@ -247,10 +245,12 @@ def _get_callback_url(request):
     return callback_url
 
 
-def _ask_consent(request, flow_request, callback_url):
-    consents, status = _create_channels(flow_request, callback_url, request.user)
+def _ask_consent(request, flow_request, destination_callback_url):
+    consents = _create_channels(flow_request, destination_callback_url, request.user)
+
     if not consents:
-        return HttpResponse(json.dumps({'errors': [status]}), content_type='application/json')
+        return HttpResponseRedirect('{}?process_id={}&success={}'.format(
+            destination_callback_url, flow_request.process_id, json.dumps(False)))
     logger.debug("Created consent")
     consent_callback_url = _get_callback_url(request)
     return HttpResponseRedirect('{}?{}&callback_url={}'.

@@ -23,6 +23,7 @@ from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
 from rest_framework import status as http_status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -30,8 +31,7 @@ from rest_framework.viewsets import ViewSet
 from consent_manager import serializers
 from consent_manager.models import Consent, ConfirmationCode
 from consent_manager.settings import USER_ID_FIELD
-from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger
-from hgw_common.utils import ERRORS
+from hgw_common.utils import IsAuthenticatedOrTokenHasResourceDetailedScope, get_logger, ERRORS
 
 logger = get_logger('consent_manager')
 

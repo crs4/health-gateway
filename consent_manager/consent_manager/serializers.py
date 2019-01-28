@@ -23,6 +23,7 @@ from rest_framework.exceptions import ValidationError
 from consent_manager.models import Consent, Endpoint
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
+from hgw_common.utils import ERRORS
 
 
 class AttributesNotAllowed(ValidationError): pass
@@ -130,7 +131,7 @@ class ConsentSerializer(serializers.ModelSerializer):
         else:
             for c in consents:
                 if c.status == Consent.ACTIVE:
-                    raise ValidationError('Consent already present', code='unique')
+                    raise ValidationError(ERRORS.DUPLICATED)
                 elif c.status == Consent.PENDING:
                     c.status = Consent.NOT_VALID
                     c.save()

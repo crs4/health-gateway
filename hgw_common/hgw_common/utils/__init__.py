@@ -137,6 +137,7 @@ class ERRORS:
     FORBIDDEN = 'forbidden'
     NOT_AUTHENTICATED = 'not_authenticated'
     NOT_FOUND = 'not_found'
+    DUPLICATED = 'duplicated'
 
 
 def custom_exception_handler(exc, context):

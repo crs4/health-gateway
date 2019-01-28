@@ -474,6 +474,7 @@ class TestHGWFrontendAPI(TestCase):
         # We create the flow request
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
+        process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
         # Then we login as mouse
@@ -482,8 +483,9 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), {'errors': ['All available consents already present']})
+        self.assertRedirects(res, "{}?process_id={}&success=false".format(callback_url, process_id), fetch_redirect_response=False)
+        # self.assertEqual(res.status_code, 200)
+        # self.assertEqual(res.json(), {'errors': ['All available consents already present']})
 
     def test_confirm_redirect(self):
         """

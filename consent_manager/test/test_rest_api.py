@@ -399,7 +399,7 @@ class TestAPI(TestCase):
         """
         self._add_consent(self.json_consent_data, status=Consent.ACTIVE)
         res = self._add_consent(self.json_consent_data)
-        expected = {'generic_errors': ['Consent already present']}
+        expected = {'generic_errors': [ERRORS.DUPLICATED]}
         self.assertEquals(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
