@@ -19,9 +19,10 @@ from datetime import datetime
 
 from django.db import models
 from django.utils.crypto import get_random_string
-from oauthlib.oauth2 import BackendApplicationClient, MissingTokenError, TokenExpiredError
-from requests_oauthlib import OAuth2Session
+from oauthlib.oauth2 import (BackendApplicationClient, MissingTokenError,
+                             TokenExpiredError)
 from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests_oauthlib import OAuth2Session
 
 from hgw_common.fields import JSONValidator
 from hgw_common.utils import get_logger
@@ -34,9 +35,11 @@ def generate_id():
 
 
 class Profile(models.Model):
+    """
+    Class for model Profile
+    """
     code = models.CharField(max_length=10, blank=False, null=False)
     version = models.CharField(max_length=30, blank=False, null=False)
-    payload = models.CharField(max_length=1000, blank=False, null=False, validators=[JSONValidator])
 
     def __str__(self):
         return self.code
@@ -45,8 +48,49 @@ class Profile(models.Model):
         unique_together = ('code', 'version')
 
 
+class ProfileDomain(models.Model):
+    """
+    Class for model ProfileDomain
+    """
+    profile = models.ForeignKey(Profile, related_name="sections", on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=10)
+    coding_system = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.__str__()
+
+
+class ProfileSection(models.Model):
+    """
+    Class for model ProfileSection
+    """
+    profile_domain = models.ForeignKey(ProfileDomain, related_name="domains", on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=10)
+    coding_system = models.CharField(max_length=10)
+
+
+class Channel(models.Model):
+    """
+    Class for model Channel
+    """
+    channel_id = models.CharField(max_length=32, blank=False, null=False, default=generate_id)
+    source_id = models.CharField(max_length=32, blank=False, null=False)
+    destination_id = models.CharField(max_length=32, blank=False, null=False)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    person_id = models.CharField(max_length=100, blank=False, null=False)
+
+
 class AccessToken(models.Model):
-    token_url = models.CharField(max_length=200, null=False, blank=False, unique=True)
+    """
+    Class for model Consent
+    """
+    token_url = models.CharField(
+        max_length=200, null=False, blank=False, unique=True)
     access_token = models.CharField(max_length=1024, null=False, blank=False)
     token_type = models.CharField(max_length=10, null=False, blank=False)
     expires_in = models.IntegerField()
@@ -127,7 +171,6 @@ class OAuth2SessionProxy(object):
         else:
             logger.debug("Token found")
             oauth_session = OAuth2Session(client=client, token=access_token.to_python())
-
         return oauth_session
 
     def _fetch_token(self, oauth_session):

@@ -3,6 +3,8 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+import django.db.models.deletion
+import hgw_common.models
 import hgw_common.fields
 
 
@@ -32,7 +34,26 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('code', models.CharField(max_length=10)),
                 ('version', models.CharField(max_length=30)),
-                ('payload', models.CharField(max_length=1000, validators=[hgw_common.fields.JSONValidator])),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ProfileDomain',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=50)),
+                ('code', models.CharField(max_length=10)),
+                ('coding_system', models.CharField(max_length=10)),
+                ('profile', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sections', to='hgw_common.Profile')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ProfileSection',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=50)),
+                ('code', models.CharField(max_length=10)),
+                ('coding_system', models.CharField(max_length=10)),
+                ('profile_domain', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='domains', to='hgw_common.ProfileDomain')),
             ],
         ),
         migrations.AlterUniqueTogether(
