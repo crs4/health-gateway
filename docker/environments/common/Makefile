@@ -25,6 +25,9 @@ rund:
 rund_with_spid:
 	docker-compose -f docker-compose-with-spid.yml -f docker-compose.override.yml up -d
 
+rund_with_tscns:
+	docker-compose -f docker-compose-with-tscns.yml -f docker-compose.override.yml up -d
+
 init_db:
 	cd ../../../utils && ./create_service_db.sh $(load_dev_data)
 

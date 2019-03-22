@@ -76,6 +76,7 @@ class ConsentView(ViewSet):
         Returns the list of the consents. If the request arrives from
         an authenticated user (i.e.. from the GUI) it returns only the
         consents belonging to him. Otherwise all consents
+        Implements GET all consents
         """
         if request.user is not None:
             person_id = self._get_person_id(request)
@@ -100,15 +101,16 @@ class ConsentView(ViewSet):
         return Response(res)
 
     @staticmethod
-    def create(request):
+    def create(self, request):
         """
         REST API to create a new consent (i.e., it implements the POST function)
         """
-        logger.debug(request.scheme)
+
         request.data.update({
             'consent_id': get_random_string(32),
             'status': Consent.PENDING
         })
+
         serializer = serializers.ConsentSerializer(data=request.data)
         if serializer.is_valid():
             consent = serializer.save()
@@ -200,6 +202,7 @@ class ConsentView(ViewSet):
         for consent_id in consents:
             logger.info('Revoking consent %s', consent_id)
             status, _ = self._revoke_consent(consent_id, person_id)
+
             if status == http_status.HTTP_200_OK:
                 revoked.append(consent_id)
             else:
@@ -292,7 +295,6 @@ class ConsentView(ViewSet):
                         except NotificationError:
                             # TODO: we should retry to notify the frontend
                             logger.error("It was impossible to notify the message to the HGW Frontend")
-
         return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
 
 

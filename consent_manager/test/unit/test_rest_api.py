@@ -17,6 +17,8 @@
 
 import json
 import os
+import pprint
+
 from datetime import datetime, timedelta
 
 from django.test import TestCase, client
@@ -25,6 +27,8 @@ from mock.mock import patch
 from consent_manager import settings
 from consent_manager.models import ConfirmationCode, Consent, RESTClient
 from consent_manager.serializers import ConsentSerializer
+from hgw_common.models import Profile, ProfileDomain, ProfileSection
+from hgw_common.serializers import ProfileSectionSerializer, ProfileSerializer
 from hgw_common.utils import ERRORS
 from hgw_common.utils.mocks import get_free_port
 
@@ -35,24 +39,29 @@ PERSON1_ID = 'AAABBB12C34D567E'
 PERSON2_ID = 'FFFGGG12H34I567G'
 
 
-class TestAPI(TestCase):
+class TestConsentAPI(TestCase):
     fixtures = ['test_data.json']
 
     def setUp(self):
         self.client = client.Client()
-        payload = '[{"clinical_domain": "Laboratory", ' \
-                  '"filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, ' \
-                  '{"clinical_domain": "Radiology", ' \
-                  '"filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, ' \
-                  '{"clinical_domain": "Emergency", ' \
-                  '"filters": [{"excludes": "", "includes": ""}]}, ' \
-                  '{"clinical_domain": "Prescription", ' \
-                  '"filters": [{"excludes": "", "includes": ""}]}]'
 
         self.profile = {
-            'code': 'PROF002',
-            'version': 'hgw.document.profile.v0',
-            'payload': payload
+            'code': 'PROF_001',
+            'version': '1.0.0',
+            'domains': [{
+                'name': 'Radiology',
+                'code': 'RAD',
+                'coding_system': 'local',
+                'sections': [{
+                    'name': 'Computed Tomography',
+                    'code': 'CT',
+                    'coding_system': 'local'
+                }, {
+                    'name': 'Magnetic Resonance Imaging',
+                    'code': 'MRI',
+                    'coding_system': 'local'
+                }]
+            }]
         }
 
         self.consent_data = {
@@ -91,6 +100,16 @@ class TestAPI(TestCase):
         res = self._get_oauth_token(client_index)
         access_token = res['access_token']
         return {'Authorization': 'Bearer {}'.format(access_token)}
+
+    def _add_consent(self, data=None, client_index=0, status=Consent.PENDING):
+        headers = self._get_oauth_header(client_index)
+        data = data or self.json_consent_data
+        res = self.client.post('/v1/consents/', data=data, content_type='application/json', **headers)
+        if 'consent_id' in res.json():
+            consent = Consent.objects.get(consent_id=res.json()['consent_id'])
+            consent.status = status
+            consent.save()
+        return res
 
     def test_oauth_scopes(self):
         """
@@ -140,9 +159,18 @@ class TestAPI(TestCase):
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00',
             'profile': {
-                'code': 'PROF002',
-                'version': 'hgw.document.profile.v0',
-                'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
+                'code': 'PROF_LAB_0001', 
+                'version': '1.0.0',
+                'domains': [{
+                    'name': 'Laboratory', 
+                    'code': 'LAB', 
+                    'coding_system': 'local',
+                    'sections': [{
+                        'name': 'Coagulation Studies', 
+                        'code': 'COS', 
+                        'coding_system': 'local'
+                    }]
+                }]
             },
             'destination': {
                 'id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
@@ -187,22 +215,71 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
         self.assertEqual(res.status_code, 403)
 
-    def _add_consent(self, data=None, client_index=0, status=Consent.PENDING):
-        headers = self._get_oauth_header(client_index)
-        data = data or self.json_consent_data
-        res = self.client.post('/v1/consents/', data=data,
-                               content_type='application/json', **headers)
-        if 'consent_id' in res.json():
-            c = Consent.objects.get(consent_id=res.json()['consent_id'])
-            c.status = status
-            c.save()
-        return res
+    def test_profile_creation(self):
+        """
+        Test creation of a Profile and its relative ProfileSections
+        """
+        p_ser = ProfileSerializer(data=self.profile)
+        self.assertTrue(p_ser.is_valid())
+        profile = p_ser.save()
+        profiles = Profile.objects.filter(code=self.profile['code'])
+        domains = ProfileDomain.objects.filter(profile=profiles[0])
+        sections = ProfileSection.objects.filter(profile_domain=domains[0])
+        self.assertEqual(len(profiles), 1)
+        self.assertEqual(len(domains), 1)
+        self.assertEqual(len(sections), 2)
+
+        saved_prof_ser = ProfileSerializer(instance=profile)
+        self.assertDictEqual(saved_prof_ser.data, self.profile)
+
+    def test_wrong_profile_creation(self):
+        """
+        Test Profile creation failure when profile validation fails
+        """
+        self.profile.pop('version')
+        p_ser = ProfileSerializer(data=self.profile)
+        self.assertFalse(p_ser.is_valid())
+        profiles = Profile.objects.filter(code=self.profile['code'])
+        domains = ProfileDomain.objects.filter(code=self.profile['domains'][0]['code'])
+        sections = ProfileSection.objects.filter(code__in=[s['code'] for s in self.profile['domains'][0]['sections']])
+        self.assertEqual(len(profiles), 0)
+        self.assertEqual(len(domains), 0)
+        self.assertEqual(len(sections), 0)
+
+    def test_wrong_profile_domain_creation(self):
+        """
+        Test Profile creation failure when profile validation fails due to domain errors
+        """
+        self.profile['domains'][0].pop('name')
+        p_ser = ProfileSerializer(data=self.profile)
+        self.assertFalse(p_ser.is_valid())
+        profiles = Profile.objects.filter(code=self.profile['code'])
+        domains = ProfileDomain.objects.filter(code=self.profile['domains'][0]['code'])
+        sections = ProfileSection.objects.filter(code__in=[s['code'] for s in self.profile['domains'][0]['sections']])
+        self.assertEqual(len(profiles), 0)
+        self.assertEqual(len(domains), 0)
+        self.assertEqual(len(sections), 0)
+
+    def test_wrong_profile_section_creation(self):
+        """
+        Test Profile creation failure when profile validation fails due to a section error
+        """
+        self.profile['domains'][0]['sections'][0].pop('name')
+        p_ser = ProfileSerializer(data=self.profile)
+        self.assertFalse(p_ser.is_valid())
+        profiles = Profile.objects.filter(code=self.profile['code'])
+        domains = ProfileDomain.objects.filter(code=self.profile['domains'][0]['code'])
+        sections = ProfileSection.objects.filter(code__in=[s['code'] for s in self.profile['domains'][0]['sections']])
+        self.assertEqual(len(profiles), 0)
+        self.assertEqual(len(domains), 0)
+        self.assertEqual(len(sections), 0)
 
     def test_add(self):
         """
         Test correct add consent
         """
         res = self._add_consent()
+
         consent_id = res.json()['consent_id']
 
         expected = self.consent_data.copy()
@@ -330,6 +407,7 @@ class TestAPI(TestCase):
         # Missing data
         res = self.client.post('/v1/consents/', data='{}', content_type='application/json', **headers)
         self.assertEqual(res.status_code, 400)
+
         expected = {
             'source': ['This field is required.'],
             'profile': ['This field is required.'],
@@ -353,7 +431,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/', data=self.json_consent_data, content_type='application/json', **headers)
         expected = {
             'profile': {'code': ['This field is required.'],
-                        'payload': ['This field is required.'],
+                        'domains': ['This field is required.'],
                         'version': ['This field is required.']},
             'source': {'id': ['This field is required.'],
                        'name': ['This field is required.']},
@@ -393,22 +471,28 @@ class TestAPI(TestCase):
 
     def test_add_duplicated_consent_when_not_active(self):
         """
-        Tests that when adding a consent and there are already other consent
-        the Consent is actually added and the old one in PENDING status is set to NOT_VALID status
+        Tests that when adding a consent and there are already other ones,
+        the consent is actually added and the old one in PENDING status is set to NOT_VALID status
         """
+        from hgw_common.utils import get_logger
+        logger = get_logger("test")
         # First we add one REVOKED and one NOT_VALID consents
         for status in (Consent.REVOKED, Consent.NOT_VALID):
-            self._add_consent(self.json_consent_data, status=status)
+            logger.info("Add consent called")
+            res = self._add_consent(self.json_consent_data, status=status)
+            logger.info(res.json())
 
         # then we add a PENDING consent
+        logger.info("Inserting the new pending consent")
         res = self._add_consent(self.json_consent_data)
+        pprint.pprint(res.json())
         old_pending_consent_id = res.json()['consent_id']
 
         # finally we add the new consent and check it's added correctly
         res = self._add_consent()
-        c = Consent.objects.get(consent_id=old_pending_consent_id)
+        consent = Consent.objects.get(consent_id=old_pending_consent_id)
         self.assertEqual(res.status_code, 201)
-        self.assertEqual(c.status, Consent.NOT_VALID)
+        self.assertEqual(consent.status, Consent.NOT_VALID)
 
     def test_add_duplicated_consent_when_active(self):
         """
@@ -899,6 +983,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 4)
         self.assertEqual(len(res.json()['failed']), 0)
+
         for index, (confirm_id, consent_data) in enumerate(consents.items()):
             consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(consent_obj.status, Consent.ACTIVE)

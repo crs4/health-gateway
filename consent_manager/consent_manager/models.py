@@ -33,6 +33,7 @@ class Consent(models.Model):
     """
     Model for Consents
     """
+
     PENDING = 'PE'
     ACTIVE = 'AC'
     REVOKED = 'RE'
@@ -60,10 +61,18 @@ class Consent(models.Model):
         return 'Consent ID: {} - Status {}'.format(self.consent_id, self.status)
         
 
-def get_validity():
+class Authorization(models.Model):
     """
-    Function that returns the datetime default value for the validity of a :class:`ConfirmationCode`.
-    It returns the current time plus :attr:`REQUEST_VALIDITY_SECONDS`
+    Model for Authorization. An authorization is an atomic part of a consent that the user can individually be authorized
+    """
+    consent = models.ForeignKey('consent_manager.Consent', on_delete=models.CASCADE)
+    profile_section = models.ForeignKey('hgw_common.ProfileSection')
+    authorized = models.BooleanField()
+
+
+def get_confirmation_code_validity_default():
+    """
+    Default value for confirmation code
     """
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)
 
@@ -75,7 +84,7 @@ class ConfirmationCode(models.Model):
     """
     consent = models.ForeignKey('Consent', on_delete=models.CASCADE)
     code = models.CharField(max_length=32, blank=False, null=False, unique=True, default=generate_id)
-    validity = models.DateTimeField(default=get_validity)
+    validity = models.DateTimeField(default=get_confirmation_code_validity_default)
 
     def check_validity(self):
         """

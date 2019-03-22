@@ -53,7 +53,8 @@ SECRET_KEY = cfg['django']['secret_key']
 
 BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
-DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
+DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(
+    BASE_CONF_DIR, cfg['django']['database']['name'])
 
 ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
 HOSTNAME = ALLOWED_HOSTS[0]

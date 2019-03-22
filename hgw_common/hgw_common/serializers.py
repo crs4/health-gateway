@@ -39,7 +39,7 @@ class ProfileDomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProfileDomain
-        fields = ('name', 'code', 'sections')
+        fields = ('name', 'code', 'coding_system', 'sections')
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -63,5 +63,5 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        # validators = []  # This will erase all standard validators, but client classes should use get_or_create method
+        validators = [] # Validation should be performed by clients
         fields = ('code', 'version', 'domains')

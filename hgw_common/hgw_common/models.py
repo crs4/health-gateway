@@ -14,23 +14,23 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-import copy
 from datetime import datetime
 
 from django.db import models
 from django.utils.crypto import get_random_string
-from oauthlib.oauth2 import (BackendApplicationClient, MissingTokenError,
-                             TokenExpiredError)
+from oauthlib.oauth2 import BackendApplicationClient, MissingTokenError, TokenExpiredError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests_oauthlib import OAuth2Session
 
-from hgw_common.fields import JSONValidator
 from hgw_common.utils import get_logger
 
 logger = get_logger('hgw_common')
 
 
 def generate_id():
+    """
+    Function to generate random id
+    """
     return get_random_string(32)
 
 
@@ -38,8 +38,8 @@ class Profile(models.Model):
     """
     Class for model Profile
     """
-    code = models.CharField(max_length=10, blank=False, null=False)
-    version = models.CharField(max_length=30, blank=False, null=False)
+    code = models.CharField(max_length=20, blank=False, null=False)
+    version = models.CharField(max_length=10, blank=False, null=False)
 
     def __str__(self):
         return self.code
@@ -52,16 +52,13 @@ class ProfileDomain(models.Model):
     """
     Class for model ProfileDomain
     """
-    profile = models.ForeignKey(Profile, related_name="sections", on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, related_name="domains", on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=10)
     coding_system = models.CharField(max_length=10)
 
     def __str__(self):
         return self.name
-
-    def __unicode__(self):
-        return self.__str__()
 
 
 class ProfileSection(models.Model):

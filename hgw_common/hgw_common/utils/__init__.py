@@ -166,7 +166,7 @@ def get_oauth_token(server_uri, client_id, client_secret):
 
 def get_logger(logger_name):
     """
-    Create, configure and returns a logger
+    Get or create a logger with :logger_name: name and set the level at DEBUG or INGO depending on the settings
     """
     level = logging.DEBUG if settings.DEBUG is True else logging.INFO
     logger = logging.getLogger(logger_name)
@@ -179,8 +179,7 @@ def get_logger(logger_name):
         handler.setLevel(level)
         handler.setFormatter(fmt)
         logger.addHandler(handler)
-    logger.setLevel(level)
-
+    
     return logger
 
 

@@ -23,13 +23,19 @@ from rest_framework.exceptions import ValidationError
 from consent_manager.models import Consent, Endpoint
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import ERRORS
+from hgw_common.utils import ERRORS, get_logger
+
+
+logger = get_logger('consent_manager.serializers')
 
 
 class AttributesNotAllowed(ValidationError): pass
 
 
 class EnpointDuplicateValidator(object):
+    """
+    Validator for duplicate Endpoint. It checks if the Endpoint already exists with the correct attribute
+    """
     message = 'An instance with the same {equal_field} and different {different_field} already exists'
 
     def __call__(self, attrs):
@@ -47,6 +53,9 @@ class EnpointDuplicateValidator(object):
 
 
 class EndpointSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Endpoint model
+    """
     id = serializers.CharField(max_length=32, allow_null=False, allow_blank=False)
     name = serializers.CharField(max_length=100, allow_null=False, allow_blank=False)
 
@@ -58,43 +67,35 @@ class EndpointSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
-class ConsentSerializerDuplicateValidator(object):
-    message = 'Consent already present'
-
-    def __call__(self, attrs):
-        try:
-            p = Profile.objects.get(**attrs['profile'])
-            s = Endpoint.objects.get(**attrs['source'])
-            d = Endpoint.objects.get(**attrs['destination'])
-            consents = Consent.objects.filter(source=s, destination=d, profile=p, person_id=attrs['person_id'])
-        except (Consent.DoesNotExist, Endpoint.DoesNotExist, Profile.DoesNotExist) as ex:
-            # If one among source, destination and profile doesn't exist it means that neither the consent exists
-            return attrs
-        else:
-            for c in consents:
-                if c.status == Consent.ACTIVE:
-                    raise ValidationError(self.message, code='unique')
-                elif c.status == Consent.PENDING:
-                    c.status = Consent.NOT_VALID
-                    c.save()
-                    return attrs
-
-
 class ConsentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Consent model
+    """
     update_fields = {'start_validity', 'expire_validity'}
     profile = ProfileSerializer(many=False, allow_null=False)
     source = EndpointSerializer(many=False, allow_null=False)
     destination = EndpointSerializer(many=False, allow_null=False)
 
     def create(self, validated_data):
-        p, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
-        s, _ = Endpoint.objects.get_or_create(**validated_data.get('source'))
-        d, _ = Endpoint.objects.get_or_create(**validated_data.get('destination'))
-        validated_data['profile'] = p
-        validated_data['source'] = s
-        validated_data['destination'] = d
-        cs = Consent.objects.create(**validated_data)
-        return cs
+        try:
+            profile = Profile.objects.get(code=validated_data['profile']['code'],
+                                          version=validated_data['profile']['version'])
+            logger.info('Profile with the same parameters found')
+        except Profile.DoesNotExist:
+            logger.info('Profile not found. Creating a new one')
+            profile_serializer = ProfileSerializer(data=validated_data['profile'])
+            if profile_serializer.is_valid():
+                profile = profile_serializer.save()
+                logger.info('Created profile')
+            else:
+                logger.error('Profile not valid')
+                
+        source, _ = Endpoint.objects.get_or_create(**validated_data.get('source'))
+        destination, _ = Endpoint.objects.get_or_create(**validated_data.get('destination'))
+        validated_data['profile'] = profile
+        validated_data['source'] = source
+        validated_data['destination'] = destination
+        return Consent.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         instance.start_validity = validated_data['start_validity']
@@ -102,7 +103,7 @@ class ConsentSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def is_update(self):
+    def _updating(self):
         return self.instance is not None
 
     def validate(self, attrs):
@@ -116,29 +117,32 @@ class ConsentSerializer(serializers.ModelSerializer):
         :param attrs: the attributes to validate
         :return: the validated attributes
         """
-        if self.is_update():
+        if self._updating():
             if not set(attrs.keys()).issubset(self.update_fields):
                 raise ValidationError('attributes_not_editable', code='attributes_not_editable')
             return attrs
+
         try:
-            s = Endpoint.objects.get(**attrs['source'])
-            d = Endpoint.objects.get(**attrs['destination'])
-            p = Profile.objects.get(**attrs['profile'])
-            consents = Consent.objects.filter(source=s, destination=d, profile=p, person_id=attrs['person_id'])
-        except (Consent.DoesNotExist, Endpoint.DoesNotExist, Profile.DoesNotExist) as ex:
+            source = Endpoint.objects.get(**attrs['source'])
+            destination = Endpoint.objects.get(**attrs['destination'])
+            profile = Profile.objects.get(code=attrs['profile']['code'], version=attrs['profile']['version'])
+            consents = Consent.objects.filter(source=source, destination=destination, profile=profile, person_id=attrs['person_id'])
+        except (Consent.DoesNotExist, Endpoint.DoesNotExist, Profile.DoesNotExist):
+            logger.info("No consent with same parameters has been found. It is possible to continue with the Consent creation")
             # If one among source, destination and profile doesn't exist it means that neither the consent exists
             return attrs
         else:
-            for c in consents:
-                if c.status == Consent.ACTIVE:
+            logger.info("Consent with the same parameter has been found. Checking if the current consent is ACTIVE")
+            for consent in consents:
+                if consent.status == Consent.ACTIVE:
+                    logger.info("The consent is ACTIVE. Aborting the new Consent creation")
                     raise ValidationError(ERRORS.DUPLICATED)
-                elif c.status == Consent.PENDING:
-                    c.status = Consent.NOT_VALID
-                    c.save()
+                elif consent.status == Consent.PENDING:
+                    logger.info("Old consent is in PENDING status. Setting it to NOT_VAID")
+                    consent.status = Consent.NOT_VALID
+                    consent.save()
             return attrs
 
-    # def get_validators(self):
-    #     return super(ConsentSerializer, self).get_validators() + [ConsentSerializerDuplicateValidator()]
 
     class Meta:
         model = Consent
