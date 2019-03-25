@@ -112,10 +112,10 @@ class OAuth2SessionProxy(object):
     def create_session(self):
         client = BackendApplicationClient(self.client_id)
         try:
-            logger.debug("Querying db to check for a previuos token for url: {}".format(self.token_url))
+            logger.debug("Querying db to check for a previuos token for url: %s", self.token_url)
             access_token = AccessToken.objects.get(token_url=self.token_url)
         except AccessToken.DoesNotExist:
-            logger.debug("No token found in the db. Asking for a new one")
+            logger.debug("No token found in the db. Requesting a new one")
             oauth_session = OAuth2Session(client=client)
             self._fetch_token(oauth_session)
         else:
@@ -124,10 +124,15 @@ class OAuth2SessionProxy(object):
         return oauth_session
 
     def _fetch_token(self, oauth_session):
-        oauth_session.fetch_token(token_url=self.token_url,
-                                  client_id=self.client_id,
-                                  client_secret=self.client_secret)
-
+        
+        try:
+            res = oauth_session.fetch_token(token_url=self.token_url,
+                                        client_id=self.client_id,
+                                        client_secret=self.client_secret)
+        except ConnectionError as ex:
+            logger.warning('Cannot obtain a token: the server is down')
+            raise
+        
         token_data = {
             'access_token': oauth_session.token['access_token'],
             'token_type': oauth_session.token['token_type'],
@@ -135,9 +140,7 @@ class OAuth2SessionProxy(object):
             'expires_at': datetime.fromtimestamp(oauth_session.token['expires_at']),
             'scope': ' '.join(oauth_session.token['scope'])
         }
-        # token_data = copy.copy(oauth_session.token)
-        # token_data['expires_at'] = datetime.fromtimestamp(token_data['expires_at'])
-        # token_data['scope'] = " ".join(token_data['scope'])
+        print(token_data)
         try:
             access_token = AccessToken.objects.get(token_url=self.token_url)
         except AccessToken.DoesNotExist:
@@ -146,4 +149,3 @@ class OAuth2SessionProxy(object):
             for k, v in token_data.items():
                 setattr(access_token, k, v)
             access_token.save()
-

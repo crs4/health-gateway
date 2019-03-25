@@ -31,6 +31,7 @@ from kafka import KafkaProducer
 from oauthlib.oauth2 import InvalidClientError
 from operator import xor
 from rest_framework import status
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -109,9 +110,7 @@ class FlowRequestView(ViewSet):
             try:
                 fr = fr_serializer.save()
             except IntegrityError as e:
-                import traceback
-                traceback.print_exc()
-                logger.debug("Integrity error adding FR with data: {}\nDetails: {}".format(fr_serializer.data, e))
+                logger.debug("Integrity error adding FR with data: %s\nDetails: %s",fr_serializer.data, e)
                 return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
             cc = ConfirmationCode.objects.create(flow_request=fr)
             cc.save()
@@ -120,7 +119,7 @@ class FlowRequestView(ViewSet):
 
             return Response(res, status=status.HTTP_201_CREATED)
         else:
-            logger.error("Error adding Flow Request with data {}. Details {}".format(data, fr_serializer.errors))
+            logger.error("Error adding Flow Request with data %s. Details %s", data, fr_serializer.errors)
         return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, process_id, format=None):
@@ -171,18 +170,22 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
     try:
         oauth_backend_session = _get_backend_session()
     except InvalidClientError:
-        return [], ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']
+        logger.error("Invalid oAuth2 client contacting the backend")
+        return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
     except requests.exceptions.ConnectionError:
-        return [], ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']
+        logger.error("Backend connection error while getting an oAuth2 tokern")
+        return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
     else:
         sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
 
     try:
         oauth_consent_session = _get_consent_session()
     except InvalidClientError:
-        return [], ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']
+        logger.error("Invalid oAuth2 client contacting the consent manager")
+        return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
     except requests.exceptions.ConnectionError:
-        return [], ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR']
+        logger.error("Consent Manager connection error while getting an oAuth2 tokern")
+        return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
 
     confirm_ids = []
     for source_data in sources.json():
@@ -213,9 +216,10 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
                                                destination_endpoint_callback_url=destination_endpoint_callback_url)
             confirm_ids.append(json_res['confirm_id'])
         else:
-            logger.info('Consent not created. Response is: {}, {}'.format(res.status_code, res.content))
-
-    return confirm_ids
+            logger.info('Consent not created. Response is: %s, %s', res.status_code, res.content)
+    if not confirm_ids:
+        return confirm_ids, ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']
+    return confirm_ids, ""
 
 
 def _get_consent(confirm_id):
@@ -246,11 +250,12 @@ def _get_callback_url(request):
 
 
 def _ask_consent(request, flow_request, destination_callback_url):
-    consents = _create_channels(flow_request, destination_callback_url, request.user)
+    consents, error = _create_channels(flow_request, destination_callback_url, request.user)
 
-    if not consents:
-        return HttpResponseRedirect('{}?process_id={}&success={}'.format(
-            destination_callback_url, flow_request.process_id, json.dumps(False)))
+    if error:
+        return HttpResponseRedirect('{}?process_id={}&success={}&error={}'.format( 
+            destination_callback_url, flow_request.process_id, json.dumps(False), error))
+
     logger.debug("Created consent")
     consent_callback_url = _get_callback_url(request)
     return HttpResponseRedirect('{}?{}&callback_url={}'.
@@ -325,14 +330,14 @@ def consents_confirmed(request):
             done = _confirm(request, consent_confirm_id)
     return HttpResponseRedirect('{}?process_id={}&success={}'.format(
         callback, flow_request.process_id, json.dumps(done))
-    )
+   )
 
 
 @require_GET
 @login_required
 def confirm_request(request):
-    logger.debug("Scheme: {}".format(request.scheme))
-    logger.debug("User: {}".format(request.user.fiscalNumber))
+    logger.debug("Scheme: %s", request.scheme)
+    logger.debug("User: %s", request.user.fiscalNumber)
     if not request.user.fiscalNumber:
         return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PERSON_ID'])
     try:
@@ -340,7 +345,7 @@ def confirm_request(request):
         fr_confirm_code = request.GET['confirm_id']
         fr_callback_url = request.GET['callback_url']
         action = request.GET['action']
-    except KeyError as ex:
+    except KeyError:
         return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PARAM'])
     else:
         if action not in CONFIRM_ACTIONS:

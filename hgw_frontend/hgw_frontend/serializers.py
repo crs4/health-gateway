@@ -30,7 +30,6 @@ class FlowRequestSerializer(serializers.ModelSerializer):
         if validated_data['profile'] is not None:
             pr, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
             validated_data['profile'] = pr
-        print(validated_data)
         fr = FlowRequest.objects.create(**validated_data)
         return fr
 

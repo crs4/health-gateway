@@ -31,8 +31,10 @@ ERRORS_MESSAGE = {
     'UNKNOWN_CONSENT': 'Unknown consent',
     'INVALID_DATA': 'Invalid parameters',
     'MISSING_PERSON_ID': 'Missing person id',
+    'INTERNAL_GATEWAY_ERROR': 'internal_gateway_error',
     'INVALID_CONSENT_CLIENT': 'invalid_consent_client',
     'CONSENT_CONNECTION_ERROR': 'consent_connection_error',
     'INVALID_BACKEND_CLIENT': 'invalid_backend_client',
-    'BACKEND_CONNECTION_ERROR': 'backend_connection_error'
+    'BACKEND_CONNECTION_ERROR': 'backend_connection_error',
+    'ALL_CONSENTS_ALREADY_CREATED': 'all_required_consents_already_created'
 }

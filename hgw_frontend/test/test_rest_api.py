@@ -325,7 +325,6 @@ class TestHGWFrontendAPI(TestCase):
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
         res = self._add_flow_request()
-        print(res.json())
         self.assertEqual(res.status_code, 201)
 
         fr = res.json()
@@ -368,6 +367,7 @@ class TestHGWFrontendAPI(TestCase):
                                content_type='application/json')
 
         self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
     def test_add_flow_requests_forbidden(self):
         """
@@ -468,8 +468,8 @@ class TestHGWFrontendAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_confirm_duplicated_consent(self):
         """
-        Test that if the consent manager return a 400 status (meaning that the consent is already present)
-        the Flow Request is not added. The mock will return 400 when the person id is "mouse" so we login as him
+        Test that, if the consent manager returns a 400 status (meaning that the consent is already present),
+        the Flow Request is not confirmed
         """
         # We create the flow request
         res = self._add_flow_request()
@@ -477,15 +477,14 @@ class TestHGWFrontendAPI(TestCase):
         process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
-        # Then we login as mouse
+        # Then we login as mouse since the mock is configured to return 400 with "mouse" login 
         self.client.login(username='mouse', password='duck')
         # Then we confirm the request.
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
 
-        self.assertRedirects(res, "{}?process_id={}&success=false".format(callback_url, process_id), fetch_redirect_response=False)
-        # self.assertEqual(res.status_code, 200)
-        # self.assertEqual(res.json(), {'errors': ['All available consents already present']})
+        self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, 
+                             ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']), fetch_redirect_response=False)
 
     def test_confirm_redirect(self):
         """
@@ -656,29 +655,34 @@ class TestHGWFrontendAPI(TestCase):
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
+        process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
         # Then confirm the request. This will cause a redirect to consent manager
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['INVALID_BACKEND_CLIENT']])
+        self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
+                             fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
     def test_confirm_cannot_contact_backend(self):
+        """
+        Tests that, if an error occurs contactin the backend, the request to confirm fails and the client is redirected to 
+        the callback url
+        """
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
+        process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
-        # Then confirm the request. This will cause a redirect to consent manager
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['BACKEND_CONNECTION_ERROR']])
+        self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
+                             fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -687,14 +691,14 @@ class TestHGWFrontendAPI(TestCase):
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
+        process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
-        # Then confirm the request. This will cause a redirect to consent manager
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['INVALID_CONSENT_CLIENT']])
+        self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
+                             fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', 'https://localhost')
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -702,14 +706,15 @@ class TestHGWFrontendAPI(TestCase):
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
+        process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
         # Then confirm the request. This will cause a redirect to consent manager
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['errors'], [ERRORS_MESSAGE['CONSENT_CONNECTION_ERROR']])
+        self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
+                             fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
