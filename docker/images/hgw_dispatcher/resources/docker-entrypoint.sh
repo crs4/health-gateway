@@ -10,12 +10,16 @@ else
 fi
 cd ${BASE_SERVICE_DIR}
 
-python3 ${BASE_SERVICE_DIR}/dispatcher.py
-STATUS=$?
-while [ ${STATUS} == 2 ]; do
-    echo "Not ready. Sleeping 5 seconds"
-    sleep 5
+if [ "$1" == "test" ]; then
+    python3 -m unittest test
+else
     python3 ${BASE_SERVICE_DIR}/dispatcher.py
     STATUS=$?
-    echo "STATUS: $STATUS"
-done
+    while [ ${STATUS} == 2 ]; do
+        echo "Not ready. Sleeping 5 seconds"
+        sleep 5
+        python3 ${BASE_SERVICE_DIR}/dispatcher.py
+        STATUS=$?
+        echo "STATUS: $STATUS"
+    done
+fi
