@@ -23,6 +23,10 @@ services:
       - ../../../certs/ca/web/certs/tscns/idp-signing.key:/opt/shibboleth-idp/credentials/idp-signing.key
       - ../../../certs/ca/web/certs/tscns/idp-encryption.crt:/opt/shibboleth-idp/credentials/idp-encryption.crt
       - ../../../certs/ca/web/certs/tscns/idp-encryption.key:/opt/shibboleth-idp/credentials/idp-encryption.key
+    networks:
+      default:
+        aliases:
+          - hgwfrontend
 
   hgw_frontend:
     image: crs4/hgw_frontend:latest
