@@ -482,7 +482,6 @@ class TestHGWFrontendAPI(TestCase):
         # Then we confirm the request.
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
-
         self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, 
                              ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']), fetch_redirect_response=False)
 

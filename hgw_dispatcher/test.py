@@ -21,7 +21,7 @@ import unittest
 from unittest import TestCase
 
 import requests
-from mock import patch, MagicMock, call, Mock
+from unittest.mock import patch, MagicMock, call, Mock
 from oauthlib.oauth2 import TokenExpiredError
 
 from dispatcher import Dispatcher, OAuth2Session, CONSENT_MANAGER_OAUTH_CLIENT_ID, CONSENT_MANAGER_OAUTH_CLIENT_SECRET, \
@@ -294,9 +294,9 @@ class TestDispatcher(TestCase):
         d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         sources_id = [s['source_id'] for s in SOURCES]
-
+        
         mocked_kafka_consumer().partitions_for_topic.assert_has_calls([call(s) for s in sources_id])
-        mocked_kafka_consumer().subscribe.assert_called()
+        mocked_kafka_consumer().subscribe.assert_called_once_with(sources_id)
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')

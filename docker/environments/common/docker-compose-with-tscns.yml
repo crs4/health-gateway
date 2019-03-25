@@ -26,7 +26,7 @@ services:
     networks:
       default:
         aliases:
-          - hgwfrontend
+          - tscns
 
   hgw_frontend:
     image: crs4/hgw_frontend:latest
@@ -116,10 +116,6 @@ services:
       - 9093:9093
     volumes:
       - ../../../certs/ca/kafka/certs/kafka-server/:/container/certs/
-    networks:
-      default:
-        aliases:
-          - kafka
 
   hgw_dispatcher:
     image: crs4/hgw_dispatcher:latest

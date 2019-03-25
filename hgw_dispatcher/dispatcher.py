@@ -88,6 +88,10 @@ KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
 
 
 class Dispatcher(object):
+    """
+    Dispatcher class
+    """
+
     def __init__(self, broker_url, ca_cert, client_cert, client_key, use_ssl):
         self._obtain_hgw_backend_oauth_token()
         # self.backend_session = OAuth2SessionProxy(HGW_BACKEND_TOKEN_URL,
@@ -119,9 +123,9 @@ class Dispatcher(object):
         subscriptions = []
         for source_id in self.consumer_topics:
             if self.consumer.partitions_for_topic(source_id) is not None:
-                logger.debug("Subscribing to {} topic".format(source_id))
+                logger.debug("Subscribing to %s topic", source_id)
                 subscriptions.append(source_id)
-        if len(subscriptions) == 0:
+        if not subscriptions:
             logger.error("There are no topics available. Exiting...")
             sys.exit(2)
 
@@ -129,7 +133,7 @@ class Dispatcher(object):
         # TODO: decide if we want it to restart from the beginning or not
         # self.consumer.seek_to_beginning(self.consumer.subscription())
 
-        logger.debug("Subscribed to {} source topics".format(len(subscriptions)))
+        logger.debug("Subscribed to %s source topics", len(subscriptions))
 
         if use_ssl:
             producer_params = {
@@ -161,7 +165,7 @@ class Dispatcher(object):
 
     @staticmethod
     def _obtain_oauth_token(url, client_id, client_secret):
-        logger.debug('Getting OAuth token from {}'.format(url))
+        logger.debug('Getting OAuth token from %s', url)
         client = BackendApplicationClient(client_id)
         oauth_session = OAuth2Session(client=client)
         token_url = '{}/oauth2/token/'.format(url)
@@ -169,11 +173,11 @@ class Dispatcher(object):
             res = oauth_session.fetch_token(token_url=token_url, client_id=client_id,
                                             client_secret=client_secret)
         except InvalidClientError:
-            logger.error("Cannot obtain the token from {}. Invalid client".format(url))
+            logger.error("Cannot obtain the token from %s. Invalid client", url)
             return None
         except requests.exceptions.ConnectionError as e:
             logger.error(traceback.format_exc())
-            logger.error("Cannot obtain the token from {}. Connection error".format(url))
+            logger.error("Cannot obtain the token from %s. Connection error", url)
             return None
 
         if 'access_token' in res:
@@ -243,7 +247,7 @@ class Dispatcher(object):
                         logger.error("Cannot connect to HGW Frontend to get the process id. Skipping")
                     else:
                         if process_id:
-                            logger.debug('Sending to destination {} with process_id {}'.format(dest_id, process_id))
+                            logger.debug('Sending to destination %s with process_id %s', dest_id, process_id)
                             future = self.producer.send(dest_id, payload, key=process_id.encode('utf-8'))
                             try:
                                 record_metadata = future.get(timeout=5)
@@ -251,7 +255,7 @@ class Dispatcher(object):
                                 logger.info("Error sending record")
                                 logger.info(e)
                             else:
-                                logger.info("Sent message to topic: {}".format(record_metadata.topic))
+                                logger.info("Sent message to topic: %s", record_metadata.topic)
                         else:
                             logger.debug('Process id not found for the channel id')
                 elif consent['status'] == 'RE':
@@ -261,8 +265,8 @@ class Dispatcher(object):
                 else:
                     logger.info('Sent message to an invalid channel')
             else:
-                logger.error('Error retrieving consent status for the channel {}. Status: {}'.format(
-                    channel_id, cm_res.status_code))
+                logger.error('Error retrieving consent status for the channel %s. Status: %s',
+                             channel_id, cm_res.status_code)
 
     def run(self):
         # partition = TopicPartition(self.consumer_topics[0], 0)
@@ -271,11 +275,11 @@ class Dispatcher(object):
             logger.debug("Read message: {}".format(msg.key))
             if msg.key:
                 channel_id = msg.key.decode('utf-8')
-                logger.debug('Received message from {} for channel {}'.format(msg.topic, channel_id))
+                logger.debug('Received message from %s for channel %s', msg.topic, channel_id)
                 payload = msg.value
                 self._process_message(channel_id, payload)
             else:
-                logger.debug('Rejecting message from {}. Channel id not specified'.format(msg.topic))
+                logger.debug('Rejecting message from %s. Channel id not specified', msg.topic)
 
 
 if __name__ == '__main__':
