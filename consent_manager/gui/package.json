@@ -36,6 +36,7 @@
     "prop-types": "^15.6.1",
     "qs": "^6.5.2",
     "query-string": "^6.1.0",
+    "react-bootstrap-toggle": "^2.3.2",
     "react-datepicker": "^1.4.1",
     "react-icons": "^2.2.7",
     "react-notification-system": "^0.2.17",

@@ -15,6 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 import React from 'react';
 import DataProvider from './dataProvider';
 import {ConsentsController} from './consent';
@@ -28,7 +29,10 @@ class App extends React.Component {
         }
         else {
             return (
-                <ConsentsController data={data} notifier={this.notifier}/>
+                <ConsentsController 
+                    data={data} 
+                    notifier={this.notifier}
+                />
             )
         }
     }
@@ -40,8 +44,10 @@ class App extends React.Component {
     render() {
         return (
             <div>
-                <DataProvider endpoint="/v1/consents/"
-                              render={data => this.renderConsents(data)}/>
+                <DataProvider 
+                    endpoint="/v1/consents/"
+                    render={data => this.renderConsents(data)}
+                />
                 <NotificationManager ref="notificationManager"/>
             </div>
         )

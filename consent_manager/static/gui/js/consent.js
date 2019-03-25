@@ -273,7 +273,7 @@ class ConsentsViewer extends React.Component {
                         {status[c.status]}
                     </td>
                     <td className="stack-table-cell" data-title="Data Profile">
-                        <Profile data={c.profile}/>
+                        <Profile data={c.profile} editable={false}/>
                     </td>
                     <td className="stack-table-cell" data-title="Start Transfer Date">
                         {moment(c.start_validity).format('L')}
@@ -374,14 +374,6 @@ class ConsentManager extends React.Component {
                         </tr>
                         <tr className='details-table-row'>
                             <td className='details-table-cell details-table-cell-key'>
-                                Data Profile
-                            </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                <Profile data={consent.profile}/>
-                            </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
                                 Start Date
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
@@ -413,6 +405,14 @@ class ConsentManager extends React.Component {
                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
                                 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
                                 nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                            </td>
+                        </tr>
+                        <tr className='details-table-row'>
+                            <td className='details-table-cell details-table-cell-key'>
+                                Authorization
+                            </td>
+                            <td className='details-table-cell details-table-cell-value'>
+                                <Profile data={consent.profile} editable={true}/>
                             </td>
                         </tr>
                         </tbody>
@@ -456,7 +456,8 @@ class ConsentManager extends React.Component {
     }
 
     canModify() {
-        return this.state.consent.status === 'AC' && (this.state.consent.start_validity !== this.props.consent.start_validity ||
+        return this.state.consent.status === 'AC' && 
+            (this.state.consent.start_validity !== this.props.consent.start_validity ||
             this.state.consent.expire_validity !== this.props.consent.expire_validity)
     }
 

@@ -15,6 +15,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import copy
 import json
 import os
 import pprint
@@ -398,7 +399,33 @@ class TestConsentAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
-    def test_add_missing_fields(self):
+    def test_add_consent_duplicated_different_profile(self):
+        """
+        Test that adding a profile with same code and version but different domains or sections raise an error
+        """
+        res = self._add_consent()
+        profile = copy.copy(self.profile)
+        self.profile['domains'][0]['name'] = 'Nephrology' 
+        self.consent_data.update({
+            'profile': profile
+        })
+        res = self._add_consent(json.dumps(self.consent_data))
+        expected = {'profile': {'generic_errors': ['A profile with the same code and version but different sections exists. The profile is not correct']}}    
+        self.assertEqual(res.status_code, 400)
+        self.assertDictEqual(res.json(), expected)
+
+        profile = copy.copy(self.profile)
+        self.profile['domains'][0]['sections'][0]['code'] = 'SCAN' 
+        self.consent_data.update({
+            'profile': profile
+        })
+
+        res = self._add_consent(json.dumps(self.consent_data))
+        expected = {'profile': {'generic_errors': ['A profile with the same code and version but different sections exists. The profile is not correct']}}    
+        self.assertEqual(res.status_code, 400)
+        self.assertDictEqual(res.json(), expected)
+
+    def test_add_consent_missing_fields(self):
         """
         Test error when adding consent and some fields are missing
         """

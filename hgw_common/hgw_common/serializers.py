@@ -17,6 +17,7 @@
 
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from hgw_common.models import Profile, ProfileDomain, ProfileSection
 
@@ -42,6 +43,22 @@ class ProfileDomainSerializer(serializers.ModelSerializer):
         fields = ('name', 'code', 'coding_system', 'sections')
 
 
+class ProfileValidator(object):
+
+    def __call__(self, attrs):
+        try:
+            profile = Profile.objects.get(code=attrs['code'], version=attrs['version'])
+        except Profile.DoesNotExist:
+            return attrs
+        else:
+            domains = ProfileDomain.objects.filter(profile=profile)
+            domain_serializer = ProfileDomainSerializer(instance=domains, many=True)
+            if domain_serializer.data == attrs['domains']:
+                return attrs
+            raise ValidationError('A profile with the same code and version but different sections exists. The profile is not correct',
+                                  code='duplicate')
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for Profile model
@@ -63,5 +80,5 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        validators = [] # Validation should be performed by clients
+        validators = [ProfileValidator()]  # Validation should be performed by clients
         fields = ('code', 'version', 'domains')
