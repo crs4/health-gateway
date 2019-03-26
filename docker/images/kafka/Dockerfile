@@ -1,6 +1,6 @@
 FROM alpine:3.6
 
-MAINTAINER Vittorio Meloni <vittorio.meloni@crs4.it>
+LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 
 ARG KAFKA_VERSION_ARG=0.11.0.2
 ARG SCALA_VERSION_ARG=2.12

@@ -17,7 +17,7 @@
 
 
 FROM crs4/hgw_base
-MAINTAINER Vittorio Meloni <vittorio.meloni@crs4.it>
+LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 
 ENV CERTS_DIR=/container/certs
 

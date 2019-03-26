@@ -1,6 +1,6 @@
 # Base image for Django services
-FROM crs4/hgw_base
-MAINTAINER Vittorio Meloni <vittorio.meloni@crs4.it>
+FROM crs4/hgw_base:latest
+LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 
 ENV NGINX_VERSION 1.12.1
 ENV GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8
@@ -121,7 +121,11 @@ RUN ./configure $NGINX_CONFIG --with-debug \
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
-RUN apk update && apk add xmlsec xmlsec-dev libc-dev libxml2-dev libffi-dev python2-dev expect \
+# https://bugs.alpinelinux.org/issues/9110 is fixed since xmlsec 1.2.25-r4.
+RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+RUN echo "@edgecommunity http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+
+RUN apk update && apk add xmlsec@edge xmlsec-dev@edgecommunity libc-dev libxml2-dev libffi-dev python2-dev expect \
     python3 python3-dev py3-pip git
 
 ENV CONTAINER_DIR=/container
@@ -143,7 +147,8 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	pycryptodomex==3.4.7 \
 	coreapi==2.3.3 \
 	drf_yasg \
-	PyYAML==3.12
+	PyYAML==3.12 \
+	coverage
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 

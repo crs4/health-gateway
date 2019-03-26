@@ -16,7 +16,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-FROM crs4/web_base
+FROM crs4/web_base:latest
+LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
+
 
 ARG HTTP_PORT=8000
 

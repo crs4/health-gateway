@@ -17,6 +17,7 @@
 
 
 FROM crs4/web_base:latest
+LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 
 ARG HTTP_PORT=8002
 

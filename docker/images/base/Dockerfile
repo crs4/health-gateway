@@ -16,8 +16,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-FROM alpine:3.5
-MAINTAINER Vittorio Meloni <vittorio.meloni@crs4.it>
+FROM alpine:3.8
+LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 
 RUN apk update && apk add gcc make python2 py2-pip ca-certificates openssl-dev bash
 
