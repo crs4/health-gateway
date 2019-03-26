@@ -58,15 +58,17 @@ else
     cd ${BASE_SERVICE_DIR}
 fi
 
-echo "Starting kafka consumer"
-/launch-kafka.sh &
 
 if [ "$1" == "test" ]; then
     python manage.py test test
-elif [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
-    envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
-    nginx
-    gunicorn_start.sh sockfile $USER
-else
-    gunicorn_start.sh http $USER
+else 
+    echo "Starting kafka consumer"
+    /launch-kafka.sh &
+    if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
+        envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
+        nginx
+        gunicorn_start.sh sockfile $USER
+    else
+        gunicorn_start.sh http $USER
+    fi
 fi
