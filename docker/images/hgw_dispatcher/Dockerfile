@@ -22,7 +22,7 @@ LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 ENV CERTS_DIR=/container/certs
 
 RUN apk update && apk add python3 python3-dev py3-pip
-RUN pip3 install kafka-python requests requests-oauthlib oauthlib PyYAML
+RUN pip3 install kafka-python==1.3.5 requests==2.18.4 requests_oauthlib==0.8.0 PyYAML==3.12
 
 ADD resources/wait-for-it.sh /custom_entrypoint/
 ADD resources/docker-entrypoint.sh /custom_entrypoint/
