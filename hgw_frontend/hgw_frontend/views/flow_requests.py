@@ -19,31 +19,37 @@
 import datetime
 import json
 import logging
+from operator import xor
+
 import requests
 import six
 from dateutil.tz import gettz
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from django.http import HttpResponse, Http404, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
 from kafka import KafkaProducer
 from oauthlib.oauth2 import InvalidClientError
-from operator import xor
 from rest_framework import status
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import TokenHasResourceDetailedScope, ERRORS
+from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
-from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, Channel
-from hgw_frontend.serializers import FlowRequestSerializer, ChannelSerializer
-from hgw_frontend.settings import CONSENT_MANAGER_CLIENT_ID, CONSENT_MANAGER_CLIENT_SECRET, CONSENT_MANAGER_URI, \
-    KAFKA_TOPIC, KAFKA_BROKER, HGW_BACKEND_URI, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT, KAFKA_CA_CERT, \
-    CONSENT_MANAGER_CONFIRMATION_PAGE, HGW_BACKEND_CLIENT_ID, HGW_BACKEND_CLIENT_SECRET, TIME_ZONE, KAFKA_SSL
+from hgw_frontend.models import (Channel, ConfirmationCode,
+                                 ConsentConfirmation, Destination, FlowRequest)
+from hgw_frontend.serializers import FlowRequestSerializer
+from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
+                                   CONSENT_MANAGER_CLIENT_SECRET,
+                                   CONSENT_MANAGER_CONFIRMATION_PAGE,
+                                   CONSENT_MANAGER_URI, HGW_BACKEND_CLIENT_ID,
+                                   HGW_BACKEND_CLIENT_SECRET, HGW_BACKEND_URI,
+                                   KAFKA_BROKER, KAFKA_CA_CERT,
+                                   KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY,
+                                   KAFKA_SSL, KAFKA_TOPIC, TIME_ZONE)
 
 logger = logging.getLogger('hgw_frontend')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -60,6 +66,9 @@ class UnknownConsentConfirmation(Exception):
 
 
 class FlowRequestView(ViewSet):
+    """
+    Class with REST views for /flow_requests/ API
+    """
     permission_classes = (TokenHasResourceDetailedScope,)
     required_scopes = ['flow_request']
     # for the search view we also want the token to have the query scope
@@ -76,6 +85,9 @@ class FlowRequestView(ViewSet):
             raise Http404
 
     def list(self, request):
+        """
+        REST function to get all FlowRequests
+        """
         if request.auth.application.is_super_client():
             flow_requests = FlowRequest.objects.all()
         else:
@@ -84,6 +96,9 @@ class FlowRequestView(ViewSet):
         return Response(serializer.data)
 
     def create(self, request):
+        """
+        REST function to create a FlowRequest
+        """
         logger.debug(request.scheme)
         if 'flow_id' not in request.data or \
                 xor(('start_validity' not in request.data), ('expire_validity' not in request.data)):
@@ -108,38 +123,47 @@ class FlowRequestView(ViewSet):
         fr_serializer = FlowRequestSerializer(data=data)
         if fr_serializer.is_valid():
             try:
-                fr = fr_serializer.save()
-            except IntegrityError as e:
-                logger.debug("Integrity error adding FR with data: %s\nDetails: %s",fr_serializer.data, e)
+                flow_request = fr_serializer.save()
+            except IntegrityError as ex:
+                logger.debug("Integrity error adding FR with data: %s\nDetails: %s", fr_serializer.data, ex)
                 return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
-            cc = ConfirmationCode.objects.create(flow_request=fr)
+            cc = ConfirmationCode.objects.create(flow_request=flow_request)
             cc.save()
             res = {k: v for k, v in six.iteritems(fr_serializer.data)}
             res.update({'confirm_id': cc.code})
 
             return Response(res, status=status.HTTP_201_CREATED)
-        else:
-            logger.error("Error adding Flow Request with data %s. Details %s", data, fr_serializer.errors)
+
+        logger.error("Error adding Flow Request with data %s. Details %s", data, fr_serializer.errors)
         return Response(ERRORS_MESSAGE['INVALID_DATA'], status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, process_id, format=None):
-        fr = self.get_flow_request(request, process_id)
-        fr.status = FlowRequest.DELETE_REQUESTED
-        fr.save()
+        """
+        REST function to delete a FlowRequest
+        """
+        flow_request = self.get_flow_request(request, process_id)
+        flow_request.status = FlowRequest.DELETE_REQUESTED
+        flow_request.save()
 
-        cc = ConfirmationCode.objects.create(flow_request=fr)
+        cc = ConfirmationCode.objects.create(flow_request=flow_request)
         cc.save()
         res = {'confirm_id': cc.code}
 
         return Response(res, status=status.HTTP_202_ACCEPTED)
 
     def retrieve(self, request, process_id, format=None):
-        fr = self.get_flow_request(request, process_id)
-        serializer = FlowRequestSerializer(fr)
+        """
+        REST function to get one FlowRequest
+        """
+        flow_request = self.get_flow_request(request, process_id)
+        serializer = FlowRequestSerializer(flow_request)
         res = {k: v for k, v in six.iteritems(serializer.data) if k != 'destination'}
         return Response(res)
 
     def search(self, request):
+        """
+        REST function to search FlowRequest
+        """
         if 'channel_id' in request.GET:
             try:
                 consent_confirmation = ConsentConfirmation.objects.get(consent_id=request.GET['channel_id'])
@@ -177,6 +201,8 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
         return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
     else:
         sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+        if sources is None:
+            return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
 
     try:
         oauth_consent_session = _get_consent_session()
@@ -188,6 +214,7 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
         return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
 
     confirm_ids = []
+    connection_errors = 0
     for source_data in sources.json():
         channel = Channel.objects.create(channel_id=get_random_string(32), flow_request=flow_request,
                                          source_id=source_data['source_id'])
@@ -209,14 +236,18 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
         }
 
         res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
-        json_res = res.json()
-        if res.status_code == 201:
-            ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
-                                               confirmation_id=json_res['confirm_id'],
-                                               destination_endpoint_callback_url=destination_endpoint_callback_url)
-            confirm_ids.append(json_res['confirm_id'])
+        if res is not None:
+            json_res = res.json()
+            if res.status_code == 201:
+                ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
+                                                   confirmation_id=json_res['confirm_id'],
+                                                   destination_endpoint_callback_url=destination_endpoint_callback_url)
+                confirm_ids.append(json_res['confirm_id'])
+            else:
+                logger.info('Consent not created. Response is: %s, %s', res.status_code, res.content)
         else:
-            logger.info('Consent not created. Response is: %s, %s', res.status_code, res.content)
+            connection_errors += 1
+            logger.info('Consent not created. Error occurred contacting the consent manager')
     if not confirm_ids:
         return confirm_ids, ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']
     return confirm_ids, ""
@@ -253,7 +284,7 @@ def _ask_consent(request, flow_request, destination_callback_url):
     consents, error = _create_channels(flow_request, destination_callback_url, request.user)
 
     if error:
-        return HttpResponseRedirect('{}?process_id={}&success={}&error={}'.format( 
+        return HttpResponseRedirect('{}?process_id={}&success={}&error={}'.format(
             destination_callback_url, flow_request.process_id, json.dumps(False), error))
 
     logger.debug("Created consent")
@@ -304,9 +335,9 @@ def _confirm(request, consent_confirm_id):
 
         kp.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
 
-        fr = consent_confirmation.flow_request
-        fr.status = FlowRequest.ACTIVE
-        fr.save()
+        flow_request = consent_confirmation.flow_request
+        flow_request.status = FlowRequest.ACTIVE
+        flow_request.save()
         return True
     return False
 
@@ -330,7 +361,7 @@ def consents_confirmed(request):
             done = _confirm(request, consent_confirm_id)
     return HttpResponseRedirect('{}?process_id={}&success={}'.format(
         callback, flow_request.process_id, json.dumps(done))
-   )
+    )
 
 
 @require_GET
@@ -358,17 +389,17 @@ def confirm_request(request):
             if not cc.check_validity():
                 return HttpResponseBadRequest(ERRORS_MESSAGE['EXPIRED_CONFIRMATION_ID'])
             else:
-                fr = cc.flow_request
+                flow_request = cc.flow_request
                 if action == CONFIRM_ACTIONS[0]:
-                    if fr.status == FlowRequest.PENDING:
-                        fr.person_id = request.user.fiscalNumber
-                        fr.save()
-                        return _ask_consent(request, fr, fr_callback_url)
+                    if flow_request.status == FlowRequest.PENDING:
+                        flow_request.person_id = request.user.fiscalNumber
+                        flow_request.save()
+                        return _ask_consent(request, flow_request, fr_callback_url)
                     else:
                         return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_FR_STATUS'])
                 else:
-                    if fr.status == FlowRequest.DELETE_REQUESTED:
-                        fr.delete()
+                    if flow_request.status == FlowRequest.DELETE_REQUESTED:
+                        flow_request.delete()
                         return HttpResponseRedirect(fr_callback_url)
                     else:
                         return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_FR_STATUS'])

@@ -14,26 +14,31 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-from datetime import timedelta
-
 import json
 import logging
 import os
+
+from datetime import timedelta, datetime
+
 from Cryptodome.PublicKey import RSA
-from datetime import timedelta
 from dateutil.parser import parse
 from django.test import TestCase, client
 from mock import patch
 
 from hgw_common.cipher import Cipher
-from hgw_common.models import Profile
-from hgw_common.utils.mocks import get_free_port, start_mock_server, MockKafkaConsumer, MockMessage
+from hgw_common.models import AccessToken, Profile
+from hgw_common.utils.mocks import (MockKafkaConsumer, MockMessage,
+                                    get_free_port, start_mock_server)
 from hgw_frontend import ERRORS_MESSAGE
-from hgw_frontend.models import FlowRequest, ConfirmationCode, ConsentConfirmation, Destination, RESTClient, Channel
+from hgw_frontend.models import (Channel, ConfirmationCode,
+                                 ConsentConfirmation, Destination, FlowRequest,
+                                 RESTClient)
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
-from . import WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, \
-    TEST_PERSON1_ID
-from .utils import MockConsentManagerRequestHandler, MockBackendRequestHandler, SOURCES_DATA, PROFILES_DATA
+
+from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, TEST_PERSON1_ID,
+               WRONG_CONFIRM_ID)
+from .utils import (PROFILES_DATA, SOURCES_DATA, MockBackendRequestHandler,
+                    MockConsentManagerRequestHandler)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -651,13 +656,15 @@ class TestHGWFrontendAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
     def test_confirm_fail_backend_oauth_token(self):
-        # First perform an add request that creates the flow request with status 'PENDING'
+        """
+        Tests that, if an error occurs when getting the backend oauth2 token because of wrong oauth2 client paramaters, 
+        the request to confirm fails and the client is redirected to the callback url with an error paramater
+        """
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
         process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
 
-        # Then confirm the request. This will cause a redirect to consent manager
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
@@ -666,16 +673,42 @@ class TestHGWFrontendAPI(TestCase):
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
-    def test_confirm_cannot_contact_backend(self):
+    def test_confirm_cannot_contact_backend_when_getting_an_oauth_token(self):
         """
-        Tests that, if an error occurs contactin the backend, the request to confirm fails and the client is redirected to 
-        the callback url
+        Tests that, if a connection error occurs getting the oauth token from the backend, 
+        the request to confirm fails and the client is redirected to the callback url with an error parameter
         """
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
         process_id = res.json()['process_id']
         callback_url = 'http://127.0.0.1/'
+
+        self.client.login(username='duck', password='duck')
+        res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
+            confirm_id, callback_url))
+        self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
+                             fetch_redirect_response=False)
+
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
+    def test_confirm_cannot_contact_backend_when_getting_sources(self):
+        """
+        Tests that, if a connection error occurs getting the sources from the backend, 
+        the request to confirm fails and the client is redirected to the callback url with an error parameter
+        """
+        # First perform an add request that creates the flow request with status 'PENDING'
+        res = self._add_flow_request()
+        confirm_id = res.json()['confirm_id']
+        process_id = res.json()['process_id']
+        callback_url = 'http://127.0.0.1/'
+        # Inserts a fake access token to skip the request of a new token and the firts request will be GET /v1/sources
+        AccessToken.objects.create(token_url='https://localhost/oauth2/token/',
+                                   access_token='C3wxJNSLfeLIwHGwnWiIbZPHLTT9a8', 
+                                   token_type='Bearer', 
+                                   expires_in=36000, 
+                                   expires_at=datetime.now() + timedelta(36000), 
+                                   scope=['read', 'write'])
 
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
@@ -687,6 +720,10 @@ class TestHGWFrontendAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_CLIENT_ID', 'wrong_client_id')
     def test_confirm_fail_consent_oauth_token(self):
+        """
+        Tests that, if an error occurs when getting the token from consent (i.e., wrong oauth2 client parameters) the client is 
+        redirected to callback_url with  an appropiate error message
+        """
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
@@ -701,7 +738,11 @@ class TestHGWFrontendAPI(TestCase):
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', 'https://localhost')
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
-    def test_confirm_cannot_contact_consent(self):
+    def test_confirm_cannot_contact_consent_when_getting_oauth2_token(self):
+        """
+        Tests that, if a connection error occurs getting the oauth token from the backend, 
+        the request to confirm fails and the client is redirected to the callback url with an error parameter
+        """
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
         confirm_id = res.json()['confirm_id']
@@ -714,6 +755,32 @@ class TestHGWFrontendAPI(TestCase):
             confirm_id, callback_url))
         self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
                              fetch_redirect_response=False)
+
+    # @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', 'https://localhost')
+    # @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    # def test_confirm_cannot_contact_consent_when_creating_consents(self):
+    #     """
+    #     Tests that, if a connection error occurs creating the consents into the backend
+    #     the request to confirm fails and the client is redirected to the callback url with an error parameter
+    #     """
+    #     # First perform an add request that creates the flow request with status 'PENDING'
+    #     res = self._add_flow_request()
+    #     confirm_id = res.json()['confirm_id']
+    #     process_id = res.json()['process_id']
+    #     callback_url = 'http://127.0.0.1/'
+    #     # Inserts a fake access token to skip the request of a new token and the firts request will be GET /v1/sources
+    #     AccessToken.objects.create(token_url='https://localhost/oauth2/token/',
+    #                                access_token='C3wxJNSLfeLIwHGwnWiIbZPHLTT9a8', 
+    #                                token_type='Bearer', 
+    #                                expires_in=36000, 
+    #                                expires_at=datetime.now() + timedelta(36000), 
+    #                                scope=['read', 'write'])
+
+    #     self.client.login(username='duck', password='duck')
+    #     res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
+    #         confirm_id, callback_url))
+    #     self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id, ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']),
+    #                          fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)

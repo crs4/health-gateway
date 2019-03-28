@@ -19,8 +19,9 @@ from datetime import datetime
 
 from django.db import models
 from django.utils.crypto import get_random_string
-from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError, MissingTokenError, TokenExpiredError
+from oauthlib.oauth2 import BackendApplicationClient, MissingTokenError, TokenExpiredError
 from requests_oauthlib import OAuth2Session
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from hgw_common.fields import JSONValidator
 from hgw_common.utils import get_logger
@@ -83,7 +84,11 @@ class OAuth2SessionProxy(object):
         self._session = self.create_session()
 
     def request(self, method, url, **kwargs):
+        """
+        Performs an http request to :url: using :method:
+        """
         try:
+            logger.debug('Performing request with method %s to %s', method, url)
             if method == 'POST':
                 res = self._session.post(url, **kwargs)
             else:
@@ -91,25 +96,34 @@ class OAuth2SessionProxy(object):
             if res.status_code == 401:
                 raise TokenExpiredError
         except TokenExpiredError:
-            logger.debug("Token for the source expired. Getting a new one")
+            logger.debug('Token expired. Getting a new one')
             self._fetch_token(self._session)
-            logger.debug("Creating connector with the new token")
+            logger.debug('Retrying to perform the request')
             res = self._session.get(url)
-        except ConnectionError:
-            logger.debug("Connection error creating the connector")
+        except RequestsConnectionError:
+            logger.debug('Connection error performing %s on %s', method, url)
             res = None
         except MissingTokenError:
-            logger.debug("Missing token for the source endpoint")
+            logger.debug('Missing token for %s', url)
             res = None
         return res
 
     def get(self, url, **kwargs):
+        """
+        Perform a GET request to url using the oauth session
+        """
         return self.request('GET', url, **kwargs)
 
     def post(self, url, **kwargs):
+        """
+        Perform a POST request to url using the oauth session
+        """
         return self.request('POST', url, **kwargs)
 
     def create_session(self):
+        """
+        Creates an oauth session, getting a token
+        """
         client = BackendApplicationClient(self.client_id)
         try:
             logger.debug("Querying db to check for a previuos token for url: %s", self.token_url)
@@ -119,20 +133,21 @@ class OAuth2SessionProxy(object):
             oauth_session = OAuth2Session(client=client)
             self._fetch_token(oauth_session)
         else:
+            logger.debug("Token found")
             oauth_session = OAuth2Session(client=client, token=access_token.to_python())
 
         return oauth_session
 
     def _fetch_token(self, oauth_session):
-        
+
         try:
-            res = oauth_session.fetch_token(token_url=self.token_url,
-                                        client_id=self.client_id,
-                                        client_secret=self.client_secret)
-        except ConnectionError as ex:
+            oauth_session.fetch_token(token_url=self.token_url,
+                                      client_id=self.client_id,
+                                      client_secret=self.client_secret)
+        except RequestsConnectionError:
             logger.warning('Cannot obtain a token: the server is down')
             raise
-        
+
         token_data = {
             'access_token': oauth_session.token['access_token'],
             'token_type': oauth_session.token['token_type'],
@@ -140,7 +155,7 @@ class OAuth2SessionProxy(object):
             'expires_at': datetime.fromtimestamp(oauth_session.token['expires_at']),
             'scope': ' '.join(oauth_session.token['scope'])
         }
-        print(token_data)
+
         try:
             access_token = AccessToken.objects.get(token_url=self.token_url)
         except AccessToken.DoesNotExist:

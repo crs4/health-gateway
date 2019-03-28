@@ -26,12 +26,16 @@ docker build -t crs4/spid-testenv-backoffice:latest ${DIR}/spid_testenv_backoffi
 
 # Create TS/CNS image
 docker build -t crs4/tscns:latest ${DIR}/tscns
+docker tag crs4/tscns:latest crs4/tscns:$VERSION
 
 # Create base image
 docker build -t crs4/hgw_base:latest ${DIR}/base
+docker tag crs4/hgw_base:latest crs4/hgw_base:$VERSION
 
 # Create web_base image
 docker build -t crs4/web_base:latest ${DIR}/web_base
+docker tag crs4/web_base:latest crs4/web_base:$VERSION
+
 
 # Create consent manager
 cp -r health_gateway/consent_manager/ ${DIR}/consent_manager/service
