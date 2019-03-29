@@ -13,8 +13,7 @@ LABEL name="kafka" version=${KAFKA_VERSION}
 RUN apk add --no-cache openjdk8-jre docker bash coreutils su-exec
 RUN apk add --no-cache -t .build-deps curl ca-certificates jq \
   && mkdir -p /opt \
-	&& mirror=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | jq -r '.preferred') \
-	&& curl -sSL "${mirror}kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz" \
+	&& curl -sSL "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz" \
 		| tar -xzf - -C /opt \
 	&& mv /opt/kafka_${SCALA_VERSION}-${KAFKA_VERSION} /opt/kafka \
   && adduser -DH -s /sbin/nologin kafka \
