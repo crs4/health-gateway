@@ -1,0 +1,8 @@
+language: bash
+before_install:
+  pip install -r hgw_frontend/requirements.txt
+script: 
+  - bash ./test/run_unittest.sh
+branches:
+  only:
+    - develop

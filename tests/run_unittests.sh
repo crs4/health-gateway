@@ -27,35 +27,29 @@ else
     PYTHON=python3
 fi
 
+echo "Using $PYTHON" 
+
 set -e
 
-DIR=$PWD
+SCRIPT_PATH=$(readlink -f "$0")
+DIR=$(dirname $SCRIPT_PATH)
+echo $DIR
 export PYTHONPATH=${DIR}/../hgw_common
-for module in  consent_manager hgw_frontend hgw_backend; do
+
+for module in consent_manager hgw_frontend hgw_backend; do
     echo $'\n*********************'
     echo "Testing $module"
-    cd ../${module}
+    cd $DIR/../${module}
     ${PYTHON} manage.py test test/
-    cd ${DIR}
 done
 
-cd ../hgw_common/hgw_common
+cd $DIR/../hgw_common/hgw_common
 echo $'\n*********************'
 echo "Testing hgw_common"
-#PYTHONPATH=../.. ${PYTHON} -m unittest discover
 ${PYTHON} manage.py test hgw_common.test
 
-cd ${DIR}
-
-cd ../examples/source_endpoint
-echo $'\n*********************'
-echo "Testing source_endpoint"
-${PYTHON} manage.py test source_endpoint.tests
-
-cd $DIR
-
 if [ "${PYTHON_VERSION}" ==  "3" ]; then
-    cd ../hgw_dispatcher/
+    cd $DIR/../hgw_dispatcher/
     echo $'\n*********************'
     echo "Testing hgw_dispatcher"
     python3 -m unittest test
