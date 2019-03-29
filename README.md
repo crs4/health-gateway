@@ -1,5 +1,6 @@
-# Health Gateway Project
+[![Build Status](https://travis-ci.org/crs4/health-gateway.png)](https://travis-ci.org/crs4/health-gateway)
 
+# Health Gateway Project
 
 Health Gateway is a system that allows a citizen to authorize the tranfer of his/her clinical data from a Source to a Destination
 

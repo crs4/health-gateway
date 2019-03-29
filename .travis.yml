@@ -1,6 +1,6 @@
 language: bash
 before_install:
-  pip install -r hgw_frontend/requirements.txt
+  pip3 install -r hgw_frontend/requirements.txt
 script: 
   - bash ./test/run_unittest.sh
 branches:
