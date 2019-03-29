@@ -1,6 +1,8 @@
 language: python
 python:
   - "3.6"
+env:
+  - PYTHONPATH=hgw_common/
 before_install:
   pip install -r hgw_frontend/requirements.txt
 script: 
