@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Adding a Flow request &mdash; Health Gateway 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/sphinxmark.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Health Gateway 1.0 documentation" href="../../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Health Gateway
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="home.html">HGW Frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_backend/home.html">HGW Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_backend/home.html#enrolling-a-source">Enrolling a Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../consent_manager/home.html">Consent Manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Health Gateway</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Adding a Flow request</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/modules/hgw_frontend/api_tutorial.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="adding-a-flow-request">
+<h1>Adding a Flow request<a class="headerlink" href="#adding-a-flow-request" title="Permalink to this headline">¶</a></h1>
+<p>The workflow to add or delete a new flow request is described in the following image</p>
+<img alt="../../_images/flow_requests_workflow.svg" src="../../_images/flow_requests_workflow.svg" /><div class="section" id="obtaining-a-token">
+<h2>Obtaining a token<a class="headerlink" href="#obtaining-a-token" title="Permalink to this headline">¶</a></h2>
+<p>Before creating a flow request a client needs to authenticate to the Health Gateway. Authentication is performed using
+two-legged [OAuth2](<a class="reference external" href="https://oauth.net/2/">https://oauth.net/2/</a>)  protocol with the <cite>client_credentials</cite> grant type.
+Before trying to authenticate and to use
+the API, the client has to be registered in the Health Gateway in order to obtain a pair of <code class="docutils literal notranslate"><span class="pre">client_id/client_secret</span></code></p>
+<p>After being registered, to obtain an access token, the client has to make <cite>POST</cite> request to the url <cite>/oauth2/token/</cite>
+passing as data <cite>client_id</cite>, <cite>client_secret</cite> and <cite>grant_type</cite> with value <cite>client_credentials</cite>.
+This request will return a Bearer access token to be used in the subsequent REST calls</p>
+</div>
+<div class="section" id="using-the-token-to-create-a-flow-request">
+<h2>Using the token to create a flow request<a class="headerlink" href="#using-the-token-to-create-a-flow-request" title="Permalink to this headline">¶</a></h2>
+<p>After gaining the token, the client can use it to create a flow request by calling, using POST, /v1/flow_requests/.
+This function creates a flow request and returns three arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>process_id</cite>: which is the flow request id assigned by the health gateway</li>
+<li><cite>confirm_id</cite>: which is an id to be used to confirm the flow request</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="obtaining-user-authorization">
+<h2>Obtaining user authorization<a class="headerlink" href="#obtaining-user-authorization" title="Permalink to this headline">¶</a></h2>
+<p>The previous call created a flow request which is not actived immediately, since it needs user authorization.
+To do that the client has to redirect the user to <cite>/v1/flow_requests/confirm/</cite> specifying the <code class="docutils literal notranslate"><span class="pre">confirm_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">action=add</span></code> and a <code class="docutils literal notranslate"><span class="pre">callback_url</span></code>. This page asks the user to login and to confirm. After that the flow
+request will be activated and the user will be redirected to the <code class="docutils literal notranslate"><span class="pre">callback_url</span></code> specified.</p>
+</div>
+<div class="section" id="deleting-a-flow-request">
+<h2>Deleting a flow request<a class="headerlink" href="#deleting-a-flow-request" title="Permalink to this headline">¶</a></h2>
+<p>The flow request deletion uses the same workflow as the creation. The difference is that it has to be called
+<cite>/v1/flow_requests/&lt;process_id&gt;/</cite> using DELETE HTTP method</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Enrolling a Source &mdash; Health Gateway 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/sphinxmark.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Health Gateway 1.0 documentation" href="../../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Health Gateway
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_frontend/home.html">HGW Frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="home.html">HGW Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="home.html#enrolling-a-source">Enrolling a Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../consent_manager/home.html">Consent Manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Health Gateway</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Enrolling a Source</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/modules/hgw_backend/admin.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="enrolling-a-source">
+<h1>Enrolling a Source<a class="headerlink" href="#enrolling-a-source" title="Permalink to this headline">¶</a></h1>
+<p>This page describes how to enroll a new Source.</p>
+<div class="section" id="registration-in-the-admin-page">
+<h2>Registration in the admin page<a class="headerlink" href="#registration-in-the-admin-page" title="Permalink to this headline">¶</a></h2>
+<p>Access to the /admin/ page of the backend to create an Authentication object and a Source object.</p>
+<div class="section" id="creation-of-the-authentication-object">
+<h3>Creation of the authentication object<a class="headerlink" href="#creation-of-the-authentication-object" title="Permalink to this headline">¶</a></h3>
+<p>To create an authentication object, which contains the parameters to connect to the
+Source. There are two methods supported:</p>
+<ul class="simple">
+<li>Certificates authentication</li>
+<li>OAuth2 authentications</li>
+</ul>
+<div class="section" id="certificate-authentication">
+<h4>Certificate authentication<a class="headerlink" href="#certificate-authentication" title="Permalink to this headline">¶</a></h4>
+<p>This type of authentication needs a pair of client key/certificate that the Source trusts (i.e., the certificate has been
+signed by a CA that the Source trusts). The method to obtain these files is out of the scope of the tutorial.</p>
+<p>To create the authentication object add one and upload the two files in PEM format. Take a not of the ID of the newly
+created object.</p>
+</div>
+<div class="section" id="oauth2-authentication">
+<h4>OAuth2 authentication<a class="headerlink" href="#oauth2-authentication" title="Permalink to this headline">¶</a></h4>
+<p>TBD</p>
+</div>
+</div>
+<div class="section" id="creation-of-the-source-object">
+<h3>Creation of the Source object<a class="headerlink" href="#creation-of-the-source-object" title="Permalink to this headline">¶</a></h3>
+<p>Now create a Source object. The fields you must insert are:</p>
+<ul class="simple">
+<li><strong>Source id:</strong> The ID of the Source. Leave the autocreated value and note it. This value has to be given to the Source
+since it is the id of the kafka topic it has to use to send messages</li>
+<li><strong>Name:</strong> The name of the source</li>
+<li><strong>URL:</strong> The url of the endpoint to create connectors (e.g.: <a class="reference external" href="https://sourceendpoint/v1/connectors/">https://sourceendpoint/v1/connectors/</a>)</li>
+<li><strong>Auth Type:</strong> Select the auth type among the available. It has to correspond to the correct authentication object
+created before</li>
+<li><strong>Content type:</strong> Select the contenttype that corresponds to the authentication object created before</li>
+<li><strong>Object id:</strong>  Insert the ID of the object noted before</li>
+</ul>
+</div>
+</div>
+<div class="section" id="creation-of-kafka-client-certificates">
+<h2>Creation of Kafka client certificates<a class="headerlink" href="#creation-of-kafka-client-certificates" title="Permalink to this headline">¶</a></h2>
+<p>The source will need a certificate with its associated private key to access to Kafka. So it is necessary to create them.
+To do that use the script <code class="docutils literal notranslate"><span class="pre">generate_kafka_client_certificates.sh</span></code> in hgw/certs/ directory. The script will generate
+PEM files and also the JKS keystore and truststore in case the Source needs them</p>
+</div>
+<div class="section" id="creation-of-kafka-topic-and-relative-acl-for-the-destination">
+<h2>Creation of Kafka topic and relative ACL for the destination<a class="headerlink" href="#creation-of-kafka-topic-and-relative-acl-for-the-destination" title="Permalink to this headline">¶</a></h2>
+<p>In the Kafka server it is necessary adding a new topic for the destination and the relative ACL. The topic has to be
+accessed only by the Source endpoint in Write mode and by the HGW Dispatcher in Read mode.
+If using docker just set the environment variable KAFKA_CREATE_TOPICS when running the container to the value:</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;source_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt;</span></code></p>
+<p>Alternatively you can execute the command <code class="docutils literal notranslate"><span class="pre">create_topics.sh</span></code> in a running kafka container</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker <span class="nb">exec</span> -e <span class="nv">KAFKA_CREATE_TOPICS</span><span class="o">=</span>&lt;source_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt; &lt;kafka_container&gt; /create_topics.sh
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>The &lt;source_id&amp;gt; is the one configured in the web application. The &lt;publisher&amp;gt; is the name used when generating</dt>
+<dd>the Kafka client certs and the <span class="raw-html-m2r"><consumer></span> is hgw_dispatcher</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

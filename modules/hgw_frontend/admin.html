@@ -1,0 +1,291 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Creation of Private/Public Key Pair &mdash; Health Gateway 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/sphinxmark.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Health Gateway 1.0 documentation" href="../../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Health Gateway
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="home.html">HGW Frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_backend/home.html">HGW Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_backend/home.html#enrolling-a-source">Enrolling a Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../consent_manager/home.html">Consent Manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Health Gateway</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Creation of Private/Public Key Pair</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/modules/hgw_frontend/admin.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Enrolling a Destination</p>
+<hr class="docutils" />
+<p>This page describes how to enroll a new Destination.</p>
+<div class="section" id="creation-of-private-public-key-pair">
+<h1>Creation of Private/Public Key Pair<a class="headerlink" href="#creation-of-private-public-key-pair" title="Permalink to this headline">¶</a></h1>
+<p>First of all you will need to create an RSA Private/Public Key pair that will be used to encrypt messages paylod. The
+private key has to be kept secret by the destination while the public has to be registered in the HGW Frontend
+application. To generates the key you can use the <code class="docutils literal notranslate"><span class="pre">create_rsa_key_pair.sh</span></code> script in hgw/utils directory.</p>
+</div>
+<div class="section" id="registration-in-the-admin-page">
+<h1>Registration in the admin page<a class="headerlink" href="#registration-in-the-admin-page" title="Permalink to this headline">¶</a></h1>
+<p>Now you will need to create a new Destination in the HGW Frontend web page. Access to the /admin/ url of the frontend
+and click Destination-&gt;Add Destination.</p>
+<p>Here you will have to fill the form with the following data:</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt><strong>Destination id</strong>:</dt>
+<dd>it is the identifier of the destination in the Health Gateway. It is created by Django so just use the value already present-
+This value is also the name of the Kafka topic associated to the destination</dd>
+</dl>
+</li>
+<li><strong>Rest or Kafka</strong>: If the Destinatio will consume messages using Kafka or REST</li>
+<li><strong>Name</strong>: The name of the Destination</li>
+<li><strong>Kafka public key</strong>: The public key created before</li>
+</ul>
+<p>After that you will need to create also the REST client corrsponding to the Destination. Go in /admin/ page and
+click REST Clients-&gt;Add Rest Client.</p>
+<p>Here it is necessary to fill the form. The data to be inserted are:</p>
+<ul class="simple">
+<li><strong>Client id</strong>: it is the OAuth2 client id assigned to the destination. It is created by Django so just use the value already present</li>
+<li><strong>User</strong>: Leave it blank</li>
+<li><strong>Redirect uris</strong>: Leave blank</li>
+<li><strong>Client type</strong>: the OAuth2 client type. Must be Confidential</li>
+<li><strong>Authorization Grant Type</strong>: The OAuth2 authorization grant type. Must be Client credentials</li>
+<li><strong>Client Secret</strong>: it is the OAuth2 client secret of the the destination. It is created by Django so just use the value already present</li>
+<li><strong>Destination</strong>: Select the Destination created in the step before</li>
+<li><strong>Client Role</strong>: Select ST (Standard)</li>
+<li><strong>Scopes</strong>: Leave the default ones</li>
+</ul>
+</div>
+<div class="section" id="creation-of-kafka-client-certificates">
+<h1>Creation of Kafka client certificates<a class="headerlink" href="#creation-of-kafka-client-certificates" title="Permalink to this headline">¶</a></h1>
+<p>The destination will need a Certificate with its associated Private Key to access to Kafka. So it is necessary to create them.
+To do that use the script <code class="docutils literal notranslate"><span class="pre">generate_kafka_client_certificates.sh</span></code> in hgw/certs/ directory. The script will generate
+PEM files and also the JKS keystore and truststore in case the Destination needs them</p>
+</div>
+<div class="section" id="creation-of-kafka-topic-and-relative-acl-for-the-destination">
+<h1>Creation of Kafka topic and relative ACL for the destination<a class="headerlink" href="#creation-of-kafka-topic-and-relative-acl-for-the-destination" title="Permalink to this headline">¶</a></h1>
+<p>In the Kafka server it is necessary adding a new topic for the destination and the relative ACL. The topic has to be
+accessed only by the HGW dispatcher in Write mode and by the Destination itself in Read mode.
+If using docker just add a record to KAFKA_TOPIC variable in the Kafka service specifying:</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;destination_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt;</span></code></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;destination_id&gt;</span></code> is the one configured in the web application. The <code class="docutils literal notranslate"><span class="pre">&lt;publisher&gt;</span></code> is hgw_dipatcher and the <code class="docutils literal notranslate"><span class="pre">&lt;consumer&gt;</span></code>
+is the service name used in the <code class="docutils literal notranslate"><span class="pre">generate_kafka_client_certificates.sh</span></code>.</p>
+</div>
+<div class="section" id="information-to-give-to-the-destination">
+<h1>Information to give to the Destination<a class="headerlink" href="#information-to-give-to-the-destination" title="Permalink to this headline">¶</a></h1>
+<p>The Destination will need the following informations back:</p>
+<ul class="simple">
+<li>OAuth2 Client id and Client secret: necessary to use the HGW Frontend REST API</li>
+<li>Destination id: This is used as the name of the Kafka topic associated to the Destination, so it is needed to get messages</li>
+<li>Kafka Client Key/Certificates: The destination needs them to connect to the Kafka Broker</li>
+</ul>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

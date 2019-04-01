@@ -1,0 +1,676 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>HGW Frontend &mdash; Health Gateway 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../_static/sphinxmark.css" type="text/css" />
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Health Gateway 1.0 documentation" href="../../index.html"/>
+        <link rel="next" title="HGW Backend" href="../hgw_backend/home.html"/>
+        <link rel="prev" title="Architecture General Overview" href="../../architecture.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Health Gateway
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">HGW Frontend</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-flow-request">Adding a Flow request</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#obtaining-a-token">Obtaining a token</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-token-to-create-a-flow-request">Using the token to create a flow request</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#obtaining-user-authorization">Obtaining user authorization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deleting-a-flow-request">Deleting a flow request</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api-methods">API Methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creation-of-private-public-key-pair">Creation of Private/Public Key Pair</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#registration-in-the-admin-page">Registration in the admin page</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creation-of-kafka-client-certificates">Creation of Kafka client certificates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creation-of-kafka-topic-and-relative-acl-for-the-destination">Creation of Kafka topic and relative ACL for the destination</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#information-to-give-to-the-destination">Information to give to the Destination</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_backend/home.html">HGW Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hgw_backend/home.html#enrolling-a-source">Enrolling a Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../consent_manager/home.html">Consent Manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Health Gateway</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+      <li>HGW Frontend</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/modules/hgw_frontend/home.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="hgw-frontend">
+<h1>HGW Frontend<a class="headerlink" href="#hgw-frontend" title="Permalink to this headline">¶</a></h1>
+<p>HGW Frontend is the Health Gateway module that interacts with the Destinations</p>
+<div class="section" id="adding-a-flow-request">
+<h2>Adding a Flow request<a class="headerlink" href="#adding-a-flow-request" title="Permalink to this headline">¶</a></h2>
+<p>The workflow to add or delete a new flow request is described in the following image</p>
+<img alt="../../_images/flow_requests_workflow.svg" src="../../_images/flow_requests_workflow.svg" /><div class="section" id="obtaining-a-token">
+<h3>Obtaining a token<a class="headerlink" href="#obtaining-a-token" title="Permalink to this headline">¶</a></h3>
+<p>Before creating a flow request a client needs to authenticate to the Health Gateway. Authentication is performed using
+two-legged [OAuth2](<a class="reference external" href="https://oauth.net/2/">https://oauth.net/2/</a>)  protocol with the <cite>client_credentials</cite> grant type.
+Before trying to authenticate and to use
+the API, the client has to be registered in the Health Gateway in order to obtain a pair of <code class="docutils literal notranslate"><span class="pre">client_id/client_secret</span></code></p>
+<p>After being registered, to obtain an access token, the client has to make <cite>POST</cite> request to the url <cite>/oauth2/token/</cite>
+passing as data <cite>client_id</cite>, <cite>client_secret</cite> and <cite>grant_type</cite> with value <cite>client_credentials</cite>.
+This request will return a Bearer access token to be used in the subsequent REST calls</p>
+</div>
+<div class="section" id="using-the-token-to-create-a-flow-request">
+<h3>Using the token to create a flow request<a class="headerlink" href="#using-the-token-to-create-a-flow-request" title="Permalink to this headline">¶</a></h3>
+<p>After gaining the token, the client can use it to create a flow request by calling, using POST, /v1/flow_requests/.
+This function creates a flow request and returns three arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>process_id</cite>: which is the flow request id assigned by the health gateway</li>
+<li><cite>confirm_id</cite>: which is an id to be used to confirm the flow request</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="obtaining-user-authorization">
+<h3>Obtaining user authorization<a class="headerlink" href="#obtaining-user-authorization" title="Permalink to this headline">¶</a></h3>
+<p>The previous call created a flow request which is not actived immediately, since it needs user authorization.
+To do that the client has to redirect the user to <cite>/v1/flow_requests/confirm/</cite> specifying the <code class="docutils literal notranslate"><span class="pre">confirm_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">action=add</span></code> and a <code class="docutils literal notranslate"><span class="pre">callback_url</span></code>. This page asks the user to login and to confirm. After that the flow
+request will be activated and the user will be redirected to the <code class="docutils literal notranslate"><span class="pre">callback_url</span></code> specified.</p>
+</div>
+<div class="section" id="deleting-a-flow-request">
+<h3>Deleting a flow request<a class="headerlink" href="#deleting-a-flow-request" title="Permalink to this headline">¶</a></h3>
+<p>The flow request deletion uses the same workflow as the creation. The difference is that it has to be called
+<cite>/v1/flow_requests/&lt;process_id&gt;/</cite> using DELETE HTTP method</p>
+</div>
+<div class="section" id="api-methods">
+<h3>API Methods<a class="headerlink" href="#api-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="post">
+<dt id="post--oauth2-token-">
+<code class="descname">POST </code><code class="descname">/oauth2/token/</code><a class="headerlink" href="#post--oauth2-token-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain an OAuth2 authorization token to be used to make request to the other API functions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>client_id</strong> – the oauth2 client id assigned during the enrollment phase</li>
+<li><strong>client_secret</strong> – the oauth2 client secret assign during the enrollment phase</li>
+<li><strong>grant_type</strong> – type of grant used. In our case is alway client_credentials</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success Response</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;access_token&quot;</span><span class="p">:</span> <span class="s2">&quot;fNN8u8THUuG5KVkTRlTtxKe7mgF1aG&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;token_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;expires_in&quot;</span><span class="p">:</span> <span class="mi">36000</span><span class="p">,</span>
+    <span class="nt">&quot;scope&quot;</span><span class="p">:</span> <span class="s2">&quot;flow_request:read flow_request:write&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-flow_requests-(str- process_id)">
+<code class="descname">GET </code><code class="descname">/v1/flow_requests/(str: process_id)</code><a class="headerlink" href="#get--v1-flow_requests-(str- process_id)" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of flow requests</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--v1-flow_requests-">
+<code class="descname">POST </code><code class="descname">/v1/flow_requests/</code><a class="headerlink" href="#post--v1-flow_requests-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new flow request. It will be created but set in a pending status until the user confirms it.
+The call returns a json with two attributes:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">process_id</span></code>: the id that identifies the flow request in the health gateway. The client must maintain the mapping between the <code class="docutils literal notranslate"><span class="pre">process_id</span></code> and the <code class="docutils literal notranslate"><span class="pre">flow_id</span></code> to be used in subsequent process</li>
+<li><code class="docutils literal notranslate"><span class="pre">confirm_id</span></code>: the id to send to the confirmation url to activate the flow request</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>flow_id</strong> – the flow id that identifies the request for the client. The Health Gateway creates a corresponding
+processing id</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a> – flow request created succesfully</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – no <cite>flow_id</cite> provided</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – server error, error’s detail are specified in the return response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;confirm_id&quot;</span><span class="p">:</span> <span class="s2">&quot;xdv5jlQiWNW3ZaFMvmyVev5A0AGOZEHC&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="delete">
+<dt id="delete--v1-flow_requests-str- process_id-">
+<code class="descname">DELETE </code><code class="descname">/v1/flow_requests/{str: process_id}/</code><a class="headerlink" href="#delete--v1-flow_requests-str- process_id-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete the flow request identified by (process_id). It will be set in a delete requested status until the user confirms it.
+The call returns a json with the <code class="docutils literal notranslate"><span class="pre">confirm_id</span></code> to send to the confirmation url to delete the flow request</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.3">202 Accepted</a> – the requested to delete has been accepted</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – server error, error’s detail are specified in the return response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;confirm_id&quot;</span><span class="p">:</span> <span class="s2">&quot;xdv5jlQiWNW3ZaFMvmyVev5A0AGOZEHC&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-flow_requests-confirm-">
+<code class="descname">GET </code><code class="descname">/v1/flow_requests/confirm/</code><a class="headerlink" href="#get--v1-flow_requests-confirm-" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the link where the user has to be redirected to confirm the creation or deletion of a flow_request</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>confirm_id</strong> – the confirm id obtained with POST or DELETE /v1/flow_requests calls</li>
+<li><strong>callback_url</strong> – the url where the user will be redirected after the confirmation</li>
+<li><strong>action</strong> – add or delete</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-messages-int- message_id-">
+<code class="descname">GET </code><code class="descname">/v1/messages/{int: message_id}/</code><a class="headerlink" href="#get--v1-messages-int- message_id-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets messages for a specific Destination</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The message with id <cite>message_id</cite> does not exist
+or if the start query parameter is minor than the first message_id available</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>message_id</strong> – the id of the message to get</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;message_id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;lot_of_data&gt;&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-messages-">
+<code class="descname">GET </code><code class="descname">/v1/messages/</code><a class="headerlink" href="#get--v1-messages-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a list of messages for a specific Destination. If <cite>start</cite> query parameter is specified the list starts
+from the message with <cite>start</cite> as id. If the <cite>limit</cite> parameter is specified the list will have that amount of
+items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+<li><em>X-Skipped</em> – number of record skipped</li>
+<li><em>X-Total-Count</em> – number of records present</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The start query parameter is minor than the first <cite>message_id</cite> available</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>start</strong> – optional - The message_id of the initial message</li>
+<li><strong>limit</strong> – optional - The maximum number of messages to return (DEFAULT: 5, MAX: 10)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;message_id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;lot_of_data&gt;&quot;</span>
+<span class="p">},</span>
+<span class="p">{</span>
+    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;gkd34uaSPgjs20xznsbpdmvqDPQ5105GG&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;message_id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;lot_of_data&gt;&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-messages-info">
+<code class="descname">GET </code><code class="descname">/v1/messages/info</code><a class="headerlink" href="#get--v1-messages-info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets information about the messages available.
+The information returned are the number of records, the first and the last message_id available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;start_id&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="nt">&quot;last_id&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="mi">26</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<p>Enrolling a Destination</p>
+<hr class="docutils" />
+<p>This page describes how to enroll a new Destination.</p>
+</div>
+<div class="section" id="creation-of-private-public-key-pair">
+<h3>Creation of Private/Public Key Pair<a class="headerlink" href="#creation-of-private-public-key-pair" title="Permalink to this headline">¶</a></h3>
+<p>First of all you will need to create an RSA Private/Public Key pair that will be used to encrypt messages paylod. The
+private key has to be kept secret by the destination while the public has to be registered in the HGW Frontend
+application. To generates the key you can use the <code class="docutils literal notranslate"><span class="pre">create_rsa_key_pair.sh</span></code> script in hgw/utils directory.</p>
+</div>
+<div class="section" id="registration-in-the-admin-page">
+<h3>Registration in the admin page<a class="headerlink" href="#registration-in-the-admin-page" title="Permalink to this headline">¶</a></h3>
+<p>Now you will need to create a new Destination in the HGW Frontend web page. Access to the /admin/ url of the frontend
+and click Destination-&gt;Add Destination.</p>
+<p>Here you will have to fill the form with the following data:</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt><strong>Destination id</strong>:</dt>
+<dd>it is the identifier of the destination in the Health Gateway. It is created by Django so just use the value already present-
+This value is also the name of the Kafka topic associated to the destination</dd>
+</dl>
+</li>
+<li><strong>Rest or Kafka</strong>: If the Destinatio will consume messages using Kafka or REST</li>
+<li><strong>Name</strong>: The name of the Destination</li>
+<li><strong>Kafka public key</strong>: The public key created before</li>
+</ul>
+<p>After that you will need to create also the REST client corrsponding to the Destination. Go in /admin/ page and
+click REST Clients-&gt;Add Rest Client.</p>
+<p>Here it is necessary to fill the form. The data to be inserted are:</p>
+<ul class="simple">
+<li><strong>Client id</strong>: it is the OAuth2 client id assigned to the destination. It is created by Django so just use the value already present</li>
+<li><strong>User</strong>: Leave it blank</li>
+<li><strong>Redirect uris</strong>: Leave blank</li>
+<li><strong>Client type</strong>: the OAuth2 client type. Must be Confidential</li>
+<li><strong>Authorization Grant Type</strong>: The OAuth2 authorization grant type. Must be Client credentials</li>
+<li><strong>Client Secret</strong>: it is the OAuth2 client secret of the the destination. It is created by Django so just use the value already present</li>
+<li><strong>Destination</strong>: Select the Destination created in the step before</li>
+<li><strong>Client Role</strong>: Select ST (Standard)</li>
+<li><strong>Scopes</strong>: Leave the default ones</li>
+</ul>
+</div>
+<div class="section" id="creation-of-kafka-client-certificates">
+<h3>Creation of Kafka client certificates<a class="headerlink" href="#creation-of-kafka-client-certificates" title="Permalink to this headline">¶</a></h3>
+<p>The destination will need a Certificate with its associated Private Key to access to Kafka. So it is necessary to create them.
+To do that use the script <code class="docutils literal notranslate"><span class="pre">generate_kafka_client_certificates.sh</span></code> in hgw/certs/ directory. The script will generate
+PEM files and also the JKS keystore and truststore in case the Destination needs them</p>
+</div>
+<div class="section" id="creation-of-kafka-topic-and-relative-acl-for-the-destination">
+<h3>Creation of Kafka topic and relative ACL for the destination<a class="headerlink" href="#creation-of-kafka-topic-and-relative-acl-for-the-destination" title="Permalink to this headline">¶</a></h3>
+<p>In the Kafka server it is necessary adding a new topic for the destination and the relative ACL. The topic has to be
+accessed only by the HGW dispatcher in Write mode and by the Destination itself in Read mode.
+If using docker just add a record to KAFKA_TOPIC variable in the Kafka service specifying:</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;destination_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt;</span></code></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">&lt;destination_id&gt;</span></code> is the one configured in the web application. The <code class="docutils literal notranslate"><span class="pre">&lt;publisher&gt;</span></code> is hgw_dipatcher and the <code class="docutils literal notranslate"><span class="pre">&lt;consumer&gt;</span></code>
+is the service name used in the <code class="docutils literal notranslate"><span class="pre">generate_kafka_client_certificates.sh</span></code>.</p>
+</div>
+<div class="section" id="information-to-give-to-the-destination">
+<h3>Information to give to the Destination<a class="headerlink" href="#information-to-give-to-the-destination" title="Permalink to this headline">¶</a></h3>
+<p>The Destination will need the following informations back:</p>
+<ul class="simple">
+<li>OAuth2 Client id and Client secret: necessary to use the HGW Frontend REST API</li>
+<li>Destination id: This is used as the name of the Kafka topic associated to the Destination, so it is needed to get messages</li>
+<li>Kafka Client Key/Certificates: The destination needs them to connect to the Kafka Broker</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../hgw_backend/home.html" class="btn btn-neutral float-right" title="HGW Backend" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../../architecture.html" class="btn btn-neutral" title="Architecture General Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
