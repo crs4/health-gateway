@@ -1,0 +1,683 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Architecture General Overview &mdash; Health Gateway 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Health Gateway 1.0 documentation" href="index.html"/>
+        <link rel="next" title="HGW Frontend" href="modules/hgw_frontend/home.html"/>
+        <link rel="prev" title="Health Gateway Documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Health Gateway
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture General Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#main-components">Main Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#main-concepts">Main Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#high-level-process-for-a-data-flow-opening">High-level Process for a Data Flow Opening</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#preconditions">Preconditions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#description">Description</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pilot-implementation-details">Pilot Implementation Details</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#control-layer">Control Layer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#destination-and-source-enrollment">Destination and Source enrollment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#channels-creation">Channels Creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#security">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#data-flow-layer">Data Flow Layer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overall-data-exchange-process">Overall data exchange process</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Security</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-encryption">Data Encryption</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/hgw_frontend/home.html">HGW Frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/hgw_backend/home.html">HGW Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/hgw_backend/home.html#enrolling-a-source">Enrolling a Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/consent_manager/home.html">Consent Manager</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Health Gateway</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Architecture General Overview</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/architecture.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="architecture-general-overview">
+<h1>Architecture General Overview<a class="headerlink" href="#architecture-general-overview" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="main-components">
+<h2>Main Components<a class="headerlink" href="#main-components" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>The platform main components are:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><strong>Destination</strong></dt>
+<dd><p class="first">a Destination is a system where a person would like to forward a set of her/his data from a Source.</p>
+<blockquote class="last">
+<div><ul>
+<li><p class="first"><strong>Destination Endpoint</strong>: it is a module of the Destination enabling it to receive the data
+from the authorized Sources. It is composed of the following subcomponents:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>Destination HGW API</strong>: the module which interacts with the API exposed by the
+Health Gateway to create, delete and manage data flows authorized by the person;</li>
+<li><strong>Destination Connection Module</strong>: the data driver which receives the authorized data from the Sources.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Source</strong></dt>
+<dd><p class="first">a Source is a system which holds person’s data and is authorized by the person to release a set of data to Destinations.</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt><strong>Source Endpoint</strong>: it is a module of the Source enabling it to send the data to the authorized</dt>
+<dd>Destinations. It is composed of the following subcomponents:<ul class="last">
+<li><dl class="first docutils">
+<dt><strong>Source HGW API</strong>: the module which interacts with the API exposed by the Health Gateway to</dt>
+<dd>create, delete and manage data flows authorized by the person;</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Source Connection Module</strong>: the data connection driver which retrieve the authorized</dt>
+<dd>data from the Source.</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Health Gateway (HGW)</strong></dt>
+<dd><p class="first">The Health Gateway acts as an intermediary to allow a person to authorize the exchange of his/her data
+between the Destination and the Source. It also handles data routing from Sources to Destinations.
+It is composed of three sub-components:</p>
+<ul class="last simple">
+<li><dl class="first docutils">
+<dt>Health Gateway Frontend</dt>
+<dd>it manages the communications with the Destinations; it exposes an API which enables the person to open,
+authorize, modify or delete a data flow, redirecting the person to the Consent Manager, after her/his
+secure authentication on the Identity Provider; it notifies the Health Gateway Backend with the results
+of the identification/authorization steps to allow the system to perform and complete the operation
+requested by the person (as data flows opening, modification,…);</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Health Gateway Backend</dt>
+<dd>it manages the communications with the Sources; it receives the authorized requests for operations
+to be performed on data flows (as data flows opening, modification,…) from the Health Gateway Frontend
+and forwards them to the Source Endpoint;</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Health Gateway Dispatcher</dt>
+<dd>it handles data dispatching from Sources to Destinations.</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Consent Manager</strong></dt>
+<dd><p class="first last">the Consent Manager is the system that handles the authorization process. It informs the person about
+the data that will be exchanged between a Destination and the Sources and allows her/him to accept or
+not the data transfer. It also handles authorization for modification or revocation.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Identity Provider</strong>:</dt>
+<dd><p class="first last">the Identity Provider identifies the person and provides her/his data to permit the Source
+to match its persons data to the person the data flow is related to.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="main-concepts">
+<h2>Main Concepts<a class="headerlink" href="#main-concepts" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt><strong>Profile</strong></dt>
+<dd><p class="first last">it is a tree data structure (as, for example, an openEHR archetype) defining what data the person authorizes
+to be sent to a Destination;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Channel</strong></dt>
+<dd><p class="first">a Channel object, identified by a unique Channel ID, is defined by the quadruple:
+(Source Endpoint, Destination Endpoint, Profile, Person ID). When a Channel is active the person’s
+data specified by the Profile are sent from the Source Endpoint to the Destination Endpoint.
+All channels have a validity time duration range associated to them. It has to be noticed that only
+the Consent Manager has the full control and knowledge of all Channel objects metadata.
+The other involved actors only know a subset of them:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>a Source Endpoint only knows Profile, Person ID and Channel ID</li>
+<li>the HGW Dispatcher only knows Channel ID and Destination ID</li>
+<li>a Destination doesn’t know anything about the Channels,
+only about the Flow Request which gather more than one Channel</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Flow Request</strong></dt>
+<dd><p class="first last">It is a request from a Destination to the HGW to start the process of opening one or more Channel for a Person</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Consent</strong></dt>
+<dd><p class="first last">authorization related to a Channel and given by a person, to transfer her/his data, as selected by the
+channel Profile, from a Source to a Destination.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Connector</strong>: a Connector is an object, associated to a Channel, created through a request sent by</dt>
+<dd><p class="first last">the Health Gateway Backend to the Source Endpoint. A Connector enables the delivering of a person’s data,
+according to the Profile and Destination of the associated Channel. Its life-cycle corresponds to the one of
+the Channel associated: when it expires the Source Endpoint stops sending the related data.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="high-level-process-for-a-data-flow-opening">
+<h2>High-level Process for a Data Flow Opening<a class="headerlink" href="#high-level-process-for-a-data-flow-opening" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="preconditions">
+<h3>Preconditions<a class="headerlink" href="#preconditions" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The Destinations are registered as possible data targets in the Consent Manager</li>
+<li>The Sources are registered as possible data origin in the Consent Manager</li>
+<li>The Health Gateway and the Consent Manger are connected to the same Identity Provider which is recognized
+by the Sources as a trusted person demographics owner</li>
+<li>The Destinations, the Sources and the Consent Manager share a set of valid Profiles among which the person can
+choose to decide which data she/he wants to share</li>
+</ul>
+</div>
+<div class="section" id="description">
+<h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
+<p>A person who wants to allow a data flow to a Destination enters in the Destination user-interface,
+selects the data Profiles and starts the process to authorize the Destination to receive her/his clinical data.
+The Destination inserts a Flow Request (about the Profile requested) in the Health Gateway Frontend, which
+redirects the user to the Identity Provider, to perform the authentication, and then to the Consent Manager.
+The Consent Manager shows the Consents corresponding to the Profile initially chosen and the user selects the
+set of authorizations she/he wants to confirm and the list of data Sources. The Consent Manager activates the
+Channels and redirects the person’s User Agent to the Destination via Health Gateway Frontend. Asynchronously,
+he Health Gateway Frontend sends a request to the Health Gateway Backend to open Connectors in the
+Source Endpoints. Before opening a Connector, the Source Endpoint must query the Consent Manager in order to
+ensure that there is an active consent for the Connector’s associated Channel. If the Consent Manager confirms
+there is an active Consent associated to the Channel, the data flow can begin, according to the Consent
+parameters (data profile, duration, …).</p>
+</div>
+</div>
+<div class="section" id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<p>The pictures below shows the overall architecture of the system. The HGW module is connected to all available Sources,
+on one side, and to the available Destinations, on the other side. Every endpoint is part of the correspondent
+Source and it acts as a black-box between the backend of the HGW and the Source itself.</p>
+<img alt="_images/architecture.svg" src="_images/architecture.svg" /><p>As shown in the detailed architecture diagram below, there are two different layers of information, and consequently
+two different sub-layers of architecture we can identify:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>Control Layer</strong>: it concerns all the operations to fulfill to create and activate the Channels between a
+Destination and one or more available Sources for a person.</li>
+<li><strong>Data Flows Layer</strong>: it is related to the exchange of clinical data between the Sources and the HGW
+and the HGW and the Destinations.</li>
+</ul>
+</div></blockquote>
+<p>The figure below depicts a schema of all the main components (including both Sources and Destinations sides)
+and all the involved flows for the control layer (in red) and the data layer (in blue). All main steps for
+both flows are enumerated, and the legend describes the performed operations. Notice that before data are sent
+from the dispatcher to the destination endpoint, a control step (C) is required, in order to ensure that the channel
+related to the current message flow still has a valid consent.</p>
+<img alt="_images/architecture_details.svg" src="_images/architecture_details.svg" /></div>
+<div class="section" id="pilot-implementation-details">
+<h2>Pilot Implementation Details<a class="headerlink" href="#pilot-implementation-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="control-layer">
+<h3>Control Layer<a class="headerlink" href="#control-layer" title="Permalink to this headline">¶</a></h3>
+<p>The <strong>Control Layer</strong> concerns all the operations to fulfill to create and activate the Channels between a
+Destination and one or more available Sources for a person. It is based on REST communications
+between the components of the system.</p>
+<div class="section" id="destination-and-source-enrollment">
+<h4>Destination and Source enrollment<a class="headerlink" href="#destination-and-source-enrollment" title="Permalink to this headline">¶</a></h4>
+<p>The Health Gateway can interact only with known Destinations and Sources. This means that they all have to
+be registered in the Health Gateway. In order to be enrolled, a Destination must be granted and validated
+by an Authority, which the Health Gateway trusts. This Authority releases a pair of key/certificate to the Destination.
+As a result of the enrollment process, Destinations and Sources obtain different kind of data.
+Destinations will have:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt>OAuth2 credentials:</dt>
+<dd>a client_id and a client_secret, that must be kept secret, needed to obtain OAuth2 tokens to interact with the REST API;</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>destination_id:</dt>
+<dd>it is an ID that identifies the Destination in the HGW. It is also the Kafka topic name assigned to the Destination;</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>RSA private/public key pair:</dt>
+<dd>this are needed for the data payload encryption. The private key must be kept secret by the destination,
+while the public key is sent to the Sources to encrypt the messages payload</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Kafka client certs:</dt>
+<dd>key/certs to use to connect to Kafka. Kafka is indeed configured using HTTPS and to accept connections only by known clients.</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>Sources will have:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt>source_id:</dt>
+<dd>it is an ID that identifies the Source in the HGW. Is is also the Kafka topic assigned to the Source where
+it sends the data</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Kafka client certs:</dt>
+<dd>key/certs to use to connect to Kafka. As for the Destinations also the Sources needs a them to connect to Kafka</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="channels-creation">
+<h4>Channels Creation<a class="headerlink" href="#channels-creation" title="Permalink to this headline">¶</a></h4>
+<p>The following diagram describes the operation to create channels for a Destination for a person (i.e. it describes
+the Control Layer)</p>
+<img alt="_images/channel_instantiation.svg" src="_images/channel_instantiation.svg" /><p>The operations are the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The person enters the Destination web page with a User Agent and starts the process
+to authorize the Destination to get her/his clinical data</li>
+<li>The Destination inserts a Flow Request in the HGW Frontend. It contains the Profile,
+the callback url and the flow_id which is an identifier of the Flow Request created by the Destination.</li>
+<li>The HGW creates the Flow Request which stays in PENDING status until the user authorizes it.
+It returns to the Destination a process_id and a confirmation_id: the process_id is the identifier
+of the Flow Request in the HGW and it will be used as the identifier of the messages sent to the
+Destination belonging to the Channels created. The confirmation_id is a temporary ID that the
+Destination needs to include as parameter to the HGW Frontend confirmation URL to confirm the request.</li>
+<li>The Destination redirects the User Agent to the HGW Frontend confirmation url specifying the confirmation ID.</li>
+<li>The HGW Frontend redirects the User Agent to the Identity Provider service to perform the authentication</li>
+<li>The Identity Provider authenticates the person and sends to the HGW her/his demographics</li>
+<li>The HGW Frontend gets the list of Sources for the Profile from the Health Gateway Backend.</li>
+<li>The HGW Frontend creates a Channel per Source in the Consent Manager. The Channels are in PENDING status.</li>
+<li>The Consent Manager returns a temporary confirmation_id to be sent to its confirmation url,
+in a similar way as done for the Flow Request confirmation.</li>
+<li>The Health Gateway Frontend redirects the User Agent to the Consent Manager confirmation url.</li>
+<li>The Consent Manager redirects the User Agent again to the Identity Provider to identify the person.
+This time the person doesn’t need to perform the login since she/he is already logged in.</li>
+<li>The Consent Manager shows the Consents that the user has to confirm and the user selects the set of
+authorizations she/he wants to confirm and the list of Sources to authorize.</li>
+<li>The Consent Manager sets the Channel to ACTIVE state and redirects the User Agent to the HGW Frontend
+which redirects again to the Destination callback page</li>
+</ul>
+<p>Asynchronously the Health Gateway Frontend sends a request to the Health Gateway Backend to open Connectors
+in the Source Endpoints.
+Before opening a Connector, the Source Endpoint MUST query the Consent Manager in order to ensure that
+there is an active Consent for the Connector’s associated Channel. If no active Consent has been returned,
+the Connector is not created, and an error response is sent back to the Health Gateway Backend.</p>
+</div></blockquote>
+</div>
+<div class="section" id="security">
+<h4>Security<a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h4>
+<p>The Control Layer is secured by using HTTPS connection for all the communications among the components.
+Also both the HGW Frontend and the Consent Manager are secured using OAuth2 client-credentials
+authentication (<a class="reference external" href="https://tools.ietf.org/html/rfc6749#section-4.4">https://tools.ietf.org/html/rfc6749#section-4.4</a>). This means that a Destination Endpoint
+has to obtain an OAuth2 access token, before continuing the process of Flow Request creation.</p>
+</div>
+</div>
+<div class="section" id="data-flow-layer">
+<h3>Data Flow Layer<a class="headerlink" href="#data-flow-layer" title="Permalink to this headline">¶</a></h3>
+<p>The <strong>Data Flows Layer</strong> is related to the transfer of clinical data between Sources and HGW and the HGW and the
+Destinations, and it is Kafka-based. The HGW acts as a Kafka Consumer for all data provided by the Sources (producers),
+and acts as a Kafka Producer when providing data to the Destinations.
+A topic for each different Source (with a well defined ID) will be created.
+Some key aspects about the design and implementation of this Kafka-based data flow layer are the following.</p>
+<blockquote>
+<div><ul class="simple">
+<li>The Destinations and the Sources have assigned one topic. A Source sends data to its topic while a
+Destination consumes data from its topic.</li>
+<li>Destinations can decide to consume its data in two ways: by implementing a Kafka Consumer for its topic
+or by using a REST API exposed by the HGW Frontend. The two options are mutually exclusive.</li>
+<li>The Destinations doesn’t know the Sources from which the data come from, unless the Source itself inserts
+the information in the data payload.</li>
+<li>The Sources include the channel_id as the Kafka message key to allow the HGW dispatcher to route the message
+to the correct Destination.</li>
+<li>The HGW Dispatcher uses the process_id as the Kafka message key to allow the Destination to know to which
+person assign the message.</li>
+<li>The HGW Dispatcher is unaware of the data that transit between a Source and a Destination, since the payload
+of the message is encrypted by the Source and only the Destination can decrypt it. The only information
+that HGW Dispatcher knows is the Destination to which route the message.</li>
+</ul>
+</div></blockquote>
+<p>The architecture is described in the following diagram</p>
+<blockquote>
+<div><img alt="_images/kafka_based_hgw.svg" src="_images/kafka_based_hgw.svg" /></div></blockquote>
+<div class="section" id="overall-data-exchange-process">
+<h4>Overall data exchange process<a class="headerlink" href="#overall-data-exchange-process" title="Permalink to this headline">¶</a></h4>
+<blockquote>
+<div><p>The following are the steps to transfer data from a Source to a Destination</p>
+<ol class="arabic simple">
+<li>The Source encrypts the data using the Destination public key (see <a class="reference internal" href="#data-encryption-label"><span class="std std-ref">Data Encryption</span></a> for the details)</li>
+<li>The Source sends a message to its topic (i.e., the topic with name <cite>source_id</cite>) specifying the <cite>channel_id</cite>
+as the key</li>
+<li>The HGW Dispatcher consume the message from the Source topic and gets the <cite>channel_id</cite>.</li>
+<li>The HGW Dispatcher queries the Consent Manager for the status of the Channel</li>
+<li>If the Channel is active the HGW Dispatcher queries the HGW Frontend for the <cite>process_id</cite> related to the
+<cite>channel_id</cite></li>
+<li>The HGW Dispatcher sends a message to the Destination’s topic (i.e., the topic with name <cite>destination_id</cite>)
+specifying the <cite>process_id</cite> as the message key</li>
+<li>The HGW Dispatcher sends a message to the Destination’s topic (i.e., the topic with name destination_id)
+specifying the process_id as the message key.
+The Destination gets the message from its topic and decrypts it with its private key.
+It can consume messages directly from its topic implementing a Kafka Consumer or it can use the
+REST API of the HGW Frontend.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="id1">
+<h4>Security<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>An important requirement of the Health Gateway is that the data transfer from a Source to a Destination
+must be secure and the data must be read only from the correct Destination; even the HGW must not be able to
+read the sensitive data of a message. To achieve this goal, the Health Gateway supports two levels of encryption:</p>
+<p>SSL encryption to connect and send data to the Kafka Broker;
+Encryption of data payload</p>
+<p>With the first level of encryption it is guaranteed that messages sent from a Kafka Producer (Source) or to a
+Kafka Consumer (Destination) are encrypted: consequently, if they are intercepted by an attacker they cannot be
+decrypted. This level is implemented by Kafka itself using HTTPS protocol, so it’s just a matter of configuration.
+Moreover, to guarantee that only the correct clients can access to a specific topic, Kafka Broker is configured to
+use HTTPS client authentication and Access Control List to the topics. When a Destination is configured to consume
+messages as Kafka Consumer, the Kafka ACL permits only the Destination’s Consumer to access its topic. In the case
+of Destination is configured to use a REST API, the ACL is configured to give access to the topic just to the
+HGW Frontend. In this case it is guaranteed that only the correct Destination can get the data by using the OAuth2
+protocol: the REST API requires an OAuth2 access token, which is associated to the Destination and so to the topic,
+and so the HGW Frontend knows the correct topic to use when it receives REST requests.</p>
+<p>The second level of encryption guarantees that the data that go through the HGW can be decrypted only from the
+correct Destination. During the instantiation of a Channel, the Source is provided with the Destination’s public
+key. When the Source sends a message it uses the key to encrypt a symmetric key used in turn to encrypt the payload.
+In this way the Destination, and only it, can decrypt the symmetric key and then the message. Data encryption are
+described in details in <a class="reference internal" href="#data-encryption-label"><span class="std std-ref">Data Encryption</span></a></p>
+</div>
+<div class="section" id="data-encryption">
+<span id="data-encryption-label"></span><h4>Data Encryption<a class="headerlink" href="#data-encryption" title="Permalink to this headline">¶</a></h4>
+<p>As said before the Source encrypts the data payload using the Destination public key.
+What actually happens is that the data are encrypted using an AES key which is encrypted itself
+using the RSA public key of the Destination. So when the Destination receives a message, it gets the
+RSA encrypted AES key, decrypts it using its private key and then decrypts the message using the AES key.
+It is to be said that the RSA decryption phase is computationally heavy, so it is possible to use the same AES
+key for more than one message and send a hash of the key included in the message. When the Destination receives
+the message, it checks if the hash is the same as the message before: if it’s not it decrypts the AES key and stores
+the hash and the key, otherwise it uses the same key as before, avoiding the RSA decryption of the key. The policy
+to use to change the AES key is left to the Source.</p>
+<dl class="docutils">
+<dt>The overall payload will be structured as follow:</dt>
+<dd><ul class="first last">
+<li><p class="first">2 MAGIC BYTES (0xdf 0xbb) they indicates if the message is encrypted or not</p>
+</li>
+<li><p class="first">3 bytes indicating</p>
+<blockquote>
+<div><ul class="simple">
+<li>the length of the AES key hash</li>
+<li>RSA factor f so that f*128*8 evaluates to the RSA key size (in bits)</li>
+<li>length of the AES initialization vector</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">AES hash</p>
+</li>
+<li><p class="first">RSA encrypted AES key</p>
+</li>
+<li><p class="first">Initialization vector</p>
+</li>
+<li><p class="first">AES encrypted message</p>
+</li>
+</ul>
+</dd>
+</dl>
+<p>The methodology used is described in <a class="reference external" href="https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka-part-1/">https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka-part-1/</a></p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="modules/hgw_frontend/home.html" class="btn btn-neutral float-right" title="HGW Frontend" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Health Gateway Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
