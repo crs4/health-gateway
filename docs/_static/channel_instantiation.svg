@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="73cm" height="50cm" viewBox="199 118 1442 984" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="200" y="120" width="160" height="80"/>
+    <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="280" y="155.928">
+      <tspan x="280" y="155.928">USER</tspan>
+      <tspan x="280" y="184.15">AGENT</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="600" y="120" width="160" height="80"/>
+    <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="680" y="155.928">
+      <tspan x="680" y="155.928">HGW</tspan>
+      <tspan x="680" y="184.15">FRONTEND</tspan>
+    </text>
+  </g>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="1560" y="540">
+    <tspan x="1560" y="540"></tspan>
+  </text>
+  <g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="395.25" y="120" width="169.5" height="80"/>
+    <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="480" y="155.928">
+      <tspan x="480" y="155.928">DESTINATION</tspan>
+      <tspan x="480" y="184.15">ENDPOINT</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="280" y1="200" x2="280" y2="1100"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="480" y1="200" x2="480" y2="1100"/>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="680" y1="200" x2="680" y2="1100"/>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="490.28" y1="341.361" x2="680.544" y2="341.361"/>
+      <polygon style="fill: #000000" points="482.78,341.361 492.78,336.361 490.28,341.361 492.78,346.361 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="482.78,341.361 492.78,336.361 490.28,341.361 492.78,346.361 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="523" y="334.557">
+      <tspan x="523" y="334.557">Confirmation URL </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="289.28" y1="381.361" x2="479.544" y2="381.361"/>
+      <polygon style="fill: #000000" points="281.78,381.361 291.78,376.361 289.28,381.361 291.78,386.361 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="281.78,381.361 291.78,376.361 289.28,381.361 291.78,386.361 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="288" y="374.557">
+      <tspan x="288" y="374.557">Redirect to Confirmation URL </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="692.582" y1="660.201" x2="1080.85" y2="660.201"/>
+      <polygon style="fill: #000000" points="685.082,660.201 695.082,655.201 692.582,660.201 695.082,665.201 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="685.082,660.201 695.082,655.201 692.582,660.201 695.082,665.201 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="736.504" y="652.201">
+      <tspan x="736.504" y="652.201">Confirmation URL</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="480.544" y1="300.361" x2="670.808" y2="300.361"/>
+      <polygon style="fill: #000000" points="678.308,300.361 668.308,305.361 670.808,300.361 668.308,295.361 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="678.308,300.361 668.308,305.361 670.808,300.361 668.308,295.361 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="446" y="293.557">
+      <tspan x="446" y="293.557">Create Flow Request (pass DE callback url)</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="680" y1="620.091" x2="1070.26" y2="620.091"/>
+      <polygon style="fill: #000000" points="1077.76,620.091 1067.76,625.091 1070.26,620.091 1067.76,615.091 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1077.76,620.091 1067.76,625.091 1070.26,620.091 1067.76,615.091 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="739.656" y="612.091">
+      <tspan x="739.656" y="612.091">Create Consent (pass HGWF callback url)</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="289.736" y1="860.424" x2="1079" y2="860.424"/>
+      <polygon style="fill: #000000" points="282.236,860.424 292.236,855.424 289.736,860.424 292.236,865.424 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="282.236,860.424 292.236,855.424 289.736,860.424 292.236,865.424 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="685.658" y="852.424">
+      <tspan x="685.658" y="852.424">Redirect to HGWF callback url </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="289.736" y1="700.201" x2="680" y2="700.201"/>
+      <polygon style="fill: #000000" points="282.236,700.201 292.236,695.201 289.736,700.201 292.236,705.201 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="282.236,700.201 292.236,695.201 289.736,700.201 292.236,705.201 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="486.656" y="692.201">
+      <tspan x="486.656" y="692.201">Redirect to Confirmation URL </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="281.2" y1="900.226" x2="670.264" y2="900.419"/>
+      <polygon style="fill: #000000" points="677.764,900.423 667.761,905.418 670.264,900.419 667.766,895.418 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="677.764,900.423 667.761,905.418 670.264,900.419 667.766,895.418 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="338.656" y="893.424">
+      <tspan x="338.656" y="893.424">GET HGWF callback url</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="289.936" y1="939.768" x2="680" y2="939.405"/>
+      <polygon style="fill: #000000" points="282.436,939.775 292.431,934.766 289.936,939.768 292.441,944.766 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="282.436,939.775 292.431,934.766 289.936,939.768 292.441,944.766 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="484.454" y="931.777">
+      <tspan x="484.454" y="931.777">Redirect to DE callback url </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="280.6" y1="259.802" x2="470.864" y2="259.802"/>
+      <polygon style="fill: #000000" points="478.364,259.802 468.364,264.802 470.864,259.802 468.364,254.802 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="478.364,259.802 468.364,264.802 470.864,259.802 468.364,254.802 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="315.056" y="253">
+      <tspan x="315.056" y="253">Enter in DE web page</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="802.4" y="120.6" width="160" height="80"/>
+    <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="882.4" y="156.528">
+      <tspan x="882.4" y="156.528">IDENTITY</tspan>
+      <tspan x="882.4" y="184.75">PROVIDER</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="882.4" y1="200.6" x2="882.4" y2="1100.6"/>
+  <g>
+    <g>
+      <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="1002" y="120" width="160" height="80"/>
+      <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1082" y="155.928">
+        <tspan x="1082" y="155.928">CONSENT</tspan>
+        <tspan x="1082" y="184.15">MANAGER</tspan>
+      </text>
+    </g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1082" y1="200" x2="1082" y2="1100"/>
+  </g>
+  <g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="1199.13" y="120" width="160" height="80"/>
+    <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1279.13" y="155.928">
+      <tspan x="1279.13" y="155.928">HGW</tspan>
+      <tspan x="1279.13" y="184.15">BACKEND</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1279.13" y1="200" x2="1279.13" y2="1100"/>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="280.744" y1="420.461" x2="670.264" y2="420.1"/>
+      <polygon style="fill: #000000" points="677.764,420.093 667.769,425.102 670.264,420.1 667.759,415.102 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="677.764,420.093 667.769,425.102 670.264,420.1 667.759,415.102 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="324.2" y="413.657">
+      <tspan x="324.2" y="413.657">Go to Confirmation URL</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="681.403" y1="460.995" x2="870.264" y2="460.135"/>
+      <polygon style="fill: #000000" points="877.764,460.101 867.787,465.147 870.264,460.135 867.741,455.147 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="877.764,460.101 867.787,465.147 870.264,460.135 867.741,455.147 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="734.859" y="454.191">
+      <tspan x="734.859" y="454.191">Identify Person</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="691.138" y1="500.995" x2="881.402" y2="500.995"/>
+      <polygon style="fill: #000000" points="683.638,500.995 693.638,495.995 691.138,500.995 693.638,505.995 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="683.638,500.995 693.638,495.995 691.138,500.995 693.638,505.995 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="723.858" y="494.191">
+      <tspan x="723.858" y="494.191">Person Data </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="893.028" y1="780.336" x2="1083.29" y2="780.336"/>
+      <polygon style="fill: #000000" points="885.528,780.336 895.528,775.336 893.028,780.336 895.528,785.336 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="885.528,780.336 895.528,775.336 893.028,780.336 895.528,785.336 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="925.748" y="773.532">
+      <tspan x="925.748" y="773.532">Identify Person </tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="882.407" y1="819.885" x2="1071.27" y2="819.025"/>
+      <polygon style="fill: #000000" points="1078.77,818.991 1068.79,824.037 1071.27,819.025 1068.74,814.037 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1078.77,818.991 1068.79,824.037 1071.27,819.025 1068.74,814.037 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="935.863" y="813.081">
+      <tspan x="935.863" y="813.081">Person Data</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="681.123" y1="540.519" x2="1270.26" y2="540.008"/>
+      <polygon style="fill: #000000" points="1277.76,540.002 1267.77,545.011 1270.26,540.008 1267.76,535.011 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1277.76,540.002 1267.77,545.011 1270.26,540.008 1267.76,535.011 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="724.579" y="533.715">
+      <tspan x="724.579" y="533.715">Get Sources</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1281.55" y1="580.91" x2="689.736" y2="580.015"/>
+      <polygon style="fill: #000000" points="682.236,580.003 692.244,575.019 689.736,580.015 692.228,585.018 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="682.236,580.003 692.244,575.019 689.736,580.015 692.228,585.018 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="725.689" y="574.106">
+      <tspan x="725.689" y="574.106">Sources List</tspan>
+    </text>
+  </g>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="281.2" y1="739.783" x2="1070.26" y2="739.979"/>
+      <polygon style="fill: #000000" points="1077.76,739.981 1067.76,744.978 1070.26,739.979 1067.77,734.978 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1077.76,739.981 1067.76,744.978 1070.26,739.979 1067.77,734.978 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="506.656" y="732.981">
+      <tspan x="506.656" y="732.981">Go to Confirmation URL</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="1401.41" y="119.25" width="160" height="80"/>
+    <text font-size="22.5778" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1481.41" y="155.177">
+      <tspan x="1481.41" y="155.177">SOURCE</tspan>
+      <tspan x="1481.41" y="183.4">ENDPOINT</tspan>
+    </text>
+  </g>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1481.41" y1="199.25" x2="1481.41" y2="1099.25"/>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="680" y1="999.932" x2="1270.26" y2="999.999"/>
+    <polygon style="fill: #000000" points="1277.76,1000 1267.76,1005 1270.26,999.999 1267.76,994.999 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1277.76,1000 1267.76,1005 1270.26,999.999 1267.76,994.999 "/>
+  </g>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="723.656" y="993.025">
+    <tspan x="723.656" y="993.025">Instantiate Channel</tspan>
+  </text>
+  <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke-dasharray: 20; stroke: #000000" x1="220" y1="960" x2="1640" y2="960"/>
+  <g>
+    <g>
+      <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1280.14" y1="1039.66" x2="1469" y2="1038.8"/>
+      <polygon style="fill: #000000" points="1476.5,1038.77 1466.52,1043.81 1469,1038.8 1466.48,1033.81 "/>
+      <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1476.5,1038.77 1466.52,1043.81 1469,1038.8 1466.48,1033.81 "/>
+    </g>
+    <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="1333.6" y="1032.86">
+      <tspan x="1333.6" y="1032.86">Create Connector</tspan>
+    </text>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="1291.15" y1="1080.87" x2="1480.01" y2="1080.01"/>
+    <polygon style="fill: #000000" points="1283.65,1080.9 1293.63,1075.85 1291.15,1080.87 1293.67,1085.85 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="1283.65,1080.9 1293.63,1075.85 1291.15,1080.87 1293.67,1085.85 "/>
+  </g>
+  <text font-size="12.8" style="fill: #000000;text-anchor:start;font-family:sans-serif;font-style:normal;font-weight:normal" x="1334.87" y="1074.11">
+    <tspan x="1334.87" y="1074.11">Connector Created</tspan>
+  </text>
+</svg>
