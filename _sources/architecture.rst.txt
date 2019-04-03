@@ -212,16 +212,19 @@ Destinations will have:
     * OAuth2 credentials:
         a client_id and a client_secret, that must be kept secret, needed
         to obtain OAuth2 tokens to interact with the REST API;
-    * destination_id:
-        it is an ID that identifies the Destination in the HGW. It is also
-        the Kafka topic name assigned to the Destination;
     * RSA private/public key pair:
         this are needed for the data payload encryption. The private key must
         be kept secret by the destination, while the public key is sent to
         the Sources to encrypt the messages payload
+    * destination_id:
+        it is an ID that identifies the Destination in the HGW. It is also
+        the Kafka topic name assigned to the Destination;
     * Kafka client certs:
         key/certs to use to connect to Kafka. Kafka is indeed configured
         using HTTPS and to accept connections only by known clients.
+
+.. note:: NB: The ```destination_id``` and the Kafka client certs are needed only when
+   the destination wants to retrieve messages using a Kafka consumer
 
 Sources will have:
 
@@ -472,3 +475,55 @@ The overall payload will be structured as follow:
 
 The methodology used is described in
 https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka-part-1/
+
+User authentication
+-------------------
+
+As explained before, the Health Gateway and the Consent Manager, delegates an
+external service for user authentication. In fact they are implemented as
+`SAML2 <https://en.wikipedia.org/wiki/SAML_2.0>`_ Service Providers, so
+they can easily be configured to use all standard Identity Providers.
+In the pilot study, two services has been considered:
+
+    * SPID (Sistema Pubblico di Identità Digitale): it is an Italian
+      service for digital identity used by the public administration
+      digital services and it is candidated to be used also at European
+      level. In the pilot implementation it has been used the
+      development docker image provided by AgID (Agenzia per l'Italia
+      Digitale)
+    * TS/CNS (Tessera Sanitaria - Carta Nazionale dei Servizi): it is
+      another Italian authentication method that requires a client
+      certificate authentication. The certificate is provided by the
+      Italian Government to its citizens and is embedded in a smartcard.
+
+SPID
+####
+
+SPID is the Italian service for digital identity to access the public
+administration services and to private services that wants to adhere.
+It is implemented as a SAML2 Identity Provider. For testing and
+development purpose, in the context of the pilot, two docker images have been
+created (crs4/spid-testenv-identityservice and crs4/spid-testenv-backlog).
+The docker images extend the docker images provided by
+`AgID <https://github.com/italia/spid-testenv-docker>`.
+
+
+TS/CNS
+######
+
+The TS/CNS is basically a standard
+`client certificate <https://en.wikipedia.org/wiki/Client_certificate>`
+authentication method. This method requires the client (i.e., the browser)
+to present a client certificate signed by a Certification Authority recognized
+by the web server, to access the website. In the case of TS/CNS the certificate
+is embedded in a personal smart card given by the government to the citizens
+and is signed by one of regional Certification Authorities. In order to use
+the certificate, the citizen needs a smart card reader to be configured in
+his/her PC or browser.
+
+In the pilot implementation, is has been created a
+`Shibboleth <https://www.shibboleth.net>`_ docker image (crs4/tscns), configured to use client
+certificate authentication with the regional Certification Authorities
+which sign the citizens certificates. For development purpose, the image
+can use also a development certification authorities and client certificates
+that can be created with the certs scripts.

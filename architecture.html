@@ -114,6 +114,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#data-encryption">Data Encryption</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#user-authentication">User authentication</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spid">SPID</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ts-cns">TS/CNS</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -461,16 +466,16 @@ to obtain OAuth2 tokens to interact with the REST API;</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>destination_id:</dt>
-<dd>it is an ID that identifies the Destination in the HGW. It is also
-the Kafka topic name assigned to the Destination;</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
 <dt>RSA private/public key pair:</dt>
 <dd>this are needed for the data payload encryption. The private key must
 be kept secret by the destination, while the public key is sent to
 the Sources to encrypt the messages payload</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>destination_id:</dt>
+<dd>it is an ID that identifies the Destination in the HGW. It is also
+the Kafka topic name assigned to the Destination;</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
@@ -481,6 +486,11 @@ using HTTPS and to accept connections only by known clients.</dd>
 </li>
 </ul>
 </div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">NB: The <code class="docutils literal notranslate"><span class="pre">`destination_id`</span></code> and the Kafka client certs are needed only when
+the destination wants to retrieve messages using a Kafka consumer</p>
+</div>
 <p>Sources will have:</p>
 <blockquote>
 <div><ul class="simple">
@@ -716,6 +726,56 @@ or not</p>
 </dl>
 <p>The methodology used is described in
 <a class="reference external" href="https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka-part-1/">https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka-part-1/</a></p>
+</div>
+</div>
+<div class="section" id="user-authentication">
+<h3>User authentication<a class="headerlink" href="#user-authentication" title="Permalink to this headline">¶</a></h3>
+<p>As explained before, the Health Gateway and the Consent Manager, delegates an
+external service for user authentication. In fact they are implemented as
+<a class="reference external" href="https://en.wikipedia.org/wiki/SAML_2.0">SAML2</a> Service Providers, so
+they can easily be configured to use all standard Identity Providers.
+In the pilot study, two services has been considered:</p>
+<blockquote>
+<div><ul class="simple">
+<li>SPID (Sistema Pubblico di Identità Digitale): it is an Italian
+service for digital identity used by the public administration
+digital services and it is candidated to be used also at European
+level. In the pilot implementation it has been used the
+development docker image provided by AgID (Agenzia per l’Italia
+Digitale)</li>
+<li>TS/CNS (Tessera Sanitaria - Carta Nazionale dei Servizi): it is
+another Italian authentication method that requires a client
+certificate authentication. The certificate is provided by the
+Italian Government to its citizens and is embedded in a smartcard.</li>
+</ul>
+</div></blockquote>
+<div class="section" id="spid">
+<h4>SPID<a class="headerlink" href="#spid" title="Permalink to this headline">¶</a></h4>
+<p>SPID is the Italian service for digital identity to access the public
+administration services and to private services that wants to adhere.
+It is implemented as a SAML2 Identity Provider. For testing and
+development purpose, in the context of the pilot, two docker images have been
+created (crs4/spid-testenv-identityservice and crs4/spid-testenv-backlog).
+The docker images extend the docker images provided by
+<cite>AgID &lt;https://github.com/italia/spid-testenv-docker&gt;</cite>.</p>
+</div>
+<div class="section" id="ts-cns">
+<h4>TS/CNS<a class="headerlink" href="#ts-cns" title="Permalink to this headline">¶</a></h4>
+<p>The TS/CNS is basically a standard
+<cite>client certificate &lt;https://en.wikipedia.org/wiki/Client_certificate&gt;</cite>
+authentication method. This method requires the client (i.e., the browser)
+to present a client certificate signed by a Certification Authority recognized
+by the web server, to access the website. In the case of TS/CNS the certificate
+is embedded in a personal smart card given by the government to the citizens
+and is signed by one of regional Certification Authorities. In order to use
+the certificate, the citizen needs a smart card reader to be configured in
+his/her PC or browser.</p>
+<p>In the pilot implementation, is has been created a
+<a class="reference external" href="https://www.shibboleth.net">Shibboleth</a> docker image (crs4/tscns), configured to use client
+certificate authentication with the regional Certification Authorities
+which sign the citizens certificates. For development purpose, the image
+can use also a development certification authorities and client certificates
+that can be created with the certs scripts.</p>
 </div>
 </div>
 </div>
