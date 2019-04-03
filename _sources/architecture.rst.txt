@@ -479,7 +479,7 @@ https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka
 User authentication
 -------------------
 
-As explained before, the Health Gateway and the Consent Manager, delegates an
+As explained before, the Health Gateway and the Consent Manager, delegate an
 external service for user authentication. In fact they are implemented as
 `SAML2 <https://en.wikipedia.org/wiki/SAML_2.0>`_ Service Providers, so
 they can easily be configured to use all standard Identity Providers.
@@ -494,7 +494,7 @@ In the pilot study, two services has been considered:
     * TS/CNS (Tessera Sanitaria - Carta Nazionale dei Servizi): it is
       another Italian authentication method that requires a client
       certificate authentication. The certificate is provided by the
-      Italian Government to its citizens and is embedded in a smartcard.
+      Italian Government to its citizens and it is embedded in a smartcard.
 
 SPID
 ####
@@ -502,28 +502,29 @@ SPID
 SPID is the Italian service for digital identity to access the public
 administration services and to private services that wants to adhere.
 It is implemented as a SAML2 Identity Provider. For testing and
-development purpose, in the context of the pilot, two docker images have been
+development purposes, in the context of the pilot, two docker images have been
 created (crs4/spid-testenv-identityservice and crs4/spid-testenv-backlog).
 The docker images extend the docker images provided by
-`AgID <https://github.com/italia/spid-testenv-docker>`.
+`AgID <https://github.com/italia/spid-testenv-docker>`_.
 
 
 TS/CNS
 ######
 
 The TS/CNS is basically a standard
-`client certificate <https://en.wikipedia.org/wiki/Client_certificate>`
+`client certificate <https://en.wikipedia.org/wiki/Client_certificate>`_
 authentication method. This method requires the client (i.e., the browser)
 to present a client certificate signed by a Certification Authority recognized
 by the web server, to access the website. In the case of TS/CNS the certificate
 is embedded in a personal smart card given by the government to the citizens
-and is signed by one of regional Certification Authorities. In order to use
+and it is signed by one of regional Certification Authorities. In order to use
 the certificate, the citizen needs a smart card reader to be configured in
 his/her PC or browser.
 
-In the pilot implementation, is has been created a
-`Shibboleth <https://www.shibboleth.net>`_ docker image (crs4/tscns), configured to use client
-certificate authentication with the regional Certification Authorities
-which sign the citizens certificates. For development purpose, the image
-can use also a development certification authorities and client certificates
+In the pilot implementation, it has been created a
+`Shibboleth <https://www.shibboleth.net>`_ docker image (crs4/tscns),
+configured to use client certificate authentication with the regional
+Certification Authorities which sign the citizens certificates.
+For development purpose, the image can use also a development
+certification authorities and client certificates
 that can be created with the certs scripts.

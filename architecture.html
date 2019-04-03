@@ -730,7 +730,7 @@ or not</p>
 </div>
 <div class="section" id="user-authentication">
 <h3>User authentication<a class="headerlink" href="#user-authentication" title="Permalink to this headline">¶</a></h3>
-<p>As explained before, the Health Gateway and the Consent Manager, delegates an
+<p>As explained before, the Health Gateway and the Consent Manager, delegate an
 external service for user authentication. In fact they are implemented as
 <a class="reference external" href="https://en.wikipedia.org/wiki/SAML_2.0">SAML2</a> Service Providers, so
 they can easily be configured to use all standard Identity Providers.
@@ -746,7 +746,7 @@ Digitale)</li>
 <li>TS/CNS (Tessera Sanitaria - Carta Nazionale dei Servizi): it is
 another Italian authentication method that requires a client
 certificate authentication. The certificate is provided by the
-Italian Government to its citizens and is embedded in a smartcard.</li>
+Italian Government to its citizens and it is embedded in a smartcard.</li>
 </ul>
 </div></blockquote>
 <div class="section" id="spid">
@@ -754,27 +754,28 @@ Italian Government to its citizens and is embedded in a smartcard.</li>
 <p>SPID is the Italian service for digital identity to access the public
 administration services and to private services that wants to adhere.
 It is implemented as a SAML2 Identity Provider. For testing and
-development purpose, in the context of the pilot, two docker images have been
+development purposes, in the context of the pilot, two docker images have been
 created (crs4/spid-testenv-identityservice and crs4/spid-testenv-backlog).
 The docker images extend the docker images provided by
-<cite>AgID &lt;https://github.com/italia/spid-testenv-docker&gt;</cite>.</p>
+<a class="reference external" href="https://github.com/italia/spid-testenv-docker">AgID</a>.</p>
 </div>
 <div class="section" id="ts-cns">
 <h4>TS/CNS<a class="headerlink" href="#ts-cns" title="Permalink to this headline">¶</a></h4>
 <p>The TS/CNS is basically a standard
-<cite>client certificate &lt;https://en.wikipedia.org/wiki/Client_certificate&gt;</cite>
+<a class="reference external" href="https://en.wikipedia.org/wiki/Client_certificate">client certificate</a>
 authentication method. This method requires the client (i.e., the browser)
 to present a client certificate signed by a Certification Authority recognized
 by the web server, to access the website. In the case of TS/CNS the certificate
 is embedded in a personal smart card given by the government to the citizens
-and is signed by one of regional Certification Authorities. In order to use
+and it is signed by one of regional Certification Authorities. In order to use
 the certificate, the citizen needs a smart card reader to be configured in
 his/her PC or browser.</p>
-<p>In the pilot implementation, is has been created a
-<a class="reference external" href="https://www.shibboleth.net">Shibboleth</a> docker image (crs4/tscns), configured to use client
-certificate authentication with the regional Certification Authorities
-which sign the citizens certificates. For development purpose, the image
-can use also a development certification authorities and client certificates
+<p>In the pilot implementation, it has been created a
+<a class="reference external" href="https://www.shibboleth.net">Shibboleth</a> docker image (crs4/tscns),
+configured to use client certificate authentication with the regional
+Certification Authorities which sign the citizens certificates.
+For development purpose, the image can use also a development
+certification authorities and client certificates
 that can be created with the certs scripts.</p>
 </div>
 </div>
