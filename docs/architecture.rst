@@ -494,7 +494,7 @@ In the pilot study, two services has been considered:
     * TS/CNS (Tessera Sanitaria - Carta Nazionale dei Servizi): it is
       another Italian authentication method that requires a client
       certificate authentication. The certificate is provided by the
-      Italian Government to its citizens and is embedded in a smartcard.
+      Italian Government to its citizens and it is embedded in a smartcard.
 
 SPID
 ####
@@ -517,13 +517,14 @@ authentication method. This method requires the client (i.e., the browser)
 to present a client certificate signed by a Certification Authority recognized
 by the web server, to access the website. In the case of TS/CNS the certificate
 is embedded in a personal smart card given by the government to the citizens
-and is signed by one of regional Certification Authorities. In order to use
+and it is signed by one of regional Certification Authorities. In order to use
 the certificate, the citizen needs a smart card reader to be configured in
 his/her PC or browser.
 
-In the pilot implementation, is has been created a
-`Shibboleth <https://www.shibboleth.net>`_ docker image (crs4/tscns), configured to use client
-certificate authentication with the regional Certification Authorities
-which sign the citizens certificates. For development purpose, the image
-can use also a development certification authorities and client certificates
+In the pilot implementation, it has been created a
+`Shibboleth <https://www.shibboleth.net>`_ docker image (crs4/tscns),
+configured to use client certificate authentication with the regional
+Certification Authorities which sign the citizens certificates.
+For development purpose, the image can use also a development
+certification authorities and client certificates
 that can be created with the certs scripts.
