@@ -479,7 +479,7 @@ https://blog.codecentric.de/en/2016/10/transparent-end-end-security-apache-kafka
 User authentication
 -------------------
 
-As explained before, the Health Gateway and the Consent Manager, delegates an
+As explained before, the Health Gateway and the Consent Manager, delegate an
 external service for user authentication. In fact they are implemented as
 `SAML2 <https://en.wikipedia.org/wiki/SAML_2.0>`_ Service Providers, so
 they can easily be configured to use all standard Identity Providers.
@@ -502,17 +502,17 @@ SPID
 SPID is the Italian service for digital identity to access the public
 administration services and to private services that wants to adhere.
 It is implemented as a SAML2 Identity Provider. For testing and
-development purpose, in the context of the pilot, two docker images have been
+development purposes, in the context of the pilot, two docker images have been
 created (crs4/spid-testenv-identityservice and crs4/spid-testenv-backlog).
 The docker images extend the docker images provided by
-`AgID <https://github.com/italia/spid-testenv-docker>`.
+`AgID <https://github.com/italia/spid-testenv-docker>`_.
 
 
 TS/CNS
 ######
 
 The TS/CNS is basically a standard
-`client certificate <https://en.wikipedia.org/wiki/Client_certificate>`
+`client certificate <https://en.wikipedia.org/wiki/Client_certificate>`_
 authentication method. This method requires the client (i.e., the browser)
 to present a client certificate signed by a Certification Authority recognized
 by the web server, to access the website. In the case of TS/CNS the certificate
