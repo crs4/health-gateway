@@ -210,18 +210,20 @@ class Dispatcher(object):
 
     def _get_process_id(self, channel_id):
         try:
-            fr = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
+            flow_request = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
                                                      format(HGW_FRONTEND_URI, channel_id))
+            if flow_request.status_code == 401:
+                raise TokenExpiredError
         except TokenExpiredError:
             logger.debug('Frontend token expired: getting new one')
             # hgw frontend token expired. Getting a new one
             self._obtain_hgw_frontend_oauth_token()
-            fr = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
+            flow_request = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
                                                      format(HGW_FRONTEND_URI, channel_id))
-        logger.debug(fr.json())
+        logger.debug(flow_request.json())
 
-        if fr.status_code == 200:
-            return fr.json()['process_id']
+        if flow_request.status_code == 200:
+            return flow_request.json()['process_id']
         else:
             return None
 
@@ -230,6 +232,8 @@ class Dispatcher(object):
             logger.debug("Checking the consent manager to get the consent status")
             try:
                 cm_res = self.consent_oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, channel_id))
+                if cm_res.status_code == 401:
+                    raise TokenExpiredError
             except TokenExpiredError:
                 logger.debug('Consent token expired: getting new one')
                 self._obtain_consent_oauth_token()
@@ -272,7 +276,7 @@ class Dispatcher(object):
         # partition = TopicPartition(self.consumer_topics[0], 0)
         logger.debug("Starting to consume messages")
         for msg in self.consumer:
-            logger.debug("Read message: {}".format(msg.key))
+            logger.debug("Read message: %s", msg.key)
             if msg.key:
                 channel_id = msg.key.decode('utf-8')
                 logger.debug('Received message from %s for channel %s', msg.topic, channel_id)

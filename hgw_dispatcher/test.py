@@ -14,7 +14,6 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-import json
 import logging
 import os
 import unittest
@@ -124,7 +123,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     def test_fail_hgw_frontend_oauth_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
+        Tests that the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
@@ -151,7 +150,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.HGW_BACKEND_URI', 'http://127.0.0.2')
     @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
     @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    def test_fail_hgw_frontend_oauth_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
+    def test_fail_hgw_backend_oauth_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
         Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
         wrong client id
@@ -165,9 +164,9 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.HGW_BACKEND_URI', HGW_BACKEND_URI)
     @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
     @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    def test_consent_oauth_token_renewal(self, mocked_kafka_consumer, mocked_kafka_producer):
+    def test_consent_oauth_token_renewal_on_token_expired(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that when the consent manager token expires, the dispatcher requires another one
+        Tests that, when the consent manager token expires, the dispatcher requires another one
         """
         messages = [
             MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
@@ -181,12 +180,7 @@ class TestDispatcher(TestCase):
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
 
         self.counter = 0
-
         def get_url(*args):
-            """
-            Method that simulates the get. When the response is 401 it means that token expired and the
-            dispatcher requires another token
-            """
             res = MagicMock()
             if args[1].startswith(CONSENT_MANAGER_URI) and self.counter == 0:
                 self.counter += 1
@@ -213,7 +207,50 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.HGW_BACKEND_URI', HGW_BACKEND_URI)
     @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
     @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    def test_hgw_frontend_oauth_token_renewal(self, mocked_kafka_consumer, mocked_kafka_producer):
+    def test_consent_oauth_token_renewal_on_not_authorized_status(self, mocked_kafka_consumer, mocked_kafka_producer):
+        """
+        Tests that, when the consent manager token expires, the dispatcher requires another one
+        """
+        messages = [
+            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        value=b'first_message', offset=0),
+            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        value=b'second_message', offset=1),
+        ]
+        token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
+                     'token_type': 'Bearer', 'expires_in': 36000,
+                     'expires_at': 1516236829.8031383, 'scope': ['read', 'write']}
+        mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
+
+        self.counter = 0
+        def get_url(*args):
+            res = MagicMock()
+            if args[1].startswith(CONSENT_MANAGER_URI) and self.counter == 0:
+                self.counter += 1
+                res.status_code = 401
+            else:
+                res.status_code = 200
+            return res
+
+        d = Dispatcher('kafka:9093', None, None, None, True)
+        with patch.object(OAuth2Session, 'fetch_token', return_value=token_res) as fetch_token, \
+                patch.object(OAuth2Session, 'get', get_url):
+            # NOTE: the first fetch_token calls (one to the consent manager and the second to the
+            # hgw frontend) are not mocked since they occurs in Dispatcher.__init__ and when we call
+            # the __init__ Oauth2Session is not mocked, so has_calls doesn't register them
+            d.run()
+            calls = [call(token_url="{}/oauth2/token/".format(CONSENT_MANAGER_URI),
+                          client_id=CONSENT_MANAGER_OAUTH_CLIENT_ID,
+                          client_secret=CONSENT_MANAGER_OAUTH_CLIENT_SECRET)]
+            # check that the fetch_token is called the second time with consent manager parameter
+            fetch_token.assert_has_calls(calls)
+
+    @patch('dispatcher.KafkaProducer')
+    @patch('dispatcher.KafkaConsumer')
+    @patch('dispatcher.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
+    @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    def test_hgw_frontend_oauth_token_renewal_on_token_expired(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
         Tests that when the hgw frontend token expires, the dispatcher requires another one
         """
@@ -239,6 +276,61 @@ class TestDispatcher(TestCase):
             if args[1].startswith(HGW_FRONTEND_URI) and self.counter == 0:
                 self.counter += 1
                 raise TokenExpiredError()
+            else:
+                res.status_code = 200
+                if args[1].startswith(CONSENT_MANAGER_URI):
+                    # simulates the consent manager with minimum data just to arrive to the point of
+                    # getting the hgw_frontend token
+                    res.json.return_value = {
+                        'destination': DESTINATION,
+                        'status': 'AC'
+                    }
+            return res
+
+        d = Dispatcher('kafka:9093', None, None, None, True)
+        with patch.object(OAuth2Session, 'fetch_token', return_value=token_res) as fetch_token, \
+                patch.object(OAuth2Session, 'get', get_url):
+            # NOTE: the first fetch_token calls (one to the consent manager and the second to the
+            # hgw frontend) are not mocked since they occurs in Dispatcher.__init__ and when we call
+            # the __init__ Oauth2Session is not mocked, so has_calls doesn't register them
+            d.run()
+            calls = [call(token_url="{}/oauth2/token/".format(HGW_FRONTEND_URI),
+                          client_id=HGW_FRONTEND_OAUTH_CLIENT_ID,
+                          client_secret=HGW_FRONTEND_OAUTH_CLIENT_SECRET)]
+            # check that the fetch_token is called the second time with consent manager parameter
+            fetch_token.assert_has_calls(calls)
+
+    @patch('dispatcher.KafkaProducer')
+    @patch('dispatcher.KafkaConsumer')
+    @patch('dispatcher.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    @patch('dispatcher.HGW_FRONTEND_URI', HGW_FRONTEND_URI)
+    @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    def test_hgw_frontend_oauth_token_renewal_on_not_authorized(self, mocked_kafka_consumer, mocked_kafka_producer):
+        """
+        Tests that when the hgw frontend token expires, the dispatcher requires another one
+        """
+        messages = [
+            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        value=b'first_message', offset=0),
+            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        value=b'second_message', offset=1),
+        ]
+        token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
+                     'token_type': 'Bearer', 'expires_in': 36000,
+                     'expires_at': 1516236829.8031383, 'scope': ['read', 'write']}
+        mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
+
+        self.counter = 0
+
+        def get_url(*args):
+            """
+            Method that simulates the get. When the response is 401 it means that token expired and the
+            dispatcher requires another token
+            """
+            res = MagicMock()
+            if args[1].startswith(HGW_FRONTEND_URI) and self.counter == 0:
+                self.counter += 1
+                res.status_code = 401
             else:
                 res.status_code = 200
                 if args[1].startswith(CONSENT_MANAGER_URI):
