@@ -65,7 +65,7 @@ class ProfileSection(models.Model):
     """
     Class for model ProfileSection
     """
-    profile_domain = models.ForeignKey(ProfileDomain, related_name="domains", on_delete=models.CASCADE)
+    profile_domain = models.ForeignKey(ProfileDomain, related_name="sections", on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=10)
     coding_system = models.CharField(max_length=10)
