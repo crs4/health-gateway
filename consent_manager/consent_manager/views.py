@@ -23,7 +23,6 @@ from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
 from rest_framework import status as http_status
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -37,6 +36,9 @@ logger = get_logger('consent_manager')
 
 
 class ConsentView(ViewSet):
+    """
+    Viewset with REST function of /v1/consents API and some GUI views
+    """
     permission_classes = (IsAuthenticatedOrTokenHasResourceDetailedScope,)
     oauth_views = ['list', 'create', 'retrieve']
     required_scopes = ['consent']
@@ -50,29 +52,37 @@ class ConsentView(ViewSet):
         return getattr(request.user, USER_ID_FIELD)
 
     def list(self, request):
+        """
+        Returns the list of the consents. If the request arrives from
+        an authenticated user (i.e.. from the GUI) it returns only the
+        consents belonging to him. Otherwise all consents
+        """
         if request.user is not None:
             person_id = self._get_person_id(request)
             consents = Consent.objects.filter(person_id=person_id,
                                               status__in=(Consent.ACTIVE, Consent.REVOKED))
-            logger.info('Found {} consents for user {}'.format(len(consents), person_id))
+            logger.info('Found %s consents for user %s', len(consents), person_id)
         else:
             consents = Consent.objects.all()
         serializer = serializers.ConsentSerializer(consents, many=True)
         if request.user is not None or request.auth.application.is_super_client():
             return Response(serializer.data)
-        else:
-            res = []
-            for c in serializer.data:
-                res.append({
-                    'consent_id': c['consent_id'],
-                    'source': c['source'],
-                    'status': c['status'],
-                    'start_validity': c['start_validity'],
-                    'expire_validity': c['expire_validity']
-                })
-            return Response(res)
+        
+        res = []
+        for c in serializer.data:
+            res.append({
+                'consent_id': c['consent_id'],
+                'source': c['source'],
+                'status': c['status'],
+                'start_validity': c['start_validity'],
+                'expire_validity': c['expire_validity']
+            })
+        return Response(res)
 
     def create(self, request):
+        """
+        REST API to create a new consent (i.e., it implements the POST function)
+        """
         logger.debug(request.scheme)
         request.data.update({
             'consent_id': get_random_string(32),
@@ -90,13 +100,16 @@ class ConsentView(ViewSet):
         return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, consent_id):
+        """
+        REST function to update a consent
+        """
         logger.info('Received update request for consent with id {}'.format(consent_id))
         consent = self._get_consent(consent_id)
         if consent.status != Consent.ACTIVE:
             logger.info('Consent is not ACTIVE. Not revoked')
             return Response({'errors': ['wrong_consent_status']}, status=http_status.HTTP_400_BAD_REQUEST)
         elif consent.person_id != self._get_person_id(request):
-            logger.warn('Consent doesn\'t belong to the logged in person so it is not revoked')
+            logger.warning('Consent doesn\'t belong to the logged in person so it is not revoked')
             return Response({'errors': ['wrong_person']}, status=http_status.HTTP_400_BAD_REQUEST)
 
         logger.info('Update data: {}'.format(request.data))
@@ -104,11 +117,14 @@ class ConsentView(ViewSet):
         if serializer.is_valid():
             serializer.save()
         else:
-            logger.info('Update data are not valid. Errors are: {}'.format(serializer.errors))
+            logger.info('Update data are not valid. Errors are: %s', serializer.errors)
             return Response({'errors': serializer.errors}, status=http_status.HTTP_400_BAD_REQUEST)
         return Response({}, status=http_status.HTTP_200_OK)
 
     def retrieve(self, request, consent_id, format=None):
+        """
+        REST function to GET only one consent
+        """
         consent = self._get_consent(consent_id)
         serializer = serializers.ConsentSerializer(consent)
         if request.auth.application.is_super_client():
@@ -149,7 +165,7 @@ class ConsentView(ViewSet):
             consents = request.data['consents']
         except KeyError:
             return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
-        logger.info('Received consents revoke request for consents {}'.format(', '.join(consents)))
+        logger.info('Received consents revoke request for consents %s', ', '.join(consents))
 
         revoked = []
         failed = []
@@ -164,7 +180,10 @@ class ConsentView(ViewSet):
         return Response({'revoked': revoked, 'failed': failed}, status=http_status.HTTP_200_OK)
 
     def revoke(self, request, consent_id):
-        logger.info('Received consent revoke request for consent {}'.format(consent_id))
+        """
+        Revoke a consent
+        """
+        logger.info('Received consent revoke request for consent %s', consent_id)
         status, res = self._revoke_consent(consent_id, self._get_person_id(request), raise_exc=True)
         return Response(res, status)
 
@@ -179,12 +198,12 @@ class ConsentView(ViewSet):
             return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
 
         confirm_ids = request.GET.getlist('confirm_id')
-        logger.info('Called /v1/consents/find/ with query paramaters {}'.format(request.query_params))
+        logger.info('Called /v1/consents/find/ with query paramaters %s'. request.query_params)
         ccs = ConfirmationCode.objects.filter(code__in=confirm_ids, consent__status=Consent.PENDING)
         if not ccs:
             return Response({}, http_status.HTTP_404_NOT_FOUND)
-        logger.debug('Found {} consents'.format(len(ccs)))
-        logger.debug('Checking validity'.format(len(ccs)))
+        logger.debug('Found %s consents', len(ccs))
+        logger.debug('Checking validity')
         consents = []
         for cc in ccs:
             if cc.check_validity():
@@ -197,13 +216,16 @@ class ConsentView(ViewSet):
         return Response(consents, status=http_status.HTTP_200_OK)
 
     def confirm(self, request):
+        """
+        View to confirm consents
+        """
         logger.info('Received consent confirmation request')
         if 'consents' not in request.data:
             logger.info('Missing the consents query params. Returning error')
             return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
 
         consents = request.data['consents']
-        logger.info('Specified the following consents: {}'.format(', '.join(consents.keys())))
+        logger.info('Specified the following consents: %s', ', '.join(consents.keys()))
 
         confirmed = []
         failed = []
@@ -211,15 +233,15 @@ class ConsentView(ViewSet):
             try:
                 cc = ConfirmationCode.objects.get(code=confirm_id)
             except ConfirmationCode.DoesNotExist:
-                logger.info('Consent associated to confirm_id {} not found'.format(confirm_id))
+                logger.info('Consent associated to confirm_id %s not found', confirm_id)
                 failed.append(confirm_id)
             else:
                 if not cc.check_validity():
-                    logger.info('Confirmation expired'.format(confirm_id))
+                    logger.info('Confirmation expired')
                     failed.append(confirm_id)
                 else:
                     c = cc.consent
-                    logger.info('consent_id is {}'.format(c.consent_id))
+                    logger.info('consent_id is %s', c.consent_id)
                     if c.status != Consent.PENDING:
                         logger.info('consent not in PENDING http_status. Cannot confirm it')
                         failed.append(confirm_id)
@@ -235,11 +257,14 @@ class ConsentView(ViewSet):
                             c.expire_validity = consent_data['expire_validity']
                         c.save()
                         confirmed.append(confirm_id)
-                        logger.info('consent with id {} confirmed'.format(c))
+                        logger.info('consent with id %s confirmed', c)
         return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
 
 
 @require_http_methods(["GET", "POST"])
 @login_required
 def confirm_consent(request):
+    """
+    View for consent confirmation
+    """
     return render(request, 'index.html', context={'nav_bar': True})
