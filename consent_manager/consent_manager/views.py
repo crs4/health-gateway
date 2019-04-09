@@ -33,6 +33,7 @@ from rest_framework.viewsets import ViewSet
 from consent_manager import serializers
 from consent_manager.models import ConfirmationCode, Consent
 from consent_manager.notifier import NotificationError, get_notifier
+from consent_manager.serializers import ConsentSerializer
 from consent_manager.settings import USER_ID_FIELD
 from hgw_common.utils import (ERRORS,
                               IsAuthenticatedOrTokenHasResourceDetailedScope,
@@ -73,7 +74,7 @@ class ConsentView(ViewSet):
         serializer = serializers.ConsentSerializer(consents, many=True)
         if request.user is not None or request.auth.application.is_super_client():
             return Response(serializer.data)
-        
+
         res = []
         for consent in serializer.data:
             res.append({
@@ -240,9 +241,7 @@ class ConsentView(ViewSet):
 
         confirmed = []
         failed = []
-        # try:
         notifier = get_notifier()
-
         for confirm_id, consent_data in consents.items():
             try:
                 confirmation_code = ConfirmationCode.objects.get(code=confirm_id)
@@ -272,11 +271,13 @@ class ConsentView(ViewSet):
                         consent.save()
                         confirmed.append(confirm_id)
                         logger.info('consent with id %s confirmed', consent)
-            try:
-                notifier.notify/(consent_data)
-            except NotificationError:
-                # TODO: we should retry to notify the frontend
-                logger.error("It was impossible to notify the message to the HGW Frontend")
+
+                        try:
+                            consent_serializer = ConsentSerializer(consent)
+                            notifier.notify(consent_serializer.data)
+                        except NotificationError:
+                            # TODO: we should retry to notify the frontend
+                            logger.error("It was impossible to notify the message to the HGW Frontend")
 
         return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
 

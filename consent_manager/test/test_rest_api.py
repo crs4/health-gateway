@@ -15,15 +15,15 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from datetime import datetime
-from datetime import timedelta
-
 import json
 import os
+from datetime import datetime, timedelta
 
 from django.test import TestCase, client
+from mock.mock import patch
 
-from consent_manager.models import Consent, ConfirmationCode, RESTClient
+from consent_manager import settings
+from consent_manager.models import ConfirmationCode, Consent, RESTClient
 from consent_manager.serializers import ConsentSerializer
 from hgw_common.utils import ERRORS
 from hgw_common.utils.mocks import get_free_port
@@ -123,12 +123,12 @@ class TestAPI(TestCase):
 
         headers = self._get_oauth_header(client_index=2)
         res = self.client.get('/v1/consents/', **headers)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()), 1)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()), 1)
         self.assertListEqual(res.json(), [expected])
 
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
-        self.assertEquals(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json(), expected)
 
     def test_get_consents_by_super_client(self):
@@ -158,12 +158,12 @@ class TestAPI(TestCase):
 
         headers = self._get_oauth_header(client_index=1)
         res = self.client.get('/v1/consents/', **headers)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()), 1)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()), 1)
         self.assertListEqual(res.json(), [expected])
 
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
-        self.assertEquals(res.status_code, 200)
+        self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json(), expected)
 
     def test_get_consent_not_found(self):
@@ -173,16 +173,19 @@ class TestAPI(TestCase):
         """
         headers = self._get_oauth_header()
         res = self.client.get('/v1/consents/unknown/', **headers)
-        self.assertEquals(res.status_code, 404)
-        self.assertEquals(res.json(), {'errors': [ERRORS.NOT_FOUND]})
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
     def test_get_consent_forbidden(self):
+        """
+        Test failure when getting consents from a client with no consent:read scope
+        """
         headers = self._get_oauth_header(client_index=3)
         res = self.client.get('/v1/consents/', **headers)
-        self.assertEquals(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
 
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
-        self.assertEquals(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
 
     def _add_consent(self, data=None, client_index=0, status=Consent.PENDING):
         headers = self._get_oauth_header(client_index)
@@ -212,8 +215,8 @@ class TestAPI(TestCase):
 
         c = Consent.objects.get(consent_id=consent_id)
         serializer = ConsentSerializer(c)
-        self.assertEquals(res.status_code, 201)
-        self.assertEquals(set(res.json().keys()), {'consent_id', 'confirm_id'})
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(set(res.json().keys()), {'consent_id', 'confirm_id'})
         self.assertDictEqual(serializer.data, expected)
 
     def test_add_consent_other_timezone(self):
@@ -236,8 +239,8 @@ class TestAPI(TestCase):
             })
             c = Consent.objects.get(consent_id=consent_id)
             serializer = ConsentSerializer(c)
-            self.assertEquals(res.status_code, 201)
-            self.assertEquals(set(res.json().keys()), {'consent_id', 'confirm_id'})
+            self.assertEqual(res.status_code, 201)
+            self.assertEqual(set(res.json().keys()), {'consent_id', 'confirm_id'})
 
             self.assertDictEqual(serializer.data, expected)
 
@@ -246,7 +249,7 @@ class TestAPI(TestCase):
         Test add consent is forbidden when it is missing the correct scopes
         """
         res = self._add_consent(client_index=2)
-        self.assertEquals(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
 
     def test_add_consent_too_long_fields(self):
         """
@@ -267,8 +270,8 @@ class TestAPI(TestCase):
                                'name': ['Ensure this field has no more than 100 characters.']},
                     'destination': {'id': ['Ensure this field has no more than 32 characters.'],
                                     'name': ['Ensure this field has no more than 100 characters.']}}
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.json(), expected)
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), expected)
 
     def test_add_consent_duplicated_endpoint(self):
         """
@@ -296,7 +299,7 @@ class TestAPI(TestCase):
             'destination': {'generic_errors': ['An instance with the same name and different id already exists']}
         }
 
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
         # Changing name, keeping the id
@@ -315,7 +318,7 @@ class TestAPI(TestCase):
             'destination': {'generic_errors': ['An instance with the same id and different name already exists']}
         }
 
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
     def test_add_consent_missing_fields(self):
@@ -326,7 +329,7 @@ class TestAPI(TestCase):
 
         # Missing data
         res = self.client.post('/v1/consents/', data='{}', content_type='application/json', **headers)
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         expected = {'source': ['This field is required.'],
                     'profile': ['This field is required.'],
                     'person_id': ['This field is required.'],
@@ -359,7 +362,7 @@ class TestAPI(TestCase):
                             'name': ['This field is required.']},
         }
 
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
     def test_add_consent_none_fields(self):
@@ -388,7 +391,7 @@ class TestAPI(TestCase):
                     'expire_validity': ['This field may not be null.']
                     }
 
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
     def test_add_duplicated_consent_when_not_active(self):
@@ -417,7 +420,7 @@ class TestAPI(TestCase):
         self._add_consent(self.json_consent_data, status=Consent.ACTIVE)
         res = self._add_consent(self.json_consent_data)
         expected = {'generic_errors': [ERRORS.DUPLICATED]}
-        self.assertEquals(res.status_code, 400)
+        self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
     def test_modify_consent(self):
@@ -439,8 +442,8 @@ class TestAPI(TestCase):
         self.assertEqual(res.json(), {})
         c = Consent.objects.get(consent_id=consent_id)
         serializer = ConsentSerializer(c)
-        self.assertEquals(serializer.data['start_validity'], updated_data['start_validity'])
-        self.assertEquals(serializer.data['expire_validity'], updated_data['expire_validity'])
+        self.assertEqual(serializer.data['start_validity'], updated_data['start_validity'])
+        self.assertEqual(serializer.data['expire_validity'], updated_data['expire_validity'])
 
     def test_modify_consent_wrong_status(self):
         """
@@ -636,6 +639,9 @@ class TestAPI(TestCase):
         self.assertEqual(c.status, Consent.ACTIVE)
 
     def test_revoke_consent_unauthorized(self):
+        """
+        Tests revoke failure when the user is authenticated but not authorized
+        """
         res = self._add_consent(status=Consent.ACTIVE)
         consent_id = res.json()['consent_id']
 
@@ -749,8 +755,8 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['revoked']), 0)
-        self.assertEquals(len(res.json()['failed']), 1)
-        self.assertEquals(res.json()['failed'][0], consent_id)
+        self.assertEqual(len(res.json()['failed']), 1)
+        self.assertEqual(res.json()['failed'][0], consent_id)
 
     def test_revoke_consent_list_unknown_consent(self):
         """
@@ -764,10 +770,10 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(data),
                                content_type='application/json')
 
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()['revoked']), 0)
-        self.assertEquals(len(res.json()['failed']), 1)
-        self.assertEquals(res.json()['failed'][0], consent_id)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['revoked']), 0)
+        self.assertEqual(len(res.json()['failed']), 1)
+        self.assertEqual(res.json()['failed'][0], consent_id)
         self.assertRaises(Consent.DoesNotExist, Consent.objects.get, consent_id=consent_id)
 
     def test_revoke_consent_list_unauthorized(self):
@@ -839,11 +845,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json()[0], expected)
 
-    def test_confirm_consent(self):
-        """
-        Tests correct consent confirmation
-        """
-
+    def _test_confirm_consent(self):
         # First create some consents
         consents = {}
         for i in range(4):
@@ -857,26 +859,60 @@ class TestAPI(TestCase):
                 'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
                 'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1),
             }
+
+        # Then, confirm them
         self.client.login(username='duck', password='duck')
         data = {
             'consents': consents
         }
-        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data),
-                               content_type='application/json')
+        res = self.client.post('/v1/consents/confirm/', data=json.dumps(data), content_type='application/json')
+        return consents, res
 
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()['confirmed']), 4)
-        self.assertEquals(len(res.json()['failed']), 0)
-        for confirm_id, consent_data in consents.items():
+    @patch('consent_manager.notifier.KafkaProducer')
+    def test_confirm_consent_with_correct_notification(self, mocked_kafka_producer):
+        """
+        Tests correct consent confirmation
+        """
+        consents, res = self._test_confirm_consent()
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['confirmed']), 4)
+        self.assertEqual(len(res.json()['failed']), 0)
+        for index, (confirm_id, consent_data) in enumerate(consents.items()):
             consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(consent_obj.status, Consent.ACTIVE)
-            s = ConsentSerializer(consent_obj)
-            self.assertEqual(s.data['start_validity'],
+            consent_serializer = ConsentSerializer(consent_obj)
+            self.assertEqual(consent_serializer.data['start_validity'],
                              consent_data['start_validity'])
-            self.assertEqual(s.data['expire_validity'],
+            self.assertEqual(consent_serializer.data['expire_validity'],
                              consent_data['expire_validity'])
 
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
+            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
+                                 consent_serializer.data)
+
+    # def test_confirm_consent_failed_notification(self):
+    #     """
+    #     Tests correct consent confirmation
+    #     """
+    #     consents, res = self._test_confirm_consent()
+
+    #     self.assertEqual(res.status_code, 200)
+    #     self.assertEqual(len(res.json()['confirmed']), 4)
+    #     self.assertEqual(len(res.json()['failed']), 0)
+    #     for index, (confirm_id, consent_data) in enumerate(consents.items()):
+    #         consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
+    #         self.assertEqual(consent_obj.status, Consent.ACTIVE)
+    #         consent_serializer = ConsentSerializer(consent_obj)
+    #         self.assertEqual(consent_serializer.data['start_validity'],
+    #                          consent_data['start_validity'])
+    #         self.assertEqual(consent_serializer.data['expire_validity'],
+    #                          consent_data['expire_validity'])
+
     def test_confirm_consent_unauthorized(self):
+        """
+        Tests failure in confirmation when the user is authenticated but not unauthorized
+        """
         res = self._add_consent()
         consent = {res.json()['confirm_id']: {}}
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
@@ -885,6 +921,9 @@ class TestAPI(TestCase):
         self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_confirm_consent_forbidden(self):
+        """
+        Tests failure in confirmation when the user is not authenticated
+        """
         res = self._add_consent()
 
         consent = {res.json()['confirm_id']: {}}
@@ -953,10 +992,10 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
 
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()['confirmed']), 0)
-        self.assertEquals(len(res.json()['failed']), 1)
-        self.assertEquals(res.json()['failed'][0], confirm_id)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['confirmed']), 0)
+        self.assertEqual(len(res.json()['failed']), 1)
+        self.assertEqual(res.json()['failed'][0], confirm_id)
         c = ConfirmationCode.objects.get(code=confirm_id).consent
         self.assertEqual(c.status, Consent.PENDING)
 
@@ -974,10 +1013,10 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
 
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()['confirmed']), 0)
-        self.assertEquals(len(res.json()['failed']), 1)
-        self.assertEquals(res.json()['failed'][0], confirm_id)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['confirmed']), 0)
+        self.assertEqual(len(res.json()['failed']), 1)
+        self.assertEqual(res.json()['failed'][0], confirm_id)
         c = ConfirmationCode.objects.get(code=confirm_id).consent
         self.assertEqual(c.status, Consent.PENDING)
 
@@ -991,10 +1030,10 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
 
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(len(res.json()['confirmed']), 0)
-        self.assertEquals(len(res.json()['failed']), 1)
-        self.assertEquals(res.json()['failed'][0], confirm_id)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['confirmed']), 0)
+        self.assertEqual(len(res.json()['failed']), 1)
+        self.assertEqual(res.json()['failed'][0], confirm_id)
         self.assertRaises(Consent.DoesNotExist, Consent.objects.get, consent_id=confirm_id)
 
     def test_page_confirm_redirect_to_identity_provider(self):
@@ -1011,7 +1050,7 @@ class TestAPI(TestCase):
         for m in ('put', 'head', 'options', 'delete', 'trace'):
             met = getattr(self.client, m)
             res = met('/confirm_consents/')
-            self.assertEquals(res.status_code, 405)
+            self.assertEqual(res.status_code, 405)
 
     # def test_confirm_missing_parameters(self):
     #     """
@@ -1023,16 +1062,16 @@ class TestAPI(TestCase):
     #
     #     self.client.login(username='duck', password='duck')
     #     res = self.client.get('/confirm_consents/')
-    #     self.assertEquals(res.status_code, 400)
-    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+    #     self.assertEqual(res.status_code, 400)
+    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
     #
     #     res = self.client.get('/confirm_consents/?confirm_id={}'.format(confirm_id))
-    #     self.assertEquals(res.status_code, 400)
-    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+    #     self.assertEqual(res.status_code, 400)
+    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
     #
     #     res = self.client.get('/confirm_consents/?callback_url={}'.format(callback_url))
-    #     self.assertEquals(res.status_code, 400)
-    #     self.assertEquals(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
+    #     self.assertEqual(res.status_code, 400)
+    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
     #
     # def test_confirm_valid(self):
     #     """
@@ -1046,11 +1085,11 @@ class TestAPI(TestCase):
     #
     #     self.client.login(username='duck', password='duck')
     #     res = self.client.get('/confirm_consents/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
-    #     self.assertEquals(res.status_code, 200)
-    #     self.assertEquals(res['Content-Type'], 'text/html; charset=utf-8')
+    #     self.assertEqual(res.status_code, 200)
+    #     self.assertEqual(res['Content-Type'], 'text/html; charset=utf-8')
     #     cc = ConfirmationCode.objects.get(code=confirm_id)
     #     consent = cc.consent
-    #     self.assertEquals(consent.status, Consent.PENDING)
+    #     self.assertEqual(consent.status, Consent.PENDING)
     #     self.assertIsNone(consent.confirmed)
     #     post_data = {
     #         'csrf_token': res.context['csrf_token'],
@@ -1062,5 +1101,5 @@ class TestAPI(TestCase):
     #     self.assertRedirects(res, '{}?success=true&consent_confirm_id={}'.format(callback_url, confirm_id),
     #                          fetch_redirect_response=False)
     #     consent.refresh_from_db()
-    #     self.assertEquals(consent.status, Consent.ACTIVE)
+    #     self.assertEqual(consent.status, Consent.ACTIVE)
     #     self.assertIsNotNone(consent.confirmed)

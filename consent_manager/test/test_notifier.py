@@ -34,7 +34,7 @@ class TestNotifiers(TestCase):
     """
     Test notifiers class
     """
-    
+
     @patch('consent_manager.settings.NOTIFICATION_TYPE', 'unknown')
     def test_raise_unknown_notifier(self):
         """
@@ -50,6 +50,7 @@ class TestNotifiers(TestCase):
         notifier = get_notifier()
         self.assertIsInstance(notifier, KafkaNotifier)
 
+
 class TestKafkaNotifier(TestCase):
     """
     Class the tests kafka notifier
@@ -61,7 +62,7 @@ class TestKafkaNotifier(TestCase):
         """
         notifier = get_notifier()
         self.assertRaises(NotificationError, notifier.notify, {'message': 'fake_message'})
-    
+
     @patch('consent_manager.notifier.KafkaProducer')
     def test_fail_json_encoding_error(self, mocked_kafka_producer):
         """
@@ -90,4 +91,3 @@ class TestKafkaNotifier(TestCase):
     #     notifier = get_notifier()
     #     message = {'message': 'text'}
     #     notifier.notify(message)
-        
