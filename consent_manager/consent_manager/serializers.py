@@ -63,9 +63,9 @@ class ConsentSerializerDuplicateValidator(object):
 
     def __call__(self, attrs):
         try:
+            p = Profile.objects.get(**attrs['profile'])
             s = Endpoint.objects.get(**attrs['source'])
             d = Endpoint.objects.get(**attrs['destination'])
-            p = Profile.objects.get(**attrs['profile'])
             consents = Consent.objects.filter(source=s, destination=d, profile=p, person_id=attrs['person_id'])
         except (Consent.DoesNotExist, Endpoint.DoesNotExist, Profile.DoesNotExist) as ex:
             # If one among source, destination and profile doesn't exist it means that neither the consent exists

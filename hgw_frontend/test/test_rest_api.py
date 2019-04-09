@@ -844,7 +844,9 @@ class TestHGWFrontendAPI(TestCase):
                 'kafka_public_key': destination.kafka_public_key
             },
             'profile': self.profile,
-            'person_id': TEST_PERSON1_ID
+            'person_id': TEST_PERSON1_ID,
+            'start_validity': '2017-10-23T10:00:54.123000+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
         }
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], 'control')
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode()), kafka_data)

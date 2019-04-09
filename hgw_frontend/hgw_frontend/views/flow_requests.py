@@ -255,7 +255,7 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
 
 def _get_consent(confirm_id):
     """
-    Query the consent manager for the consent with confirmation_id equale to confirm_id
+    Query the consent manager for the consent with confirmation_id equal to confirm_id
     :param confirm_id: the confirmation_id of the consent to get
     :return:
     """
@@ -330,7 +330,9 @@ def _confirm(request, consent_confirm_id):
                 'kafka_public_key': destination.kafka_public_key
             },
             'profile': profile_ser.data,
-            'person_id': request.user.fiscalNumber
+            'person_id': request.user.fiscalNumber,
+            'start_validity': consent['start_validity'],
+            'expire_validity': consent['expire_validity']
         }
 
         kafka_producer.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
