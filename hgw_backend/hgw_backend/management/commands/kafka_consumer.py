@@ -54,15 +54,18 @@ class Command(BaseCommand):
             person_id = channel_data['person_id']
             channel_id = channel_data['channel_id']
             source_endpoint_profile = channel_data['profile']
+            start_channel_validity = channel_data['start_validity']
+            end_channel_validity = channel_data['expire_validity']
             connector = {
                 'profile': source_endpoint_profile,
                 'person_identifier': person_id,
                 'dest_public_key': destination_kafka_key,
-                'channel_id': channel_id
+                'channel_id': channel_id,
+                'start_validity': start_channel_validity,
+                'end_channel_validity': end_channel_validity
             }
 
             res = source.create_connector(connector)
             if res is None:
                 logging.error('error processing msg %s', msg)
                 # TODO: decide what to do when connector creation failed
-                pass
