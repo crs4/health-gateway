@@ -318,7 +318,7 @@ def _confirm(request, consent_confirm_id):
             producer_params = {
                 'bootstrap_servers': KAFKA_BROKER
             }
-        kp = KafkaProducer(**producer_params)
+        kafka_producer = KafkaProducer(**producer_params)
 
         destination = Destination.objects.get(destination_id=consent['destination']['id'])
         profile_ser = ProfileSerializer(consent_confirmation.flow_request.profile)
@@ -333,7 +333,7 @@ def _confirm(request, consent_confirm_id):
             'person_id': request.user.fiscalNumber
         }
 
-        kp.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
+        kafka_producer.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
 
         flow_request = consent_confirmation.flow_request
         flow_request.status = FlowRequest.ACTIVE
@@ -360,8 +360,7 @@ def consents_confirmed(request):
             logger.debug("Checking consents")
             done = _confirm(request, consent_confirm_id)
     return HttpResponseRedirect('{}?process_id={}&success={}'.format(
-        callback, flow_request.process_id, json.dumps(done))
-    )
+        callback, flow_request.process_id, json.dumps(done)))
 
 
 @require_GET

@@ -14,9 +14,12 @@ saml:
   sp_cert: ../saml2/saml2.cert.pem
   sp_key: ../saml2/saml2.key.pem
 
-kafka:
-  uri: kafka:9093
-  ssl: true
-  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
-  client_cert: ../../certs/ca/kafka/certs/consentmanager/cert.pem
-  client_key: ../../certs/ca/kafka/certs/consentmanager/key.pem
+notification:
+  type: 'kafka'
+  kafka:
+    uri: kafka:9093
+    topic: consent-manager-notifications
+    ssl: true
+    ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
+    client_cert: ../../certs/ca/kafka/certs/consentmanager/cert.pem
+    client_key: ../../certs/ca/kafka/certs/consentmanager/key.pem
