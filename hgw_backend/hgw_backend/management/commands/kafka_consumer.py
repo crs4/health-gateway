@@ -89,11 +89,11 @@ class Command(BaseCommand):
                             'start_validity': start_channel_validity,
                             'end_validity': end_channel_validity
                         }
-                        # res = source.create_connector(connector)
-                        # if res is None:
-                        #     failure_reason = FailedConnectors.SENDING_ERROR
-                        #     retry = True
-                        #     logger.error('Skipping message with id %s: error with contacting the Source Endpoint', msg.offset)
+                        res = source.create_connector(connector)
+                        if res is None:
+                            failure_reason = FailedConnectors.SENDING_ERROR
+                            retry = True
+                            logger.error('Skipping message with id %s: error with contacting the Source Endpoint', msg.offset)
 
             if failure_reason is not None:
                 try:
