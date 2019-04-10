@@ -43,7 +43,7 @@
       "name": "cert_source",
       "url": "http://localhost:40000/v1/connectors/",
       "profile": 1,
-      "content_type": 14,
+      "content_type": ["hgw_backend", "certificatesauthentication"],
       "object_id": 1
     }
   },
@@ -55,7 +55,7 @@
       "name": "oauth2_source",
       "url": "http://localhost:40001/v1/connectors/",
       "profile": 2,
-      "content_type": 15,
+      "content_type": ["hgw_backend", "oauth2authentication"],
       "object_id": 1
     }
   },
