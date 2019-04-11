@@ -25,7 +25,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from kafka import KafkaConsumer, TopicPartition
 
-from hgw_backend.models import FailedConnectors, Source
+from hgw_backend.models import FailedConnector, Source
 from hgw_common.utils import get_logger
 
 logger = get_logger('backend_kafka_consumer')
@@ -59,15 +59,15 @@ class Command(BaseCommand):
                 channel_data = json.loads(msg.value.decode('utf-8'))
             except (TypeError, UnicodeError):
                 logger.error('Skipping message with id %s: something bad happened', msg.offset)
-                failure_reason = FailedConnectors.DECODING
+                failure_reason = FailedConnector.DECODING
             except JSONDecodeError:
-                failure_reason = FailedConnectors.JSON_DECODING
+                failure_reason = FailedConnector.JSON_DECODING
                 logger.error('Skipping message with id %s: message was not json encoded', msg.offset)
             else:
                 try:
                     source = Source.objects.get(source_id=channel_data['source_id'])
                 except Source.DoesNotExist:
-                    failure_reason = FailedConnectors.SOURCE_NOT_FOUND
+                    failure_reason = FailedConnector.SOURCE_NOT_FOUND
                     logger.error('Skipping message with id %s: source with id %s was not found in the db', msg.offset, channel_data['source_id'])
                 else:
                     try:
@@ -78,7 +78,7 @@ class Command(BaseCommand):
                         start_channel_validity = channel_data['start_validity']
                         end_channel_validity = channel_data['expire_validity']
                     except KeyError as k:
-                        failure_reason = FailedConnectors.WRONG_MESSAGE_STRUCTURE
+                        failure_reason = FailedConnector.WRONG_MESSAGE_STRUCTURE
                         logger.error('Skipping message with id %s: cannot find %s attribute in the message', msg.offset, k.args[0])
                     else:
                         connector = {
@@ -91,13 +91,13 @@ class Command(BaseCommand):
                         }
                         res = source.create_connector(connector)
                         if res is None:
-                            failure_reason = FailedConnectors.SENDING_ERROR
+                            failure_reason = FailedConnector.SENDING_ERROR
                             retry = True
                             logger.error('Skipping message with id %s: error with contacting the Source Endpoint', msg.offset)
 
             if failure_reason is not None:
                 try:
                     with transaction.atomic():
-                        FailedConnectors.objects.create(message=msg.value, reason=failure_reason, retry=retry)
+                        FailedConnector.objects.create(message=msg.value, reason=failure_reason, retry=retry)
                 except:
                     logger.error('Failure saving message with id %s into database', msg.offset)

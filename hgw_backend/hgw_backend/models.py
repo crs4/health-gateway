@@ -80,7 +80,7 @@ class CertificatesAuthentication(models.Model):
             return "ID: {id}".format(id=self.id)
 
 
-class FailedConnectors(models.Model):
+class FailedConnector(models.Model):
     """
     Model to store messages from hgw_frontend that failed delivering to Sources
     """

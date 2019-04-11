@@ -5,7 +5,7 @@ from django.test import TestCase
 from mock.mock import patch
 
 from hgw_backend.management.commands.kafka_consumer import Command
-from hgw_backend.models import FailedConnectors
+from hgw_backend.models import FailedConnector
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -79,7 +79,7 @@ class TestConsumer(TestCase):
             patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             Command().handle()
-            self.assertEqual(FailedConnectors.objects.count(), 0)
+            self.assertEqual(FailedConnector.objects.count(), 0)
 
     def test_send_message_fail(self):
         """
@@ -88,10 +88,10 @@ class TestConsumer(TestCase):
         with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             Command().handle()
-            self.assertEqual(FailedConnectors.objects.count(), 2)
-            for index, failed in enumerate(FailedConnectors.objects.all()):
+            self.assertEqual(FailedConnector.objects.count(), 2)
+            for index, failed in enumerate(FailedConnector.objects.all()):
                 self.assertEqual(json.loads(failed.message), self.messages[index])
-                self.assertEqual(failed.reason, FailedConnectors.SENDING_ERROR)
+                self.assertEqual(failed.reason, FailedConnector.SENDING_ERROR)
                 self.assertEqual(failed.retry, True)
 
     def test_consume_message_fail_to_json_decode(self):
@@ -105,10 +105,10 @@ class TestConsumer(TestCase):
             command = Command()
             command.handle()
 
-            self.assertEqual(FailedConnectors.objects.count(), 1)
-            f = FailedConnectors.objects.first()
+            self.assertEqual(FailedConnector.objects.count(), 1)
+            f = FailedConnector.objects.first()
             self.assertEqual(f.message, messages[0])
-            self.assertEqual(f.reason, FailedConnectors.JSON_DECODING)
+            self.assertEqual(f.reason, FailedConnector.JSON_DECODING)
             self.assertEqual(f.retry, False)
 
     def test_consume_message_fail_to_message_structure(self):
@@ -122,10 +122,10 @@ class TestConsumer(TestCase):
             command = Command()
             command.handle()
 
-            self.assertEqual(FailedConnectors.objects.count(), 1)
-            f = FailedConnectors.objects.first()
+            self.assertEqual(FailedConnector.objects.count(), 1)
+            f = FailedConnector.objects.first()
             self.assertEqual(json.loads(f.message), self.messages[0])
-            self.assertEqual(f.reason, FailedConnectors.WRONG_MESSAGE_STRUCTURE)
+            self.assertEqual(f.reason, FailedConnector.WRONG_MESSAGE_STRUCTURE)
             self.assertEqual(f.retry, False)
 
     def test_consume_message_fail_to_unknown_source_id(self):
@@ -139,10 +139,10 @@ class TestConsumer(TestCase):
             command = Command()
             command.handle()
 
-            self.assertEqual(FailedConnectors.objects.count(), 1)
-            f = FailedConnectors.objects.first()
+            self.assertEqual(FailedConnector.objects.count(), 1)
+            f = FailedConnector.objects.first()
             self.assertEqual(json.loads(f.message), self.messages[0])
-            self.assertEqual(f.reason, FailedConnectors.SOURCE_NOT_FOUND)
+            self.assertEqual(f.reason, FailedConnector.SOURCE_NOT_FOUND)
             self.assertEqual(f.retry, False)
 
     def test_consume_message_fail_to_unicode_error(self):
@@ -157,4 +157,4 @@ class TestConsumer(TestCase):
             command.handle()
 
             # Django will fail to insert the message into the db because of the wrong encoding
-            self.assertEqual(FailedConnectors.objects.count(), 0)
+            self.assertEqual(FailedConnector.objects.count(), 0)
