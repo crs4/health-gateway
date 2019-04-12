@@ -90,6 +90,7 @@ class Command(BaseCommand):
                     else:
                         self._handle_payload(message, *args, **options)
                 except ValueError as e:
+                    print(e)
                     logger.info("Error")
             elif msg.status_code == 404:
                 logger.info("No message. Retrying in 6 seconds")

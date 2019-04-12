@@ -175,7 +175,7 @@ class OAuth2Authentication(models.Model):
             res = None
         else:
             try:
-                logger.debug("Creating connector")
+                logger.debug("Creating connector with data %s", connector)
                 res = session.post(source.url, json=connector)
                 if res.status_code == 401:
                     raise TokenExpiredError

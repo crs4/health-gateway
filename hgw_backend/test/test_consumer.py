@@ -53,8 +53,6 @@ class TestConsumer(TestCase):
             'profile': {
                 "code": "PROF002",
                 "version": "hgw.document.profile.v0",
-                "start_time_validity": "2017-06-23T10:13:39Z",
-                "end_time_validity": "2018-06-23T23:59:59Z",
                 "payload": "{\"clinical_domain\": \"Laboratory\"}"
             },
             'person_id': 'AAAABBBBCCCCDDDD',

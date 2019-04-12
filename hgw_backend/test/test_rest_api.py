@@ -47,8 +47,6 @@ sys.path.append(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/managemen
 PROFILE = {
     'code': 'PROF001',
     'version': 'hgw.document.profile.v0',
-    'start_time_validity': '2017-06-23T10:13:39+02:00',
-    'end_time_validity': '2018-06-23T23:59:59+02:00',
     'payload': '{\'domain\': \'Laboratory\'}'
 }
 

@@ -89,6 +89,7 @@ class Command(BaseCommand):
                             'start_validity': start_channel_validity,
                             'end_validity': end_channel_validity
                         }
+                        logger.debug("Consumed connector with data %s", connector)
                         res = source.create_connector(connector)
                         if res is None:
                             failure_reason = FailedConnector.SENDING_ERROR
