@@ -18,51 +18,87 @@
 
 import json
 import logging
+from json import JSONDecodeError
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from kafka import KafkaConsumer, TopicPartition
 
-from hgw_backend.models import Source
+from hgw_backend.models import FailedConnector, Source
+from hgw_common.utils import get_logger
+
+logger = get_logger('backend_kafka_consumer')
 
 
 class Command(BaseCommand):
     help = 'Launch a KafkaConsumer'
 
     def handle(self, *args, **options):
+        consumer_params = {
+            'bootstrap_servers': settings.KAFKA_BROKER
+        }
         if settings.KAFKA_SSL:
-            consumer_params = {
+            consumer_params.update({
                 'bootstrap_servers': settings.KAFKA_BROKER,
                 'security_protocol': 'SSL',
                 'ssl_check_hostname': True,
                 'ssl_cafile': settings.KAFKA_CA_CERT,
                 'ssl_certfile': settings.KAFKA_CLIENT_CERT,
                 'ssl_keyfile': settings.KAFKA_CLIENT_KEY
-            }
-        else:
-            consumer_params = {
-                'bootstrap_servers': settings.KAFKA_BROKER
-            }
-        kc = KafkaConsumer(**consumer_params)
+            })
 
-        kc.assign([TopicPartition(settings.KAFKA_TOPIC, 0)])
-        kc.seek_to_beginning(TopicPartition(settings.KAFKA_TOPIC, 0))
-        for msg in kc:
-            channel_data = json.loads(msg.value.decode('utf-8'))
-            source = Source.objects.get(source_id=channel_data['source_id'])
-            destination_kafka_key = channel_data['destination']['kafka_public_key']
-            person_id = channel_data['person_id']
-            channel_id = channel_data['channel_id']
-            source_endpoint_profile = channel_data['profile']
-            connector = {
-                'profile': source_endpoint_profile,
-                'person_identifier': person_id,
-                'dest_public_key': destination_kafka_key,
-                'channel_id': channel_id
-            }
+        consumer = KafkaConsumer(**consumer_params)
+        consumer.assign([TopicPartition(settings.KAFKA_TOPIC, 0)])
+        consumer.seek_to_beginning(TopicPartition(settings.KAFKA_TOPIC, 0))
 
-            res = source.create_connector(connector)
-            if res is None:
-                logging.error('error processing msg %s', msg)
-                # TODO: decide what to do when connector creation failed
-                pass
+        for msg in consumer:
+            failure_reason = None
+            retry = False
+            try:
+                channel_data = json.loads(msg.value.decode('utf-8'))
+            except (TypeError, UnicodeError):
+                logger.error('Skipping message with id %s: something bad happened', msg.offset)
+                failure_reason = FailedConnector.DECODING
+            except JSONDecodeError:
+                failure_reason = FailedConnector.JSON_DECODING
+                logger.error('Skipping message with id %s: message was not json encoded', msg.offset)
+            else:
+                try:
+                    source = Source.objects.get(source_id=channel_data['source_id'])
+                except Source.DoesNotExist:
+                    failure_reason = FailedConnector.SOURCE_NOT_FOUND
+                    logger.error('Skipping message with id %s: source with id %s was not found in the db', msg.offset, channel_data['source_id'])
+                else:
+                    try:
+                        destination_kafka_key = channel_data['destination']['kafka_public_key']
+                        person_id = channel_data['person_id']
+                        channel_id = channel_data['channel_id']
+                        source_endpoint_profile = channel_data['profile']
+                        start_channel_validity = channel_data['start_validity']
+                        end_channel_validity = channel_data['expire_validity']
+                    except KeyError as k:
+                        failure_reason = FailedConnector.WRONG_MESSAGE_STRUCTURE
+                        logger.error('Skipping message with id %s: cannot find %s attribute in the message', msg.offset, k.args[0])
+                    else:
+                        connector = {
+                            'profile': source_endpoint_profile,
+                            'person_identifier': person_id,
+                            'dest_public_key': destination_kafka_key,
+                            'channel_id': channel_id,
+                            'start_validity': start_channel_validity,
+                            'end_validity': end_channel_validity
+                        }
+                        logger.debug("Consumed connector with data %s", connector)
+                        res = source.create_connector(connector)
+                        if res is None:
+                            failure_reason = FailedConnector.SENDING_ERROR
+                            retry = True
+                            logger.error('Skipping message with id %s: error with contacting the Source Endpoint', msg.offset)
+
+            if failure_reason is not None:
+                try:
+                    with transaction.atomic():
+                        FailedConnector.objects.create(message=msg.value, reason=failure_reason, retry=retry)
+                except:
+                    logger.error('Failure saving message with id %s into database', msg.offset)

@@ -18,10 +18,12 @@
 
 from django.contrib import admin
 
-from hgw_backend.models import Source, CertificatesAuthentication, OAuth2Authentication
+from hgw_backend.models import (CertificatesAuthentication, FailedConnector,
+                                OAuth2Authentication, Source)
 from hgw_common.models import Profile
 
 admin.site.register(Source)
 admin.site.register(Profile)
 admin.site.register(CertificatesAuthentication)
 admin.site.register(OAuth2Authentication)
+admin.site.register(FailedConnector)

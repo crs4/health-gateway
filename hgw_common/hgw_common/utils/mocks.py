@@ -114,7 +114,7 @@ class MockRequestHandler(BaseHTTPRequestHandler):
         return json.loads(self._content_data())
 
     def do_GET(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def log_message(self, *args, **kwargs): pass
 

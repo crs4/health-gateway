@@ -255,7 +255,7 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
 
 def _get_consent(confirm_id):
     """
-    Query the consent manager for the consent with confirmation_id equale to confirm_id
+    Query the consent manager for the consent with confirmation_id equal to confirm_id
     :param confirm_id: the confirmation_id of the consent to get
     :return:
     """
@@ -318,7 +318,7 @@ def _confirm(request, consent_confirm_id):
             producer_params = {
                 'bootstrap_servers': KAFKA_BROKER
             }
-        kp = KafkaProducer(**producer_params)
+        kafka_producer = KafkaProducer(**producer_params)
 
         destination = Destination.objects.get(destination_id=consent['destination']['id'])
         profile_ser = ProfileSerializer(consent_confirmation.flow_request.profile)
@@ -330,10 +330,12 @@ def _confirm(request, consent_confirm_id):
                 'kafka_public_key': destination.kafka_public_key
             },
             'profile': profile_ser.data,
-            'person_id': request.user.fiscalNumber
+            'person_id': request.user.fiscalNumber,
+            'start_validity': consent['start_validity'],
+            'expire_validity': consent['expire_validity']
         }
 
-        kp.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
+        kafka_producer.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
 
         flow_request = consent_confirmation.flow_request
         flow_request.status = FlowRequest.ACTIVE
@@ -360,8 +362,7 @@ def consents_confirmed(request):
             logger.debug("Checking consents")
             done = _confirm(request, consent_confirm_id)
     return HttpResponseRedirect('{}?process_id={}&success={}'.format(
-        callback, flow_request.process_id, json.dumps(done))
-    )
+        callback, flow_request.process_id, json.dumps(done)))
 
 
 @require_GET

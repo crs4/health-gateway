@@ -21,6 +21,10 @@ RUN apk add --no-cache -t .build-deps curl ca-certificates jq \
   && rm -rf /tmp/* \
   && apk del --purge .build-deps
 
+
+RUN apk update \
+  && apk add nss
+
 ENV PATH /sbin:/opt/kafka/bin/:$PATH
 
 WORKDIR /opt/kafka

@@ -13,3 +13,13 @@ saml:
   sp_name: Consent Manager Service Provider
   sp_cert: /container/devservice/saml2/saml2.cert.pem
   sp_key: /container/devservice/saml2/saml2.key.pem
+
+notification:
+  type: 'kafka'
+  kafka:
+    uri: kafka:9093
+    topic: consent-manager-notifications
+    ssl: false
+    ca_cert: /container/client_certs/kafka.chain.cert.pem
+    client_cert: /container/client_certs/cert.pem
+    client_key: /container/client_certs/key.pem

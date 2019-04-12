@@ -80,6 +80,29 @@ class CertificatesAuthentication(models.Model):
             return "ID: {id}".format(id=self.id)
 
 
+class FailedConnector(models.Model):
+    """
+    Model to store messages from hgw_frontend that failed delivering to Sources
+    """
+    JSON_DECODING = 'JS'
+    DECODING = 'DE'
+    SOURCE_NOT_FOUND = 'SN'
+    WRONG_MESSAGE_STRUCTURE = 'WS'
+    SENDING_ERROR = 'SE'
+    UNKNOWN_ERROR = 'UE'
+
+    FAIL_REASON = ((JSON_DECODING, 'JSON_DECODING'),
+                   (DECODING, 'DECODING'),
+                   (SOURCE_NOT_FOUND, 'SOURCE_NOT_FOUND'),
+                   (WRONG_MESSAGE_STRUCTURE, 'WRONG_MESSAGE_STRUCTURE'),
+                   (SENDING_ERROR, 'SENDING_ERROR'),
+                   (UNKNOWN_ERROR, 'UNKNOWN_ERROR'))
+
+    message = models.CharField(max_length=1500, blank=False, null=False)
+    reason = models.CharField(max_length=2, choices=FAIL_REASON)
+    retry = models.BooleanField()
+
+
 class WrongUrlException(Exception):
     pass
 
@@ -152,7 +175,7 @@ class OAuth2Authentication(models.Model):
             res = None
         else:
             try:
-                logger.debug("Creating connector")
+                logger.debug("Creating connector with data %s", connector)
                 res = session.post(source.url, json=connector)
                 if res.status_code == 401:
                     raise TokenExpiredError

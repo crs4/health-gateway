@@ -16,9 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-import logging
 import os
-
 import sys
 import yaml
 
@@ -208,15 +206,31 @@ DEFAULT_SCOPES = ['consent:read', 'consent:write']
 
 
 class ApplicationBasedScope(object):
-    def get_all_scopes(self):
+    """
+    oAuth2 custom class to handle scopes
+    """
+
+    @staticmethod
+    def get_all_scopes():
+        """
+        Returns all scopes
+        """
         return SCOPES
 
-    def get_available_scopes(self, application=None, request=None, *args, **kwargs):
+    @staticmethod
+    def get_available_scopes(*args, application=None, request=None, **kwargs):
+        """
+        Returns available scopes
+        """
         if application.scopes:
             return application.scopes.split(" ")
         return SCOPES.keys()
 
-    def get_default_scopes(self, application=None, request=None, *args, **kwargs):
+    @staticmethod
+    def get_default_scopes(*args, application=None, request=None, **kwargs):
+        """
+        Returns all scopes
+        """
         if application.scopes:
             return application.scopes.split(" ")
         return DEFAULT_SCOPES
@@ -242,3 +256,12 @@ SWAGGER_SETTINGS = {
         }
     }
 }
+
+NOTIFICATION_TYPE = cfg['notification']['type']
+if NOTIFICATION_TYPE == 'kafka':
+    KAFKA_BROKER = cfg['notification']['kafka']['uri']
+    KAFKA_TOPIC = cfg['notification']['kafka']['topic']
+    KAFKA_SSL = cfg['notification']['kafka']['ssl']
+    KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['ca_cert'])
+    KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['client_cert'])
+    KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['client_key'])

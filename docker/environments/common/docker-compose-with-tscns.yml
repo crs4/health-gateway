@@ -96,6 +96,9 @@ services:
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
       - ../../../certs/ca/web/certs/consentmanager/:/container/web_certs/
+      - ../../../certs/ca/kafka/certs/consentmanager/cert.pem:/container/client_certs/cert.pem
+      - ../../../certs/ca/kafka/certs/consentmanager/key.pem:/container/client_certs/key.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
     networks:
       default:
         aliases:
