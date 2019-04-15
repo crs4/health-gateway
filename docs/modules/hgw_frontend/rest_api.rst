@@ -168,5 +168,5 @@ API Methods
         {
             "start_id": 5,
             "last_id": 30,
-            "data": 26
+            "count": 26
         }
