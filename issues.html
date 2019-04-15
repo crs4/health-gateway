@@ -103,6 +103,20 @@
 <li class="toctree-l3"><a class="reference internal" href="#consents-creation">Consents Creation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#consents-confirmation">Consents Confirmation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#health-gateway-backend-notification">Health Gateway Backend notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creation-of-connectors-in-the-source">Creation of connectors in the Source</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-flow-layer">Data Flow Layer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-sending-to-health-gateway">Data sending to Health Gateway</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#using-kafka-prdoucer">Using Kafka Prdoucer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#using-rest-endpoint">Using REST endpoint</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#data-dispatching-from-source-topic-to-destination-topic">Data dispatching from Source Topic to Destination Topic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#consuming-from-source-s-topic">Consuming from Source’s Topic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#delivering-to-the-destination-s-topic">Delivering to the Destination’s Topic</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -588,7 +602,9 @@ channels and when sending data, and possible mitigation.</p>
 </tr>
 </tbody>
 </table>
-<p>Creation of connectors in the Source</p>
+</div>
+<div class="section" id="creation-of-connectors-in-the-source">
+<h3>Creation of connectors in the Source<a class="headerlink" href="#creation-of-connectors-in-the-source" title="Permalink to this headline">¶</a></h3>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -662,6 +678,469 @@ channels and when sending data, and possible mitigation.</p>
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+<div class="section" id="data-flow-layer">
+<h2>Data Flow Layer<a class="headerlink" href="#data-flow-layer" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="data-sending-to-health-gateway">
+<h3>Data sending to Health Gateway<a class="headerlink" href="#data-sending-to-health-gateway" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="using-kafka-prdoucer">
+<h4>Using Kafka Prdoucer<a class="headerlink" href="#using-kafka-prdoucer" title="Permalink to this headline">¶</a></h4>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="24%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Connection to the</div>
+<div class="line">Kafka broker fails</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Authentication to</div>
+<div class="line">the Kafka broker</div>
+<div class="line">fails</div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="using-rest-endpoint">
+<h4>Using REST endpoint<a class="headerlink" href="#using-rest-endpoint" title="Permalink to this headline">¶</a></h4>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="24%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Connection to the</div>
+<div class="line">HGW Backend fails</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Must be implemented in
+Source Endpoint</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Authentication to</div>
+<div class="line">the HGW Backend</div>
+<div class="line">broker fails</div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Must be implemented in
+Source Endpoint</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Connection to the</div>
+<div class="line">Kafka broker fails</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Must be implemented in
+Source Endpoint</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Authentication to</div>
+<div class="line">the Kafka broker</div>
+<div class="line">fails</div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Must be implemented in
+Source Endpoint</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Message parameters</div>
+<div class="line">are incorrect (e.g.</div>
+<div class="line">unencrypted message</div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Must be implemented in
+Source Endpoint</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Message parameters</div>
+<div class="line">are incorrect (e.g.</div>
+<div class="line">unencrypted message</div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">won’t send the message</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">retries to send the</div>
+<div class="line">message</div>
+</div>
+</td>
+<td>Must be implemented in
+Source Endpoint</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="data-dispatching-from-source-topic-to-destination-topic">
+<h3>Data dispatching from Source Topic to Destination Topic<a class="headerlink" href="#data-dispatching-from-source-topic-to-destination-topic" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="consuming-from-source-s-topic">
+<h4>Consuming from Source’s Topic<a class="headerlink" href="#consuming-from-source-s-topic" title="Permalink to this headline">¶</a></h4>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="24%" />
+<col width="23%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Missing channel id</div>
+<div class="line">in kafka message</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The message is lost</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">TBD</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Consent Manager is</div>
+<div class="line">unreachable</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The consent associated</div>
+<div class="line">to the message cannot</div>
+<div class="line">be verified</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Consent Manager</div>
+<div class="line">auth fails</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The consent associated</div>
+<div class="line">to the message cannot</div>
+<div class="line">be verified</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Consent is revoked</div>
+<div class="line">or expired</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The message is not</div>
+<div class="line">dispatched</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">We should save the</div>
+<div class="line">message to understand</div>
+<div class="line">why it was sent by</div>
+<div class="line">source</div>
+</div>
+</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">HGW Frontend</div>
+<div class="line">unreachable</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">We cannot discover the</div>
+<div class="line">flow request</div>
+<div class="line">associated to the</div>
+<div class="line">consent</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">HGW Frontend</div>
+<div class="line">auth fails</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">We cannot discover the</div>
+<div class="line">flow request</div>
+<div class="line">associated to the</div>
+<div class="line">consent</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">The flow request</div>
+<div class="line">corresponding to</div>
+<div class="line">the channel is not</div>
+<div class="line">found</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">We cannot discover the</div>
+<div class="line">flow request</div>
+<div class="line">associated to the</div>
+<div class="line">consent</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="delivering-to-the-destination-s-topic">
+<h4>Delivering to the Destination’s Topic<a class="headerlink" href="#delivering-to-the-destination-s-topic" title="Permalink to this headline">¶</a></h4>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="24%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">The broker is</div>
+<div class="line">unreachable</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The message cannot be</div>
+<div class="line">dispatched</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">The authentication</div>
+<div class="line">to the broker fails</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The message cannot be</div>
+<div class="line">dispatched</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Message must be</div>
+<div class="line">reprocessed</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 </div>
 </div>

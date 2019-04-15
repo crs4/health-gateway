@@ -109,6 +109,7 @@ Health Gateway Backend notification
 +----------------------+----------+-------------------------+-----------------------+------------------------+
 
 Creation of connectors in the Source
+------------------------------------
 
 +----------------------+----------+-------------------------+-----------------------+------------------------+
 | Issue                | Blocking | Effect                  | Mitigation            | Mitigation implemented |
@@ -124,4 +125,110 @@ Creation of connectors in the Source
 || fails               |          || about the new data     || implemented and auth |                        |
 ||                     |          || transfer to activate   || parameters should be |                        |
 ||                     |          ||                        || checked              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+
+Data Flow Layer
+***************
+
+Data sending to Health Gateway
+------------------------------
+
+Using Kafka Prdoucer
+####################
+
++----------------------+----------+-------------------------+-----------------------+------------------------+
+| Issue                | Blocking | Effect                  | Mitigation            | Mitigation implemented |
++======================+==========+=========================+=======================+========================+
+|| Connection to the   | No       || The Source Endpoint    || The Source Endpoint  | No                     |
+|| Kafka broker fails  |          || won't send the message || retries to send the  |                        |
+||                     |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| Authentication to   | No       || The Source Endpoint    || The Source Endpoint  | Yes                    |
+|| the Kafka broker    |          || won't send the message || retries to send the  |                        |
+|| fails               |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+
+Using REST endpoint
+###################
+
++----------------------+----------+-------------------------+-----------------------+------------------------+
+| Issue                | Blocking | Effect                  | Mitigation            | Mitigation implemented |
++======================+==========+=========================+=======================+========================+
+|| Connection to the   | No       || The Source Endpoint    || The Source Endpoint  | Must be implemented in |
+|| HGW Backend fails   |          || won't send the message || retries to send the  | Source Endpoint        |
+||                     |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| Authentication to   | No       || The Source Endpoint    || The Source Endpoint  | Must be implemented in |
+|| the HGW Backend     |          || won't send the message || retries to send the  | Source Endpoint        |
+|| broker fails        |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| Connection to the   | No       || The Source Endpoint    || The Source Endpoint  | Must be implemented in |
+|| Kafka broker fails  |          || won't send the message || retries to send the  | Source Endpoint        |
+||                     |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| Authentication to   | No       || The Source Endpoint    || The Source Endpoint  | Must be implemented in |
+|| the Kafka broker    |          || won't send the message || retries to send the  | Source Endpoint        |
+|| fails               |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| Message parameters  | No       || The Source Endpoint    || The Source Endpoint  | Must be implemented in |
+|| are incorrect (e.g. |          || won't send the message || retries to send the  | Source Endpoint        |
+|| unencrypted message |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| Message parameters  | No       || The Source Endpoint    || The Source Endpoint  | Must be implemented in |
+|| are incorrect (e.g. |          || won't send the message || retries to send the  | Source Endpoint        |
+|| unencrypted message |          ||                        || message              |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+
+Data dispatching from Source Topic to Destination Topic
+-------------------------------------------------------
+
+Consuming from Source's Topic
+#############################
+
++----------------------+----------+-------------------------+------------------------+------------------------+
+| Issue                | Blocking | Effect                  | Mitigation             | Mitigation implemented |
++======================+==========+=========================+========================+========================+
+|| Missing channel id  | Yes      || The message is lost    || TBD                   | No                     |
+|| in kafka message    |          ||                        ||                       |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+|| Consent Manager is  | Yes      || The consent associated || Message must be       | No                     |
+|| unreachable         |          || to the message cannot  || reprocessed           |                        |
+||                     |          || be verified            ||                       |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+|| Consent Manager     | Yes      || The consent associated || Message must be       | No                     |
+|| auth fails          |          || to the message cannot  || reprocessed           |                        |
+||                     |          || be verified            ||                       |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+|| Consent is revoked  | Yes      || The message is not     || We should save the    |                        |
+|| or expired          |          || dispatched             || message to understand |                        |
+||                     |          ||                        || why it was sent by    |                        |
+||                     |          ||                        || source                |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+|| HGW Frontend        | Yes      || We cannot discover the || Message must be       | No                     |
+|| unreachable         |          || flow request           || reprocessed           |                        |
+||                     |          || associated to the      ||                       |                        |
+||                     |          || consent                ||                       |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+|| HGW Frontend        | Yes      || We cannot discover the || Message must be       | No                     |
+|| auth fails          |          || flow request           || reprocessed           |                        |
+||                     |          || associated to the      ||                       |                        |
+||                     |          || consent                ||                       |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+|| The flow request    | Yes      || We cannot discover the || Message must be       | No                     |
+|| corresponding to    |          || flow request           || reprocessed           |                        |
+|| the channel is not  |          || associated to the      ||                       |                        |
+|| found               |          || consent                ||                       |                        |
++----------------------+----------+-------------------------+------------------------+------------------------+
+
+Delivering to the Destination's Topic
+#####################################
+
++----------------------+----------+-------------------------+-----------------------+------------------------+
+| Issue                | Blocking | Effect                  | Mitigation            | Mitigation implemented |
++======================+==========+=========================+=======================+========================+
+|| The broker is       | Yes      || The message cannot be  || Message must be      | No                     |
+|| unreachable         |          || dispatched             || reprocessed          |                        |
++----------------------+----------+-------------------------+-----------------------+------------------------+
+|| The authentication  | Yes      || The message cannot be  || Message must be      | No                     |
+|| to the broker fails |          || dispatched             || reprocessed          |                        |
 +----------------------+----------+-------------------------+-----------------------+------------------------+
