@@ -1,0 +1,739 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Issues &mdash; Health Gateway 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="Health Gateway 1.0 documentation" href="index.html"/>
+        <link rel="prev" title="Consent Manager" href="modules/consent_manager/home.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Health Gateway
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture General Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/hgw_frontend/home.html">HGW Frontend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/hgw_backend/home.html">HGW Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/hgw_backend/home.html#enrolling-a-source">Enrolling a Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/consent_manager/home.html">Consent Manager</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Issues</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#control-layer">Control Layer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flow-request-creation">Flow Request Creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flow-request-confirmation">Flow Request Confirmation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consents-creation">Consents Creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consents-confirmation">Consents Confirmation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#health-gateway-backend-notification">Health Gateway Backend notification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Health Gateway</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Issues</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/issues.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="issues">
+<h1>Issues<a class="headerlink" href="#issues" title="Permalink to this headline">¶</a></h1>
+<p>This page lists the possible issues that can occur when creating
+channels and when sending data, and possible mitigation.</p>
+<div class="section" id="control-layer">
+<h2>Control Layer<a class="headerlink" href="#control-layer" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="flow-request-creation">
+<h3>Flow Request Creation<a class="headerlink" href="#flow-request-creation" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="23%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Error in parameters</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Flow Request</div>
+<div class="line">creation fails</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">returns 400</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="flow-request-confirmation">
+<h3>Flow Request Confirmation<a class="headerlink" href="#flow-request-confirmation" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="23%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Cannot contact IdP</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The login into the</div>
+<div class="line">Health Gateway fails</div>
+<div class="line">and the confirmation</div>
+<div class="line">process fails</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">The person rejects</div>
+<div class="line">authorization in</div>
+<div class="line">the IdP</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Health Gateway</div>
+<div class="line">cannot get patient’s</div>
+<div class="line">demographics from IdP</div>
+<div class="line">and the process fails</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Wrong parameters</div>
+<div class="line">in the request</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Health Gateway</div>
+<div class="line">shows an error</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Connection or oauth</div>
+<div class="line">error with HGW</div>
+<div class="line">Backend</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Health Gateway</div>
+<div class="line">cannot create the</div>
+<div class="line">channels</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="consents-creation">
+<h3>Consents Creation<a class="headerlink" href="#consents-creation" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="23%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Error in parameters</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The consent creation</div>
+<div class="line">fails</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">should return an</div>
+<div class="line">error feedback</div>
+<div class="line">to the destination</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Connection or oauth</div>
+<div class="line">error with Consent</div>
+<div class="line">Manager</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Health Gateway</div>
+<div class="line">cannot create the</div>
+<div class="line">channels</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">All possible</div>
+<div class="line">consents have been</div>
+<div class="line">already created</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Health Gateway</div>
+<div class="line">cannot create the</div>
+<div class="line">channels</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="consents-confirmation">
+<h3>Consents Confirmation<a class="headerlink" href="#consents-confirmation" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="23%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Cannot contact IdP</div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The login into the</div>
+<div class="line">Consent Manager fails</div>
+<div class="line">and the confirmation</div>
+<div class="line">process fails</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">The person rejects</div>
+<div class="line">authorization in</div>
+<div class="line">the IdP</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Consent Manager</div>
+<div class="line">cannot get patient’s</div>
+<div class="line">demographics from IdP</div>
+<div class="line">and the process fails</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Wrong parameters</div>
+<div class="line">in the request</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>Yes</td>
+<td><div class="first last line-block">
+<div class="line">The Consent Manager</div>
+<div class="line">shows an error</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Health Gateway</div>
+<div class="line">redirects to the</div>
+<div class="line">destination with an</div>
+<div class="line">error feedback</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Kafka connection</div>
+<div class="line">error when sending</div>
+<div class="line">notification to the</div>
+<div class="line">topic</div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Consent Manager</div>
+<div class="line">fails to notify</div>
+<div class="line">the Health Gateway</div>
+<div class="line">about theconsents</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Consent Manager</div>
+<div class="line">should retry to</div>
+<div class="line">send the message</div>
+<div class="line">in the kafka topic</div>
+</div>
+</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="health-gateway-backend-notification">
+<h3>Health Gateway Backend notification<a class="headerlink" href="#health-gateway-backend-notification" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="24%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Kafka connection</div>
+<div class="line">error when sending</div>
+<div class="line">channels data in</div>
+<div class="line">the topic</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The HGW Frontend does</div>
+<div class="line">not notify the backend</div>
+<div class="line">about the new channels</div>
+<div class="line">and sources cannot be</div>
+<div class="line">informed</div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">HGW Frontend</div>
+<div class="line">should retry to</div>
+<div class="line">send the message</div>
+<div class="line">in the kafka topic</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>Creation of connectors in the Source</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="10%" />
+<col width="24%" />
+<col width="22%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Issue</th>
+<th class="head">Blocking</th>
+<th class="head">Effect</th>
+<th class="head">Mitigation</th>
+<th class="head">Mitigation implemented</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><div class="first last line-block">
+<div class="line">Connection to the</div>
+<div class="line">Source Endpoint</div>
+<div class="line">fails</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">will not be notified</div>
+<div class="line">about the new data</div>
+<div class="line">transfer to activate</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">HGW backend</div>
+<div class="line">should retry to</div>
+<div class="line">open the connector</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td><div class="first last line-block">
+<div class="line">Authentication to</div>
+<div class="line">the Source Endpoint</div>
+<div class="line">fails</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td>No</td>
+<td><div class="first last line-block">
+<div class="line">The Source Endpoint</div>
+<div class="line">will not be notified</div>
+<div class="line">about the new data</div>
+<div class="line">transfer to activate</div>
+<div class="line"><br /></div>
+</div>
+</td>
+<td><div class="first last line-block">
+<div class="line">Some kind of alert</div>
+<div class="line">should be</div>
+<div class="line">implemented and auth</div>
+<div class="line">parameters should be</div>
+<div class="line">checked</div>
+</div>
+</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="modules/consent_manager/home.html" class="btn btn-neutral" title="Consent Manager" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, CRS4 - Center for Advanced Studies, Research and Development in Sardinia.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

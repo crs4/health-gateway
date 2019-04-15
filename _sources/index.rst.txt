@@ -57,6 +57,7 @@ platform, including the prototypal configurations.
     modules/hgw_frontend/home.rst
     modules/hgw_backend/home.md
     modules/consent_manager/home.rst
+    issues.rst
 
 Indices and tables
 ==================

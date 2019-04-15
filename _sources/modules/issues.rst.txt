@@ -1,0 +1,16 @@
+Issues
+======
+
+This page lists the possible issues that can occur when creating
+channels and when sending data, and possible mitigation.
+
+Control Layer
+*************
+
++------------+------------+-----------+-----------+-----------+ 
+| Issue   | Blocking   | Effect | Mitigation | Mitigation implemented |
++============+============+===========+===========+===========+ 
+| body row 1 | column 2   | column 3  | 
++------------+------------+-----------+------------+-----------+ 
+| body row 2 | Cells may  | span columns.|
++------------+------------+-----------+------------+-----------+
