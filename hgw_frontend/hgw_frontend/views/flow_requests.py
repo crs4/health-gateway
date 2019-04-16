@@ -23,6 +23,7 @@ from operator import xor
 
 import requests
 import six
+from dateutil import parser
 from dateutil.tz import gettz
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
@@ -276,7 +277,7 @@ def _get_callback_url(request):
     :return:
     """
     callback_url = '{}://{}/v1/flow_requests/consents_confirmed/'.format('https', request.get_host())
-    logger.debug("Callback url {}".format(callback_url))
+    logger.debug("Callback url %s", callback_url)
     return callback_url
 
 

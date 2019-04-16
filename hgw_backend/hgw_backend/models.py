@@ -88,6 +88,7 @@ class FailedConnector(models.Model):
     DECODING = 'DE'
     SOURCE_NOT_FOUND = 'SN'
     WRONG_MESSAGE_STRUCTURE = 'WS'
+    WRONG_DATE_FORMAT = 'WD'
     SENDING_ERROR = 'SE'
     UNKNOWN_ERROR = 'UE'
 
@@ -95,6 +96,7 @@ class FailedConnector(models.Model):
                    (DECODING, 'DECODING'),
                    (SOURCE_NOT_FOUND, 'SOURCE_NOT_FOUND'),
                    (WRONG_MESSAGE_STRUCTURE, 'WRONG_MESSAGE_STRUCTURE'),
+                   (WRONG_DATE_FORMAT, 'WRONG_DATE_FORMAT'),
                    (SENDING_ERROR, 'SENDING_ERROR'),
                    (UNKNOWN_ERROR, 'UNKNOWN_ERROR'))
 

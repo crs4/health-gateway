@@ -15,11 +15,12 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 import json
 import logging
+from datetime import datetime
 from json import JSONDecodeError
 
+from dateutil import parser
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -56,6 +57,7 @@ class Command(BaseCommand):
             failure_reason = None
             retry = False
             try:
+                # Loads the json message
                 channel_data = json.loads(msg.value.decode('utf-8'))
             except (TypeError, UnicodeError):
                 logger.error('Skipping message with id %s: something bad happened', msg.offset)
@@ -65,12 +67,14 @@ class Command(BaseCommand):
                 logger.error('Skipping message with id %s: message was not json encoded', msg.offset)
             else:
                 try:
+                    # Then get the source data
                     source = Source.objects.get(source_id=channel_data['source_id'])
                 except Source.DoesNotExist:
                     failure_reason = FailedConnector.SOURCE_NOT_FOUND
                     logger.error('Skipping message with id %s: source with id %s was not found in the db', msg.offset, channel_data['source_id'])
                 else:
                     try:
+                        # Then get the key from the structure
                         destination_kafka_key = channel_data['destination']['kafka_public_key']
                         person_id = channel_data['person_id']
                         channel_id = channel_data['channel_id']
@@ -81,6 +85,20 @@ class Command(BaseCommand):
                         failure_reason = FailedConnector.WRONG_MESSAGE_STRUCTURE
                         logger.error('Skipping message with id %s: cannot find %s attribute in the message', msg.offset, k.args[0])
                     else:
+                        if start_channel_validity is not None:
+                            try:
+                                start_channel_validity = parser.parse(channel_data['start_validity']).date().isoformat()
+                            except ValueError:
+                                failure_reason = FailedConnector.WRONG_DATE_FORMAT
+                                logger.error('Skipping message with id %s: wrong start date format', msg.offset)
+
+                        if end_channel_validity is not None:
+                            try:
+                                end_channel_validity = parser.parse(channel_data['expire_validity']).date().isoformat()
+                            except ValueError:
+                                failure_reason = FailedConnector.WRONG_DATE_FORMAT
+                                logger.error('Skipping message with id %s: wrong end date format', msg.offset)
+
                         connector = {
                             'profile': source_endpoint_profile,
                             'person_identifier': person_id,
