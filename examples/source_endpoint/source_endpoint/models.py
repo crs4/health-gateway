@@ -27,5 +27,5 @@ class Connector(models.Model):
     dest_public_key = models.CharField(max_length=500)
     channel_id = models.CharField(max_length=256)
     profile = models.ForeignKey('hgw_common.Profile')
-    start_validity = models.DateTimeField(null=False)
-    end_validity = models.DateTimeField(null=False)
+    start_validity = models.DateTimeField(null=True)
+    end_validity = models.DateTimeField(null=True)
