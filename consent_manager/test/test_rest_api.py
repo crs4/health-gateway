@@ -330,13 +330,12 @@ class TestAPI(TestCase):
         # Missing data
         res = self.client.post('/v1/consents/', data='{}', content_type='application/json', **headers)
         self.assertEqual(res.status_code, 400)
-        expected = {'source': ['This field is required.'],
-                    'profile': ['This field is required.'],
-                    'person_id': ['This field is required.'],
-                    'destination': ['This field is required.'],
-                    'start_validity': ['This field is required.'],
-                    'expire_validity': ['This field is required.']
-                    }
+        expected = {
+            'source': ['This field is required.'],
+            'profile': ['This field is required.'],
+            'person_id': ['This field is required.'],
+            'destination': ['This field is required.']
+        }
         self.assertDictEqual(res.json(), expected)
 
     def test_add_consent_empty_fields(self):
@@ -386,9 +385,7 @@ class TestAPI(TestCase):
         expected = {'profile': ['This field may not be null.'],
                     'source': ['This field may not be null.'],
                     'destination': ['This field may not be null.'],
-                    'person_id': ['This field may not be null.'],
-                    'start_validity': ['This field may not be null.'],
-                    'expire_validity': ['This field may not be null.']
+                    'person_id': ['This field may not be null.']
                     }
 
         self.assertEqual(res.status_code, 400)
@@ -845,7 +842,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json()[0], expected)
 
-    def _test_confirm_consent(self):
+    def _test_confirm_consent(self, null_dates=False):
         # First create some consents
         consents = {}
         for i in range(4):
@@ -855,10 +852,16 @@ class TestAPI(TestCase):
                 'name': 'source_{}_name'.format(i)
             }
             res = self._add_consent(data=json.dumps(data))
-            consents[res.json()['confirm_id']] = {
-                'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
-                'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1),
-            }
+            if null_dates is False:
+                consents[res.json()['confirm_id']] = {
+                    'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
+                    'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1)
+                }
+            else:
+                consents[res.json()['confirm_id']] = {
+                    'start_validity': None,
+                    'expire_validity': None
+                }
 
         # Then, confirm them
         self.client.login(username='duck', password='duck')
@@ -886,6 +889,27 @@ class TestAPI(TestCase):
                              consent_data['start_validity'])
             self.assertEqual(consent_serializer.data['expire_validity'],
                              consent_data['expire_validity'])
+
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
+            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
+                                 consent_serializer.data)
+
+    @patch('consent_manager.notifier.KafkaProducer')
+    def test_confirm_consent_with_correct_notification_and_null_validity_dates(self, mocked_kafka_producer):
+        """
+        Tests correct consent confirmation with start and expire validity set to null
+        """
+        consents, res = self._test_confirm_consent(null_dates=True)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['confirmed']), 4)
+        self.assertEqual(len(res.json()['failed']), 0)
+        for index, (confirm_id, consent_data) in enumerate(consents.items()):
+            consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
+            self.assertEqual(consent_obj.status, Consent.ACTIVE)
+            consent_serializer = ConsentSerializer(consent_obj)
+            self.assertEqual(consent_serializer.data['start_validity'], None)
+            self.assertEqual(consent_serializer.data['expire_validity'], None)
 
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),

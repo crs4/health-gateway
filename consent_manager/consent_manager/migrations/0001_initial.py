@@ -68,8 +68,8 @@ class Migration(migrations.Migration):
                 ('person_id', models.CharField(max_length=20)),
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
                 ('confirmed', models.DateTimeField(null=True)),
-                ('start_validity', models.DateTimeField()),
-                ('expire_validity', models.DateTimeField()),
+                ('start_validity', models.DateTimeField(null=True)),
+                ('expire_validity', models.DateTimeField(null=True)),
             ],
         ),
         migrations.CreateModel(

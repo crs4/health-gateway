@@ -50,8 +50,8 @@ class Consent(models.Model):
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     confirmed = models.DateTimeField(null=True)
-    start_validity = models.DateTimeField(null=False)
-    expire_validity = models.DateTimeField(null=False)
+    start_validity = models.DateTimeField(null=True)
+    expire_validity = models.DateTimeField(null=True)
 
     def save(self, *args, **kwargs):
         super(Consent, self).save(*args, **kwargs)

@@ -19,7 +19,7 @@ import React from 'react';
 import Profile from './profile';
 import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
-import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
+import {Button, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
 import {arrayToObject, copy, iterate} from './utils';
@@ -55,7 +55,8 @@ class ConfirmConsents extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            consents: arrayToObject(this.props.data, 'confirm_id', {'checked': false}),
+            consents: arrayToObject(this.props.data, 'confirm_id', 
+                {'checked': false, 'start_date_disabled': false, 'expire_date_disabled': false}),
             sent: false,
             modal: false
         };
@@ -65,7 +66,7 @@ class ConfirmConsents extends React.Component {
         let rows = [];
         let checkedCounter = 0;
         for (let [k, c] of iterate(this.state.consents)) {
-            if (c['checked'] === true) {
+            if (c.checked === true) {
                 checkedCounter++;
             }
             if (c.status === "PE") {
@@ -81,18 +82,29 @@ class ConfirmConsents extends React.Component {
                             <Profile data={c.profile}/>
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Starting">
+                            <Input type="checkbox" name={"excludeStartDate" + k} 
+                                id={"exclude-start-date-" + k} 
+                                onChange={this.checkDate.bind(this, c.confirm_id, 'start')}/>
+                            <Label for={"excludeStartDate" + k}>Exclude start date</Label>
                             <DatePicker
-                                minDate={moment(c.start_validity)}
+                                id={"exclude-start-date-date-picker" + k}
+                                disabled={c.start_date_disabled}
                                 maxDate={moment(c.expire_validity)}
                                 selected={moment(c.start_validity)}
-                                onChange={this.changeDate.bind(this, c.confirm_id, 'S')}
+                                onChange={this.changeDate.bind(this, c.confirm_id, 'start')}
                             />
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Ending">
+                            <Input type="checkbox" name={"excludeEndDate" + k}
+                                id={"exclude-end-date-" + k} 
+                                onChange={this.checkDate.bind(this, c.confirm_id, 'expire')}/>
+                            <Label for={"excludeEndDate{k}"}>Exclude end date</Label>
                             <DatePicker
+                                id={"exclude-end-date-date-picker" + k}
+                                disabled={c.expire_date_disabled}
                                 minDate={moment(c.start_validity)}
                                 selected={moment(c.expire_validity)}
-                                onChange={this.changeDate.bind(this, c.confirm_id, 'E')}
+                                onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
                             />
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
@@ -175,12 +187,6 @@ class ConfirmConsents extends React.Component {
     }
 
     changeDate(confirmId, startOrEnd, dateObject) {
-        if (startOrEnd === 'S') {
-            startOrEnd = 'start'
-        }
-        else {
-            startOrEnd = 'expire'
-        }
         let consents = copy(this.state.consents);
         consents[confirmId][`${startOrEnd}_validity`] = dateObject.format();
         this.setState({
@@ -188,8 +194,16 @@ class ConfirmConsents extends React.Component {
         });
     }
 
+    checkDate(confirmId, startOrEnd, event) {
+        let consents = copy(this.state.consents);
+        consents[confirmId][`${startOrEnd}_date_disabled`] = event.target.checked;
+        this.setState({
+            consents: consents
+        }); 
+    }
+
     checkBoxHandler(event) {
-        let consents = Object.assign({}, this.state.consents);
+        let consents = copy(this.state.consents);
         consents[event.target.value]['checked'] = event.target.checked;
         this.setState({
             consents: consents
@@ -215,14 +229,15 @@ class ConfirmConsents extends React.Component {
     sendConfirmed() {
         this.toggle();
         let consentsData = {};
-        for (let [k, v] of iterate(this.state.consents)) {
-            if (v['checked'] === true) {
-                consentsData[k] = {
-                    'start_validity': v['start_validity'],
-                    'expire_validity': v['expire_validity']
+        for (let [key, consent] of iterate(this.state.consents)) {
+            if (consent.checked === true) {
+                consentsData[key] = {
+                    'start_validity': consent.start_date_disabled ? null : consent.start_validity,
+                    'expire_validity': consent.expire_date_disabled ? null : consent.expire_validity
                 }
             }
         }
+        console.log(consentsData)
 
         axios.post('/v1/consents/confirm/', {
             consents: consentsData,
@@ -387,7 +402,7 @@ class ConsentManager extends React.Component {
                                     minDate={moment(this.props.consent.start_validity)}
                                     maxDate={moment(consent.expire_validity)}
                                     selected={moment(consent.start_validity)}
-                                    onChange={this.changeDate.bind(this, 'S')}
+                                    onChange={this.changeDate.bind(this, 'start')}
                                 />
                             </td>
                         </tr>
@@ -399,7 +414,7 @@ class ConsentManager extends React.Component {
                                 <DatePicker
                                     minDate={moment(consent.start_validity)}
                                     selected={moment(consent.expire_validity)}
-                                    onChange={this.changeDate.bind(this, 'E')}
+                                    onChange={this.changeDate.bind(this, 'expire')}
                                 />
                             </td>
                         </tr>
