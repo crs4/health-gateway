@@ -77,8 +77,8 @@ CONNECTOR = {
     'person_identifier': PERSON_ID,
     'dest_public_key': DEST_PUBLIC_KEY,
     'channel_id': CHANNEL_MESSAGE['channel_id'],
-    'start_validity': '2017-10-23T10:00:54.123000+02:00',
-    'expire_validity': '2018-10-23T10:00:00+02:00',
+    'start_validity': '2017-10-23',
+    'end_validity': '2018-10-23',
 }
 
 
