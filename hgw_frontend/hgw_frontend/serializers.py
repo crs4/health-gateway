@@ -71,19 +71,30 @@ class FlowRequestSerializer(serializers.ModelSerializer):
         sources = validated_data.pop('sources')
         logger.debug(sources)
         if validated_data['profile'] is not None:
-            profile, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
-            validated_data['profile'] = profile
-        flow_request = FlowRequest.objects.create(**validated_data)
-
-        for source_data in sources:
             try:
-                source = Source.objects.get(source_id=source_data['source_id'])
-            except Source.DoesNotExist:
-                pass
-            else:
-                flow_request.sources.add(source)
+                profile = Profile.objects.get(code=validated_data['profile']['code'],
+                                              version=validated_data['profile']['version'])
+                logger.info('Profile with the same parameters found')
+            except Profile.DoesNotExist:
+                logger.info('Profile not found. Creating a new one')
+                profile_serializer = ProfileSerializer(data=validated_data['profile'])
+                if profile_serializer.is_valid():
+                    profile = profile_serializer.save()
+                    logger.info('Created profile')
+                else:
+                    logger.error('Profile not valid')
+            validated_data['profile'] = profile
+            flow_request = FlowRequest.objects.create(**validated_data)
 
-        return flow_request
+            for source_data in sources:
+                try:
+                    source = Source.objects.get(source_id=source_data['source_id'])
+                except Source.DoesNotExist:
+                    pass
+                else:
+                    flow_request.sources.add(source)
+   
+            return flow_request
 
     class Meta:
         model = FlowRequest
