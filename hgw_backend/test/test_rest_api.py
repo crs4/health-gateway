@@ -149,9 +149,9 @@ class TestHGWBackendAPI(TestCase):
         res = self._get_oauth_token(client_index=0)
         for k in ['access_token', 'token_type', 'expires_in', 'scope']:
             self.assertIn(k, res)
-        self.assertEquals(res['token_type'], 'Bearer')
+        self.assertEqual(res['token_type'], 'Bearer')
         self.assertIn(res['scope'], settings.DEFAULT_SCOPES)
-        self.assertEquals(res['expires_in'], oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS)
+        self.assertEqual(res['expires_in'], oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS)
 
     def test_create_token_wrong_client(self):
         """
@@ -164,8 +164,8 @@ class TestHGWBackendAPI(TestCase):
                 'client_secret': client_data[1]
             }
             res = self._call_token_creation(wrong_client_data)
-            self.assertEquals(res.status_code, 401)
-            self.assertEquals(res.json(), {'error': 'invalid_client'})
+            self.assertEqual(res.status_code, 401)
+            self.assertEqual(res.json(), {'error': 'invalid_client'})
 
     def test_create_token_wrong_grant_type(self):
         """
@@ -178,8 +178,8 @@ class TestHGWBackendAPI(TestCase):
             'client_secret': client_secret
         }
         res = self._call_token_creation(wrong_client_data)
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.json(), {'error': 'unsupported_grant_type'})
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), {'error': 'unsupported_grant_type'})
 
     def test_create_token_invalid_scope(self):
         """
@@ -193,8 +193,8 @@ class TestHGWBackendAPI(TestCase):
             'scope': 'wrong'
         }
         res = self._call_token_creation(wrong_client_data)
-        self.assertEquals(res.status_code, 401)
-        self.assertEquals(res.json(), {'error': 'invalid_scope'})
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'error': 'invalid_scope'})
 
     def test_get_sources(self):
         """
@@ -203,15 +203,15 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header(client_index=1)
 
         res = self.client.get('/v1/sources/', **oauth2_header)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res['Content-Type'], 'application/json')
-        self.assertEquals(len(res.json()), 2)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/json')
+        self.assertEqual(len(res.json()), 2)
 
         for i, s in enumerate(self.sources):
             ret_source = res.json()[i]
             req_source = {k: s[k] for k in SourceSerializer.Meta.fields}
             req_source['profile'] = self.profiles[int(s['profile'] - 1)]
-            self.assertEquals(ret_source, req_source)
+            self.assertEqual(ret_source, req_source)
 
     def test_get_sources_forbidden(self):
         """
@@ -220,14 +220,14 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header(client_index=0)
 
         res = self.client.get('/v1/sources/', **oauth2_header)
-        self.assertEquals(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
 
     def test_get_sources_not_authorized(self):
         """
         Test getting sources
         """
         res = self.client.get('/v1/sources/')
-        self.assertEquals(res.status_code, 401)
+        self.assertEqual(res.status_code, 401)
 
     def test_get_profiles(self):
         """
@@ -236,9 +236,9 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header(client_index=1)
 
         res = self.client.get('/v1/profiles/', **oauth2_header)
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res['Content-Type'], 'application/json')
-        self.assertEquals(len(res.json()), 2)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/json')
+        self.assertEqual(len(res.json()), 2)
         for p in res.json():
             self.assertEqual(len(p['sources']), 1)
 
@@ -249,14 +249,14 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header(client_index=0)
 
         res = self.client.get('/v1/profiles/', **oauth2_header)
-        self.assertEquals(res.status_code, 403)
+        self.assertEqual(res.status_code, 403)
 
     def test_get_profiles_not_authorized(self):
         """
         Test getting profiles
         """
         res = self.client.get('/v1/profiles/')
-        self.assertEquals(res.status_code, 401)
+        self.assertEqual(res.status_code, 401)
 
     def test_create_connector_oauth2_source_fails_connector_unreachable(self):
         """
@@ -416,11 +416,11 @@ class TestHGWBackendAPI(TestCase):
         with patch('hgw_backend.views.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 
-            self.assertEquals(MockKP().send.call_args_list[0][0][0], source_id)
-            self.assertEquals(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
-            self.assertEquals(MockKP().send.call_args_list[0][1]['value'], data['payload'])
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res.json(), {})
+            self.assertEqual(MockKP().send.call_args_list[0][0][0], source_id)
+            self.assertEqual(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
+            self.assertEqual(MockKP().send.call_args_list[0][1]['value'], data['payload'])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), {})
 
     def test_send_message_string(self):
         """
@@ -439,11 +439,11 @@ class TestHGWBackendAPI(TestCase):
         with patch('hgw_backend.views.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 
-            self.assertEquals(MockKP().send.call_args_list[0][0][0], source_id)
-            self.assertEquals(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
-            self.assertEquals(MockKP().send.call_args_list[0][1]['value'], data['payload'].encode('utf-8'))
-        self.assertEquals(res.status_code, 200)
-        self.assertEquals(res.json(), {})
+            self.assertEqual(MockKP().send.call_args_list[0][0][0], source_id)
+            self.assertEqual(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
+            self.assertEqual(MockKP().send.call_args_list[0][1]['value'], data['payload'].encode('utf-8'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), {})
 
     def test_send_message_missing_paramaters(self):
         channel_id = 'channel_id'
@@ -457,8 +457,8 @@ class TestHGWBackendAPI(TestCase):
             params = {k: v}
             res = self.client.post('/v1/messages/', data=params,
                                    **oauth2_header)
-            self.assertEquals(res.status_code, 400)
-            self.assertEquals(res.json(), {'error': 'missing_parameters'})
+            self.assertEqual(res.status_code, 400)
+            self.assertEqual(res.json(), {'error': 'missing_parameters'})
 
     def test_send_message_not_encrypted_string(self):
         channel_id = 'channel_id'
@@ -470,8 +470,8 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header()
 
         res = self.client.post('/v1/messages/', data=data, **oauth2_header)
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.json(), {'error': 'not_encrypted_payload'})
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), {'error': 'not_encrypted_payload'})
 
     def test_send_message_not_encrypted_bytes(self):
         channel_id = 'channel_id'
@@ -483,8 +483,8 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header = self._get_oauth_header()
 
         res = self.client.post('/v1/messages/', data=data, **oauth2_header)
-        self.assertEquals(res.status_code, 400)
-        self.assertEquals(res.json(), {'error': 'not_encrypted_payload'})
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json(), {'error': 'not_encrypted_payload'})
 
     def test_send_message_unauthorized(self):
         channel_id = 'channel_id'
@@ -497,8 +497,8 @@ class TestHGWBackendAPI(TestCase):
         oauth2_header['Authorization'] = 'Bearer wrong'
 
         res = self.client.post('/v1/messages/', data=data, **oauth2_header)
-        self.assertEquals(res.status_code, 401)
-        self.assertEquals(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
 
     def test_send_message_no_broker_available(self):
         channel_id = 'channel_id'
@@ -514,8 +514,8 @@ class TestHGWBackendAPI(TestCase):
             MockKP.side_effect = NoBrokersAvailable
             res = self.client.post('/v1/messages/', data, **oauth2_header)
 
-            self.assertEquals(res.status_code, 500)
-            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'error': 'cannot_send_message'})
 
     def test_send_message_wrong_broker_credentials(self):
         channel_id = 'channel_id'
@@ -531,8 +531,8 @@ class TestHGWBackendAPI(TestCase):
             MockKP.side_effect = SSLError
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 
-            self.assertEquals(res.status_code, 500)
-            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'error': 'cannot_send_message'})
 
     def test_send_message_missing_topic(self):
         channel_id = 'channel_id'
@@ -548,8 +548,8 @@ class TestHGWBackendAPI(TestCase):
             MockKP().send.side_effect = KafkaTimeoutError
             res = self.client.post('/v1/messages/', data, **oauth2_header)
 
-            self.assertEquals(res.status_code, 500)
-            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'error': 'cannot_send_message'})
 
     def test_send_message_no_authorization(self):
         channel_id = 'channel_id'
@@ -568,8 +568,8 @@ class TestHGWBackendAPI(TestCase):
 
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 
-            self.assertEquals(res.status_code, 500)
-            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'error': 'cannot_send_message'})
 
     def test_send_message_generic_kafka_error(self):
         channel_id = 'channel_id'
@@ -586,5 +586,5 @@ class TestHGWBackendAPI(TestCase):
             MockKP().send.side_effect = mock_future_record_metadata
 
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
-            self.assertEquals(res.status_code, 500)
-            self.assertEquals(res.json(), {'error': 'cannot_send_message'})
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'error': 'cannot_send_message'})
