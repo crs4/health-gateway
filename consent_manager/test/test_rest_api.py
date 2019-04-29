@@ -198,7 +198,7 @@ class TestAPI(TestCase):
             c.save()
         return res
 
-    def test_add_consent(self):
+    def test_add(self):
         """
         Test correct add consent
         """
@@ -219,7 +219,7 @@ class TestAPI(TestCase):
         self.assertEqual(set(res.json().keys()), {'consent_id', 'confirm_id'})
         self.assertDictEqual(serializer.data, expected)
 
-    def test_add_consent_other_timezone(self):
+    def test_add_other_timezone(self):
         """
         Tests that when the date is sent using timezone different from settings.TIME_ZONE,
         when it is returned is still represented with settings.TIME_ZONE timezone.
@@ -244,14 +244,14 @@ class TestAPI(TestCase):
 
             self.assertDictEqual(serializer.data, expected)
 
-    def test_add_consent_forbidden(self):
+    def test_add_forbidden(self):
         """
         Test add consent is forbidden when it is missing the correct scopes
         """
         res = self._add_consent(client_index=2)
         self.assertEqual(res.status_code, 403)
 
-    def test_add_consent_too_long_fields(self):
+    def test_add_too_long_fields(self):
         """
         Test error when adding consent with too long source id and name
         """
@@ -273,7 +273,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), expected)
 
-    def test_add_consent_duplicated_endpoint(self):
+    def test_add_duplicated_endpoint(self):
         """
         Test that adding source or destination with the same name or id of an existing one, returns an error
         """
@@ -321,7 +321,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
-    def test_add_consent_missing_fields(self):
+    def test_add_missing_fields(self):
         """
         Test error when adding consent and some fields are missing
         """
@@ -338,7 +338,7 @@ class TestAPI(TestCase):
         }
         self.assertDictEqual(res.json(), expected)
 
-    def test_add_consent_empty_fields(self):
+    def test_add_empty_fields(self):
         """
         Test error when some the fields are empty {i.e., dict wothout keys}
         """
@@ -364,7 +364,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
-    def test_add_consent_none_fields(self):
+    def test_add_none_fields(self):
         """
         Test error when some the fields are empty {i.e., dict wothout keys}
         """
@@ -420,7 +420,8 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
-    def test_modify_consent(self):
+    @patch('consent_manager.notifier.KafkaProducer')
+    def test_modify(self, mocked_kafka_producer):
         """
         Test consent modification (i.e., update). It can update only the start date and end data
         """
@@ -437,12 +438,15 @@ class TestAPI(TestCase):
                               content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), {})
-        c = Consent.objects.get(consent_id=consent_id)
-        serializer = ConsentSerializer(c)
-        self.assertEqual(serializer.data['start_validity'], updated_data['start_validity'])
-        self.assertEqual(serializer.data['end_validity'], updated_data['end_validity'])
+        consent = Consent.objects.get(consent_id=consent_id)
+        consent_serializer = ConsentSerializer(consent)
+        self.assertEqual(consent_serializer.data['start_validity'], updated_data['start_validity'])
+        self.assertEqual(consent_serializer.data['end_validity'], updated_data['end_validity'])
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_TOPIC)
+        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')),
+                             consent_serializer.data)
 
-    def test_modify_consent_wrong_status(self):
+    def test_modify_wrong_status(self):
         """
         Test consent modification failure when the client specifies a consent in the wrong status
         """
@@ -472,7 +476,7 @@ class TestAPI(TestCase):
             self.assertEqual(s.data['start_validity'], self.consent_data['start_validity'])
             self.assertEqual(s.data['end_validity'], self.consent_data['end_validity'])
 
-    def test_modify_consent_unallowed_fields(self):
+    def test_modify_unallowed_fields(self):
         """
         Test consent modification failure when the client specify attributes different from the allowed ones
         """
@@ -491,7 +495,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), {'errors': {'generic_errors': ['attributes_not_editable']}})
 
-    def test_modify_consent_wrong_fields_format(self):
+    def test_modify_wrong_fields_format(self):
         """
         Test consent modification failure when the client specify attributes in a wronf form
         """
@@ -512,7 +516,7 @@ class TestAPI(TestCase):
             'end_validity': ['invalid_date_format']
         }})
 
-    def test_modify_consent_wrong_person(self):
+    def test_modify_wrong_person(self):
         """
         Test consent modification failure when the client specify a client that doesn't belong to the logged in user
         """
@@ -535,7 +539,7 @@ class TestAPI(TestCase):
         self.assertEqual(s.data['start_validity'], self.consent_data['start_validity'])
         self.assertEqual(s.data['end_validity'], self.consent_data['end_validity'])
 
-    def test_modify_consent_unauthorized(self):
+    def test_modify_unauthorized(self):
         """
         Test consent modification failure when the client is unauthorized (i.e., it is not logged in)
         """
@@ -550,7 +554,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
-    def test_modify_consent_forbidden(self):
+    def test_modify_forbidden(self):
         """
         Test consent modification failure when the client is forbidden (i.e., it is using oauth2)
         """
@@ -567,7 +571,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
-    def test_modify_consent_not_found(self):
+    def test_modify_not_found(self):
         """
         Test revoke operation for a single consent. Test revoke error when the consent is not found
         """
@@ -577,7 +581,8 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
-    def test_revoke_consent(self):
+    @patch('consent_manager.notifier.KafkaProducer')
+    def test_revoke(self, mocked_kafka_producer):
         """
         Test revoke operation for a single consent. Test that the consent is not revoked in case
         the consent doesn't belong to the logged person
@@ -591,10 +596,15 @@ class TestAPI(TestCase):
                                content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), {})
-        c = Consent.objects.get(consent_id=consent_id)
-        self.assertEqual(c.status, Consent.REVOKED)
+        consent = Consent.objects.get(consent_id=consent_id)
+        consent_serializer = ConsentSerializer(consent)
 
-    def test_revoke_consent_wrong_status(self):
+        self.assertEqual(consent.status, Consent.REVOKED)
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_TOPIC)
+        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')),
+                             consent_serializer.data)
+
+    def test_revoke_wrong_status(self):
         """
         Test revoke operation for a single consent. Test that the consent is not revoked in case
         the consent is not in ACTIVE status
@@ -618,7 +628,7 @@ class TestAPI(TestCase):
             c = Consent.objects.get(consent_id=c)
             self.assertEqual(c.status, statuses[i])
 
-    def test_revoke_consent_wrong_person(self):
+    def test_revoke_wrong_person(self):
         """
         Test revoke operation for a single consent. Test that the consent is not revoked in case
         the consent doesn't belong to the logged person
@@ -635,7 +645,7 @@ class TestAPI(TestCase):
         c = Consent.objects.get(consent_id=consent_id)
         self.assertEqual(c.status, Consent.ACTIVE)
 
-    def test_revoke_consent_unauthorized(self):
+    def test_revoke_unauthorized(self):
         """
         Tests revoke failure when the user is authenticated but not authorized
         """
@@ -647,7 +657,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
-    def test_revoke_consent_forbidden(self):
+    def test_revoke_forbidden(self):
         """
         Tests that the revoke action cannot be performed by an OAuth2 authenticated client
         """
@@ -660,7 +670,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
-    def test_revoke_consent_not_found(self):
+    def test_revoke_not_found(self):
         """
         Test revoke operation for a single consent. Test revoke error when the consent is not found
         """
@@ -670,7 +680,8 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
-    def test_revoke_consent_list(self):
+    @patch('consent_manager.notifier.KafkaProducer')
+    def test_revoke_list(self, mocked_kafka_producer):
         """
         Tests consents revocation
         """
@@ -693,11 +704,16 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['revoked'], consents)
         self.assertEqual(len(res.json()['failed']), 0)
-        for consent in consents:
-            c = Consent.objects.get(consent_id=consent)
-            self.assertEqual(c.status, Consent.REVOKED)
+        for index, consent in enumerate(consents):
+            consent = Consent.objects.get(consent_id=consent)
+            consent_serializer = ConsentSerializer(consent)
+            
+            self.assertEqual(consent.status, Consent.REVOKED)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
+            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
+                                 consent_serializer.data)
 
-    def test_revoke_consent_list_missing_parameters(self):
+    def test_revoke_list_missing_parameters(self):
         """
         Tests error when not sending consents
         """
@@ -707,14 +723,14 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), {'errors': [ERRORS.MISSING_PARAMETERS]})
 
-    def test_revoke_consent_list_wrong_status(self):
+    def test_revoke_list_wrong_status(self):
         """
         Tests that if the consent was not in ACTIVE status it is not revoked. It does so by trying to revoke
-        4 consent, one for every status (ACTIVE, PENDING, REVOKED, NOT_VALID). It checks that only the one that was in
-        ACTIVE status is returned and is in REVOKED status
+        3 consent, one for every status (PENDING, REVOKED, NOT_VALID). It checks that the consents have not
+        changed
         """
         consents = []
-        statuses = [Consent.ACTIVE, Consent.PENDING, Consent.REVOKED, Consent.NOT_VALID]
+        statuses = [Consent.PENDING, Consent.REVOKED, Consent.NOT_VALID]
         for i, s in enumerate(statuses):
             data = self.consent_data.copy()
             data['source'] = {
@@ -731,15 +747,14 @@ class TestAPI(TestCase):
         }
         res = self.client.post('/v1/consents/revoke/', data=json.dumps(data), content_type='application/json')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()['revoked']), 1)
+        self.assertEqual(len(res.json()['revoked']), 0)
         self.assertEqual(len(res.json()['failed']), 3)
-        self.assertListEqual(res.json()['failed'], consents[1:])
-        statuses[0] = Consent.REVOKED
+        self.assertListEqual(res.json()['failed'], consents)
         for i, c in enumerate(consents):
             c = Consent.objects.get(consent_id=c)
             self.assertEqual(c.status, statuses[i])
 
-    def test_revoke_consent_list_wrong_user(self):
+    def test_revoke_list_wrong_user(self):
         """
         Tests that when the logged user is not the owner of the consent to be revoked, the consent is not revoked
         """
@@ -755,7 +770,7 @@ class TestAPI(TestCase):
         self.assertEqual(len(res.json()['failed']), 1)
         self.assertEqual(res.json()['failed'][0], consent_id)
 
-    def test_revoke_consent_list_unknown_consent(self):
+    def test_revoke_list_unknown_consent(self):
         """
         Tests error when confirming an unknwown consent
         """
@@ -773,7 +788,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.json()['failed'][0], consent_id)
         self.assertRaises(Consent.DoesNotExist, Consent.objects.get, consent_id=consent_id)
 
-    def test_revoke_consent_list_unauthorized(self):
+    def test_revoke_list_unauthorized(self):
         res = self._add_consent(status=Consent.ACTIVE)
         consent_id = res.json()['consent_id']
 
@@ -782,7 +797,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
-    def test_revoke_consent_list_forbidden(self):
+    def test_revoke_list_forbidden(self):
         """
         Tests that the revoke action cannot be performed by an OAuth2 authenticated client
         """
@@ -794,7 +809,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
-    def test_find_consent_unauthorized(self):
+    def test_find_unauthorized(self):
         res = self._add_consent()
 
         confirm_id = res.json()['confirm_id']
@@ -804,7 +819,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
-    def test_find_consent_with_oauth_token(self):
+    def test_find_with_oauth_token(self):
         res = self._add_consent()
 
         confirm_id = res.json()['confirm_id']
@@ -816,19 +831,19 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
-    def test_find_consent_missing_parameters(self):
+    def test_find_missing_parameters(self):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/consents/find/')
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), {'errors': [ERRORS.MISSING_PARAMETERS]})
 
-    def test_find_consent_not_found(self):
+    def test_find_not_found(self):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/consents/find/?confirm_id=unk')
         self.assertEqual(res.status_code, 404)
         self.assertDictEqual(res.json(), {})
 
-    def test_find_consent(self):
+    def test_find(self):
         res = self._add_consent()
         confirm_id = res.json()['confirm_id']
         expected = self.consent_data.copy()
@@ -842,7 +857,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json()[0], expected)
 
-    def _test_confirm_consent(self, null_dates=False):
+    def _test_confirm(self, null_dates=False):
         """
         Support method that adds the consents and calls the confirmation REST endpoint.
         It returns the consents created and the response
@@ -876,11 +891,11 @@ class TestAPI(TestCase):
         return consents, res
 
     @patch('consent_manager.notifier.KafkaProducer')
-    def test_confirm_consent_with_correct_notification(self, mocked_kafka_producer):
+    def test_confirm_with_correct_notification(self, mocked_kafka_producer):
         """
         Tests correct consent confirmation
         """
-        consents, res = self._test_confirm_consent()
+        consents, res = self._test_confirm()
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 4)
         self.assertEqual(len(res.json()['failed']), 0)
@@ -890,17 +905,16 @@ class TestAPI(TestCase):
             consent_serializer = ConsentSerializer(consent_obj)
             self.assertEqual(consent_serializer.data['start_validity'], consent_data['start_validity'])
             self.assertEqual(consent_serializer.data['end_validity'], consent_data['end_validity'])
-
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
                                  consent_serializer.data)
 
     @patch('consent_manager.notifier.KafkaProducer')
-    def test_confirm_consent_with_correct_notification_and_null_validity_dates(self, mocked_kafka_producer):
+    def test_confirm_with_correct_notification_and_null_validity_dates(self, mocked_kafka_producer):
         """
         Tests correct consent confirmation with start and expire validity set to null
         """
-        consents, res = self._test_confirm_consent(null_dates=True)
+        consents, res = self._test_confirm(null_dates=True)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 4)
@@ -916,11 +930,11 @@ class TestAPI(TestCase):
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
                                  consent_serializer.data)
 
-    # def test_confirm_consent_failed_notification(self):
+    # def test_confirm_failed_notification(self):
     #     """
     #     Tests correct consent confirmation
     #     """
-    #     consents, res = self._test_confirm_consent()
+    #     consents, res = self._test_confirm()
 
     #     self.assertEqual(res.status_code, 200)
     #     self.assertEqual(len(res.json()['confirmed']), 4)
@@ -934,7 +948,7 @@ class TestAPI(TestCase):
     #         self.assertEqual(consent_serializer.data['end_validity'],
     #                          consent_data['end_validity'])
 
-    def test_confirm_consent_unauthorized(self):
+    def test_confirm_unauthorized(self):
         """
         Tests failure in confirmation when the user is authenticated but not unauthorized
         """
@@ -945,7 +959,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
-    def test_confirm_consent_forbidden(self):
+    def test_confirm_forbidden(self):
         """
         Tests failure in confirmation when the user is not authenticated
         """
@@ -958,7 +972,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
-    def test_confirm_consent_missing_parameters(self):
+    def test_confirm_missing_parameters(self):
         """
         Tests error when not sending consents
         """
@@ -968,7 +982,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), {'errors': [ERRORS.MISSING_PARAMETERS]})
 
-    def test_confirm_consent_wrong_consent_status(self):
+    def test_confirm_wrong_consent_status(self):
         """
         Tests that if the consent was not in PENDING status it is not activated. It does so by trying to revoke
         4 consent, one for every status (PENDING, ACTIVE, REVOKED, NOT_VALID). It checks that only the one that was in
@@ -1005,7 +1019,7 @@ class TestAPI(TestCase):
             c = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(c.status, statuses[i])
 
-    def test_confirm_consent_wrong_user(self):
+    def test_confirm_wrong_user(self):
         """
         Tests error when confirming a consent of another user
         """
@@ -1024,7 +1038,7 @@ class TestAPI(TestCase):
         c = ConfirmationCode.objects.get(code=confirm_id).consent
         self.assertEqual(c.status, Consent.PENDING)
 
-    def test_confirm_consent_confirm_id_not_valid(self):
+    def test_confirm_confirm_id_not_valid(self):
         """
         Tests error when confirming a consent of and the confirmation code has expired
         """
@@ -1045,7 +1059,7 @@ class TestAPI(TestCase):
         c = ConfirmationCode.objects.get(code=confirm_id).consent
         self.assertEqual(c.status, Consent.PENDING)
 
-    def test_confirm_consent_unknown_consent(self):
+    def test_confirm_unknown_consent(self):
         """
         Tests error when confirming an unknwown consent
         """

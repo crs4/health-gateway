@@ -50,6 +50,10 @@ class ConsentView(ViewSet):
     oauth_views = ['list', 'create', 'retrieve']
     required_scopes = ['consent']
 
+    def __init__(self, *args, **kwargs):
+        self._notifier = None
+        super(ConsentView, self).__init__(*args, **kwargs)
+
     @staticmethod
     def _get_consent(consent_id):
         return get_object_or_404(Consent, consent_id=consent_id)
@@ -57,6 +61,15 @@ class ConsentView(ViewSet):
     @staticmethod
     def _get_person_id(request):
         return getattr(request.user, USER_ID_FIELD)
+
+    def _notify_changes(self, consent):
+        """
+        Method to notify consent changes. If the notifier is None it gets one
+        """
+        if self._notifier is None:
+            self._notifier = get_notifier()
+        consent_serializer = ConsentSerializer(consent)
+        self._notifier.notify(consent_serializer.data)
 
     def list(self, request):
         """
@@ -124,6 +137,7 @@ class ConsentView(ViewSet):
         serializer = serializers.ConsentSerializer(consent, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            self._notify_changes(consent)
         else:
             logger.info('Update data are not valid. Errors are: %s', serializer.errors)
             return Response({'errors': serializer.errors}, status=http_status.HTTP_400_BAD_REQUEST)
@@ -166,6 +180,8 @@ class ConsentView(ViewSet):
             logger.info('Consent revoked')
             consent.status = Consent.REVOKED
             consent.save()
+            self._notify_changes(consent)
+
             return http_status.HTTP_200_OK, {}
 
     def revoke_list(self, request):
@@ -241,7 +257,6 @@ class ConsentView(ViewSet):
 
         confirmed = []
         failed = []
-        notifier = get_notifier()
         for confirm_id, consent_data in consents.items():
             try:
                 confirmation_code = ConfirmationCode.objects.get(code=confirm_id)
@@ -273,8 +288,7 @@ class ConsentView(ViewSet):
                         logger.info('consent with id %s confirmed', consent)
 
                         try:
-                            consent_serializer = ConsentSerializer(consent)
-                            notifier.notify(consent_serializer.data)
+                            self._notify_changes(consent)
                         except NotificationError:
                             # TODO: we should retry to notify the frontend
                             logger.error("It was impossible to notify the message to the HGW Frontend")
