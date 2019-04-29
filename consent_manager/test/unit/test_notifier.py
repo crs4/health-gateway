@@ -82,12 +82,3 @@ class TestKafkaNotifier(TestCase):
         notifier.notify(message)
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')), message)
-
-    # def test_real_send(self):
-    #     """
-    #     Tests that, if the json encoding fails the notify method raises an exception
-    #     """
-    #     print("Sending message to kafka")
-    #     notifier = get_notifier()
-    #     message = {'message': 'text'}
-    #     notifier.notify(message)
