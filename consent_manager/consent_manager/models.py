@@ -30,6 +30,9 @@ logger = get_logger('consent_manager')
 
 
 class Consent(models.Model):
+    """
+    Model for Consents
+    """
     PENDING = 'PE'
     ACTIVE = 'AC'
     REVOKED = 'RE'
@@ -53,38 +56,42 @@ class Consent(models.Model):
     start_validity = models.DateTimeField(null=True)
     expire_validity = models.DateTimeField(null=True)
 
-    def save(self, *args, **kwargs):
-        super(Consent, self).save(*args, **kwargs)
-
-    def __unicode__(self):
-        return 'Consent ID: {} - Status {}'.\
-            format(self.consent_id, self.status)
-
     def __str__(self):
-        return self.__unicode__()
-
+        return 'Consent ID: {} - Status {}'.format(self.consent_id, self.status)
+        
 
 def get_validity():
+    """
+    Function that returns the datetime default value for the validity of a :class:`ConfirmationCode`.
+    It returns the current time plus :attr:`REQUEST_VALIDITY_SECONDS`
+    """
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)
 
 
 class ConfirmationCode(models.Model):
+    """
+    Model for Confirmation Codes. These are temporary code to be used by the Consent Creator to confirm the consents.
+    They are valid for a limited amount of time
+    """
     consent = models.ForeignKey('Consent', on_delete=models.CASCADE)
     code = models.CharField(max_length=32, blank=False, null=False, unique=True, default=generate_id)
     validity = models.DateTimeField(default=get_validity)
 
     def check_validity(self):
+        """
+        Check if the code is still valid (i.e., the validity field is greater than the current time)
+        """
         return timezone.now() < self.validity
 
 
 class ConsentManagerUser(AbstractUser):
+    """
+    User model. It adds italian fiscalNumber to the basic Django User
+    """
     fiscalNumber = models.CharField(max_length=16, blank=True, null=True)
 
-    def __unicode__(self):
-        return self.fiscalNumber
-
     def __str__(self):
-        return self.__unicode__()
+        return self.fiscalNumber
 
 
 class Endpoint(models.Model):
@@ -94,12 +101,13 @@ class Endpoint(models.Model):
     """
     id = models.CharField(max_length=32, blank=False, null=False, primary_key=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
-    #
-    # class Meta:
-    #     unique_together = ('id', 'name')
 
 
 class RESTClient(AbstractApplication):
+    """
+    Model for REST Clients. It implements the application of django_oauth_toolkit.
+    It adds the :attr:`client_role`, which can be STANDARD or SUPER, and :attr:`scopes`
+    """
     STANDARD = 'ST'
     SUPER = 'SU'
 
@@ -113,7 +121,16 @@ class RESTClient(AbstractApplication):
                               help_text="Space separated scopes to assign to the REST client")
 
     def is_super_client(self):
+        """
+        Method to check if a client is a SUPER client (i.e., it has special permission) or not
+        """
         return self.client_role == self.SUPER
 
     def has_scope(self, scope):
+        """
+        Method to check if a client own the scope specified
+        """
         return scope in self.scopes
+
+    def __str__(self):
+        return self.name
