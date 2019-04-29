@@ -81,7 +81,7 @@ class ConsentSerializerDuplicateValidator(object):
 
 
 class ConsentSerializer(serializers.ModelSerializer):
-    update_fields = {'start_validity', 'expire_validity'}
+    update_fields = {'start_validity', 'end_validity'}
     profile = ProfileSerializer(many=False, allow_null=False)
     source = EndpointSerializer(many=False, allow_null=False)
     destination = EndpointSerializer(many=False, allow_null=False)
@@ -98,7 +98,7 @@ class ConsentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.start_validity = validated_data['start_validity']
-        instance.expire_validity = validated_data['expire_validity']
+        instance.end_validity = validated_data['end_validity']
         instance.save()
         return instance
 
@@ -143,13 +143,13 @@ class ConsentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consent
         fields = ('consent_id', 'status', 'source', 'destination', 'person_id',
-                  'profile', 'start_validity', 'expire_validity')
+                  'profile', 'start_validity', 'end_validity')
         extra_kwargs = {
             'start_validity': {
                 'error_messages': {
                     'invalid': 'invalid_date_format'}
             },
-            'expire_validity': {
+            'end_validity': {
                 'error_messages': {
                     'invalid': 'invalid_date_format'}
             }

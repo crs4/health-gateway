@@ -35,7 +35,7 @@ The {{ destination_name }} wants to retrieve the following data:
     <p>From these sources, and for these periods of time:</p>
     {% for consent in consents %}
         {% if consent.is_valid %}
-            <input id="{{ consent.source }}" type="checkbox" name="confirm_id" value="{{ consent.confirm_id }}"/>{{ consent.source }} -- From {{ consent.start_validity }} To {{ consent.expire_validity }} <br/>
+            <input id="{{ consent.source }}" type="checkbox" name="confirm_id" value="{{ consent.confirm_id }}"/>{{ consent.source }} -- From {{ consent.start_validity }} To {{ consent.end_validity }} <br/>
 
         {% endif %}
     {% endfor %}

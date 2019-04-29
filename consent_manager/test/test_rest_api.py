@@ -67,7 +67,7 @@ class TestAPI(TestCase):
             'profile': self.profile,
             'person_id': PERSON1_ID,
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00'
+            'end_validity': '2018-10-23T10:00:00+02:00'
         }
 
         self.json_consent_data = json.dumps(self.consent_data)
@@ -115,7 +115,7 @@ class TestAPI(TestCase):
         expected = {'consent_id': 'q18r2rpd1wUqQjAZPhh24zcN9KCePRyr',
                     'status': 'PE',
                     'start_validity': '2017-10-23T10:00:54.123000+02:00',
-                    'expire_validity': '2018-10-23T10:00:00+02:00',
+                    'end_validity': '2018-10-23T10:00:00+02:00',
                     'source': {
                         'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
                         'name': 'SOURCE_1'
@@ -138,7 +138,7 @@ class TestAPI(TestCase):
         expected = {
             'status': 'PE',
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00',
+            'end_validity': '2018-10-23T10:00:00+02:00',
             'profile': {
                 'code': 'PROF002',
                 'version': 'hgw.document.profile.v0',
@@ -227,7 +227,7 @@ class TestAPI(TestCase):
         for tz in (('08', 'Z'), ('09', '+01:00')):
             consent_data = self.consent_data.copy()
             consent_data['start_validity'] = '2017-10-23T{}:00:54.123000{}'.format(tz[0], tz[1])
-            consent_data['expire_validity'] = '2018-10-23T{}:00:00{}'.format(tz[0], tz[1])
+            consent_data['end_validity'] = '2018-10-23T{}:00:00{}'.format(tz[0], tz[1])
             res = self._add_consent(data=json.dumps(consent_data))
             consent_id = res.json()['consent_id']
             expected = self.consent_data.copy()
@@ -377,7 +377,7 @@ class TestAPI(TestCase):
             'destination': None,
             'person_id': None,
             'start_validity': None,
-            'expire_validity': None
+            'end_validity': None
         }
 
         self.json_consent_data = json.dumps(self.consent_data)
@@ -429,7 +429,7 @@ class TestAPI(TestCase):
 
         updated_data = {
             'start_validity': '2017-09-23T10:00:54.123000+02:00',
-            'expire_validity': '2018-09-23T10:00:00+02:00'
+            'end_validity': '2018-09-23T10:00:00+02:00'
         }
 
         self.client.login(username='duck', password='duck')
@@ -440,7 +440,7 @@ class TestAPI(TestCase):
         c = Consent.objects.get(consent_id=consent_id)
         serializer = ConsentSerializer(c)
         self.assertEqual(serializer.data['start_validity'], updated_data['start_validity'])
-        self.assertEqual(serializer.data['expire_validity'], updated_data['expire_validity'])
+        self.assertEqual(serializer.data['end_validity'], updated_data['end_validity'])
 
     def test_modify_consent_wrong_status(self):
         """
@@ -459,7 +459,7 @@ class TestAPI(TestCase):
 
         updated_data = {
             'start_validity': '2017-11-23T10:00:54.123+02:00',
-            'expire_validity': '2018-11-23T10:00:00.000+02:00'
+            'end_validity': '2018-11-23T10:00:00.000+02:00'
         }
         self.client.login(username='duck', password='duck')
         for i, c in enumerate(consents):
@@ -470,7 +470,7 @@ class TestAPI(TestCase):
             c = Consent.objects.get(consent_id=c)
             s = ConsentSerializer(c)
             self.assertEqual(s.data['start_validity'], self.consent_data['start_validity'])
-            self.assertEqual(s.data['expire_validity'], self.consent_data['expire_validity'])
+            self.assertEqual(s.data['end_validity'], self.consent_data['end_validity'])
 
     def test_modify_consent_unallowed_fields(self):
         """
@@ -482,7 +482,7 @@ class TestAPI(TestCase):
 
         updated_data = {
             'person_id': 'DIFFERENT_PERSON',
-            'expire_validity': '2018-11-23T10:00:00+02:00'
+            'end_validity': '2018-11-23T10:00:00+02:00'
         }
 
         self.client.login(username='duck', password='duck')
@@ -500,7 +500,7 @@ class TestAPI(TestCase):
 
         updated_data = {
             'start_validity': 'wrong_date_value',
-            'expire_validity': '2018-11-23'
+            'end_validity': '2018-11-23'
         }
 
         self.client.login(username='duck', password='duck')
@@ -509,7 +509,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), {'errors': {
             'start_validity': ['invalid_date_format'],
-            'expire_validity': ['invalid_date_format']
+            'end_validity': ['invalid_date_format']
         }})
 
     def test_modify_consent_wrong_person(self):
@@ -522,7 +522,7 @@ class TestAPI(TestCase):
 
         updated_data = {
             'start_validity': '2017-09-23T10:00:54.123000+02:00',
-            'expire_validity': '2018-09-23T10:00:00+02:00'
+            'end_validity': '2018-09-23T10:00:00+02:00'
         }
 
         self.client.login(username='paperone', password='paperone')
@@ -533,7 +533,7 @@ class TestAPI(TestCase):
         c = Consent.objects.get(consent_id=consent_id)
         s = ConsentSerializer(c)
         self.assertEqual(s.data['start_validity'], self.consent_data['start_validity'])
-        self.assertEqual(s.data['expire_validity'], self.consent_data['expire_validity'])
+        self.assertEqual(s.data['end_validity'], self.consent_data['end_validity'])
 
     def test_modify_consent_unauthorized(self):
         """
@@ -543,7 +543,7 @@ class TestAPI(TestCase):
         consent_id = res.json()['consent_id']
         updated_data = {
             'start_validity': '2017-11-23T10:00:54.123+02:00',
-            'expire_validity': '2018-11-23T10:00:00.000+02:00'
+            'end_validity': '2018-11-23T10:00:00.000+02:00'
         }
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json')
@@ -560,7 +560,7 @@ class TestAPI(TestCase):
         headers = self._get_oauth_header(0)
         updated_data = {
             'start_validity': '2017-11-23T10:00:54.123+02:00',
-            'expire_validity': '2018-11-23T10:00:00.000+02:00'
+            'end_validity': '2018-11-23T10:00:00.000+02:00'
         }
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json', **headers)
@@ -843,6 +843,10 @@ class TestAPI(TestCase):
         self.assertDictEqual(res.json()[0], expected)
 
     def _test_confirm_consent(self, null_dates=False):
+        """
+        Support method that adds the consents and calls the confirmation REST endpoint.
+        It returns the consents created and the response
+        """
         # First create some consents
         consents = {}
         for i in range(4):
@@ -855,12 +859,12 @@ class TestAPI(TestCase):
             if null_dates is False:
                 consents[res.json()['confirm_id']] = {
                     'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
-                    'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1)
+                    'end_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1)
                 }
             else:
                 consents[res.json()['confirm_id']] = {
                     'start_validity': None,
-                    'expire_validity': None
+                    'end_validity': None
                 }
 
         # Then, confirm them
@@ -877,7 +881,6 @@ class TestAPI(TestCase):
         Tests correct consent confirmation
         """
         consents, res = self._test_confirm_consent()
-
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 4)
         self.assertEqual(len(res.json()['failed']), 0)
@@ -885,10 +888,8 @@ class TestAPI(TestCase):
             consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(consent_obj.status, Consent.ACTIVE)
             consent_serializer = ConsentSerializer(consent_obj)
-            self.assertEqual(consent_serializer.data['start_validity'],
-                             consent_data['start_validity'])
-            self.assertEqual(consent_serializer.data['expire_validity'],
-                             consent_data['expire_validity'])
+            self.assertEqual(consent_serializer.data['start_validity'], consent_data['start_validity'])
+            self.assertEqual(consent_serializer.data['end_validity'], consent_data['end_validity'])
 
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
@@ -909,7 +910,7 @@ class TestAPI(TestCase):
             self.assertEqual(consent_obj.status, Consent.ACTIVE)
             consent_serializer = ConsentSerializer(consent_obj)
             self.assertEqual(consent_serializer.data['start_validity'], None)
-            self.assertEqual(consent_serializer.data['expire_validity'], None)
+            self.assertEqual(consent_serializer.data['end_validity'], None)
 
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
@@ -930,8 +931,8 @@ class TestAPI(TestCase):
     #         consent_serializer = ConsentSerializer(consent_obj)
     #         self.assertEqual(consent_serializer.data['start_validity'],
     #                          consent_data['start_validity'])
-    #         self.assertEqual(consent_serializer.data['expire_validity'],
-    #                          consent_data['expire_validity'])
+    #         self.assertEqual(consent_serializer.data['end_validity'],
+    #                          consent_data['end_validity'])
 
     def test_confirm_consent_unauthorized(self):
         """
@@ -985,7 +986,7 @@ class TestAPI(TestCase):
             res = self._add_consent(data=json.dumps(data), status=s)
             consents[res.json()['confirm_id']] = {
                 'start_validity': '2018-03-0{}T10:05:05.123000+02:00'.format(i + 1),
-                'expire_validity': '2019-03-0{}T10:05:05.123000+02:00'.format(i + 1),
+                'end_validity': '2019-03-0{}T10:05:05.123000+02:00'.format(i + 1),
             }
             confirm_ids.append(res.json()['confirm_id'])
 
