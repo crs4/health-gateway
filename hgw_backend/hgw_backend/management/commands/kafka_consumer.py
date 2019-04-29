@@ -85,7 +85,7 @@ class Command(KafkaConsumerCommand):
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
                             logger.error('Skipping message with id %s: wrong end date format', message.offset)
-
+                            
                     connector = {
                         'profile': source_endpoint_profile,
                         'person_identifier': person_id,

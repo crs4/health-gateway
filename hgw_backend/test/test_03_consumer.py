@@ -50,7 +50,7 @@ class TestConsumer(TestCase):
             },
             'person_id': 'AAAABBBBCCCCDDDD',
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00'
+            'end_validity': '2018-10-23T10:00:00+02:00'
         }, {
             'channel_id': 'KKa8QqqTBGePJStJpQMbspEvvV4LJJCY',
             'source_id': 'LD2j7v35BvUlzWDe8G89JGzz4SOincB7',
@@ -65,7 +65,7 @@ class TestConsumer(TestCase):
             },
             'person_id': 'AAAABBBBCCCCDDDD',
             'start_validity': None,
-            'expire_validity': None
+            'end_validity': None
         }]
 
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, json_enc=True, encoding='utf-8'):
@@ -96,7 +96,7 @@ class TestConsumer(TestCase):
                     'dest_public_key': m['destination']['kafka_public_key'],
                     'channel_id': m['channel_id'],
                     'start_validity': m['start_validity'][:10] if m['start_validity'] is not None else None,
-                    'end_validity': m['expire_validity'][:10] if m['expire_validity'] is not None else None
+                    'end_validity': m['end_validity'][:10] if m['end_validity'] is not None else None
                 }
                 calls.append(call(source_obj, connector))
             mocked_create_connector.assert_has_calls(calls)

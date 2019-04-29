@@ -87,7 +87,7 @@ class FlowRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FlowRequest
-        fields = ('flow_id', 'process_id', 'status', 'profile', 'sources', 'destination', 'start_validity', 'expire_validity')
+        fields = ('flow_id', 'process_id', 'status', 'profile', 'destination', 'start_validity', 'end_validity')
 
 
 class ChannelSerializer(serializers.ModelSerializer):

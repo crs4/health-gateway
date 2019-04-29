@@ -79,7 +79,7 @@ class Migration(migrations.Migration):
                 ('status', models.CharField(choices=[('PE', 'PENDING'), ('AC', 'ACTIVE'), ('DR', 'DELETE_REQUIRED')], default='PE', max_length=2)),
                 ('person_id', models.CharField(blank=True, max_length=20, null=True)),
                 ('start_validity', models.DateTimeField()),
-                ('expire_validity', models.DateTimeField()),
+                ('end_validity', models.DateTimeField()),
                 ('destination', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='hgw_frontend.Destination')),
                 ('sources', models.ManyToManyField(to='hgw_frontend.Source')),
                 ('profile', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='hgw_common.Profile')),
