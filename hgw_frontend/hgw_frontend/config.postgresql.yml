@@ -1,0 +1,38 @@
+django:
+  debug: true
+  secret_key: 8m#4t%c_z1l7=gsfpf=han8ibdmd-+w1-05^&-+e4%)vwn2*7@
+  hostname: hgwfrontend
+  port: 8000
+  request_validity_seconds: 60
+  timezone: Europe/Rome
+  database:
+    engine: postgresql
+    name: hgwfrontend
+    user: hgwfrontend
+    password: hgwfrontend
+    host: hgwfrontend-db
+    port: 5432
+
+saml:
+  service: tscns
+  idp_url: https://tscns/idp/shibboleth
+  sp_name: HGW Frontend Service Provider
+  sp_cert: ../saml2/saml2.cert.pem
+  sp_key: ../saml2/saml2.key.pem
+
+consent_manager:
+  uri: https://consentmanager:8002
+  client_id: 04hpKQ1RPdbQAI0TYZ4A162r0IBlPH8WS6cZ5BMR
+  client_secret: NrRetjwS3n9By6FhqWKbkuGLTvuQWtbQq3QwnKc8CgHoJg02MeQI4Mitj2fISJXv4DQieaIhdyWLy5Klf30i37mP7P0Vh3acOGJZFaHhKuBI3QYlRJBGipm50bBR3zfD
+
+hgw_backend:
+  uri: https://hgwbackend:8003
+  client_id: Z3p4Q2La14DItTBz9fxFBY4vflHPYMLLeXoUltOt
+  client_secret: ptyQgSdx9r0QZNntI3q1F1ZwT9fZU0aijGkZqRkAyibEF5qNaSIxwIFEsYV1L0rBD9a1ALCmVqC6ERw7sK4qcfk57oUrkFOOhUs5JUHnIcQ2A6rJ5c2tcIQUsJLfcQLI
+
+kafka:
+  uri: kafka:9093
+  ssl: true
+  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
+  client_cert: ../../certs/ca/kafka/certs/hgwfrontend/cert.pem
+  client_key: ../../certs/ca/kafka/certs/hgwfrontend/key.pem

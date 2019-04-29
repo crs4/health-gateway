@@ -148,7 +148,8 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	coreapi==2.3.3 \
 	drf_yasg \
 	PyYAML==3.12 \
-	coverage
+	coverage \
+	psycopg2
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 

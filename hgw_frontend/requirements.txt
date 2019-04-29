@@ -11,3 +11,4 @@ coreapi==2.3.3
 drf_yasg
 PyYAML==3.12
 djangosaml2==0.16.10
+psycopg2==2.8.2

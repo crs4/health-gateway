@@ -1,0 +1,31 @@
+version: '3.0'
+services:
+  hgwfrontend-db:
+    image: postgres:11.1-alpine
+    environment:
+      - POSTGRES_USER=hgwfrontend
+      - POSTGRES_PASSWORD=hgwfrontend
+      - POSTGRES_DB=hgwfrontend
+    ports:
+      - 5432:5432
+
+  hgw_frontend:
+    image: crs4/hgw_frontend:latest
+    environment:
+      - HTTP_PORT=8000
+      - DJANGO_APP_NAME=hgw_frontend
+    ports:
+      - 8000:8000
+    extra_hosts:
+      - "tscns:172.17.0.1"
+    volumes:
+      - ./:/container/devservice/
+      - ../hgw_common/hgw_common/:/container/devservice/hgw_common/
+      - ./hgw_frontend/config.postgresql.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../certs/ca/web/certs/hgwfrontend:/container/web_certs/
+      - ../certs/ca/kafka/certs/hgwfrontend/cert.pem:/container/client_certs/cert.pem
+      - ../certs/ca/kafka/certs/hgwfrontend/key.pem:/container/client_certs/key.pem
+      - ../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
