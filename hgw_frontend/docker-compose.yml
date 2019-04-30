@@ -22,6 +22,7 @@ services:
       - ./:/container/devservice/
       - ../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./hgw_frontend/config.postgresql.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ./hgw_frontend/fixtures/development_data.json:/container/fixtures/development_data.json
       - ../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
