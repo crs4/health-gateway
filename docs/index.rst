@@ -55,7 +55,7 @@ platform, including the prototypal configurations.
 
     architecture.rst
     modules/hgw_frontend/home.rst
-    modules/hgw_backend/home.md
+    modules/hgw_backend/home.rst
     modules/consent_manager/home.rst
     issues.rst
 
