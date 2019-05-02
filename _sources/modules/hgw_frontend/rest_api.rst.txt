@@ -170,3 +170,61 @@ API Methods
             "last_id": 30,
             "count": 26
         }
+
+.. http:get:: /v1/sources/
+
+    Gets the list of sources with their associated profiles
+
+    :reqheader Authorization: Bearer <oauth_2_access_token>
+    :resheader Content-Type: application/json
+    :statuscode 200: The request was successfull
+    :statuscode 404: Not Found - The start query parameter is minor than the first `message_id` available
+
+    **Success response**
+
+        .. sourcecode:: http
+
+            HTTP/1.1 202 OK
+            Vary: Authorization
+            Content-Type: application/json
+
+            [{
+                "source_id": "WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN",
+                "name": "SOURCE_ENDPOINT",
+                "profile": {
+                    "code": "PROF_001",
+                    "version": "v0",
+                    "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+                }
+            }]
+
+.. http:get:: /v1/sources/{str: source_id}
+
+    Gets the source with id `source_id` and its associated profiles
+
+    :reqheader Authorization: Bearer <oauth_2_access_token>
+    :resheader Content-Type: application/json
+    :statuscode 200: The request was successfull
+    :statuscode 401: Unauthorized - The client has not provide a valid token or the token has expired
+    :statuscode 403: Forbidden - The client token has not the right scope for the operation
+    :statuscode 404: Not Found - The source with the specified id was not found
+    :statuscode 500: Internal Server Error - Something wrong happened
+    :parameter source_id: the id of the source to get
+
+    **Success response**
+
+        .. sourcecode:: http
+
+            HTTP/1.1 202 OK
+            Vary: Authorization
+            Content-Type: application/json
+
+            {
+                "source_id": "WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN",
+                "name": "SOURCE_ENDPOINT",
+                "profile": {
+                    "code": "PROF_001",
+                    "version": "v0",
+                    "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+                }
+            }

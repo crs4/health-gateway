@@ -532,6 +532,110 @@ The information returned are the number of records, the first and the last messa
 </div>
 </dd></dl>
 
+<dl class="get">
+<dt id="get--v1-sources-">
+<code class="descname">GET </code><code class="descname">/v1/sources/</code><a class="headerlink" href="#get--v1-sources-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the list of sources with their associated profiles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The start query parameter is minor than the first <cite>message_id</cite> available</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+    <span class="p">}</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-sources-str- source_id">
+<code class="descname">GET </code><code class="descname">/v1/sources/{str: source_id}</code><a class="headerlink" href="#get--v1-sources-str- source_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the source with id <cite>source_id</cite> and its associated profiles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - The client has not provide a valid token or the token has expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - The client token has not the right scope for the operation</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The source with the specified id was not found</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – Internal Server Error - Something wrong happened</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source_id</strong> – the id of the source to get</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
 <p>Enrolling a Destination</p>
 <hr class="docutils" />
 <p>This page describes how to enroll a new Destination.</p>

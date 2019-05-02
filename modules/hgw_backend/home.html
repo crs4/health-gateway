@@ -94,7 +94,10 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../hgw_frontend/home.html">HGW Frontend</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">HGW Backend</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">HGW Backend</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#api-methods">API Methods</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="#enrolling-a-source">Enrolling a Source</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#registration-in-the-admin-page">Registration in the admin page</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#creation-of-the-authentication-object">Creation of the authentication object</a><ul>
@@ -161,7 +164,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../../_sources/modules/hgw_backend/home.md.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/modules/hgw_backend/home.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -177,6 +180,205 @@
   <div class="section" id="hgw-backend">
 <h1>HGW Backend<a class="headerlink" href="#hgw-backend" title="Permalink to this headline">¶</a></h1>
 <p>HGW Backend is the Health Gateway module that interacts with the Sources</p>
+<div class="section" id="api-methods">
+<h2>API Methods<a class="headerlink" href="#api-methods" title="Permalink to this headline">¶</a></h2>
+<dl class="post">
+<dt id="post--oauth2-token-">
+<code class="descname">POST </code><code class="descname">/oauth2/token/</code><a class="headerlink" href="#post--oauth2-token-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain an OAuth2 authorization token to be used by the Source Endpoint to make request to the
+other API functions. The token will have a <cite>message:write</cite> scope, which is the one that allows
+to send messages, or a <cite>sources:read</cite> scope, which is the one that to read sources.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>client_id</strong> – the oauth2 client id assigned to a Source Endpoint during the enrollment phase</li>
+<li><strong>client_secret</strong> – the oauth2 client secret assign during the enrollment phase</li>
+<li><strong>grant_type</strong> – type of grant used. In our case is always <cite>client_credentials</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success Response</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;access_token&quot;</span><span class="p">:</span> <span class="s2">&quot;fNN8u8THUuG5KVkTRlTtxKe7mgF1aG&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;token_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;expires_in&quot;</span><span class="p">:</span> <span class="mi">36000</span><span class="p">,</span>
+    <span class="nt">&quot;scope&quot;</span><span class="p">:</span> <span class="s2">&quot;messages:write&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-sources-">
+<code class="descname">GET </code><code class="descname">/v1/sources/</code><a class="headerlink" href="#get--v1-sources-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the list of sources with their associated profiles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - The client has not provide a valid token or the token has expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - The client token has not the right scope for the operation</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – Internal Server Error - Something wrong happened</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+    <span class="p">}</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-sources-str- source_id">
+<code class="descname">GET </code><code class="descname">/v1/sources/{str: source_id}</code><a class="headerlink" href="#get--v1-sources-str- source_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the source with id <cite>source_id</cite> and its associated profiles</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - The client has not provide a valid token or the token has expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - The client token has not the right scope for the operation</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The source with the specified id was not found</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – Internal Server Error - Something wrong happened</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source_id</strong> – the id of the source to get</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success response</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--v1-messages-">
+<code class="descname">POST </code><code class="descname">/v1/messages/</code><a class="headerlink" href="#post--v1-messages-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates (i.e., sends) a new message. The Source Endpoint must include the <cite>channel_id</cite> the
+message refers to and the <cite>payload</cite> which is an encrypted string. To use this endpoint
+the client needs a token with <cite>messages:write</cite> scope</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Form Parameters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>channel_id</strong> – The channel id the message refers to</li>
+<li><strong>message</strong> – The encrypted message</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – multipart/form-data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – Success - Message sent correctly</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – Bad Request - Missing parameters or payload not encrypted</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - The client has not provide a valid token or the token has expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - The client token has not the right scope for the operation</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – Internal Server Error - Something wrong happened sending the message
+(e.g., broker was unreachable)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Request Example</strong></p>
+<blockquote>
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/v1/messages/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">multipart/form-data</span>
+
+channel_id: channel_id,
+payload: \xdf\xbb \x02\x10\xbd\x91\xc0g\xb9\xba\xdd2\x1f\x8c\x9b\xb9H\xd6\xbc\x9c3\x02\x13\xcaN\x08\xa7:5\xe3\xbd@\xf9\xf1\xc5\x97\x90\xb4G\xb57\x8fb\xff\x05D\xcc\x9e\n\x8e\xa3\xa8\xbf\xd8\xcb\xc6\xbb\xb2\xcb\xe1;\xc1\x15\xef\xf15/\x08q1#\xbf\xb62\xdf\xacD){\xb5\x83@\xef\xc5i\xf1~fLs\x80\xcb(\x95\x88\x01C\x1d\xeaIA\xd2~\xce\x92\x18\xd6\xa6\xf9E\xd2\x7f\x9d5M&quot;\xa4\x00,~T!{l3\&#39;\x0c*\xd3\xb3\xeb\xec2\x8a\xf2\xc2j\xb7\xa0\xa0\xe1,\x17\x1aN\xbb\x88l\xd2\xe6K\xbb7\xb6o\xec\xd4\x0bM\xd7\xcf9\xa4\x9c\xadgx\n\&#39;m\xad\xa3=\x11\x1e\x8b\x13\x80\xf7\x87e\x03\xeb\xc0,\xebW\x0e\xa0\xbf\xd4#:Y-F\xf5}o\xff\xd4\xa7\x91&quot;M*\x8f\xe4\xa7&gt;\x06y\x9ak,\x07N\xe0\xa0*6\xcby\xbd\xfb\xd59\xe3g\xd2\x08\xc1\xc1\xb1\xf8=\x1a\x02\xe9]Y\xb1\x12\x03\xd1y\xee\x93f;\xc9\xe3\x1e\x97\x93&amp;`\n8\x0c\\ \xb3\xaa)\x07\x8e\xc0\x0f\x8fJ\x93H\xb2ZEL\x9d\x1c\xebEG\xd2\xce\xf0!\x18\xb8\x93\xad\x8dy\x19\xd7\xd9\x81\xb2\xf2Z\x15\x0b\xa5\x87\xa0\xc9#\x8f6\xdeBz\xafk6\x00\xb5\xbfd\x81\xe2\xc1&gt;q\x83
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="enrolling-a-source">
 <h1>Enrolling a Source<a class="headerlink" href="#enrolling-a-source" title="Permalink to this headline">¶</a></h1>
