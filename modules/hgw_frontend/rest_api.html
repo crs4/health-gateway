@@ -164,118 +164,132 @@
 <dl class="post">
 <dt id="post--oauth2-token-">
 <code class="descname">POST </code><code class="descname">/oauth2/token/</code><a class="headerlink" href="#post--oauth2-token-" title="Permalink to this definition">¶</a></dt>
-<dd><p>Obtain an OAuth2 authorization token to be used to make request to the other API functions</p>
+<dd><p>Obtain an OAuth2 authorization token to be used to make request to the other API functions.
+The client will obtain a scope based on its registration in the HGW. This means that
+a client can specify in the request just a subset of the scopes it is registered for.
+The available scopes and the description of the operation that can be performed
+are the following:</p>
+<p><code class="docutils literal notranslate"><span class="pre">flow_request:read</span></code>: Read flow request belonging to the corrispondent destination
+<code class="docutils literal notranslate"><span class="pre">flow_request:write</span></code>: Write scope. You can add, update or delete a flow_request
+<code class="docutils literal notranslate"><span class="pre">flow_request:query</span></code>: Perform flow request query
+<code class="docutils literal notranslate"><span class="pre">messages:read</span></code>: Can read messages
+<code class="docutils literal notranslate"><span class="pre">sources:read</span></code>: Can get information about sources</p>
+<p>In case of error the response will be a json object with the key <cite>error</cite> and a description
+of the error. Possible errors’ values are:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">invalid_client</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">unsupported_grant_type</span></code></li>
+</ul>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
-<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/x-www-form-urlencoded</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Form Parameters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><strong>client_id</strong> – the oauth2 client id assigned during the enrollment phase</li>
 <li><strong>client_secret</strong> – the oauth2 client secret assign during the enrollment phase</li>
-<li><strong>grant_type</strong> – type of grant used. In our case is alway client_credentials</li>
+<li><strong>grant_type</strong> – type of grant used. In our case is always client_credentials</li>
+<li><strong>scope</strong> – Optional. A subset of possible scope for the client</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - The token has been created successfully</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – Bad Request - <code class="docutils literal notranslate"><span class="pre">grant_type</span></code> missing or wrong (i.e., different from <cite>client_credentials</cite>)</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - one of client_id, client_secret missing or wrong</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>access_token</strong> (<em>string</em>) – the value of the token</li>
+<li><strong>token_type</strong> (<em>string</em>) – the type of the token. It is always <cite>Bearer</cite></li>
+<li><strong>expires_in</strong> (<em>int</em>) – number of seconds after which the token expires</li>
+<li><strong>scope</strong> (<em>string</em>) – a string with whitespace-separated scopes assigned to the token.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p><strong>Success Response</strong></p>
-<blockquote>
-<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<p><strong>Request example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/oauth2/token</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/x-www-form-urlencoded</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+
+client_id: client_id
+client_secret: supersecretstring
+grant_type: client_credentials
+scope: flow_request:read
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 
 <span class="p">{</span>
     <span class="nt">&quot;access_token&quot;</span><span class="p">:</span> <span class="s2">&quot;fNN8u8THUuG5KVkTRlTtxKe7mgF1aG&quot;</span><span class="p">,</span>
     <span class="nt">&quot;token_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer&quot;</span><span class="p">,</span>
     <span class="nt">&quot;expires_in&quot;</span><span class="p">:</span> <span class="mi">36000</span><span class="p">,</span>
-    <span class="nt">&quot;scope&quot;</span><span class="p">:</span> <span class="s2">&quot;flow_request:read flow_request:write&quot;</span>
+    <span class="nt">&quot;scope&quot;</span><span class="p">:</span> <span class="s2">&quot;flow_request:read flow_request:write messages:read sources:rea&quot;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-</div></blockquote>
-</dd></dl>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 
-<dl class="get">
-<dt id="get--v1-flow_requests-(str- process_id)">
-<code class="descname">GET </code><code class="descname">/v1/flow_requests/(str: process_id)</code><a class="headerlink" href="#get--v1-flow_requests-(str- process_id)" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the list of flow requests</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
-<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
+<span class="p">{</span>
+    <span class="nt">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;invalid_client&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="post">
 <dt id="post--v1-flow_requests-">
 <code class="descname">POST </code><code class="descname">/v1/flow_requests/</code><a class="headerlink" href="#post--v1-flow_requests-" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new flow request. It will be created but set in a pending status until the user confirms it.
-The call returns a json with two attributes:</p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">process_id</span></code>: the id that identifies the flow request in the health gateway. The client must maintain the mapping between the <code class="docutils literal notranslate"><span class="pre">process_id</span></code> and the <code class="docutils literal notranslate"><span class="pre">flow_id</span></code> to be used in subsequent process</li>
-<li><code class="docutils literal notranslate"><span class="pre">confirm_id</span></code>: the id to send to the confirmation url to activate the flow request</li>
-</ul>
+<dd><p>Create a new flow request. It will be created and set in a PENDING status
+until the user confirms it. The client will receive a json object with a <code class="docutils literal notranslate"><span class="pre">process_id</span></code> and a <code class="docutils literal notranslate"><span class="pre">confirm_id</span></code>.</p>
+<p><strong>N.B. The client needs an OAut2 token with the flow_request:write scope to perform this action</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Request JSON Object:</th></tr>
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
-<li><strong>flow_id</strong> – the flow id that identifies the request for the client. The Health Gateway creates a corresponding
-processing id</li>
+<li><strong>flow_id</strong> (<em>string</em>) – the flow id that identifies the request for the client. The Health Gateway creates a corresponding
+id called <code class="docutils literal notranslate"><span class="pre">process_id</span></code></li>
+<li><strong>profile</strong> (<em>object</em>) – <strong>(optional)</strong> - the profile of the flow_request, indicating the medical specialty required</li>
+<li><strong>start_validity</strong> (<em>datetime</em>) – <strong>(optional)</strong> the start datetime of validity of the flow request. It is the lower datetime
+of the clinical documents of the person that the destination wants to be sent. It can be changed by the person during the
+consent authorization</li>
+<li><strong>end_validity</strong> (<em>datetime</em>) – <strong>(optional)</strong> the end datetime of validity of the flow request. It is the upper datetime
+of the clinical documents that the destination wants to be sent. It can be changed by the person during the
+consent authorization</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
 <tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
-<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+<li><strong>process_id</strong> (<em>string</em>) – the id that identifies the flow request in the health gateway.
+The client must maintain the mapping between the <code class="docutils literal notranslate"><span class="pre">process_id</span></code> and the <code class="docutils literal notranslate"><span class="pre">flow_id</span></code> to
+be used in subsequent process</li>
+<li><strong>confirm_id</strong> (<em>string</em>) – the id to send to the confirmation url to activate the flow request</li>
 </ul>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
-<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
-<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a> – flow request created succesfully</li>
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – no <cite>flow_id</cite> provided</li>
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – server error, error’s detail are specified in the return response</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Success response</strong></p>
-<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">OK</span>
-<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
-<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
-
-<span class="p">{</span>
-    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
-    <span class="nt">&quot;confirm_id&quot;</span><span class="p">:</span> <span class="s2">&quot;xdv5jlQiWNW3ZaFMvmyVev5A0AGOZEHC&quot;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="delete">
-<dt id="delete--v1-flow_requests-str- process_id-">
-<code class="descname">DELETE </code><code class="descname">/v1/flow_requests/{str: process_id}/</code><a class="headerlink" href="#delete--v1-flow_requests-str- process_id-" title="Permalink to this definition">¶</a></dt>
-<dd><p>Delete the flow request identified by (process_id). It will be set in a delete requested status until the user confirms it.
-The call returns a json with the <code class="docutils literal notranslate"><span class="pre">confirm_id</span></code> to send to the confirmation url to delete the flow request</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
 <tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
@@ -289,21 +303,151 @@ The call returns a json with the <code class="docutils literal notranslate"><spa
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.3">202 Accepted</a> – the requested to delete has been accepted</li>
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – server error, error’s detail are specified in the return response</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a> – OK - flow request created succesfully</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – Bad Request - <code class="docutils literal notranslate"><span class="pre">flow_id</span></code> not provided</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a> – Internal Server Error - server error, error’s detail are specified in the return response</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<p><strong>Request Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/v1/flow_requests/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;flow_id&quot;</span><span class="p">:</span> <span class="s2">&quot;dq39rXdscfNiZuhVSAnHG3H65pnI44a6&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;start_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T10:00:00&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;expire_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T18:00:00&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <p><strong>Success response</strong></p>
-<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 
 <span class="p">{</span>
+    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
     <span class="nt">&quot;confirm_id&quot;</span><span class="p">:</span> <span class="s2">&quot;xdv5jlQiWNW3ZaFMvmyVev5A0AGOZEHC&quot;</span>
 <span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-flow_requests-(str- process_id)">
+<code class="descname">GET </code><code class="descname">/v1/flow_requests/(str: process_id)</code><a class="headerlink" href="#get--v1-flow_requests-(str- process_id)" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the flow request with the process id specified. If everything is ok, the flow request is
+returned. If, otherwise, one or more errors occur, it is returned an array with the specified
+errors. Possible errors’ values are:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code> in case of 401 and 403</li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code> in case of 404</li>
+</ul>
+<p><strong>N.B. The client needs an OAut2 token with the flow_request:read scope to perform this action</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>process_id</strong> – the process id of the flow request. It is the one returned in creation phase</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - the flow request was found and returned</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the oauth2 token is invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the oauth2 token is missing</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - the flow request has not been found</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>flow_id</strong> (<em>string</em>) – the id of the flow request generated by the destination when creating the flow request</li>
+<li><strong>process_id</strong> (<em>string</em>) – the id of the flow request generated by the Health Gateway when creating the flow request</li>
+<li><strong>status</strong> (<em>string</em>) – the status of the flow request. It can assume the values
+* PE: PENDING. The request has not been confirmed by the person yet
+* AC: ACTIVE. The request has been confirmed by the person</li>
+<li><strong>profile</strong> (<em>obj</em>) – a json object representing the profile of the flow request</li>
+<li><strong>start_validity</strong> (<em>string</em>) – the datetime of the start of the validity of the request. The format is the ISO-8601</li>
+<li><strong>expire_validity</strong> (<em>string</em>) – the datetime of the end of the validity of the request</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Request Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/flow_requests/12345/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;flow_id&quot;</span><span class="p">:</span> <span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;54321&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;PE&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;start_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T10:00:00+02:00&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;expire_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-10-23T10:00:00+02:00&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -329,16 +473,36 @@ The call returns a json with the <code class="docutils literal notranslate"><spa
 </dd></dl>
 
 <dl class="get">
-<dt id="get--v1-messages-int- message_id-">
-<code class="descname">GET </code><code class="descname">/v1/messages/{int: message_id}/</code><a class="headerlink" href="#get--v1-messages-int- message_id-" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets messages for a specific Destination</p>
+<dt id="get--v1-messages-(int- message_id)">
+<code class="descname">GET </code><code class="descname">/v1/messages/(int: message_id})</code><a class="headerlink" href="#get--v1-messages-(int- message_id)" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets messages for a specific Destination. If everything is correct it return the message, if
+something wrong happens it returns a json response with the list of possible errors. They can be:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code></li>
+</ul>
+<p><strong>N.B. The client needs an OAut2 token with the messages:read scope to perform this action</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>message_id</strong> – the id of the message to get</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>process_id</strong> (<em>string</em>) – the process_id of the Flow Request that the message belongs to.</li>
+<li><strong>message_id</strong> (<em>string</em>) – the message_id: it is the same as the one in the request url</li>
+<li><strong>message_id</strong> – a base64 encoded string representing the encrypted message arrived from the source</li>
+</ul>
+</td>
+</tr>
 <tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-5.3.2">Accept</a> – application/json</li>
 </ul>
 </td>
 </tr>
@@ -348,22 +512,24 @@ The call returns a json with the <code class="docutils literal notranslate"><spa
 </ul>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The message with id <cite>message_id</cite> does not exist
-or if the start query parameter is minor than the first message_id available</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>message_id</strong> – the id of the message to get</li>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - The request was successfull and the message is returned</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the OAuth2 token was invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the OAuth2 token was missing</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The message with id <cite>message_id</cite> does not exist</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p><strong>Success response</strong></p>
-<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<p><strong>Request Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/messages/1/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 
@@ -374,6 +540,25 @@ or if the start query parameter is minor than the first message_id available</li
 <span class="p">}</span>
 </pre></div>
 </div>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="get">
@@ -381,42 +566,59 @@ or if the start query parameter is minor than the first message_id available</li
 <code class="descname">GET </code><code class="descname">/v1/messages/</code><a class="headerlink" href="#get--v1-messages-" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets a list of messages for a specific Destination. If <cite>start</cite> query parameter is specified the list starts
 from the message with <cite>start</cite> as id. If the <cite>limit</cite> parameter is specified the list will have that amount of
-items.</p>
+items. If something wrong happens it returns a json response with the list of possible errors. They can be:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code></li>
+</ul>
+<p><strong>N.B. The client needs an OAut2 token with the messages:read scope to perform this action</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>start</strong> – optional - The <cite>message_id</cite> of the first message</li>
+<li><strong>limit</strong> – optional - The maximum number of messages to return (DEFAULT: 5, MAX: 10)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
 <li><em>X-Skipped</em> – number of record skipped</li>
 <li><em>X-Total-Count</em> – number of records present</li>
 </ul>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
 <li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The start query parameter is minor than the first <cite>message_id</cite> available</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
-<li><strong>start</strong> – optional - The message_id of the initial message</li>
-<li><strong>limit</strong> – optional - The maximum number of messages to return (DEFAULT: 5, MAX: 10)</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the OAuth2 token was invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the OAuth2 token was missing</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p><strong>Success response</strong></p>
-<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<p><strong>Request Examples</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/messages/?start=10&amp;limit=10</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/messages/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 
@@ -432,36 +634,68 @@ items.</p>
 <span class="p">}]</span>
 </pre></div>
 </div>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="get">
 <dt id="get--v1-messages-info">
 <code class="descname">GET </code><code class="descname">/v1/messages/info</code><a class="headerlink" href="#get--v1-messages-info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets information about the messages available.
-The information returned are the number of records, the first and the last message_id available.</p>
+The information returned are the number of records, the first and the last message_id available.
+If something wrong happens it returns a json response with the list of possible errors. They can be:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code></li>
+</ul>
+<p><strong>N.B. The client needs an OAut2 token with the messages:read scope to perform this action</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>start_id</strong> (<em>int</em>) – the id of the first message available</li>
+<li><strong>last_id</strong> (<em>int</em>) – the id of the last message available</li>
+<li><strong>count</strong> (<em>int</em>) – the number of messages available</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
 </ul>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the OAuth2 token was invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the OAuth2 token was missing</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<p><strong>Request Examples</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/messages/info</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
 <p><strong>Success response</strong></p>
 <div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
@@ -474,39 +708,77 @@ The information returned are the number of records, the first and the last messa
 <span class="p">}</span>
 </pre></div>
 </div>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="get">
 <dt id="get--v1-sources-">
 <code class="descname">GET </code><code class="descname">/v1/sources/</code><a class="headerlink" href="#get--v1-sources-" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the list of sources with their associated profiles</p>
+<dd><p>Gets the list of sources with their associated profiles.
+If something wrong happens it returns a json response with the list of possible errors. They can be:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code></li>
+</ul>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>source_id</strong> (<em>string</em>) – The id of the Source</li>
+<li><strong>name</strong> (<em>string</em>) – The name of the Source</li>
+<li><strong>profile</strong> (<em>object</em>) – The profile that the Source supports</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
 </ul>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – The request was successfull</li>
-<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - The start query parameter is minor than the first <cite>message_id</cite> available</li>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - The request was successfull</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the OAuth2 token was invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the OAuth2 token was missing</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<p><strong>Request Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/sources</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
 <p><strong>Success response</strong></p>
-<blockquote>
-<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">200</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 
@@ -521,13 +793,36 @@ The information returned are the number of records, the first and the last messa
 <span class="p">}]</span>
 </pre></div>
 </div>
-</div></blockquote>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="get">
-<dt id="get--v1-sources-str- source_id">
-<code class="descname">GET </code><code class="descname">/v1/sources/{str: source_id}</code><a class="headerlink" href="#get--v1-sources-str- source_id" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the source with id <cite>source_id</cite> and its associated profiles</p>
+<dt id="get--v1-sources-(str- source_id)">
+<code class="descname">GET </code><code class="descname">/v1/sources/(str: source_id)</code><a class="headerlink" href="#get--v1-sources-(str- source_id)" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the source with id <cite>source_id</cite> and its associated profiles.
+If something wrong happens it returns a json response with the listi of possible errors. They can be:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code></li>
+</ul>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -560,7 +855,13 @@ The information returned are the number of records, the first and the last messa
 </tr>
 </tbody>
 </table>
-<p><strong>Success response</strong></p>
+<p><strong>Request Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/sources/WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
 <blockquote>
 <div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">202</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
@@ -578,6 +879,25 @@ The information returned are the number of records, the first and the last messa
 </pre></div>
 </div>
 </div></blockquote>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </div>
