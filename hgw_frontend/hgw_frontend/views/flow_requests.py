@@ -30,6 +30,7 @@ from django.db import IntegrityError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
+from ebcli.operations import statusops
 from kafka import KafkaProducer
 from oauthlib.oauth2 import InvalidClientError
 from rest_framework import status
@@ -218,7 +219,7 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
     connection_errors = 0
     for source_data in sources.json():
         channel = Channel.objects.create(channel_id=get_random_string(32), flow_request=flow_request,
-                                         source_id=source_data['source_id'])
+                                         source_id=source_data['source_id'], status=Channel.CONSENT_REQUESTED)
         channel.save()
 
         consent_data = {

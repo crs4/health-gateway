@@ -123,7 +123,8 @@ class TestHGWFrontendAPI(TestCase):
                 'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
                 'person_id': self.flow_requests[obj['fields']['flow_request']]['person_id'],
                 'destination_id':
-                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id']
+                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
+                'status': obj['fields']['status']
             } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
@@ -973,7 +974,7 @@ class TestHGWFrontendAPI(TestCase):
         self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
         headers = self._get_oauth_header(client_name=DISPATCHER_ID)
-        res = self.client.get('/v1/flow_requests/search/?channel_id=unknown'.format(c.consent_id), **headers)
+        res = self.client.get('/v1/flow_requests/search/?channel_id=unknown', **headers)
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {})
 

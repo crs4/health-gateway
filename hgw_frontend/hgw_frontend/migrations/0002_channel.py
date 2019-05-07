@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
                 ('source_id', models.CharField(max_length=32, unique=False)),
                 ('flow_request', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
                                                    to='hgw_frontend.FlowRequest')),
+                ('status', models.CharField(choices=[('CR', 'CONSENT_REQUESTED'), ('AC', 'ACTIVE')], max_length=2)),
             ],
         ),
     ]

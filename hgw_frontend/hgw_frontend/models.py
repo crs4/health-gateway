@@ -57,13 +57,21 @@ class FlowRequest(models.Model):
 
 
 class Channel(models.Model):
+    CONSENT_REQUESTED = 'CR'
+    ACTIVE = 'AC'
+
+    STATUS_CHOICES = (
+        (CONSENT_REQUESTED, 'CONSENT_REQUESTED'),
+        (ACTIVE, 'ACTIVE')
+    )
+
     channel_id = models.CharField(max_length=32, blank=False)
     flow_request = models.ForeignKey('hgw_frontend.FlowRequest', null=False)
     source_id = models.CharField(max_length=32, null=False, unique=False)
-
+    status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
+   
     class Meta:
         unique_together = ('flow_request', 'source_id')
-
 
 def get_validity():
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)
@@ -96,8 +104,7 @@ class ConsentConfirmation(models.Model):
     destination_endpoint_callback_url = models.CharField(max_length=100, blank=False, null=False)
 
     def __unicode__(self):
-        return 'Consent {} - Confirmation: {}'.\
-            format(self.flow_request, self.consent_id, self.confirmation_id)
+        return 'Consent {} - Confirmation: {}'.format(self.consent_id, self.confirmation_id)
 
     def __str__(self):
         return self.__unicode__()

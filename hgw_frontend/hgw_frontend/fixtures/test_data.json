@@ -226,7 +226,8 @@
     "fields": {
       "channel_id": "nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b",
       "flow_request": 1,
-      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT"
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "status": "CR"
     }
   }, {
     "model": "hgw_frontend.channel",
@@ -234,7 +235,8 @@
     "fields": {
       "channel_id": "kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh",
       "flow_request": 2,
-      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT"
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "status": "AC"
     }
   }
 ]
