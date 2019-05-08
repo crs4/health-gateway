@@ -14,7 +14,6 @@ class ChannelView(ViewSet):
 
     @staticmethod
     def list(request):
-
         if request.auth.application.is_super_client():
             channels = Channel.objects.all()
         else:
@@ -27,7 +26,7 @@ class ChannelView(ViewSet):
                 return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
             channels = channels.filter(status=request.GET['status'])
         serializer = ChannelSerializer(channels, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, headers={'X-Total-Count': channels.count()})
 
     @staticmethod
     def retrieve(request, channel_id):

@@ -94,7 +94,7 @@ class FlowRequestView(ViewSet):
         else:
             flow_requests = FlowRequest.objects.filter(destination=request.auth.application.destination)
         serializer = FlowRequestSerializer(flow_requests, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, headers={'X-Total-Count': flow_requests.count()})
 
     def create(self, request):
         """
@@ -182,10 +182,11 @@ class FlowRequestView(ViewSet):
                 channels = Channel.objects.filter(flow_request=flow_request, status=request.GET['status'])
             else:
                 channels = Channel.objects.filter(flow_request=flow_request)
-            if channels.count() == 0:
+            count = channels.count()
+            if count == 0:
                 raise Http404
             serializer = ChannelSerializer(channels, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, headers={'X-Total-Count': count})
 
     def search(self, request):
         """
@@ -198,7 +199,7 @@ class FlowRequestView(ViewSet):
                 serializer = FlowRequestSerializer(instance=flow_request)
             except ConsentConfirmation.DoesNotExist:
                 return Response({}, status.HTTP_404_NOT_FOUND)
-            return Response(serializer.data)
+            return Response(serializer.data, headers={'X-Total-Count': '1'})
         else:
             return Response({}, status.HTTP_400_BAD_REQUEST)
 

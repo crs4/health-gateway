@@ -251,7 +251,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/flow_requests/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 1)
+        self.assertEqual(res['X-Total-Count'], '1')
 
     def test_get_one_flow_request_for_a_destination(self):
         """
@@ -281,7 +281,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(len(res.json()), 3)
+        self.assertEqual(res['X-Total-Count'], '3')
 
     def test_get_one_flow_requests_as_super_client(self):
         """
@@ -956,8 +956,9 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.consent_id), **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['process_id'], 'p_11111')
+        self.assertEqual(res['X-Total-Count'], '1')
 
-    def test_get_flow_request_by_channel_id(self):
+    def test_get_flow_request_by_channel_id_with_standard_client(self):
         """
         Tests that getting the flow request by channel id, using non admin REST client is forbidden
         """
@@ -1234,8 +1235,10 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/channels/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()
-                                      if ch_fi['destination_id'] == DEST_1_ID])
+        expected = [ch_fi for ch_pk, ch_fi in self.channels.items()
+                    if ch_fi['destination_id'] == DEST_1_ID]
+        self.assertEqual(res.json(), expected)
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
     def test_get_channels_filter_by_status(self):
         """
@@ -1244,8 +1247,10 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=DEST_2_NAME)
         res = self.client.get('/v1/channels/?status=AC', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()
-                                      if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC'])
+        expected = [ch_fi for ch_pk, ch_fi in self.channels.items()
+                    if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
+        self.assertEqual(res.json(), expected)
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
     def test_get_channels_filter_by_status_wrong_status(self):
         """
@@ -1262,7 +1267,9 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/channels/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()])
+        expected = [ch_fi for ch_pk, ch_fi in self.channels.items()]
+        self.assertEqual(res.json(), expected)
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
     def test_get_channels_unauthorized(self):
         """
@@ -1319,7 +1326,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.json(), target_channel)
 
     def test_get_channel_not_found(self):
-
         """
         Tests get channels not found. It tests not found for superclient, for nonexistent channel and for a channel
         that belongs to another destination
@@ -1346,8 +1352,10 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=DEST_2_NAME)
         res = self.client.get('/v1/flow_requests/p_22222/channels/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
-                                      if ch_fi['destination_id'] == DEST_2_ID])
+        expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
+                    if ch_fi['destination_id'] == DEST_2_ID]
+        self.assertEqual(res.json(), expected)
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))        
 
     def test_get_channels_by_flow_request_filter_by_status(self):
         """
@@ -1356,8 +1364,10 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=DEST_2_NAME)
         res = self.client.get('/v1/flow_requests/p_22222/channels/?status=AC', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
-                                      if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC'])
+        expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
+                    if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
+        self.assertEqual(res.json(), expected)
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))  
 
     def test_get_channels_by_flow_request_filter_by_status_wrong_status(self):
         """
@@ -1402,8 +1412,10 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/p_22222/channels/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
-                                      if ch_fi['destination_id'] == DEST_2_ID])
+        expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
+                    if ch_fi['destination_id'] == DEST_2_ID]
+        self.assertEqual(res.json(), expected)
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))        
 
     def test_get_channels_by_flow_request_unauthorized(self):
         """
