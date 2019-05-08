@@ -43,7 +43,7 @@ from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, Destination, FlowRequest)
-from hgw_frontend.serializers import FlowRequestSerializer
+from hgw_frontend.serializers import ChannelSerializer, FlowRequestSerializer
 from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    CONSENT_MANAGER_CLIENT_SECRET,
                                    CONSENT_MANAGER_CONFIRMATION_PAGE,
@@ -161,6 +161,27 @@ class FlowRequestView(ViewSet):
         serializer = FlowRequestSerializer(flow_request)
         res = {k: v for k, v in six.iteritems(serializer.data) if k != 'destination'}
         return Response(res)
+
+    @staticmethod
+    def channels(request, process_id):
+        """
+        Returns a list of Channels belonging to the FlowRequest identified by :param:`process_id`
+        """
+        logger.warning("Requested channels for flow_request %s", process_id)
+        try:
+            if request.auth.application.is_super_client():
+                flow_request = FlowRequest.objects.get(process_id=process_id)
+            else:
+                flow_request = FlowRequest.objects.get(destination=request.auth.application.destination, process_id=process_id)
+        except FlowRequest.DoesNotExist:
+            logger.warning("Flow request not found")
+            raise Http404
+        else:
+            if Channel.objects.filter(flow_request=flow_request).count() == 0:
+                raise Http404
+            channels = Channel.objects.filter(flow_request=flow_request)
+            serializer = ChannelSerializer(channels, many=True)
+        return Response(serializer.data)
 
     def search(self, request):
         """

@@ -156,13 +156,13 @@
     "model": "hgw_frontend.flowrequest",
     "pk": 1,
     "fields": {
-      "flow_id": "12345",
-      "process_id": "54321",
+      "flow_id": "f_11111",
+      "process_id": "p_11111",
       "status": "PE",
       "profile": 1,
       "destination": 1,
-      "start_validity" : "2017-10-23T10:00:00.000+02:00",
-      "expire_validity" : "2018-10-23T10:00:00.000+02:00",
+      "start_validity": "2017-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00",
       "person_id": "100001"
     }
   },
@@ -170,8 +170,8 @@
     "model": "hgw_frontend.flowrequest",
     "pk": 2,
     "fields": {
-      "flow_id": "67890",
-      "process_id": "09876",
+      "flow_id": "f_22222",
+      "process_id": "p_22222",
       "status": "AC",
       "profile": 1,
       "destination": 2,
@@ -179,7 +179,22 @@
       "expire_validity": "2018-10-23T10:00:00.000+02:00",
       "person_id": "100001"
     }
-  }, {
+  },
+  {
+    "model": "hgw_frontend.flowrequest",
+    "pk": 3,
+    "fields": {
+      "flow_id": "f_33333",
+      "process_id": "p_33333",
+      "status": "PE",
+      "profile": 1,
+      "destination": 2,
+      "start_validity": "2017-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "person_id": "100001"
+    }
+  },
+  {
     "model": "hgw_frontend.channel",
     "pk": 1,
     "fields": {
@@ -188,7 +203,8 @@
       "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
       "status": "CR"
     }
-  }, {
+  },
+  {
     "model": "hgw_frontend.channel",
     "pk": 2,
     "fields": {
@@ -197,7 +213,8 @@
       "source_id": "sChq7kDhvF1TjkrSAwpv1dt782SSkcZi",
       "status": "AC"
     }
-  }, {
+  },
+  {
     "model": "hgw_frontend.channel",
     "pk": 3,
     "fields": {
@@ -206,7 +223,8 @@
       "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
       "status": "CR"
     }
-  }, {
+  },
+  {
     "model": "hgw_frontend.channel",
     "pk": 4,
     "fields": {
@@ -215,7 +233,8 @@
       "source_id": "sChq7kDhvF1TjkrSAwpv1dt782SSkcZi",
       "status": "AC"
     }
-  }, {
+  },
+  {
     "model": "hgw_frontend.consentconfirmation",
     "pk": 1,
     "fields": {
@@ -236,7 +255,8 @@
       "confirmation_id": "wrong_confirmed",
       "destination_endpoint_callback_url": "http://localhost:8000"
     }
-  }, {
+  },
+  {
     "model": "hgw_frontend.consentconfirmation",
     "pk": 3,
     "fields": {
@@ -246,7 +266,8 @@
       "confirmation_id": "wrong_confirmed2",
       "destination_endpoint_callback_url": "http://localhost:8000"
     }
-  }, {
+  },
+  {
     "model": "hgw_frontend.consentconfirmation",
     "pk": 4,
     "fields": {

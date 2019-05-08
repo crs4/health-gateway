@@ -41,20 +41,15 @@ class FlowRequestSerializer(serializers.ModelSerializer):
 class ChannelSerializer(serializers.ModelSerializer):
 
     destination_id = serializers.SerializerMethodField()
-    person_id = serializers.SerializerMethodField()
     profile = serializers.SerializerMethodField()
 
     class Meta:
         model = Channel
-        fields = ('channel_id', 'status','destination_id', 'source_id', 'person_id', 'profile')
+        fields = ('channel_id', 'status','destination_id', 'source_id', 'profile')
 
     @staticmethod
     def get_destination_id(obj):
         return obj.flow_request.destination.destination_id
-
-    @staticmethod
-    def get_person_id(obj):
-        return obj.flow_request.person_id
 
     @staticmethod
     def get_profile(obj):
