@@ -98,7 +98,8 @@ class ConfirmationCode(models.Model):
 
 
 class ConsentConfirmation(models.Model):
-    flow_request = models.ForeignKey('FlowRequest', on_delete=models.CASCADE)
+    flow_request = models.ForeignKey(FlowRequest, on_delete=models.CASCADE)
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
     consent_id = models.CharField(max_length=32, blank=False, null=False, unique=True)
     confirmation_id = models.CharField(max_length=32, blank=False, null=False)
     destination_endpoint_callback_url = models.CharField(max_length=100, blank=False, null=False)

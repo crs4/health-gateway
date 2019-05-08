@@ -179,48 +179,7 @@
       "expire_validity": "2018-10-23T10:00:00.000+02:00",
       "person_id": "100001"
     }
-  },
-  {
-    "model": "hgw_frontend.consentconfirmation",
-    "pk": 1,
-    "fields": {
-      "flow_request": 1,
-      "consent_id": "consent",
-      "confirmation_id": "confirmed",
-      "destination_endpoint_callback_url": "http://localhost:8000"
-    }
-  },
-  {
-    "model": "hgw_frontend.consentconfirmation",
-    "pk": 2,
-    "fields": {
-      "flow_request": 1,
-      "consent_id": "wrong_consent",
-      "confirmation_id": "wrong_confirmed",
-      "destination_endpoint_callback_url": "http://localhost:8000"
-    }
-  },
-  {
-    "model": "hgw_frontend.consentconfirmation",
-    "pk": 3,
-    "fields": {
-      "flow_request": 1,
-      "consent_id": "wrong_consent2",
-      "confirmation_id": "wrong_confirmed2",
-      "destination_endpoint_callback_url": "http://localhost:8000"
-    }
-  },
-  {
-    "model": "hgw_frontend.consentconfirmation",
-    "pk": 4,
-    "fields": {
-      "flow_request": 1,
-      "consent_id": "consent2",
-      "confirmation_id": "confirmed2",
-      "destination_endpoint_callback_url": "http://localhost:8000"
-    }
-  },
-  {
+  }, {
     "model": "hgw_frontend.channel",
     "pk": 1,
     "fields": {
@@ -233,10 +192,69 @@
     "model": "hgw_frontend.channel",
     "pk": 2,
     "fields": {
-      "channel_id": "kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh",
+      "channel_id": "07rm7LqdFUqRUZz5zBZ2FPkzb7mXbj3u",
+      "flow_request": 1,
+      "source_id": "sChq7kDhvF1TjkrSAwpv1dt782SSkcZi",
+      "status": "AC"
+    }
+  }, {
+    "model": "hgw_frontend.channel",
+    "pk": 3,
+    "fields": {
+      "channel_id": "fF4sG1fgIGY1JcdqRSz91LelfQ6rq7qx",
       "flow_request": 2,
       "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "status": "CR"
+    }
+  }, {
+    "model": "hgw_frontend.channel",
+    "pk": 4,
+    "fields": {
+      "channel_id": "kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh",
+      "flow_request": 2,
+      "source_id": "sChq7kDhvF1TjkrSAwpv1dt782SSkcZi",
       "status": "AC"
+    }
+  }, {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 1,
+    "fields": {
+      "flow_request": 1,
+      "channel": 1,
+      "consent_id": "consent",
+      "confirmation_id": "confirmed",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 2,
+    "fields": {
+      "flow_request": 1,
+      "channel": 2,
+      "consent_id": "wrong_consent",
+      "confirmation_id": "wrong_confirmed",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  }, {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 3,
+    "fields": {
+      "flow_request": 1,
+      "channel": 3,
+      "consent_id": "wrong_consent2",
+      "confirmation_id": "wrong_confirmed2",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  }, {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 4,
+    "fields": {
+      "flow_request": 1,
+      "channel": 4,
+      "consent_id": "consent2",
+      "confirmation_id": "confirmed2",
+      "destination_endpoint_callback_url": "http://localhost:8000"
     }
   }
 ]

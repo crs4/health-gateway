@@ -807,8 +807,9 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(fr.person_id, '100001')
 
         channels = Channel.objects.filter(flow_request=fr)
-        for ch in channels:
-            self.assertIn(ch.source_id, [s['source_id'] for s in self.sources_data])
+        for channel in channels:
+            self.assertIn(channel.source_id, [s['source_id'] for s in self.sources_data])
+            self.assertIn(channel.status, Channel.CONSENT_REQUESTED)
 
         consent_confirm_ids = [c.confirmation_id for c in list(ConsentConfirmation.objects.all())[-2:]]
         consent_callback_url = 'https://testserver/v1/flow_requests/consents_confirmed/'
@@ -833,10 +834,13 @@ class TestHGWFrontendAPI(TestCase):
         redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
-        fr = c.flow_request
-        self.assertEqual(fr.status, FlowRequest.ACTIVE)
+        flow_request = c.flow_request
+        self.assertEqual(flow_request.status, FlowRequest.ACTIVE)
+        channels = Channel.objects.filter(flow_request=flow_request)
+        for channel in channels:
+            self.assertEqual(channel.status, Channel.ACTIVE)
 
-        destination = fr.destination
+        destination = flow_request.destination
         kafka_data = {
             'channel_id': c.consent_id,
             'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
@@ -865,25 +869,11 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}'.format(WRONG_CONFIRM_ID))
         self.assertEqual(res.status_code, 302)
-        c = ConsentConfirmation.objects.get(confirmation_id=WRONG_CONFIRM_ID)
-        redirect_url = '{}?process_id={}&success=false'.format(c.destination_endpoint_callback_url,
-                                                               c.flow_request.process_id)
-        fr = FlowRequest.objects.get(flow_id='12345')
-        self.assertEqual(fr.status, FlowRequest.PENDING)
-
-    # @patch('hgw_frontend.views.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    # @patch('hgw_frontend.views.KafkaProducer')
-    # def test_confirm_add_flow_request_wrong_consent_status(self, mocked_kafka_producer):
-    #     """
-    #     Tests the behavior when a user try to call the /flow_requests/confirm view with no consent_confirm_id
-    #     :return:
-    #     """
-    #     self.client.login(username='duck', password='duck')
-    #     res = self.client.get('/v1/flow_requests/consents_confirmed/')
-    #     self.assertEqual(res.status_code, 400)
-    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
-    #     fr = FlowRequest.objects.get(flow_id='12345')
-    #     self.assertEqual(fr.status, FlowRequest.PENDING)
+        consent_confirmation = ConsentConfirmation.objects.get(confirmation_id=WRONG_CONFIRM_ID)
+        flow_request = FlowRequest.objects.get(flow_id='12345')
+        self.assertEqual(flow_request.status, FlowRequest.PENDING)
+        for channel in Channel.objects.filter(flow_request=flow_request):
+            channel.status = Channel.CONSENT_REQUESTED
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')

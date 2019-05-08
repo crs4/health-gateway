@@ -242,7 +242,7 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
             json_res = res.json()
             if res.status_code == 201:
                 ConsentConfirmation.objects.create(flow_request=flow_request, consent_id=json_res['consent_id'],
-                                                   confirmation_id=json_res['confirm_id'],
+                                                   channel=channel, confirmation_id=json_res['confirm_id'],
                                                    destination_endpoint_callback_url=destination_endpoint_callback_url)
                 confirm_ids.append(json_res['confirm_id'])
             else:
@@ -342,6 +342,9 @@ def _confirm(request, consent_confirm_id):
         flow_request = consent_confirmation.flow_request
         flow_request.status = FlowRequest.ACTIVE
         flow_request.save()
+        channel = consent_confirmation.channel
+        channel.status = Channel.ACTIVE
+        channel.save()
         return True
     return False
 
