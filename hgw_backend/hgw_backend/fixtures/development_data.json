@@ -34,7 +34,7 @@
       "name": "SOURCE_ENDPOINT_MOCKUP",
       "url": "https://source-endpoint-mockup:8004/v1/connectors/",
       "profile": 1,
-      "content_type": 15,
+      "content_type": ["hgw_backend", "oauth2authentication"],
       "object_id": 1
     }
   },
