@@ -1,4 +1,5 @@
 from django.http import Http404
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
@@ -19,8 +20,13 @@ class ChannelView(ViewSet):
             channels = Channel.objects.filter(flow_request__in=
                                               FlowRequest.objects.filter(destination=
                                                                          request.auth.application.destination))
+
+        if 'status' in request.GET:
+            if request.GET['status'] not in list(zip(*Channel.STATUS_CHOICES))[0]:
+                return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+            channels = channels.filter(status=request.GET['status'])
         serializer = ChannelSerializer(channels, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, headers={'X-Total-Count': channels.count()})
 
     @staticmethod
     def retrieve(request, channel_id):
