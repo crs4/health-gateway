@@ -30,7 +30,6 @@ from django.db import IntegrityError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
-from ebcli.operations import statusops
 from kafka import KafkaProducer
 from oauthlib.oauth2 import InvalidClientError
 from rest_framework import status
@@ -177,9 +176,14 @@ class FlowRequestView(ViewSet):
             logger.warning("Flow request not found")
             raise Http404
         else:
-            if Channel.objects.filter(flow_request=flow_request).count() == 0:
+            if 'status' in request.GET:
+                if request.GET['status'] not in list(zip(*Channel.STATUS_CHOICES))[0]:
+                    return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+                channels = Channel.objects.filter(flow_request=flow_request, status=request.GET['status'])
+            else:
+                channels = Channel.objects.filter(flow_request=flow_request)
+            if channels.count() == 0:
                 raise Http404
-            channels = Channel.objects.filter(flow_request=flow_request)
             serializer = ChannelSerializer(channels, many=True)
         return Response(serializer.data)
 

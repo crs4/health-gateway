@@ -1237,6 +1237,24 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()
                                       if ch_fi['destination_id'] == DEST_1_ID])
 
+    def test_get_channels_filter_by_status(self):
+        """
+        Tests getting channels related to a specific flow_request
+        """
+        headers = self._get_oauth_header(client_name=DEST_2_NAME)
+        res = self.client.get('/v1/channels/?status=AC', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.channels.items()
+                                      if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC'])
+
+    def test_get_channels_filter_by_status_wrong_status(self):
+        """
+        Tests getting channels related to a specific flow_request
+        """
+        headers = self._get_oauth_header(client_name=DEST_2_NAME)
+        res = self.client.get('/v1/channels/?status=WRONG_STATUS', **headers)
+        self.assertEqual(res.status_code, 400)
+
     def test_get_channels_by_superuser(self):
         """
         Tests getting all channels from a superuser
@@ -1330,6 +1348,24 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
                                       if ch_fi['destination_id'] == DEST_2_ID])
+
+    def test_get_channels_by_flow_request_filter_by_status(self):
+        """
+        Tests getting channels related to a specific flow_request
+        """
+        headers = self._get_oauth_header(client_name=DEST_2_NAME)
+        res = self.client.get('/v1/flow_requests/p_22222/channels/?status=AC', **headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
+                                      if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC'])
+
+    def test_get_channels_by_flow_request_filter_by_status_wrong_status(self):
+        """
+        Tests getting channels related to a specific flow_request
+        """
+        headers = self._get_oauth_header(client_name=DEST_2_NAME)
+        res = self.client.get('/v1/flow_requests/p_22222/channels/?status=WRONG_STATUS', **headers)
+        self.assertEqual(res.status_code, 400)
 
     def test_get_channels_by_flow_request_flow_request_not_found(self):
         """
