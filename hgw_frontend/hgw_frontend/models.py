@@ -28,6 +28,10 @@ from hgw_common.utils import generate_id
 from hgw_frontend.settings import REQUEST_VALIDITY_SECONDS, DEFAULT_SCOPES
 
 
+class Source(models.Model):
+    source_id = models.CharField(max_length=32, blank=False, null=False, unique=True)
+    name = models.CharField(max_length=100, blank=False, null=False, unique=True)
+
 class FlowRequest(models.Model):
     PENDING = 'PE'
     ACTIVE = 'AC'
@@ -56,6 +60,11 @@ class FlowRequest(models.Model):
         return self.__unicode__()
 
 
+class FlowRequestSource(models.Model):
+    flow_request = models.ForeignKey(FlowRequest, on_delete=models.CASCADE, null=True)
+    source = models.ForeignKey(Source, on_delete=models.CASCADE, null=True)
+
+
 class Channel(models.Model):
     CONSENT_REQUESTED = 'CR'
     ACTIVE = 'AC'
@@ -69,9 +78,10 @@ class Channel(models.Model):
     flow_request = models.ForeignKey('hgw_frontend.FlowRequest', null=False)
     source_id = models.CharField(max_length=32, null=False, unique=False)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
-   
+
     class Meta:
         unique_together = ('flow_request', 'source_id')
+
 
 def get_validity():
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)

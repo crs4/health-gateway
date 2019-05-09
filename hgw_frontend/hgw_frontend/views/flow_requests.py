@@ -41,7 +41,8 @@ from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
-                                 ConsentConfirmation, Destination, FlowRequest)
+                                 ConsentConfirmation, Destination, FlowRequest,
+                                 Source)
 from hgw_frontend.serializers import ChannelSerializer, FlowRequestSerializer
 from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    CONSENT_MANAGER_CLIENT_SECRET,
@@ -244,6 +245,9 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
     confirm_ids = []
     connection_errors = 0
     for source_data in sources.json():
+        #TODO: Terrible. This should use its own Sources syncronized from hgwbackend. This is just a temporary solution
+        source = Source.objects.get_or_create(source_id=source_data['source_id'], name=source_data['name'])
+
         channel = Channel.objects.create(channel_id=get_random_string(32), flow_request=flow_request,
                                          source_id=source_data['source_id'], status=Channel.CONSENT_REQUESTED)
         channel.save()
