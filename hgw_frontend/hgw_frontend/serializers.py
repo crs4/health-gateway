@@ -20,32 +20,84 @@ from rest_framework import serializers
 
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_frontend.models import FlowRequest, Channel
+from hgw_common.utils import get_logger
+from hgw_frontend.models import Channel, FlowRequest, Source
+
+logger = get_logger("hgw_frontend")
+
+# class ProfileSerializer(serializers.ModelSerializer):
+#     """
+#     Serializer for Profile model
+#     """
+
+#     domains = ProfileDomainSerializer(many=True, allow_null=False)
+
+#     def create(self, validated_data):
+#         domains_data = validated_data.pop('domains')
+#         profile = Profile.objects.create(**validated_data)
+#         if profile is not None:
+#             for domain_data in domains_data:
+#                 sections_data = domain_data.pop('sections')
+#                 domain = ProfileDomain.objects.create(profile=profile, **domain_data)
+#                 if domain:
+#                     for section_data in sections_data:
+#                         ProfileSection.objects.create(profile_domain=domain, **section_data)
+#             return profile
+
+
+class SourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Source
+        fields = ('source_id', 'name')
+        extra_kwargs = {
+            'name': {
+                'validators': []
+            }, 
+            'source_id': {
+                'validators': []
+            }
+        }
 
 
 class FlowRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Flow Request
+    """
     profile = ProfileSerializer(many=False, allow_null=True)
+    sources = SourceSerializer(many=True, allow_null=False)
 
     def create(self, validated_data):
+        sources = validated_data.pop('sources')
+        logger.debug(sources)
         if validated_data['profile'] is not None:
-            pr, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
-            validated_data['profile'] = pr
-        fr = FlowRequest.objects.create(**validated_data)
-        return fr
+            profile, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
+            validated_data['profile'] = profile
+        logger.debug(validated_data)
+        flow_request = FlowRequest.objects.create(**validated_data)
+
+        for source_data in sources:
+            try:
+                source = Source.objects.get(**source_data)
+            except Source.DoesNotExist:
+                pass
+            else:
+                flow_request.sources.add(source)
+
+        return flow_request
 
     class Meta:
         model = FlowRequest
-        fields = ('flow_id', 'process_id', 'status', 'profile', 'destination', 'start_validity', 'expire_validity')
+        fields = ('flow_id', 'process_id', 'status', 'profile', 'sources', 'destination', 'start_validity', 'expire_validity')
 
 
 class ChannelSerializer(serializers.ModelSerializer):
-
     destination_id = serializers.SerializerMethodField()
     profile = serializers.SerializerMethodField()
+    source = SourceSerializer(allow_null=False)
 
     class Meta:
         model = Channel
-        fields = ('channel_id', 'status','destination_id', 'source_id', 'profile')
+        fields = ('channel_id', 'status', 'destination_id', 'source', 'profile')
 
     @staticmethod
     def get_destination_id(obj):
@@ -54,5 +106,3 @@ class ChannelSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_profile(obj):
         return ProfileSerializer(obj.flow_request.profile).data
-
-

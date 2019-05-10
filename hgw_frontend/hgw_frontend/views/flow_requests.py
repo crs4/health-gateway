@@ -97,21 +97,79 @@ class FlowRequestView(ViewSet):
         serializer = FlowRequestSerializer(flow_requests, many=True)
         return Response(serializer.data, headers={'X-Total-Count': flow_requests.count()})
 
+    def _get_sources_from_backend(self, required_sources=None):
+        """
+        Get sources from the backend. If :param:`required_sources` is specified, 
+        it gets only the sources in the this list.
+
+        :param required_sources: a list of sources to get
+        """
+        logger.info("Getting sources from backend")
+        try:
+            oauth_backend_session = _get_backend_session()
+        except InvalidClientError:
+            logger.error("Invalid oAuth2 client contacting the backend")
+            return []
+        except requests.exceptions.ConnectionError:
+            logger.error("Backend connection error while getting an oAuth2 tokern")
+            return []
+        else:
+            # gets all sources
+            sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
+            # error happened retrieving the sources
+            if sources is None:
+                return []
+            sources = sources.json()
+            logger.info("Found %s sources", len(sources))
+
+            if required_sources is not None:
+                required_sources_id = [s['source_id'] for s in required_sources]
+            res_sources = []
+            for source_data in sources:
+                if required_sources is not None and source_data['source_id'] not in required_sources_id:
+                    # it means the source is not one of the required so we skip it
+                    continue
+                logger.debug("Source data are %s", source_data)
+                source, _ = Source.objects.get_or_create(source_id=source_data['source_id'], name=source_data['name'])
+                logger.debug("Found %s", _)
+                res_sources.append({
+                    'source_id': source.source_id,
+                    'name': source.name
+                })
+            return res_sources
+
     def create(self, request):
         """
         REST function to create a FlowRequest
         """
-        logger.debug(request.scheme)
         if 'flow_id' not in request.data or \
                 xor(('start_validity' not in request.data), ('expire_validity' not in request.data)):
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+
+        # We get the sources. If the client specified a subset it checks if it's correct,
+        # otherwise it gets all the sources from backend
+        logger.info("Received create flow_request request")
+        if 'sources' in request.data:
+            logger.info("Required flow request only for sources %s", request.data['sources'])
+            request_sources = request.data['sources']
+        else:
+            request_sources = None
+        logger.info("Getting sources from backend")
+        sources = self._get_sources_from_backend(request_sources)
+        logger.info("Found %d sources", len(sources))
+
+        if not sources:
+            return Response({'errors': [ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         data = {
             'flow_id': request.data['flow_id'],
             'process_id': get_random_string(32),
             'status': FlowRequest.PENDING,
             'profile': request.data['profile'] if 'profile' in request.data else None,
-            'destination': request.auth.application.destination.pk
+            'destination': request.auth.application.destination.pk,
+            'sources': sources
         }
+
         if 'start_validity' not in request.data and 'expire_validity' not in request.data:
             # Assign default values for the validity range: current datetime + 6 months
             start_datetime = datetime.datetime.now(gettz(TIME_ZONE))
@@ -219,20 +277,7 @@ def _get_consent_session():
 
 def _create_channels(flow_request, destination_endpoint_callback_url, user):
     destination = flow_request.destination
-
-    try:
-        oauth_backend_session = _get_backend_session()
-    except InvalidClientError:
-        logger.error("Invalid oAuth2 client contacting the backend")
-        return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
-    except requests.exceptions.ConnectionError:
-        logger.error("Backend connection error while getting an oAuth2 tokern")
-        return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
-    else:
-        sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
-        if sources is None:
-            return [], ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']
-
+    sources = flow_request.sources.all()
     try:
         oauth_consent_session = _get_consent_session()
     except InvalidClientError:
@@ -244,24 +289,21 @@ def _create_channels(flow_request, destination_endpoint_callback_url, user):
 
     confirm_ids = []
     connection_errors = 0
-    for source_data in sources.json():
-        #TODO: Terrible. This should use its own Sources syncronized from hgwbackend. This is just a temporary solution
-        source = Source.objects.get_or_create(source_id=source_data['source_id'], name=source_data['name'])
-
+    for source in sources:
         channel = Channel.objects.create(channel_id=get_random_string(32), flow_request=flow_request,
-                                         source_id=source_data['source_id'], status=Channel.CONSENT_REQUESTED)
+                                         source=source, status=Channel.CONSENT_REQUESTED)
         channel.save()
 
         consent_data = {
             'source': {
-                'id': source_data['source_id'],
-                'name': source_data['name']
+                'id': source.source_id,
+                'name': source.name
             },
             'destination': {
                 'id': destination.destination_id,
                 'name': destination.name
             },
-            'profile': source_data['profile'],
+            'profile': None,
             'person_id': user.fiscalNumber,
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)

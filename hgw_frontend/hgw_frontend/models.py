@@ -48,6 +48,7 @@ class FlowRequest(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False, default=PENDING)
     person_id = models.CharField(max_length=20, blank=True, null=True)
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=True)
+    sources = models.ManyToManyField(Source)
     destination = models.ForeignKey('Destination')
     start_validity = models.DateTimeField(null=False)
     expire_validity = models.DateTimeField(null=False)
@@ -60,11 +61,6 @@ class FlowRequest(models.Model):
         return self.__unicode__()
 
 
-class FlowRequestSource(models.Model):
-    flow_request = models.ForeignKey(FlowRequest, on_delete=models.CASCADE, null=True)
-    source = models.ForeignKey(Source, on_delete=models.CASCADE, null=True)
-
-
 class Channel(models.Model):
     CONSENT_REQUESTED = 'CR'
     ACTIVE = 'AC'
@@ -75,12 +71,12 @@ class Channel(models.Model):
     )
 
     channel_id = models.CharField(max_length=32, blank=False)
-    flow_request = models.ForeignKey('hgw_frontend.FlowRequest', null=False)
-    source_id = models.CharField(max_length=32, null=False, unique=False)
+    flow_request = models.ForeignKey(FlowRequest, null=False)
+    source = models.ForeignKey(Source, null=False)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
 
     class Meta:
-        unique_together = ('flow_request', 'source_id')
+        unique_together = ('flow_request', 'source')
 
 
 def get_validity():
