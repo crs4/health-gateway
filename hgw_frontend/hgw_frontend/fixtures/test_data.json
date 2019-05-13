@@ -76,22 +76,6 @@
     }
   },
   {
-    "model": "hgw_frontend.source",
-    "pk": 1,
-    "fields": {
-      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-      "name": "source_1"
-    }
-  },
-  {
-    "model": "hgw_frontend.source",
-    "pk": 2,
-    "fields": {
-      "source_id": "TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS",
-      "name": "source_2"
-    }
-  },
-  {
     "model": "hgw_frontend.restclient",
     "pk": 1,
     "fields": {
@@ -163,9 +147,34 @@
     "model": "hgw_common.profile",
     "pk": 1,
     "fields": {
-      "code": "PROF002",
-      "version": "hgw.document.profile.v0",
-      "payload": "[{\"clinical_domain\": \"Laboratory\"}, {\"clinical_domain\": \"Radiology\"}, {\"clinical_domain\": \"Emergency\"}, {\"clinical_domain\": \"Prescription\"}]"
+      "code": "PROF_001",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"}
+  },
+  {
+    "model": "hgw_common.profile",
+    "pk": 2,
+    "fields": {
+      "code": "PROF_002",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Radiology\"}]"}
+  },
+  {
+    "model": "hgw_frontend.source",
+    "pk": 1,
+    "fields": {
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "name": "source_1",
+      "profile": 1      
+    }
+  },
+  {
+    "model": "hgw_frontend.source",
+    "pk": 2,
+    "fields": {
+      "source_id": "TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS",
+      "name": "source_2",
+      "profile": 1
     }
   },
   {

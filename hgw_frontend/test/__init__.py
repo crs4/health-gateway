@@ -46,9 +46,9 @@ SOURCES_DATA = [
         'source_id': SOURCE_2_ID,
         'name': SOURCE_2_NAME,
         'profile': {
-            'code': 'PROF_002',
+            'code': 'PROF_001',
             'version': 'v0',
-            'payload': '[{"clinical_domain": "Radiology"}]'
+            'payload': '[{"clinical_domain": "Laboratory"}]'
         }
     }]
 
@@ -60,12 +60,7 @@ PROFILES_DATA = [
         'sources': [{
             'source_id': SOURCE_1_ID,
             'name': SOURCE_1_NAME
-        }]
-    }, {
-        'code': 'PROF_002',
-        'version': 'v0',
-        'payload': '[{"clinical_domain": "Radiology"}]',
-        'sources': [{
+        }, {
             'source_id': SOURCE_2_ID,
             'name': SOURCE_2_NAME
         }]

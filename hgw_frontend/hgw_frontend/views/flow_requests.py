@@ -43,7 +43,8 @@ from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, Destination, FlowRequest,
                                  Source)
-from hgw_frontend.serializers import ChannelSerializer, FlowRequestSerializer
+from hgw_frontend.serializers import (ChannelSerializer, FlowRequestSerializer,
+                                      SourceSerializer)
 from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    CONSENT_MANAGER_CLIENT_SECRET,
                                    CONSENT_MANAGER_CONFIRMATION_PAGE,
@@ -126,15 +127,21 @@ class FlowRequestView(ViewSet):
                 required_sources_id = [s['source_id'] for s in required_sources]
             res_sources = []
             for source_data in sources:
+                logger.info(source_data['profile'])
                 if required_sources is not None and source_data['source_id'] not in required_sources_id:
                     # it means the source is not one of the required so we skip it
                     continue
                 logger.debug("Source data are %s", source_data)
-                source, _ = Source.objects.get_or_create(source_id=source_data['source_id'], name=source_data['name'])
-                logger.debug("Found %s", _)
+                try:
+                    source = Source.objects.get(source_id=source_data['source_id'])
+                except Source.DoesNotExist:
+                    source_serializer = SourceSerializer(source_id=source_data['source_id'], name=source_data['name'],
+                                                         profile=source_data['profile'])
+                    source = source_serializer.save()
                 res_sources.append({
                     'source_id': source.source_id,
-                    'name': source.name
+                    'name': source.name,
+                    'profile': ProfileSerializer(source.profile).data
                 })
             return res_sources
 
@@ -169,7 +176,6 @@ class FlowRequestView(ViewSet):
             'destination': request.auth.application.destination.pk,
             'sources': sources
         }
-
         if 'start_validity' not in request.data and 'expire_validity' not in request.data:
             # Assign default values for the validity range: current datetime + 6 months
             start_datetime = datetime.datetime.now(gettz(TIME_ZONE))

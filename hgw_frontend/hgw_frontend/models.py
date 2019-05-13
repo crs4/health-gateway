@@ -31,6 +31,8 @@ from hgw_frontend.settings import REQUEST_VALIDITY_SECONDS, DEFAULT_SCOPES
 class Source(models.Model):
     source_id = models.CharField(max_length=32, blank=False, null=False, unique=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
+    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=False)
+
 
 class FlowRequest(models.Model):
     PENDING = 'PE'

@@ -83,13 +83,10 @@ class TestHGWFrontendAPI(TestCase):
 
     def setUp(self):
         self.client = client.Client()
-        payload = '[{"clinical_domain": "Laboratory"}, ' \
-                  '{"clinical_domain": "Radiology"}, ' \
-                  '{"clinical_domain": "Emergency"}, ' \
-                  '{"clinical_domain": "Prescription"}]'
+        payload = '[{"clinical_domain": "Laboratory"}]'
         self.profile = {
-            'code': 'PROF002',
-            'version': 'hgw.document.profile.v0',
+            'code': 'PROF_001',
+            'version': 'v0',
             'payload': payload
         }
         self.flow_request = {
@@ -109,33 +106,35 @@ class TestHGWFrontendAPI(TestCase):
 
         with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_frontend/fixtures/test_data.json'))) as fixtures_file:
             self.fixtures = json.load(fixtures_file)
-
-        self.sources = {obj['pk']: obj['fields'] for obj in self.fixtures
-                        if obj['model'] == 'hgw_frontend.source'}
         
-        self.destinations = {obj['pk']: obj['fields'] for obj in self.fixtures
-                             if obj['model'] == 'hgw_frontend.destination'}
         self.profiles = {obj['pk']: obj['fields'] for obj in self.fixtures
                          if obj['model'] == 'hgw_common.profile'}
+        self.sources = {obj['pk']: {
+                'source_id': obj['fields']['source_id'],
+                'name': obj['fields']['name'],
+                'profile':  self.profiles[obj['fields']['profile']]
+            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
+        self.destinations = {obj['pk']: obj['fields'] for obj in self.fixtures
+                             if obj['model'] == 'hgw_frontend.destination'}
         self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
                               if obj['model'] == 'hgw_frontend.flowrequest'}
         self.channels = {obj['pk']: {
-            'channel_id': obj['fields']['channel_id'],
-            'source': self.sources[obj['fields']['source']],
-            'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
-            'destination_id':
-                self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
-            'status': obj['fields']['status']
-        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
+                'channel_id': obj['fields']['channel_id'],
+                'source': self.sources[obj['fields']['source']],
+                'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+                'destination_id':
+                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
+                'status': obj['fields']['status']
+            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
 
         self.active_flow_request_channels = {obj['pk']: {
-            'channel_id': obj['fields']['channel_id'],
-            'source': self.sources[obj['fields']['source']],
-            'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
-            'destination_id':
-                self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
-            'status': obj['fields']['status']
-        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel' and obj['fields']['flow_request'] == 2}
+                'channel_id': obj['fields']['channel_id'],
+                'source': self.sources[obj['fields']['source']],
+                'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+                'destination_id':
+                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
+                'status': obj['fields']['status']
+            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel' and obj['fields']['flow_request'] == 2}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
@@ -490,6 +489,8 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         expected = [ch_fi for ch_pk, ch_fi in self.channels.items()
                     if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
+        print(res.json())
+        print(expected)
         self.assertEqual(res.json(), expected)
         self.assertEqual(res['X-Total-Count'], str(len(expected)))
 

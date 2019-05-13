@@ -67,6 +67,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('source_id', models.CharField(max_length=32, unique=True)),
                 ('name', models.CharField(max_length=100, unique=True)),
+                ('profile', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='hgw_common.Profile')),
             ],
         ),
         migrations.CreateModel(

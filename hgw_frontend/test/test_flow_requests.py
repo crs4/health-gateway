@@ -34,6 +34,7 @@ from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, Destination, FlowRequest,
                                  RESTClient)
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
+from hgw_frontend.serializers import SourceSerializer
 
 from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, TEST_PERSON1_ID,
                WRONG_CONFIRM_ID, PROFILES_DATA, SOURCES_DATA, DEST_1_ID, DEST_1_NAME,
@@ -54,6 +55,7 @@ HGW_BACKEND_URI = 'http://localhost:{}'.format(HGW_BACKEND_PORT)
 logger = logging.getLogger('hgw_frontend')
 logger.setLevel(logging.DEBUG)
 
+
 class TestFlowRequestAPI(TestCase):
     fixtures = ['test_data.json']
 
@@ -65,13 +67,10 @@ class TestFlowRequestAPI(TestCase):
 
     def setUp(self):
         self.client = client.Client()
-        payload = '[{"clinical_domain": "Laboratory"}, ' \
-                  '{"clinical_domain": "Radiology"}, ' \
-                  '{"clinical_domain": "Emergency"}, ' \
-                  '{"clinical_domain": "Prescription"}]'
+        payload = '[{"clinical_domain": "Laboratory"}]'
         self.profile = {
-            'code': 'PROF002',
-            'version': 'hgw.document.profile.v0',
+            'code': 'PROF_001',
+            'version': 'v0',
             'payload': payload
         }
         self.flow_request = {
@@ -86,10 +85,6 @@ class TestFlowRequestAPI(TestCase):
                 'source_id': SOURCE_1_ID
             }]
         })
-        self.sources_data = [{
-            'source_id': s['source_id'],
-            'name': s['name']
-        } for s in SOURCES_DATA]
 
         self.encrypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
 
@@ -102,23 +97,11 @@ class TestFlowRequestAPI(TestCase):
                          if obj['model'] == 'hgw_common.profile'}
         self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
                               if obj['model'] == 'hgw_frontend.flowrequest'}
-        self.channels = {obj['pk']: {
-            'channel_id': obj['fields']['channel_id'],
-            'source': obj['fields']['source'],
-            'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
-            'destination_id':
-                self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
-            'status': obj['fields']['status']
-        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
-
-        self.active_flow_request_channels = {obj['pk']: {
-            'channel_id': obj['fields']['channel_id'],
-            'source': obj['fields']['source'],
-            'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
-            'destination_id':
-                self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
-            'status': obj['fields']['status']
-        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel' and obj['fields']['flow_request'] == 2}
+        self.sources = {obj['pk']: {
+                'source_id': obj['fields']['source_id'],
+                'name': obj['fields']['name'],
+                'profile':  self.profiles[obj['fields']['profile']]
+            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
@@ -186,24 +169,28 @@ class TestFlowRequestAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/flow_requests/p_11111/', **headers)
         self.assertEqual(res.status_code, 200)
-        expected = {'flow_id': 'f_11111',
-                    'process_id': 'p_11111',
-                    'status': 'PE',
-                    'profile': {
-                        'code': 'PROF002',
-                        'version': 'hgw.document.profile.v0',  
-                        'payload': '[{"clinical_domain": "Laboratory"}, {"clinical_domain": "Radiology"}, {"clinical_domain": "Emergency"}, {"clinical_domain": "Prescription"}]'
-                    },
-                    'sources': [{
-                        'source_id': SOURCE_1_ID,
-                        'name': SOURCE_1_NAME
-                    }, {
-                        'source_id': SOURCE_2_ID,
-                        'name': SOURCE_2_NAME
-                    }],
-                    'start_validity': '2017-10-23T10:00:00+02:00',
-                    'expire_validity': '2018-10-23T10:00:00+02:00'
-                    }
+        profile = {
+            'code': 'PROF_001',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Laboratory"}]'
+        }
+        expected = {
+            'flow_id': 'f_11111',
+            'process_id': 'p_11111',
+            'status': 'PE',
+            'profile': profile,
+            'sources': [{
+                'source_id': SOURCE_1_ID,
+                'name': SOURCE_1_NAME,
+                'profile': profile
+            }, {
+                'source_id': SOURCE_2_ID,
+                'name': SOURCE_2_NAME,
+                'profile': profile
+            }],
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
+        }
         self.assertDictEqual(res.json(), expected)
 
     def test_get_all_flow_requests_as_super_client(self):
@@ -223,25 +210,28 @@ class TestFlowRequestAPI(TestCase):
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/p_11111/', **headers)
         self.assertEqual(res.status_code, 200)
-        expected = {'flow_id': 'f_11111',
-                    'process_id': 'p_11111',
-                    'status': 'PE',
-                    'profile': {
-                        'code': 'PROF002',
-                        'version': 'hgw.document.profile.v0',
-                        'payload': '[{"clinical_domain": "Laboratory"}, {"clinical_domain": "Radiology"}, {"clinical_domain": "Emergency"}, {"clinical_domain": "Prescription"}]'
-                    },
-                    'sources': [{
-                        'source_id': SOURCE_1_ID,
-                        'name': SOURCE_1_NAME
-                    }, {
-                        'source_id': SOURCE_2_ID,
-                        'name': SOURCE_2_NAME
-                    }],
-                    'start_validity': '2017-10-23T10:00:00+02:00',
-                    'expire_validity': '2018-10-23T10:00:00+02:00'
-                    }
-        print(res.json())
+        profile = {
+            'code': 'PROF_001',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Laboratory"}]'
+        }
+        expected = {
+            'flow_id': 'f_11111',
+            'process_id': 'p_11111',
+            'status': 'PE',
+            'profile': profile,
+            'sources': [{
+                'source_id': SOURCE_1_ID,
+                'name': SOURCE_1_NAME,
+                'profile': profile
+            }, {
+                'source_id': SOURCE_2_ID,
+                'name': SOURCE_2_NAME,
+                'profile': profile
+            }],
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00'
+        }
         self.assertDictEqual(res.json(), expected)
 
     def test_not_owned_flow_request(self):
@@ -257,7 +247,7 @@ class TestFlowRequestAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_request_with_no_sources(self):
         """
-        Tests adding a flow request without specifying the sources. 
+        Tests adding a flow request without specifying the sources.
         It tests that the request is added but its status is set to PENDING. It also tests
         that the Sources are all the Sources in the db
         """
@@ -272,9 +262,9 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
         sources = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.all()
-        for source in sources:
-            self.assertIn({'source_id': source.source_id, 'name': source.name}, self.sources_data)
-    
+        serializer = SourceSerializer(sources, many=True)
+        self.assertEqual(serializer.data, [s for pk, s in self.sources.items()])
+        
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_request_with_sources(self):
         """
@@ -301,7 +291,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.count(), 1)
         source = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.first()
         self.assertDictEqual(
-            {'source_id': source.source_id, 'name': source.name}, 
+            {'source_id': source.source_id, 'name': source.name},
             {'source_id': SOURCE_1_ID, 'name': SOURCE_1_NAME}
         )
 
@@ -380,7 +370,7 @@ class TestFlowRequestAPI(TestCase):
         """
         Tests that, if a connection error occurs getting the sources from the backend, 
         the request to confirm fails and the client is redirected to the callback url with an error parameter
-        """        
+        """
         # Inserts a fake access token to skip the request of a new token and the first request will be GET /v1/sources
         AccessToken.objects.create(token_url='https://localhost/oauth2/token/',
                                    access_token='C3wxJNSLfeLIwHGwnWiIbZPHLTT9a8',
@@ -423,8 +413,8 @@ class TestFlowRequestAPI(TestCase):
         """
         # We change the profile of the original flow request. Notice that in test data there is already a flow request
         profile = {
-            'code': 'PROF002',
-            'version': 'hgw.document.profile.v0',
+            'code': 'PROF_002',
+            'version': 'v0',
             'payload': '[{"clinical_domain": "Laboratory"}]'
         }
         flow_request = {
@@ -433,7 +423,7 @@ class TestFlowRequestAPI(TestCase):
             'start_validity': '2017-10-23T10:00:00+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
         }
-        
+
         res = self._add_flow_request(flow_request=flow_request)
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json(), ERRORS_MESSAGE['INVALID_DATA'])
@@ -486,7 +476,7 @@ class TestFlowRequestAPI(TestCase):
             'process_id': '22222',
             'status': FlowRequest.ACTIVE
         })
-        
+
         res = self._add_flow_request(flow_request=flow_request)
         self.assertEqual(res.status_code, 201)
         res_flow_request = res.json()
@@ -515,7 +505,7 @@ class TestFlowRequestAPI(TestCase):
         res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=add'.format(
             confirm_id, callback_url))
         self.assertRedirects(res, "{}?process_id={}&success=false&error={}".format(callback_url, process_id,
-                                                                                   ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']), 
+                                                                                   ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']),
                              fetch_redirect_response=False)
 
     def test_confirm_redirect(self):
@@ -771,7 +761,7 @@ class TestFlowRequestAPI(TestCase):
 
         channels = Channel.objects.filter(flow_request=flow_request)
         for channel in channels:
-            self.assertIn(channel.source.source_id, [s['source_id'] for s in self.sources_data])
+            self.assertIn(channel.source.source_id, [s['source_id'] for pk, s in self.sources.items()])
             self.assertIn(channel.status, Channel.CONSENT_REQUESTED)
 
         consent_confirm_ids = [c.confirmation_id for c in list(ConsentConfirmation.objects.all())[-2:]]

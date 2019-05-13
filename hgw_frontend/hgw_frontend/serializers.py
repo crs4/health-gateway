@@ -25,34 +25,25 @@ from hgw_frontend.models import Channel, FlowRequest, Source
 
 logger = get_logger("hgw_frontend")
 
-# class ProfileSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer for Profile model
-#     """
-
-#     domains = ProfileDomainSerializer(many=True, allow_null=False)
-
-#     def create(self, validated_data):
-#         domains_data = validated_data.pop('domains')
-#         profile = Profile.objects.create(**validated_data)
-#         if profile is not None:
-#             for domain_data in domains_data:
-#                 sections_data = domain_data.pop('sections')
-#                 domain = ProfileDomain.objects.create(profile=profile, **domain_data)
-#                 if domain:
-#                     for section_data in sections_data:
-#                         ProfileSection.objects.create(profile_domain=domain, **section_data)
-#             return profile
-
 
 class SourceSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(many=False, allow_null=False)
+
+    def create(self, validated_data):
+        if validated_data['profile'] is not None:
+            profile, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
+            validated_data['profile'] = profile
+
+        source = Source.objects.create(**validated_data)
+        return source
+
     class Meta:
         model = Source
-        fields = ('source_id', 'name')
+        fields = ('source_id', 'name', 'profile')
         extra_kwargs = {
             'name': {
                 'validators': []
-            }, 
+            },
             'source_id': {
                 'validators': []
             }
@@ -72,12 +63,11 @@ class FlowRequestSerializer(serializers.ModelSerializer):
         if validated_data['profile'] is not None:
             profile, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
             validated_data['profile'] = profile
-        logger.debug(validated_data)
         flow_request = FlowRequest.objects.create(**validated_data)
 
         for source_data in sources:
             try:
-                source = Source.objects.get(**source_data)
+                source = Source.objects.get(source_id=source_data['source_id'])
             except Source.DoesNotExist:
                 pass
             else:
