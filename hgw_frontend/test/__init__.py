@@ -29,3 +29,57 @@ WRONG_CONFIRM_ID = 'wrong_confirmed'
 WRONG_CONFIRM_ID2 = 'wrong_confirmed2'
 TEST_PERSON1_ID = '100001'
 TEST_PERSON2_ID = '100002'
+
+SOURCE_1_ID = 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT'
+SOURCE_2_ID = 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS'
+SOURCE_1_NAME = 'source_1'
+SOURCE_2_NAME = 'source_2'
+SOURCES_DATA = [
+    {
+        'source_id': SOURCE_1_ID,
+        'name': SOURCE_1_NAME,
+        'profile': {
+            'code': 'PROF_001',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Laboratory"}]'}
+    }, {
+        'source_id': SOURCE_2_ID,
+        'name': SOURCE_2_NAME,
+        'profile': {
+            'code': 'PROF_001',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Laboratory"}]'
+        }
+    }]
+
+PROFILES_DATA = [
+    {
+        'code': 'PROF_001',
+        'version': 'v0',
+        'payload': '[{"clinical_domain": "Laboratory"}]',
+        'sources': [{
+            'source_id': SOURCE_1_ID,
+            'name': SOURCE_1_NAME
+        }, {
+            'source_id': SOURCE_2_ID,
+            'name': SOURCE_2_NAME
+        }]
+    }
+]
+
+DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
+                  'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n' \
+                  '8IYqrPIlQyz1/xljqDD162ZAYJLCYeCfs9yczcazC8keWzGd5/tn4TF6II0oINKh\n' \
+                  'kCYLqTIVkVGC7/tgH5UEe/XG1trRZfMqwl1hEvZV+/zanV0cl7IjTR9ajb1TwwQY\n' \
+                  'MOjcaaBZj+xfD884pwogWkcSGTEODGfoVACHjEXHs+oVriHqs4iggiiMYbO7TBjg\n' \
+                  'Be9p7ZDHSVBbXtQ3XuGKnxs9MTLIh5L9jxSRb9CgAtv8ubhzs2vpnHrRVkRoddrk\n' \
+                  '8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\n' \
+                  'XQIDAQAB\n' \
+                  '-----END PUBLIC KEY-----'
+
+DEST_1_NAME = 'Destination 1'
+DEST_1_ID = 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'
+DEST_2_NAME = 'Destination 2'
+DEST_2_ID = '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3'
+DISPATCHER_NAME = 'Health Gateway Dispatcher'
+POWERLESS_NAME = 'Powerless Client'

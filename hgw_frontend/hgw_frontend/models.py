@@ -28,6 +28,12 @@ from hgw_common.utils import generate_id
 from hgw_frontend.settings import REQUEST_VALIDITY_SECONDS, DEFAULT_SCOPES
 
 
+class Source(models.Model):
+    source_id = models.CharField(max_length=32, blank=False, null=False, unique=True)
+    name = models.CharField(max_length=100, blank=False, null=False, unique=True)
+    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=False)
+
+
 class FlowRequest(models.Model):
     PENDING = 'PE'
     ACTIVE = 'AC'
@@ -44,6 +50,7 @@ class FlowRequest(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False, default=PENDING)
     person_id = models.CharField(max_length=20, blank=True, null=True)
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=True)
+    sources = models.ManyToManyField(Source)
     destination = models.ForeignKey('Destination')
     start_validity = models.DateTimeField(null=False)
     expire_validity = models.DateTimeField(null=False)
@@ -66,12 +73,13 @@ class Channel(models.Model):
     )
 
     channel_id = models.CharField(max_length=32, blank=False)
-    flow_request = models.ForeignKey('hgw_frontend.FlowRequest', null=False)
-    source_id = models.CharField(max_length=32, null=False, unique=False)
+    flow_request = models.ForeignKey(FlowRequest, null=False)
+    source = models.ForeignKey(Source, null=False)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
-   
+
     class Meta:
-        unique_together = ('flow_request', 'source_id')
+        unique_together = ('flow_request', 'source')
+
 
 def get_validity():
     return timezone.now() + timedelta(seconds=REQUEST_VALIDITY_SECONDS)

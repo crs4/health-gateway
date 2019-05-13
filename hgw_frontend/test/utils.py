@@ -26,46 +26,8 @@ from hgw_frontend.models import FlowRequest
 from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_ID
 
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
-    TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2
-
-SOURCES_DATA = [
-    {
-        'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
-        'name': 'source_1',
-        'profile': {
-            'code': 'PROF_001',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Laboratory"}]'}
-    }, {
-        'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS',
-        'name': 'source_2',
-        'profile': {
-            'code': 'PROF_002',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Radiology"}]'
-        }
-    }]
-
-PROFILES_DATA = [
-    {
-        'code': 'PROF_001',
-        'version': 'v0',
-        'payload': '[{"clinical_domain": "Laboratory"}]',
-        'sources': [{
-            'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
-            'name': 'source_1'
-        }]
-    }, {
-        'code': 'PROF_002',
-        'version': 'v0',
-        'payload': '[{"clinical_domain": "Radiology"}]',
-        'sources': [{
-            'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS',
-            'name': 'source_2'
-        }]
-    }
-]
-
+    TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2, \
+    SOURCES_DATA, PROFILES_DATA
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
     """

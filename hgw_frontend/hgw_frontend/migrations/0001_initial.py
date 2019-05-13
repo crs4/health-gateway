@@ -62,6 +62,15 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='Source',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('source_id', models.CharField(max_length=32, unique=True)),
+                ('name', models.CharField(max_length=100, unique=True)),
+                ('profile', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='hgw_common.Profile')),
+            ],
+        ),
+        migrations.CreateModel(
             name='FlowRequest',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -72,6 +81,7 @@ class Migration(migrations.Migration):
                 ('start_validity', models.DateTimeField()),
                 ('expire_validity', models.DateTimeField()),
                 ('destination', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='hgw_frontend.Destination')),
+                ('sources', models.ManyToManyField(to='hgw_frontend.Source')),
                 ('profile', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='hgw_common.Profile')),
             ],
         ),
@@ -80,7 +90,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('channel_id', models.CharField(max_length=32)),
-                ('source_id', models.CharField(max_length=32)),
+                ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='hgw_frontend.Source')),
                 ('status', models.CharField(choices=[('CR', 'CONSENT_REQUESTED'), ('AC', 'ACTIVE')], max_length=2)),
                 ('flow_request', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='hgw_frontend.FlowRequest')),
             ],
@@ -127,6 +137,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='channel',
-            unique_together=set([('flow_request', 'source_id')]),
+            unique_together=set([('flow_request', 'source')]),
         ),
     ]
