@@ -281,7 +281,7 @@ def _get_consent_session():
                               CONSENT_MANAGER_CLIENT_SECRET)
 
 
-def _create_channels(flow_request, destination_endpoint_callback_url, user):
+def _create_consents(flow_request, destination_endpoint_callback_url, user):
     destination = flow_request.destination
     sources = flow_request.sources.all()
     try:
@@ -361,7 +361,7 @@ def _get_callback_url(request):
 
 
 def _ask_consent(request, flow_request, destination_callback_url):
-    consents, error = _create_channels(flow_request, destination_callback_url, request.user)
+    consents, error = _create_consents(flow_request, destination_callback_url, request.user)
 
     if error:
         return HttpResponseRedirect('{}?process_id={}&success={}&error={}'.format(
