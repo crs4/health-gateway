@@ -20,13 +20,13 @@ cd ${DIR}
 docker build -t crs4/kafka:latest ${DIR}/kafka
 docker tag crs4/kafka:latest crs4/kafka:$VERSION
 
-# Create Spid images
-docker build -t crs4/spid-testenv-identityserver:latest ${DIR}/spid_testenv_identityserver
-docker build -t crs4/spid-testenv-backoffice:latest ${DIR}/spid_testenv_backoffice
+# # Create Spid images
+# docker build -t crs4/spid-testenv-identityserver:latest ${DIR}/spid_testenv_identityserver
+# docker build -t crs4/spid-testenv-backoffice:latest ${DIR}/spid_testenv_backoffice
 
-# Create TS/CNS image
-docker build -t crs4/tscns:latest ${DIR}/tscns
-docker tag crs4/tscns:latest crs4/tscns:$VERSION
+# # Create TS/CNS image
+# docker build -t crs4/tscns:latest ${DIR}/tscns
+# docker tag crs4/tscns:latest crs4/tscns:$VERSION
 
 # Create base image
 docker build -t crs4/hgw_base:latest ${DIR}/base

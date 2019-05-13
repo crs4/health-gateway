@@ -489,8 +489,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         expected = [ch_fi for ch_pk, ch_fi in self.channels.items()
                     if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
-        print(res.json())
-        print(expected)
         self.assertEqual(res.json(), expected)
         self.assertEqual(res['X-Total-Count'], str(len(expected)))
 

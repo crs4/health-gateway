@@ -68,6 +68,7 @@ class TestFlowRequestAPI(TestCase):
     def setUp(self):
         self.client = client.Client()
         payload = '[{"clinical_domain": "Laboratory"}]'
+
         self.profile = {
             'code': 'PROF_001',
             'version': 'v0',
@@ -77,14 +78,13 @@ class TestFlowRequestAPI(TestCase):
             'flow_id': 'f_44444',
             'profile': self.profile,
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00'
-        }
-        self.flow_request_with_sources = self.flow_request.copy()
-        self.flow_request_with_sources.update({
+            'expire_validity': '2018-10-23T10:00:00+02:00',
             'sources': [{
                 'source_id': SOURCE_1_ID
             }]
-        })
+        }
+        self.flow_request_without_sources = self.flow_request.copy()
+        del self.flow_request_without_sources['sources']
 
         self.encrypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
 
@@ -183,10 +183,6 @@ class TestFlowRequestAPI(TestCase):
                 'source_id': SOURCE_1_ID,
                 'name': SOURCE_1_NAME,
                 'profile': profile
-            }, {
-                'source_id': SOURCE_2_ID,
-                'name': SOURCE_2_NAME,
-                'profile': profile
             }],
             'start_validity': '2017-10-23T10:00:00+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
@@ -224,10 +220,6 @@ class TestFlowRequestAPI(TestCase):
                 'source_id': SOURCE_1_ID,
                 'name': SOURCE_1_NAME,
                 'profile': profile
-            }, {
-                'source_id': SOURCE_2_ID,
-                'name': SOURCE_2_NAME,
-                'profile': profile
             }],
             'start_validity': '2017-10-23T10:00:00+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
@@ -249,9 +241,11 @@ class TestFlowRequestAPI(TestCase):
         """
         Tests adding a flow request without specifying the sources.
         It tests that the request is added but its status is set to PENDING. It also tests
-        that the Sources are all the Sources in the db
+        that the Sources are all the Sources in the db.
+        NB: Note that it is testing also the case when the source returned from the backend
+        is not present in the frontend db.
         """
-        res = self._add_flow_request(flow_request=self.flow_request)
+        res = self._add_flow_request(flow_request=self.flow_request_without_sources)
         self.assertEqual(res.status_code, 201)
         flow_request = res.json()
         destination = Destination.objects.get(name='Destination 1')
@@ -262,8 +256,13 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
         sources = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.all()
+        backend_sources = [{
+            'source_id': source['source_id'],
+            'name': source['name'],
+            'profile': source['profile']
+        } for source in SOURCES_DATA]
         serializer = SourceSerializer(sources, many=True)
-        self.assertEqual(serializer.data, [s for pk, s in self.sources.items()])
+        self.assertEqual(serializer.data, backend_sources)
         
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_request_with_sources(self):
@@ -272,13 +271,7 @@ class TestFlowRequestAPI(TestCase):
         It tests that the request is added but its status is set to PENDING. It also tests
         that the Sources are all the Sources in the db
         """
-        flow_request_data = self.flow_request.copy()
-        flow_request_data.update({
-            'sources': [{
-                'source_id': SOURCE_1_ID
-            }]
-        })
-        res = self._add_flow_request(flow_request=flow_request_data)
+        res = self._add_flow_request(flow_request=self.flow_request)
         self.assertEqual(res.status_code, 201)
         flow_request = res.json()
         destination = Destination.objects.get(name='Destination 1')
@@ -755,7 +748,7 @@ class TestFlowRequestAPI(TestCase):
             confirm_id, callback_url))
 
         self.assertEqual(res.status_code, 302)
-        self.assertEqual(ConsentConfirmation.objects.count(), previous_consent_confirmation_count + 2)
+        self.assertEqual(ConsentConfirmation.objects.count(), previous_consent_confirmation_count + 1)
         flow_request = ConfirmationCode.objects.get(code=confirm_id).flow_request
         self.assertEqual(flow_request.person_id, '100001')
 
@@ -764,10 +757,10 @@ class TestFlowRequestAPI(TestCase):
             self.assertIn(channel.source.source_id, [s['source_id'] for pk, s in self.sources.items()])
             self.assertIn(channel.status, Channel.CONSENT_REQUESTED)
 
-        consent_confirm_ids = [c.confirmation_id for c in list(ConsentConfirmation.objects.all())[-2:]]
+        consent_confirm_id = ConsentConfirmation.objects.last().confirmation_id
         consent_callback_url = 'https://testserver/v1/flow_requests/consents_confirmed/'
-        self.assertRedirects(res, '{}?confirm_id={}&confirm_id={}&callback_url={}'.
-                             format(CONSENT_MANAGER_CONFIRMATION_PAGE, consent_confirm_ids[0], consent_confirm_ids[1],
+        self.assertRedirects(res, '{}?confirm_id={}&callback_url={}'.
+                             format(CONSENT_MANAGER_CONFIRMATION_PAGE, consent_confirm_id,
                                     consent_callback_url),
                              fetch_redirect_response=False)
 

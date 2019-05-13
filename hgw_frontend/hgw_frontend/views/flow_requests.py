@@ -135,9 +135,14 @@ class FlowRequestView(ViewSet):
                 try:
                     source = Source.objects.get(source_id=source_data['source_id'])
                 except Source.DoesNotExist:
-                    source_serializer = SourceSerializer(source_id=source_data['source_id'], name=source_data['name'],
-                                                         profile=source_data['profile'])
-                    source = source_serializer.save()
+                    data = {
+                        'source_id': source_data['source_id'], 
+                        'name': source_data['name'],
+                        'profile': source_data['profile']
+                    } 
+                    source_serializer = SourceSerializer(data=data)
+                    if source_serializer.is_valid():
+                        source = source_serializer.save()
                 res_sources.append({
                     'source_id': source.source_id,
                     'name': source.name,

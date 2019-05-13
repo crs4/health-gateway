@@ -32,8 +32,10 @@ TEST_PERSON2_ID = '100002'
 
 SOURCE_1_ID = 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT'
 SOURCE_2_ID = 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS'
+SOURCE_3_ID = 'AtLVwAIYrl2dx2WRcg6ZnufD1rsBO9eB'
 SOURCE_1_NAME = 'source_1'
 SOURCE_2_NAME = 'source_2'
+SOURCE_3_NAME = 'source_3'
 SOURCES_DATA = [
     {
         'source_id': SOURCE_1_ID,
@@ -49,6 +51,14 @@ SOURCES_DATA = [
             'code': 'PROF_001',
             'version': 'v0',
             'payload': '[{"clinical_domain": "Laboratory"}]'
+        }
+    }, {
+        'source_id': SOURCE_3_ID,
+        'name': SOURCE_3_NAME,
+        'profile': {
+            'code': 'PROF_002',
+            'version': 'v0',
+            'payload': '[{"clinical_domain": "Radiology"}]'
         }
     }]
 
