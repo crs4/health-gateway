@@ -314,12 +314,12 @@ def _create_consents(flow_request, destination_endpoint_callback_url, user):
                 'id': destination.destination_id,
                 'name': destination.name
             },
-            'profile': None,
+            'profile': ProfileSerializer(source.profile).data,
             'person_id': user.fiscalNumber,
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
-
+        logger.info("Creating consent with data %s", consent_data)
         res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
         if res is not None:
             json_res = res.json()
