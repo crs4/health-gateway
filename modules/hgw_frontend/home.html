@@ -339,6 +339,9 @@ until the user confirms it. The client will receive a json object with a <code c
 <tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><strong>flow_id</strong> (<em>string</em>) – the flow id that identifies the request for the client. The Health Gateway creates a corresponding
 id called <code class="docutils literal notranslate"><span class="pre">process_id</span></code></li>
+<li><strong>sources</strong> (<em>list</em>) – <strong>(optional)</strong> - a list of sources which is a subset of the available ones.
+If specified, the HGW will create channels only for these sources. Every item is an object with the
+field :source_id: specified</li>
 <li><strong>profile</strong> (<em>object</em>) – <strong>(optional)</strong> - the profile of the flow_request, indicating the medical specialty required</li>
 <li><strong>start_validity</strong> (<em>datetime</em>) – <strong>(optional)</strong> the start datetime of validity of the flow request. It is the lower datetime
 of the clinical documents of the person that the destination wants to be sent. It can be changed by the person during the
@@ -379,7 +382,7 @@ be used in subsequent process</li>
 </tr>
 </tbody>
 </table>
-<p><strong>Request Example</strong></p>
+<p><strong>Request Examples</strong></p>
 <div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/v1/flow_requests/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
 <span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
@@ -392,6 +395,20 @@ be used in subsequent process</li>
         <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
     <span class="p">},</span>
     <span class="nt">&quot;start_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T10:00:00&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;expire_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T18:00:00&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/v1/flow_requests/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">{</span>
+    <span class="nt">&quot;flow_id&quot;</span><span class="p">:</span> <span class="s2">&quot;dq39rXdscfNiZuhVSAnHG3H65pnI44a6&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;sources&quot;</span><span class="p">:</span> <span class="p">[{</span>
+        <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span>
+    <span class="p">}]</span>
+    <span class="s2">&quot;start_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T10:00:00&quot;</span><span class="p">,</span>
     <span class="nt">&quot;expire_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T18:00:00&quot;</span>
 <span class="p">}</span>
 </pre></div>
@@ -494,12 +511,171 @@ errors. Possible errors’ values are:</p>
         <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
         <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
     <span class="p">},</span>
+    <span class="nt">&quot;sources&quot;</span><span class="p">:</span> <span class="p">[{</span>
+        <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+        <span class="p">},</span>
+    <span class="p">}],</span>
     <span class="nt">&quot;start_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2017-10-23T10:00:00+02:00&quot;</span><span class="p">,</span>
     <span class="nt">&quot;expire_validity&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-10-23T10:00:00+02:00&quot;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-flow_requests-(str- process_id)-channels-">
+<code class="descname">GET </code><code class="descname">/v1/flow_requests/(str: process_id)/channels/</code><a class="headerlink" href="#get--v1-flow_requests-(str- process_id)-channels-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the channels associated to a specific Flow Request, identified by the <cite>process_id</cite>.
+It is possible to filter by status of the channels using the query parameter <cite>status</cite>. If something
+wrong happens. it returns a json with specified an error status. Possible error values are:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code> in case of 401 and 403</li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code> in case of 404</li>
+</ul>
+<p><strong>N.B. The client needs an OAut2 token with the flow_request:read scope to perform this action</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>process_id</strong> – the process id of the flow request. It is the one returned in creation phase</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>status</strong> – filter channels by status. The status must be AC (ACTIVE) or CR (CONSENT_REQUESTED)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - the flow request was found and returned</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – Bad Request - the status query parameter has an invalid value</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the oauth2 token is invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the oauth2 token is missing</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - the flow request has not been found</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>channel_id</strong> (<em>string</em>) – the id of the flow request generated by the destination when creating the flow request</li>
+<li><strong>destination_id</strong> (<em>string</em>) – the id of the flow request generated by the Health Gateway when creating the flow request</li>
+<li><strong>status</strong> (<em>string</em>) – the status of the flow request. It can assume the values
+* CR: CONSENT_REQUESTED. The consent for the channels has been requested but not confirmed yet by the user
+* AC: ACTIVE. The channel is active</li>
+<li><strong>source</strong> (<em>obj</em>) – a json object representing the source endpoint of the channel</li>
+<li><strong>profile</strong> (<em>obj</em>) – a json object representing the profile of the channel</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Request Examples</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/flow_requests/12345/channels/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/flow_requests/12345/channels/?status=AC</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;zcRVwZjoYJsRivaFq4xOdpEi4r8Hy7Gw&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;destination_id&quot;</span><span class="p">:</span> <span class="s2">&quot;zb2WTuyHyK7I1QGngt1Y7I4YnVMBRZ8Y&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;JyUUH5Av20HI18ty81aTKHoaH26nQYuk&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;CR&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;destination_id&quot;</span><span class="p">:</span> <span class="s2">&quot;zb2WTuyHyK7I1QGngt1Y7I4YnVMBRZ8Y&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">400</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;invalid_query_params&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 <div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
 <span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
 <span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
@@ -538,6 +714,151 @@ errors. Possible errors’ values are:</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-channels-">
+<code class="descname">GET </code><code class="descname">/v1/channels/</code><a class="headerlink" href="#get--v1-channels-" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the all the channels for a destination. The destination is implicit in the OAuth2 token.
+It is possible to filter by status of the channels using the query parameter <cite>status</cite>. If something
+wrong happens. it returns a json with specified an error status. Possible error values are:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">not_authenticated</span></code> in case of 401 and 403</li>
+<li><code class="docutils literal notranslate"><span class="pre">not_found</span></code> in case of 404</li>
+</ul>
+<p><strong>N.B. The client needs an OAut2 token with the flow_request:read scope to perform this action</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>process_id</strong> – the process id of the flow request. It is the one returned in creation phase</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Query Parameters:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><strong>status</strong> – filter channels by status. The status must be AC (ACTIVE) or CR (CONSENT_REQUESTED)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7235#section-4.2">Authorization</a> – Bearer &lt;oauth_2_access_token&gt;</li>
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://tools.ietf.org/html/rfc7231#section-3.1.1.5">Content-Type</a> – application/json</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – OK - the flow request was found and returned</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> – Bad Request - the status query parameter has an invalid value</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> – Unauthorized - the oauth2 token is invalid or expired</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4">403 Forbidden</a> – Forbidden - the oauth2 token is missing</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> – Not Found - the flow request has not been found</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first last simple">
+<li><strong>channel_id</strong> (<em>string</em>) – the id of the flow request generated by the destination when creating the flow request</li>
+<li><strong>destination_id</strong> (<em>string</em>) – the id of the flow request generated by the Health Gateway when creating the flow request</li>
+<li><strong>status</strong> (<em>string</em>) – the status of the flow request. It can assume the values
+* CR: CONSENT_REQUESTED. The consent for the channels has been requested but not confirmed yet by the user
+* AC: ACTIVE. The channel is active</li>
+<li><strong>source</strong> (<em>obj</em>) – a json object representing the source endpoint of the channel</li>
+<li><strong>profile</strong> (<em>obj</em>) – a json object representing the profile of the channel</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Request Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">GET</span> <span class="nn">/v1/flow_requests/12345/channels/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Accept</span><span class="o">:</span> <span class="l">application/json</span>
+</pre></div>
+</div>
+<p><strong>Success Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">201</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;zcRVwZjoYJsRivaFq4xOdpEi4r8Hy7Gw&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;destination_id&quot;</span><span class="p">:</span> <span class="s2">&quot;zb2WTuyHyK7I1QGngt1Y7I4YnVMBRZ8Y&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+        <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;JyUUH5Av20HI18ty81aTKHoaH26nQYuk&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;CR&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;destination_id&quot;</span><span class="p">:</span> <span class="s2">&quot;zb2WTuyHyK7I1QGngt1Y7I4YnVMBRZ8Y&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>Error Response Example</strong></p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">400</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;invalid_query_params&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">401</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_authenticated&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">404</span> <span class="ne">OK</span>
+<span class="na">Vary</span><span class="o">:</span> <span class="l">Authorization</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+
+<span class="p">[{</span>
+    <span class="nt">&quot;errors&quot;</span><span class="p">:</span> <span class="s2">&quot;not_found&quot;</span>
+<span class="p">}]</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="get">
@@ -855,7 +1176,7 @@ If something wrong happens it returns a json response with the list of possible 
     <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
     <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
         <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
     <span class="p">}</span>
 <span class="p">}]</span>
@@ -940,7 +1261,7 @@ If something wrong happens it returns a json response with the listi of possible
     <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SOURCE_ENDPOINT&quot;</span><span class="p">,</span>
     <span class="nt">&quot;profile&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="nt">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;PROF_001&quot;</span><span class="p">,</span>
-        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v0&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1.0.0&quot;</span><span class="p">,</span>
         <span class="nt">&quot;payload&quot;</span><span class="p">:</span> <span class="s2">&quot;[{\&quot;clinical_domain\&quot;: \&quot;Laboratory\&quot;}]&quot;</span>
     <span class="p">}</span>
 <span class="p">}</span>
