@@ -500,7 +500,7 @@ API Methods
             "errors": "not_found"
         }]
 
-.. http:get:: /v1/messages/(int: message_id})
+.. http:get:: /v1/messages/(int: message_id)
 
     Gets messages for a specific Destination. If everything is correct it return the message, if
     something wrong happens it returns a json response with the list of possible errors. They can be:
