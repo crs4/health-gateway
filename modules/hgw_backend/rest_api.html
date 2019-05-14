@@ -93,7 +93,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../hgw_frontend/home.html">HGW Frontend</a></li>
 <li class="toctree-l1"><a class="reference internal" href="home.html">HGW Backend</a></li>
-<li class="toctree-l1"><a class="reference internal" href="home.html#enrolling-a-source">Enrolling a Source</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../consent_manager/home.html">Consent Manager</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../issues.html">Issues</a></li>
 </ul>
@@ -347,11 +346,11 @@ the client needs a token with <cite>messages:write</cite> scope</p>
 </table>
 <p><strong>Request Example</strong></p>
 <blockquote>
-<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span>POST /v1/messages/ HTTP/1.1
-Authorization Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA
-Content-Type: multipart/form-data
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/v1/messages/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">multipart/form-data</span>
 
-channel_id: channel_id,
+channel_id: channel_id
 payload: \xdf\xbb \x02\x10\xbd\x91\xc0g\xb9\xba\xdd2\x1f\x8c\x9b\xb9H\xd6\xbc\x9c3\x02\x13\xcaN\x08\xa7:5\xe3\xbd@\xf9\xf1\xc5\x97\x90\xb4G\xb57\x8fb\xff\x05D\xcc\x9e\n\x8e\xa3\xa8\xbf\xd8\xcb\xc6\xbb\xb2\xcb\xe1;\xc1\x15\xef\xf15/\x08q1#\xbf\xb62\xdf\xacD){\xb5\x83@\xef\xc5i\xf1~fLs\x80\xcb(\x95\x88\x01C\x1d\xeaIA\xd2~\xce\x92\x18\xd6\xa6\xf9E\xd2\x7f\x9d5M&quot;\xa4\x00,~T!{l3\&#39;\x0c*\xd3\xb3\xeb\xec2\x8a\xf2\xc2j\xb7\xa0\xa0\xe1,\x17\x1aN\xbb\x88l\xd2\xe6K\xbb7\xb6o\xec\xd4\x0bM\xd7\xcf9\xa4\x9c\xadgx\n\&#39;m\xad\xa3=\x11\x1e\x8b\x13\x80\xf7\x87e\x03\xeb\xc0,\xebW\x0e\xa0\xbf\xd4#:Y-F\xf5}o\xff\xd4\xa7\x91&quot;M*\x8f\xe4\xa7&gt;\x06y\x9ak,\x07N\xe0\xa0*6\xcby\xbd\xfb\xd59\xe3g\xd2\x08\xc1\xc1\xb1\xf8=\x1a\x02\xe9]Y\xb1\x12\x03\xd1y\xee\x93f;\xc9\xe3\x1e\x97\x93&amp;`\n8\x0c\\ \xb3\xaa)\x07\x8e\xc0\x0f\x8fJ\x93H\xb2ZEL\x9d\x1c\xebEG\xd2\xce\xf0!\x18\xb8\x93\xad\x8dy\x19\xd7\xd9\x81\xb2\xf2Z\x15\x0b\xa5\x87\xa0\xc9#\x8f6\xdeBz\xafk6\x00\xb5\xbfd\x81\xe2\xc1&gt;q\x83
 </pre></div>
 </div>

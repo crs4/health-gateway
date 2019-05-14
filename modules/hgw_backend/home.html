@@ -95,21 +95,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture General Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../hgw_frontend/home.html">HGW Frontend</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">HGW Backend</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#api-methods">API Methods</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="#enrolling-a-source">Enrolling a Source</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#registration-in-the-admin-page">Registration in the admin page</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#creation-of-the-authentication-object">Creation of the authentication object</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#certificate-authentication">Certificate authentication</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#oauth2-authentication">OAuth2 authentication</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#enrolling-a-source">Enrolling a Source</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creation-of-the-authentication-object">Creation of the Authentication Object</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#creation-of-the-source-object">Creation of the Source object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creation-of-kafka-client-certificates">Creation of Kafka client certificates</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#creation-of-kafka-client-certificates">Creation of Kafka client certificates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#creation-of-kafka-topic-and-relative-acl-for-the-destination">Creation of Kafka topic and relative ACL for the destination</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-methods">API Methods</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../consent_manager/home.html">Consent Manager</a></li>
@@ -180,6 +172,91 @@
   <div class="section" id="hgw-backend">
 <h1>HGW Backend<a class="headerlink" href="#hgw-backend" title="Permalink to this headline">¶</a></h1>
 <p>HGW Backend is the Health Gateway module that interacts with the Sources</p>
+<div class="section" id="enrolling-a-source">
+<h2>Enrolling a Source<a class="headerlink" href="#enrolling-a-source" title="Permalink to this headline">¶</a></h2>
+<p>To enroll a new Source, access to the /admin/ page of the backend to
+create an Authentication object and a Source object.</p>
+<div class="section" id="creation-of-the-authentication-object">
+<h3>Creation of the Authentication Object<a class="headerlink" href="#creation-of-the-authentication-object" title="Permalink to this headline">¶</a></h3>
+<p>An Authentication object contains the parameters to authenticate to the
+REST API of the Source Endpoint. The Health Gateway can support two
+methods:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Certificates</li>
+<li>OAuth2</li>
+</ul>
+</div></blockquote>
+<p>The Certificates method needs a pair of client key/certificate
+that the Source trusts (i.e., the certificate has been signed by a CA that the
+Source trusts).
+The method to obtain these files is out of the scope of the tutorial.
+To create the object, add one and upload the two files in PEM
+format.
+Take a note of the ID of the newly created object.</p>
+<p>OAuth2 method means that the Source Endpoint uses OAuth2 client_credentials
+method to authenticate the clients. This means that the Health Gateway
+need a pair of client_id and client_secret assigned by the Source Endpoint
+administrators. If the Source Endpoint wants also a Basic auth to get
+an authorization token, it is required it to give also the Auth Username
+and Auth Password.
+After having obtained the parameters, create an OAuth2 Authentication object,
+fill the form and save. Take a not the ID of the object in this case as well.</p>
+</div>
+<div class="section" id="creation-of-the-source-object">
+<h3>Creation of the Source object<a class="headerlink" href="#creation-of-the-source-object" title="Permalink to this headline">¶</a></h3>
+<p>Now create the Source object. The fields you must insert are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt><strong>Source id:</strong> The ID of the Source. Leave the autocreated value and note</dt>
+<dd>it. This value has to be given to the Source since it is the id of the
+kafka topic it has to use to send messages</dd>
+</dl>
+</li>
+<li><strong>Name:</strong> The name of the source</li>
+<li><strong>URL:</strong> The url of the endpoint to create connectors (e.g.: <a class="reference external" href="https://sourceendpoint/v1/connectors/">https://sourceendpoint/v1/connectors/</a>)</li>
+<li><dl class="first docutils">
+<dt><strong>Auth Type:</strong> Select the auth type among the available.</dt>
+<dd>It has to correspond to the correct authentication object
+created before</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Content type:</strong> Select the contenttype that corresponds to the</dt>
+<dd>authentication object created before</dd>
+</dl>
+</li>
+<li><strong>Object id:</strong>  Insert the ID of the object noted before</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="creation-of-kafka-client-certificates">
+<h3>Creation of Kafka client certificates<a class="headerlink" href="#creation-of-kafka-client-certificates" title="Permalink to this headline">¶</a></h3>
+<p>In the case the Source is configured to send the messages using a Kafka
+client, it will need a certificate with its associated private key
+to access to Kafka. So it is necessary to create them.
+To do that use the script <cite>generate_kafka_client_certificates.sh</cite>
+in hgw/certs/ directory. The script will generate
+PEM files and also the JKS keystore and truststore
+in case the Source needs them</p>
+<p>In the Kafka server it is necessary the creation of a new topic and its ACL
+for the Source Endpoint. The topic has to be
+accessed only by the Source Endpoint in Write mode and by the HGW
+Dispatcher in read mode.
+If using docker just set the environment variable
+KAFKA_CREATE_TOPICS when running the container to the value:</p>
+<p><cite>&lt;source_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt;</cite></p>
+<p>Alternatively you can execute the command
+<cite>create_topics.sh</cite> in a running kafka container:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`bash</span>
+<span class="pre">docker</span> <span class="pre">exec</span> <span class="pre">-e</span> <span class="pre">KAFKA_CREATE_TOPICS=&lt;source_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt;</span> <span class="pre">&lt;kafka_container&gt;</span> <span class="pre">/create_topics.sh</span>
+<span class="pre">`</span></code></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">source_id</span></code> is the one configured in the web application.
+The <code class="docutils literal notranslate"><span class="pre">publisher</span></code> is the name used when generating the Kafka client
+certs and the &lt;consumer&gt; is hgw_dispatcher</p>
+</div>
+</div>
 <div class="section" id="api-methods">
 <h2>API Methods<a class="headerlink" href="#api-methods" title="Permalink to this headline">¶</a></h2>
 <dl class="post">
@@ -368,80 +445,17 @@ the client needs a token with <cite>messages:write</cite> scope</p>
 </table>
 <p><strong>Request Example</strong></p>
 <blockquote>
-<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span>POST /v1/messages/ HTTP/1.1
-Authorization Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA
-Content-Type: multipart/form-data
+<div><div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="nf">POST</span> <span class="nn">/v1/messages/</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<span class="na">Authorization</span><span class="o">:</span> <span class="l">Bearer rhETLn6FyPWfnZ2chxgRfqqSx5YKIA</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">multipart/form-data</span>
 
-channel_id: channel_id,
+channel_id: channel_id
 payload: \xdf\xbb \x02\x10\xbd\x91\xc0g\xb9\xba\xdd2\x1f\x8c\x9b\xb9H\xd6\xbc\x9c3\x02\x13\xcaN\x08\xa7:5\xe3\xbd@\xf9\xf1\xc5\x97\x90\xb4G\xb57\x8fb\xff\x05D\xcc\x9e\n\x8e\xa3\xa8\xbf\xd8\xcb\xc6\xbb\xb2\xcb\xe1;\xc1\x15\xef\xf15/\x08q1#\xbf\xb62\xdf\xacD){\xb5\x83@\xef\xc5i\xf1~fLs\x80\xcb(\x95\x88\x01C\x1d\xeaIA\xd2~\xce\x92\x18\xd6\xa6\xf9E\xd2\x7f\x9d5M&quot;\xa4\x00,~T!{l3\&#39;\x0c*\xd3\xb3\xeb\xec2\x8a\xf2\xc2j\xb7\xa0\xa0\xe1,\x17\x1aN\xbb\x88l\xd2\xe6K\xbb7\xb6o\xec\xd4\x0bM\xd7\xcf9\xa4\x9c\xadgx\n\&#39;m\xad\xa3=\x11\x1e\x8b\x13\x80\xf7\x87e\x03\xeb\xc0,\xebW\x0e\xa0\xbf\xd4#:Y-F\xf5}o\xff\xd4\xa7\x91&quot;M*\x8f\xe4\xa7&gt;\x06y\x9ak,\x07N\xe0\xa0*6\xcby\xbd\xfb\xd59\xe3g\xd2\x08\xc1\xc1\xb1\xf8=\x1a\x02\xe9]Y\xb1\x12\x03\xd1y\xee\x93f;\xc9\xe3\x1e\x97\x93&amp;`\n8\x0c\\ \xb3\xaa)\x07\x8e\xc0\x0f\x8fJ\x93H\xb2ZEL\x9d\x1c\xebEG\xd2\xce\xf0!\x18\xb8\x93\xad\x8dy\x19\xd7\xd9\x81\xb2\xf2Z\x15\x0b\xa5\x87\xa0\xc9#\x8f6\xdeBz\xafk6\x00\xb5\xbfd\x81\xe2\xc1&gt;q\x83
 </pre></div>
 </div>
 </div></blockquote>
 </dd></dl>
 
-</div>
-</div>
-<div class="section" id="enrolling-a-source">
-<h1>Enrolling a Source<a class="headerlink" href="#enrolling-a-source" title="Permalink to this headline">¶</a></h1>
-<p>This page describes how to enroll a new Source.</p>
-<div class="section" id="registration-in-the-admin-page">
-<h2>Registration in the admin page<a class="headerlink" href="#registration-in-the-admin-page" title="Permalink to this headline">¶</a></h2>
-<p>Access to the /admin/ page of the backend to create an Authentication object and a Source object.</p>
-<div class="section" id="creation-of-the-authentication-object">
-<h3>Creation of the authentication object<a class="headerlink" href="#creation-of-the-authentication-object" title="Permalink to this headline">¶</a></h3>
-<p>To create an authentication object, which contains the parameters to connect to the
-Source. There are two methods supported:</p>
-<ul class="simple">
-<li>Certificates authentication</li>
-<li>OAuth2 authentications</li>
-</ul>
-<div class="section" id="certificate-authentication">
-<h4>Certificate authentication<a class="headerlink" href="#certificate-authentication" title="Permalink to this headline">¶</a></h4>
-<p>This type of authentication needs a pair of client key/certificate that the Source trusts (i.e., the certificate has been
-signed by a CA that the Source trusts). The method to obtain these files is out of the scope of the tutorial.</p>
-<p>To create the authentication object add one and upload the two files in PEM format. Take a not of the ID of the newly
-created object.</p>
-</div>
-<div class="section" id="oauth2-authentication">
-<h4>OAuth2 authentication<a class="headerlink" href="#oauth2-authentication" title="Permalink to this headline">¶</a></h4>
-<p>TBD</p>
-</div>
-</div>
-<div class="section" id="creation-of-the-source-object">
-<h3>Creation of the Source object<a class="headerlink" href="#creation-of-the-source-object" title="Permalink to this headline">¶</a></h3>
-<p>Now create a Source object. The fields you must insert are:</p>
-<ul class="simple">
-<li><strong>Source id:</strong> The ID of the Source. Leave the autocreated value and note it. This value has to be given to the Source
-since it is the id of the kafka topic it has to use to send messages</li>
-<li><strong>Name:</strong> The name of the source</li>
-<li><strong>URL:</strong> The url of the endpoint to create connectors (e.g.: <a class="reference external" href="https://sourceendpoint/v1/connectors/">https://sourceendpoint/v1/connectors/</a>)</li>
-<li><strong>Auth Type:</strong> Select the auth type among the available. It has to correspond to the correct authentication object
-created before</li>
-<li><strong>Content type:</strong> Select the contenttype that corresponds to the authentication object created before</li>
-<li><strong>Object id:</strong>  Insert the ID of the object noted before</li>
-</ul>
-</div>
-</div>
-<div class="section" id="creation-of-kafka-client-certificates">
-<h2>Creation of Kafka client certificates<a class="headerlink" href="#creation-of-kafka-client-certificates" title="Permalink to this headline">¶</a></h2>
-<p>The source will need a certificate with its associated private key to access to Kafka. So it is necessary to create them.
-To do that use the script <code class="docutils literal notranslate"><span class="pre">generate_kafka_client_certificates.sh</span></code> in hgw/certs/ directory. The script will generate
-PEM files and also the JKS keystore and truststore in case the Source needs them</p>
-</div>
-<div class="section" id="creation-of-kafka-topic-and-relative-acl-for-the-destination">
-<h2>Creation of Kafka topic and relative ACL for the destination<a class="headerlink" href="#creation-of-kafka-topic-and-relative-acl-for-the-destination" title="Permalink to this headline">¶</a></h2>
-<p>In the Kafka server it is necessary adding a new topic for the destination and the relative ACL. The topic has to be
-accessed only by the Source endpoint in Write mode and by the HGW Dispatcher in Read mode.
-If using docker just set the environment variable KAFKA_CREATE_TOPICS when running the container to the value:</p>
-<p><code class="docutils literal notranslate"><span class="pre">&lt;source_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt;</span></code></p>
-<p>Alternatively you can execute the command <code class="docutils literal notranslate"><span class="pre">create_topics.sh</span></code> in a running kafka container</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker <span class="nb">exec</span> -e <span class="nv">KAFKA_CREATE_TOPICS</span><span class="o">=</span>&lt;source_id&gt;:1:1:&lt;publisher&gt;:&lt;consumer&gt; &lt;kafka_container&gt; /create_topics.sh
-</pre></div>
-</div>
-<dl class="docutils">
-<dt>The &lt;source_id&amp;gt; is the one configured in the web application. The &lt;publisher&amp;gt; is the name used when generating</dt>
-<dd>the Kafka client certs and the <span class="raw-html-m2r"><consumer></span> is hgw_dispatcher</dd>
-</dl>
 </div>
 </div>
 
