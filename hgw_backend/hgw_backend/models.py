@@ -15,20 +15,28 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import copy
-import requests
+import json
 from datetime import datetime
+
+import requests
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (GenericForeignKey,
+                                                GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.crypto import get_random_string
 from oauth2_provider.models import AbstractApplication
-from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError, InvalidClientError, MissingTokenError
+from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
+                             MissingTokenError, TokenExpiredError)
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError
 from requests_oauthlib import OAuth2Session
 
 from hgw_backend.fields import HostnameURLField
+from hgw_backend.settings import KAFKA_NOTIFICATION_TOPIC
+from hgw_backend.utils import get_kafka_producer
 from hgw_common.utils import get_logger
 
 logger = get_logger('hgw_backend')
@@ -59,6 +67,25 @@ class Source(models.Model):
 
     def create_connector(self, connector):
         return self.content_object.create_connector(self, connector)
+
+
+@receiver(post_save, sender=Source)
+def source_saved_handler(sender, instance, **kwargs):
+    """
+    Post save signal handler for Source model.
+    It sends new Source data to kafka
+    """
+    message = {
+        'source_id': instance.source_id,
+        'name': instance.name,
+        'profile': {
+            'code': instance.profile.code,
+            'version': instance.profile.version,
+            'payload': instance.profile.payload
+        }
+    }
+    kafka_producer = get_kafka_producer()
+    kafka_producer.send(KAFKA_NOTIFICATION_TOPIC, value=json.dumps(message).encode('utf-8'))
 
 
 class CertificatesAuthentication(models.Model):

@@ -74,6 +74,26 @@ class GenericTestCase(TestCase):
     def setUp(self):
         self.maxDiff = None
         self.client = client.Client()
+        with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/fixtures/test_data.json'))) as fixtures_file:
+            self.fixtures = json.load(fixtures_file)
+        self.profiles = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_common.profile']
+        self.sources = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_backend.source']
+        self.encypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
+
+    @staticmethod
+    def configure_mock_kafka_consumer(mock_kc_klass, n_messages=1):
+        mock_kc_klass.FIRST = 0
+        mock_kc_klass.END = n_messages
+        mock_kc_klass.MESSAGES = {i: MockMessage(key='09876'.encode('utf-8'), offset=i,
+                                                 topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
+                                                 value=json.dumps(CHANNEL_MESSAGE).encode('utf-8')) for i in
+                                  range(mock_kc_klass.FIRST, mock_kc_klass.END)}
+
+    @staticmethod
+    def _get_client_data(client_index=0):
+        app = RESTClient.objects.all()[client_index]
+        return app.client_id, app.client_secret
+
 
     def _call_token_creation(self, data):
         return self.client.post('/oauth2/token/', data=data)
@@ -251,7 +271,7 @@ class TestMessagesAPI(GenericTestCase):
 
         oauth2_header = self._get_oauth_header()
         source_id = RESTClient.objects.get(pk=1).source.source_id
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_backend.utils.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
             self.assertEqual(MockKP().send.call_args_list[0][0][0], source_id)
             self.assertEqual(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
@@ -273,7 +293,7 @@ class TestMessagesAPI(GenericTestCase):
 
         oauth2_header = self._get_oauth_header()
         source_id = RESTClient.objects.get(pk=1).source.source_id
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_backend.utils.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
             self.assertEqual(MockKP().send.call_args_list[0][0][0], source_id)
             self.assertEqual(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))

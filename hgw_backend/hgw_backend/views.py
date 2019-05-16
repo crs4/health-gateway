@@ -15,24 +15,25 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from _ssl import SSLError
-
-from rest_framework.viewsets import ViewSet
 from traceback import format_exc
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import Http404, HttpResponse
 from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable, KafkaError, KafkaTimeoutError, TopicAuthorizationFailedError
+from kafka.errors import (KafkaError, KafkaTimeoutError, NoBrokersAvailable,
+                          TopicAuthorizationFailedError)
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
 
-from hgw_backend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_KEY, KAFKA_CLIENT_CERT, KAFKA_SSL
+from hgw_backend.utils import get_kafka_producer
 from hgw_common.cipher import is_encrypted
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
+
 from .models import Source
 from .serializers import SourceSerializer
 
@@ -93,34 +94,21 @@ class Profiles(ViewSet):
 
 
 class Messages(APIView):
+    """
+    Viewset for /messages/ REST API
+    """
     permission_classes = (TokenHasResourceDetailedScope,)
     required_scopes = ['messages']
     parser_classes = (MultiPartParser,)
-
-    @staticmethod
-    def _get_kafka_producer():
-        if KAFKA_SSL:
-            consumer_params = {
-                'bootstrap_servers': KAFKA_BROKER,
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': KAFKA_CA_CERT,
-                'ssl_certfile': KAFKA_CLIENT_CERT,
-                'ssl_keyfile': KAFKA_CLIENT_KEY
-            }
-        else:
-            consumer_params = {
-                'bootstrap_servers': KAFKA_BROKER
-            }
-        kp = KafkaProducer(**consumer_params)
-
-        return kp
 
     @staticmethod
     def _get_kafka_topic(request):
         return request.auth.application.source.source_id
 
     def post(self, request):
+        """
+        Create a message
+        """
         if 'channel_id' not in request.data or 'payload' not in request.data:
             logger.debug('Missing channel_id or payload in request')
             return Response({'error': 'missing_parameters'}, status.HTTP_400_BAD_REQUEST)
@@ -135,7 +123,7 @@ class Messages(APIView):
                 payload = payload[0].encode('utf-8')
 
         if not is_encrypted(payload):
-            logger.info('Source {} sent an unencrypted message'.format(self.request.auth.application.source.name))
+            logger.info('Source %s sent an unencrypted message', self.request.auth.application.source.name)
             return Response({'error': 'not_encrypted_payload'}, status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -143,31 +131,25 @@ class Messages(APIView):
         except ValueError:
             return Response({'error': 'invalid_paramater: channel_id'})
 
-        try:
-            kp = self._get_kafka_producer()
-        except NoBrokersAvailable:
-            logger.info('Cannot connect to kafka broker'.format(KAFKA_BROKER))
-            return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except SSLError:
-            logger.info('Failed authentication connection to kafka broker. Wrong certs')
+        producer = get_kafka_producer()
+        if producer is None:
             return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             topic = self._get_kafka_topic(request)
             try:
-                future = kp.send(topic, key=channel_id, value=payload)
+                future = producer.send(topic, key=channel_id, value=payload)
             except KafkaTimeoutError:
-                logger.info('Cannot get topic {} metadata. Probably the token does not exist'.format(topic))
+                logger.info('Cannot get topic %s metadata. Probably the token does not exist', topic)
                 # Topic doesn't exist
                 return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
             # Block for 'synchronous' sends
             try:
                 future.get(timeout=2)
             except TopicAuthorizationFailedError:
-                logger.info('Missing write permission to write in topic {}'.format(topic))
+                logger.info('Missing write permission to write in topic %s', topic)
                 return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            except KafkaError as ke:
-                logger.info('An error occurred sending message to topic {}. Error details {}'
-                            .format(topic, format_exc()))
+            except KafkaError:
+                logger.info('An error occurred sending message to topic %s. Error details %s', topic, format_exc())
                 # Decide what to do if produce request failed...
                 return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
