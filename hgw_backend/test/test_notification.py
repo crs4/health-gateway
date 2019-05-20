@@ -20,13 +20,12 @@ import logging
 import os
 
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, client
+from django.test import TestCase
 from mock.mock import patch
 
 from hgw_backend.models import Source
 from hgw_backend.serializers import SourceSerializer
-from hgw_backend.settings import KAFKA_NOTIFICATION_TOPIC
-from hgw_backend.utils import get_kafka_producer
+from hgw_backend.settings import KAFKA_SOURCE_NOTIFICATION_TOPIC
 from hgw_common.models import Profile
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -53,11 +52,11 @@ class TestNotification(TestCase):
         """
         Test that, when a new Source is created, it is notified to kafka
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKP:
+        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
             source = Source.objects.create(**self.new_source_data)
-            MockKP().send.assert_called_once()
+            MockKafkaProducer().send.assert_called_once()
             serializer = SourceSerializer(source)
-            print(MockKP().send.call_args_list[0][0][0])
             source_data = {k: serializer.data[k] for k in ('source_id', 'name', 'profile')}
-            self.assertEqual(MockKP().send.call_args_list[0][0][0], KAFKA_NOTIFICATION_TOPIC)
-            self.assertEqual(json.loads(MockKP().send.call_args_list[0][1]['value'].decode('utf-8')), source_data)
+            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_SOURCE_NOTIFICATION_TOPIC)
+            self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')), source_data)
+    

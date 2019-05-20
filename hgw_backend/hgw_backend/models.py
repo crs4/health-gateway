@@ -25,7 +25,6 @@ from django.contrib.contenttypes.fields import (GenericForeignKey,
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.utils.crypto import get_random_string
 from oauth2_provider.models import AbstractApplication
 from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
@@ -35,7 +34,7 @@ from requests.exceptions import ConnectionError
 from requests_oauthlib import OAuth2Session
 
 from hgw_backend.fields import HostnameURLField
-from hgw_backend.settings import KAFKA_NOTIFICATION_TOPIC
+from hgw_backend.signals import source_saved_handler, connector_created, connector_created_handler
 from hgw_backend.utils import get_kafka_producer
 from hgw_common.utils import get_logger
 
@@ -66,26 +65,10 @@ class Source(models.Model):
         return self.name
 
     def create_connector(self, connector):
-        return self.content_object.create_connector(self, connector)
-
-
-@receiver(post_save, sender=Source)
-def source_saved_handler(sender, instance, **kwargs):
-    """
-    Post save signal handler for Source model.
-    It sends new Source data to kafka
-    """
-    message = {
-        'source_id': instance.source_id,
-        'name': instance.name,
-        'profile': {
-            'code': instance.profile.code,
-            'version': instance.profile.version,
-            'payload': instance.profile.payload
-        }
-    }
-    kafka_producer = get_kafka_producer()
-    kafka_producer.send(KAFKA_NOTIFICATION_TOPIC, value=json.dumps(message).encode('utf-8'))
+        res = self.content_object.create_connector(self, connector)
+        if res is not None:
+            connector_created.send(sender=self.__class__, connector=connector)
+        return res
 
 
 class CertificatesAuthentication(models.Model):
@@ -94,42 +77,18 @@ class CertificatesAuthentication(models.Model):
     key = models.FileField(blank=False, null=False)
 
     def create_connector(self, source, connector):
-        return requests.post(source.url,
-                             json=connector,
-                             verify=True,
-                             cert=(self.cert.file.name, self.key.file.name)
-                             )
+        return requests.post(
+            source.url,
+            json=connector,
+            verify=True,
+            cert=(self.cert.file.name, self.key.file.name)
+        )
 
     def __str__(self):
         try:
             return "ID: {id}. SOURCE: {source}".format(id=self.id, source=self.source.get())
         except Source.DoesNotExist:
             return "ID: {id}".format(id=self.id)
-
-
-class FailedConnector(models.Model):
-    """
-    Model to store messages from hgw_frontend that failed delivering to Sources
-    """
-    JSON_DECODING = 'JS'
-    DECODING = 'DE'
-    SOURCE_NOT_FOUND = 'SN'
-    WRONG_MESSAGE_STRUCTURE = 'WS'
-    WRONG_DATE_FORMAT = 'WD'
-    SENDING_ERROR = 'SE'
-    UNKNOWN_ERROR = 'UE'
-
-    FAIL_REASON = ((JSON_DECODING, 'JSON_DECODING'),
-                   (DECODING, 'DECODING'),
-                   (SOURCE_NOT_FOUND, 'SOURCE_NOT_FOUND'),
-                   (WRONG_MESSAGE_STRUCTURE, 'WRONG_MESSAGE_STRUCTURE'),
-                   (WRONG_DATE_FORMAT, 'WRONG_DATE_FORMAT'),
-                   (SENDING_ERROR, 'SENDING_ERROR'),
-                   (UNKNOWN_ERROR, 'UNKNOWN_ERROR'))
-
-    message = models.CharField(max_length=1500, blank=False, null=False)
-    reason = models.CharField(max_length=2, choices=FAIL_REASON)
-    retry = models.BooleanField()
 
 
 class WrongUrlException(Exception):
@@ -236,6 +195,31 @@ class OAuth2Authentication(models.Model):
         verbose_name = 'OAuth2 Authentication'
 
 
+class FailedConnector(models.Model):
+    """
+    Model to store messages from hgw_frontend that failed delivering to Sources
+    """
+    JSON_DECODING = 'JS'
+    DECODING = 'DE'
+    SOURCE_NOT_FOUND = 'SN'
+    WRONG_MESSAGE_STRUCTURE = 'WS'
+    WRONG_DATE_FORMAT = 'WD'
+    SENDING_ERROR = 'SE'
+    UNKNOWN_ERROR = 'UE'
+
+    FAIL_REASON = ((JSON_DECODING, 'JSON_DECODING'),
+                   (DECODING, 'DECODING'),
+                   (SOURCE_NOT_FOUND, 'SOURCE_NOT_FOUND'),
+                   (WRONG_MESSAGE_STRUCTURE, 'WRONG_MESSAGE_STRUCTURE'),
+                   (WRONG_DATE_FORMAT, 'WRONG_DATE_FORMAT'),
+                   (SENDING_ERROR, 'SENDING_ERROR'),
+                   (UNKNOWN_ERROR, 'UNKNOWN_ERROR'))
+
+    message = models.CharField(max_length=1500, blank=False, null=False)
+    reason = models.CharField(max_length=2, choices=FAIL_REASON)
+    retry = models.BooleanField()
+
+
 class RESTClient(AbstractApplication):
     STANDARD = 'STANDARD'
     SUPER = 'SUPER'
@@ -273,3 +257,7 @@ class AccessToken(models.Model):
             'expires_at': self.expires_at.timestamp(),
             'scope': self.scope
         }
+
+
+post_save.connect(source_saved_handler, sender=Source)
+connector_created.connect(connector_created_handler, sender=Source)
