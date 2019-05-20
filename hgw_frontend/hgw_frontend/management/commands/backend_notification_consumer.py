@@ -50,29 +50,30 @@ class Command(BaseCommand):
             })
 
         consumer = KafkaConsumer(**consumer_params)
-        consumer.assign([TopicPartition(settings.KAFKA_CONNECTOR_NOTIFICATION_TOPIC, 0)])
         consumer.assign([TopicPartition(settings.KAFKA_SOURCE_NOTIFICATION_TOPIC, 0)])
+        # consumer.assign([TopicPartition(settings.KAFKA_CONNECTOR_NOTIFICATION_TOPIC, 0)])
         # consumer.seek_to_beginning(TopicPartition(settings.KAFKA_TOPIC, 0))
+        
         logger.info("Start consuming messages from Backend")
         for msg in consumer:
-            logger.info("Message from topic %s", msg.topic)
-            if msg.topic == settings.KAFKA_SOURCE_NOTIFICATION_TOPIC:
+            logger.info("Found message")
+            try:
+                source_data = json.loads(msg.value.decode('utf-8'))
+            except JSONDecodeError:
+                logger.error("Cannot add Source. JSON Error")
+            else:
                 try:
-                    source_data = json.loads(msg.value.decode('utf-8'))
-                except JSONDecodeError:
-                    logger.error("Cannot add Source. JSON Error")
+                    data = {key: source_data[key] for key in ['source_id', 'name', 'profile']}
+                except KeyError:
+                    logger.error("Cannot find some source information in the message")
                 else:
                     try:
-                        data = {key: source_data[key] for key in ['source_id', 'name', 'profile']}
-                    except KeyError:
-                        pass
+                        source = Source.objects.get(source_id=data['source_id'])
+                    except Source.DoesNotExist:
+                        logger.info("Inserting new source with id %s", data['source_id'])
+                        source_serializer = SourceSerializer(data=data)
                     else:
-                        try:
-                            source = Source.objects.get(source_id=data['source_id'])
-                        except Source.DoesNotExist:
-                            source_serializer = SourceSerializer(data=data)
-                        else:
-                            source_serializer = SourceSerializer(source, data=data)
-                            
-                        if source_serializer.is_valid():
-                            source_serializer.save()
+                        logger.info("Updating new source with id %s", data['source_id'])
+                        source_serializer = SourceSerializer(source, data=data)                        
+                    if source_serializer.is_valid():
+                        source_serializer.save()
