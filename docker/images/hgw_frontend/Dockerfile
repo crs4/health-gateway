@@ -25,6 +25,12 @@ ARG HTTP_PORT=8000
 ENV DJANGO_APP_NAME=hgw_frontend
 ENV HTTP_PORT=${HTTP_PORT}
 
-ADD service/ /container/service/
+
+COPY resources/docker-entrypoint.sh /custom_entrypoint/
+COPY resources/launch-notification-worker-consumer.sh /
+COPY service/ /container/service/
+
+RUN chmod +x /custom_entrypoint/docker-entrypoint.sh
+RUN chmod +x /launch-notification-worker-consumer.sh
 
 EXPOSE ${HTTP_PORT}

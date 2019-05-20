@@ -37,6 +37,16 @@ class SourceSerializer(serializers.ModelSerializer):
         source = Source.objects.create(**validated_data)
         return source
 
+    def update(self, instance, validated_data):
+        if validated_data['profile'] is not None:
+            profile, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
+            validated_data['profile'] = profile
+
+        instance.name = validated_data.get('name', instance.name)
+        instance.profile = validated_data.get('profile', instance.profile)
+        instance.save()
+        return instance
+
     class Meta:
         model = Source
         fields = ('source_id', 'name', 'profile')

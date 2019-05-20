@@ -30,6 +30,18 @@ WRONG_CONFIRM_ID2 = 'wrong_confirmed2'
 TEST_PERSON1_ID = '100001'
 TEST_PERSON2_ID = '100002'
 
+PROFILE_1 = {
+    'code': 'PROF_001',
+    'version': 'v0',
+    'payload': '[{"clinical_domain": "Laboratory"}]'
+}
+
+PROFILE_2 = {
+    'code': 'PROF_002',
+    'version': 'v0',
+    'payload': '[{"clinical_domain": "Radiology"}]'
+}
+
 SOURCE_1_ID = 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT'
 SOURCE_2_ID = 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS'
 SOURCE_3_ID = 'AtLVwAIYrl2dx2WRcg6ZnufD1rsBO9eB'
@@ -40,26 +52,15 @@ SOURCES_DATA = [
     {
         'source_id': SOURCE_1_ID,
         'name': SOURCE_1_NAME,
-        'profile': {
-            'code': 'PROF_001',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Laboratory"}]'}
+        'profile': PROFILE_1
     }, {
         'source_id': SOURCE_2_ID,
         'name': SOURCE_2_NAME,
-        'profile': {
-            'code': 'PROF_001',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Laboratory"}]'
-        }
+        'profile': PROFILE_2
     }, {
         'source_id': SOURCE_3_ID,
         'name': SOURCE_3_NAME,
-        'profile': {
-            'code': 'PROF_002',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Radiology"}]'
-        }
+        'profile': PROFILE_2
     }]
 
 PROFILES_DATA = [
