@@ -19,7 +19,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from hgw_frontend.models import HGWFrontendUser, Destination, Channel, FlowRequest, ConsentConfirmation, ConfirmationCode
+from hgw_frontend.models import HGWFrontendUser, Destination, Channel, \
+    FlowRequest, ConsentConfirmation, ConfirmationCode, Source
 
 
 class HGWFrontendUserAdmin(UserAdmin):
@@ -32,3 +33,4 @@ admin.site.register(FlowRequest)
 admin.site.register(Channel)
 admin.site.register(ConfirmationCode)
 admin.site.register(ConsentConfirmation)
+admin.site.register(Source)

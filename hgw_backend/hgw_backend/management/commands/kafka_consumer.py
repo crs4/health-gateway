@@ -37,7 +37,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         consumer_params = {
-            'bootstrap_servers': settings.KAFKA_BROKER
+            'bootstrap_servers': settings.KAFKA_BROKER,
+            'client_id': 'create_connector_consumer',
+            'group_id': 'create_connector_consumer',
         }
         if settings.KAFKA_SSL:
             consumer_params.update({
@@ -50,9 +52,9 @@ class Command(BaseCommand):
             })
 
         consumer = KafkaConsumer(**consumer_params)
-        consumer.assign([TopicPartition(settings.KAFKA_TOPIC, 0)])
-        consumer.seek_to_beginning(TopicPartition(settings.KAFKA_TOPIC, 0))
-
+        partition = TopicPartition(settings.KAFKA_TOPIC, 0)
+        consumer.assign([partition])
+        logger.info('Start consuming messages from backend starting from position %d', consumer.position(partition))
         for msg in consumer:
             failure_reason = None
             retry = False

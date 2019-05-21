@@ -131,6 +131,7 @@ TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+LOG_FILE = 'hgw_backend_logs'
 
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATIC_URL = '/static/'

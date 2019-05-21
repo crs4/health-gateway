@@ -30,6 +30,9 @@ services:
 
   hgw_frontend:
     image: crs4/hgw_frontend:latest
+    depends_on:
+      - kafka
+      - hgw_backend
     environment:
       - HTTP_PORT=8000
       - DJANGO_APP_NAME=hgw_frontend

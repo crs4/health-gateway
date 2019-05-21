@@ -99,16 +99,23 @@ class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedSco
                     return False
                 else:
                     # Check the scopes
-                    return super(TokenHasResourceDetailedScope, self).has_permission(request, view)
+                    return super(IsAuthenticatedOrTokenHasResourceDetailedScope, self).has_permission(request, view)
             except AttributeError:
                 return False
 
 
 def generate_id():
+    """
+    Generates a random string of 32 characters to be used as an id for objects
+    """
     return get_random_string(32)
 
 
 def get_oauth_token(server_uri, client_id, client_secret):
+    """
+    Obtains an OAuth2 token from :param:`server_uri` using :param:`client_id` and
+    :param:`client_secret` as authentication parameters
+    """
     client = BackendApplicationClient(client_id)
     oauth_session = OAuth2Session(client=client)
     token_url = '{}/oauth2/token/'.format(server_uri)
@@ -121,14 +128,22 @@ def get_oauth_token(server_uri, client_id, client_secret):
 
 
 def get_logger(logger_name):
+    """
+    Create, configure and returns a logger
+    """
     level = logging.DEBUG if settings.DEBUG is True else logging.INFO
     logger = logging.getLogger(logger_name)
     fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-    ch.setFormatter(fmt)
-    logger.addHandler(ch)
+    handlers = [logging.StreamHandler()]
+    if hasattr(settings, 'LOG_FILE'):
+        handlers.append(logging.handlers.RotatingFileHandler(settings.LOG_FILE))
+    
+    for handler in handlers:
+        handler.setLevel(level)
+        handler.setFormatter(fmt)
+        logger.addHandler(handler)
     logger.setLevel(level)
+    
     return logger
 
 
@@ -141,6 +156,9 @@ class ERRORS:
 
 
 def custom_exception_handler(exc, context):
+    """
+    Configures the Django Rest Framework return messages
+    """
     if isinstance(exc, Http404):
         response = Response({'errors': [ERRORS.NOT_FOUND]}, status=status.HTTP_404_NOT_FOUND)
     elif isinstance(exc, NotAuthenticated):

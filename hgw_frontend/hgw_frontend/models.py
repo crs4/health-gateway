@@ -33,6 +33,9 @@ class Source(models.Model):
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=False)
 
+    def __str__(self):
+        return self.name
+
 
 class FlowRequest(models.Model):
     PENDING = 'PE'
