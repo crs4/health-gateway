@@ -35,8 +35,7 @@ class TestConsumer(TestCase):
         """
         Tests that the message is consumed and that a new Source is created in the db
         """
-        with patch('hgw_frontend.management.commands.backend_notification_consumer.KafkaConsumer',
-                   MockKafkaConsumer):
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.source_notification_messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
             Command().handle()
@@ -63,7 +62,7 @@ class TestConsumer(TestCase):
             'name': 'NEW_NAME',
             'profile': PROFILE_2
         }]
-        with patch('hgw_frontend.management.commands.backend_notification_consumer.KafkaConsumer',
+        with patch('hgw_common.utils.KafkaConsumer',
                    MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
@@ -83,7 +82,7 @@ class TestConsumer(TestCase):
         """
         Tests that the message is consumed but json decoding fails
         """
-        with patch('hgw_frontend.management.commands.backend_notification_consumer.KafkaConsumer',
+        with patch('hgw_common.utils.KafkaConsumer',
                    MockKafkaConsumer):
             messages = ['(a)']
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
@@ -96,8 +95,7 @@ class TestConsumer(TestCase):
         """
         Tests that the message is consumed but it doesn't have the correct structure
         """
-        with patch('hgw_frontend.management.commands.backend_notification_consumer.KafkaConsumer',
-                   MockKafkaConsumer):
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
             messages = [{
                 'name': SOURCE_3_NAME,
                 'profile': PROFILE_1
@@ -118,8 +116,7 @@ class TestConsumer(TestCase):
         """
         Tests that the message is consumed but it doesn't have the correct structure
         """
-        with patch('hgw_frontend.management.commands.backend_notification_consumer.KafkaConsumer',
-                   MockKafkaConsumer):
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
             messages = [{
                 'source_id': SOURCE_3_ID,
                 'name': SOURCE_3_NAME,

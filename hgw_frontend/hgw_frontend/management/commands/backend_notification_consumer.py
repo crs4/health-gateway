@@ -21,54 +21,40 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from kafka import KafkaConsumer, TopicPartition
 
-from hgw_common.utils import get_logger
+from hgw_common.utils import KafkaConsumerCommand, get_logger
 from hgw_frontend.models import Source
 from hgw_frontend.serializers import SourceSerializer
 
 logger = get_logger('backend_notification_consumer')
 
 
-class Command(BaseCommand):
+class Command(KafkaConsumerCommand):
     help = 'Launch Backend Notification Consumer'
 
-    def handle(self, *args, **options):
-        consumer_params = {
-            'bootstrap_servers': settings.KAFKA_BROKER,
-            'client_id': 'backend_notification_consumer',
-            'group_id': 'backend_notification_consumer'
-        }
-        if settings.KAFKA_SSL:
-            consumer_params.update({
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': settings.KAFKA_CA_CERT,
-                'ssl_certfile': settings.KAFKA_CLIENT_CERT,
-                'ssl_keyfile': settings.KAFKA_CLIENT_KEY
-            })
+    def __init__(self, *args, **kwargs):
+        self.client_id = 'backend_notification_consumer'
+        self.group_id = 'backend_notification_consumer'
+        super(Command, self).__init__(*args, **kwargs)
 
-        consumer = KafkaConsumer(**consumer_params)
-        partition = TopicPartition(settings.KAFKA_SOURCE_NOTIFICATION_TOPIC, 0)
-        consumer.assign([partition])
-        logger.info('Start consuming messages from backend starting from position %d', consumer.position(partition))
-        for msg in consumer:
-            logger.info('Found message')
+    def handle_message(self, message):
+        logger.info('Found message')
+        try:
+            source_data = json.loads(message.value.decode('utf-8'))
+        except json.JSONDecodeError:
+            logger.error('Cannot add Source. JSON Error')
+        else:
             try:
-                source_data = json.loads(msg.value.decode('utf-8'))
-            except json.JSONDecodeError:
-                logger.error('Cannot add Source. JSON Error')
+                data = {key: source_data[key] for key in ['source_id', 'name', 'profile']}
+            except KeyError:
+                logger.error('Cannot find some source information in the message')
             else:
                 try:
-                    data = {key: source_data[key] for key in ['source_id', 'name', 'profile']}
-                except KeyError:
-                    logger.error('Cannot find some source information in the message')
+                    source = Source.objects.get(source_id=data['source_id'])
+                except Source.DoesNotExist:
+                    logger.info('Inserting new source with id %s', data['source_id'])
+                    source_serializer = SourceSerializer(data=data)
                 else:
-                    try:
-                        source = Source.objects.get(source_id=data['source_id'])
-                    except Source.DoesNotExist:
-                        logger.info('Inserting new source with id %s', data['source_id'])
-                        source_serializer = SourceSerializer(data=data)
-                    else:
-                        logger.info('Updating new source with id %s', data['source_id'])
-                        source_serializer = SourceSerializer(source, data=data)                        
-                    if source_serializer.is_valid():
-                        source_serializer.save()
+                    logger.info('Updating new source with id %s', data['source_id'])
+                    source_serializer = SourceSerializer(source, data=data)                        
+                if source_serializer.is_valid():
+                    source_serializer.save()

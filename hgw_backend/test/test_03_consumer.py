@@ -73,7 +73,7 @@ class TestConsumer(TestCase):
         """
         Test correct message send
         """
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True) as mocked_create_connector:
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             Command().handle()
@@ -97,7 +97,7 @@ class TestConsumer(TestCase):
         """
         Test failure sending message
         """
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             Command().handle()
             self.assertEqual(FailedConnector.objects.count(), 2)
@@ -111,7 +111,7 @@ class TestConsumer(TestCase):
         Tests failure because of json decode
         """
         messages = ['(a)']
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, False)
             command = Command()
@@ -128,7 +128,7 @@ class TestConsumer(TestCase):
         Tests failure beacuse of incorrect message structure
         """
         del self.messages[0]['channel_id']
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             command = Command()
@@ -145,7 +145,7 @@ class TestConsumer(TestCase):
         Tests failure beacuse of unknown source
         """
         self.messages[0]['source_id'] = 'a' * 32  # generates an unknown source_id. 32 is the character length of a source_id
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             command = Command()
@@ -162,7 +162,7 @@ class TestConsumer(TestCase):
         Tests failure because of unicode decoding error. In this case the message won't be saved on db
         """
         messages = ['(a)']
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, True, 'utf-16')
             command = Command()
@@ -177,7 +177,7 @@ class TestConsumer(TestCase):
         """
         self.messages[0]['start_validity'] = 'WRONG_DATE'
         self.messages[1]['expire_validity'] = 'WRONG_DATE'
-        with patch('hgw_backend.management.commands.kafka_consumer.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             command = Command()

@@ -16,13 +16,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+import logging
 from itertools import product
 
-import logging
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management.base import BaseCommand
 from django.http import Http404
 from django.utils.crypto import get_random_string
+from kafka import KafkaConsumer, TopicPartition
 from oauth2_provider.ext.rest_framework import TokenHasScope
 from oauth2_provider.ext.rest_framework.permissions import SAFE_HTTP_METHODS
 from oauth2_provider.settings import oauth2_settings
@@ -104,6 +106,40 @@ class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedSco
                 return False
 
 
+class KafkaConsumerCommand(BaseCommand):
+    """
+    This class implements a Django Command that consumes message from a kafka topic.
+    It provides connection funcionalities. Subclasses must implement only the 
+    real handling of the messages
+    """
+
+    def handle(self, *args, **options):
+        consumer_params = {
+            'bootstrap_servers': settings.KAFKA_BROKER,
+            'client_id': self.client_id,
+            'group_id': self.group_id,
+        }
+        if settings.KAFKA_SSL:
+            consumer_params.update({
+                'bootstrap_servers': settings.KAFKA_BROKER,
+                'security_protocol': 'SSL',
+                'ssl_check_hostname': True,
+                'ssl_cafile': settings.KAFKA_CA_CERT,
+                'ssl_certfile': settings.KAFKA_CLIENT_CERT,
+                'ssl_keyfile': settings.KAFKA_CLIENT_KEY
+            })
+
+        consumer = KafkaConsumer(**consumer_params)
+        partition = TopicPartition(settings.KAFKA_TOPIC, 0)
+        consumer.assign([partition])
+        for msg in consumer:
+            print(msg)
+            self.handle_message(msg)
+
+    def handle_message(self, message):
+        raise NotImplementedError
+
+
 def generate_id():
     """
     Generates a random string of 32 characters to be used as an id for objects
@@ -137,13 +173,13 @@ def get_logger(logger_name):
     handlers = [logging.StreamHandler()]
     if hasattr(settings, 'LOG_FILE'):
         handlers.append(logging.handlers.RotatingFileHandler(settings.LOG_FILE))
-    
+
     for handler in handlers:
         handler.setLevel(level)
         handler.setFormatter(fmt)
         logger.addHandler(handler)
     logger.setLevel(level)
-    
+
     return logger
 
 
