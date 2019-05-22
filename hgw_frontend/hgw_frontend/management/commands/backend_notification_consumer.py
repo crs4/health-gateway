@@ -34,6 +34,7 @@ class Command(KafkaConsumerCommand):
     def __init__(self, *args, **kwargs):
         self.client_id = 'backend_notification_consumer'
         self.group_id = 'backend_notification_consumer'
+        self.topics = [settings.KAFKA_SOURCE_NOTIFICATION_TOPIC]
         super(Command, self).__init__(*args, **kwargs)
 
     def handle_message(self, message):

@@ -184,8 +184,8 @@ SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_
                               SAML_IDP_URL)
 if SAML_SERVICE == 'spid':
     SAML_ATTRIBUTE_MAPPING = {
-       'spidCode': ('username',),
-       'fiscalNumber': ('fiscalNumber',)
+        'spidCode': ('username',),
+        'fiscalNumber': ('fiscalNumber',)
     }
 else:
     SAML_ATTRIBUTE_MAPPING = {

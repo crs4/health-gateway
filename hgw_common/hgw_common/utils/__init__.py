@@ -130,10 +130,9 @@ class KafkaConsumerCommand(BaseCommand):
             })
 
         consumer = KafkaConsumer(**consumer_params)
-        partition = TopicPartition(settings.KAFKA_TOPIC, 0)
-        consumer.assign([partition])
+        partitions = [TopicPartition(topic, 0) for topic in self.topics]
+        consumer.assign(partitions)
         for msg in consumer:
-            print(msg)
             self.handle_message(msg)
 
     def handle_message(self, message):

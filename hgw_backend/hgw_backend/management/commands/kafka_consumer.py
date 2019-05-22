@@ -37,6 +37,7 @@ class Command(KafkaConsumerCommand):
     def __init__(self, *args, **kwargs):
         self.client_id = 'create_connector_consumer'
         self.group_id = 'create_connector_consumer'
+        self.topics = [settings.KAFKA_TOPIC]
         super(Command, self).__init__(*args, **kwargs)
 
     def handle_message(self, message):
