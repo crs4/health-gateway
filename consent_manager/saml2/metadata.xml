@@ -2,7 +2,7 @@
 
 <md:EntityDescriptor xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
                      xmlns:ns1="urn:oasis:names:tc:SAML:metadata:algsupport"
-                     entityID="https://consentmanager:8002/saml2/metadata/" validUntil="2019-05-08T13:50:35Z">
+                     entityID="https://consentmanager:8002/saml2/metadata/" validUntil="2050-05-08T13:50:35Z">
     <md:Extensions>
         <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#md5"/>
         <ns1:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#ripemd160"/>
