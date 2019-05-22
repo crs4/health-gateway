@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from django.test import TestCase
@@ -24,6 +25,13 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
 
 class TestConsumer(TestCase):
     fixtures = ['test_data.json']
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestConsumer, cls).setUpClass()
+        for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
+            logger = logging.getLogger(logger_name)
+            logger.setLevel(logging.CRITICAL)
 
     def setUp(self):
         self.messages = [{
