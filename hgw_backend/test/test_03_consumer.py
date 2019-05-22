@@ -63,7 +63,7 @@ class TestConsumer(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        topic = topic = 'control'.encode('utf-8')
+        topic = 'control'.encode('utf-8')
         key = 'key'
         mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
