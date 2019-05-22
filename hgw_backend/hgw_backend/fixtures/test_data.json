@@ -86,7 +86,7 @@
       "client_type": "confidential",
       "authorization_grant_type": "client-credentials",
       "client_secret": "M3ZmctPHaeEPYBHYDObdHV0EFq9IOBSXC8UAVxZZ0yPasp4sIW1pqW9WkZlIQugwQmFbSgkTjf8bWpa1BH2sKEfM4pb8KExyO72HYRWcyDOmdvgVDPITAMEAhhFaOJLz",
-      "name": "SOURCE_ENPOINT_MOCKUP",
+      "name": "SOURCE MOCK",
       "skip_authorization": false,
       "source": 1,
       "client_role": "ST",

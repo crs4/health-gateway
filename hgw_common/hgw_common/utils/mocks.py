@@ -174,3 +174,8 @@ def start_mock_server(certs_dir, cls, port=None):
     mock_server_thread = Thread(target=mock_server.serve_forever)
     mock_server_thread.setDaemon(True)
     mock_server_thread.start()
+    return mock_server_thread, mock_server
+
+def stop_mock_server(mock_server_thread, mock_server):
+    mock_server.shutdown()
+    mock_server_thread.join()
