@@ -11,3 +11,7 @@ body {
 .link {
   color: black !important;
 }
+
+.custom-date-picker-label {
+  padding-left: 20px;
+}

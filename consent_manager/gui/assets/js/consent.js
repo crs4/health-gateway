@@ -19,13 +19,13 @@ import React from 'react';
 import Profile from './profile';
 import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
-import {Button, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
-import DatePicker from 'react-datepicker';
+import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
 import moment from 'moment';
 import {arrayToObject, copy, iterate} from './utils';
 import Pencil from 'react-icons/lib/fa/pencil';
 import PropTypes from 'prop-types';
 import NotificationManager from './notificationManager';
+import CustomDatePicker from './customDatePicker';
 
 moment.locale('it');  // This should correspond to the timezone set in Django
 
@@ -57,7 +57,7 @@ class ConfirmConsents extends React.Component {
         this.state = {
             consents: arrayToObject(this.props.data, 'confirm_id', 
                 {'checked': false, 'start_date_disabled': false, 'expire_date_disabled': false}),
-            sent: false,
+            sent: false,    
             modal: false
         };
     }
@@ -82,30 +82,24 @@ class ConfirmConsents extends React.Component {
                             <Profile data={c.profile}/>
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Starting">
-                            <Input type="checkbox" name={"excludeStartDate" + k} 
-                                id={"exclude-start-date-" + k} 
-                                onChange={this.checkDate.bind(this, c.confirm_id, 'start')}/>
-                            <Label for={"excludeStartDate" + k}>Exclude start date</Label>
-                            <DatePicker
-                                id={"exclude-start-date-date-picker" + k}
+                            <CustomDatePicker
+                                id={"start-date-picker-" + k}
                                 disabled={c.start_date_disabled}
-                                maxDate={moment(c.expire_validity)}
                                 selected={moment(c.start_validity)}
-                                onChange={this.changeDate.bind(this, c.confirm_id, 'start')}
-                            />
+                                maxDate={moment(c.start_validity)}
+                                label="Exclude Start Date"
+                                onChangeDate={this.changeDate.bind(this, c.confirm_id, 'start')}
+                                onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'start')}/>
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Ending">
-                            <Input type="checkbox" name={"excludeEndDate" + k}
-                                id={"exclude-end-date-" + k} 
-                                onChange={this.checkDate.bind(this, c.confirm_id, 'expire')}/>
-                            <Label for={"excludeEndDate{k}"}>Exclude end date</Label>
-                            <DatePicker
-                                id={"exclude-end-date-date-picker" + k}
+                            <CustomDatePicker
+                                id={"expire-date-picker-" + k}
                                 disabled={c.expire_date_disabled}
-                                minDate={moment(c.start_validity)}
                                 selected={moment(c.expire_validity)}
-                                onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
-                            />
+                                minDate={moment(c.start_validity)}
+                                label="Exclude End Date"
+                                onChangeDate={this.changeDate.bind(this, c.confirm_id, 'expire')}
+                                onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'expire')}/>
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
@@ -131,14 +125,10 @@ class ConfirmConsents extends React.Component {
                     <tr className="stack-table-row">
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Destination</th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile
-                        </th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Transfer Date
-                        </th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Date
-                        </th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Legal notice
-                        </th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Transfer Starting</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Starting</th>
+                        <th className="stack-table-cell stack-table-cell-header" scope="col">Legal notice</th>
                         <th className="stack-table-cell stack-table-cell-header" scope="col">
                             <input type="checkbox" name="confirm_all"
                                    disabled={this.state.sent}
