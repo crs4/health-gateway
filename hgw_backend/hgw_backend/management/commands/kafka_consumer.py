@@ -70,21 +70,21 @@ class Command(KafkaConsumerCommand):
                     end_channel_validity = channel_data['expire_validity']
                 except KeyError as k:
                     failure_reason = FailedConnector.WRONG_MESSAGE_STRUCTURE
-                    logger.error('Skipping message with id %s: cannot find %s attribute in the message', msg.offset, k.args[0])
+                    logger.error('Skipping message with id %s: cannot find %s attribute in the message', message.offset, k.args[0])
                 else:
                     if start_channel_validity is not None:
                         try:
                             start_channel_validity = parser.parse(channel_data['start_validity']).date().isoformat()
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
-                            logger.error('Skipping message with id %s: wrong start date format', msg.offset)
+                            logger.error('Skipping message with id %s: wrong start date format', message.offset)
 
                     if end_channel_validity is not None:
                         try:
                             end_channel_validity = parser.parse(channel_data['expire_validity']).date().isoformat()
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
-                            logger.error('Skipping message with id %s: wrong end date format', msg.offset)
+                            logger.error('Skipping message with id %s: wrong end date format', message.offset)
 
                     connector = {
                         'profile': source_endpoint_profile,
@@ -99,7 +99,7 @@ class Command(KafkaConsumerCommand):
                     if res is None:
                         failure_reason = FailedConnector.SENDING_ERROR
                         retry = True
-                        logger.error('Skipping message with id %s: error with contacting the Source Endpoint', msg.offset)
+                        logger.error('Skipping message with id %s: error with contacting the Source Endpoint', message.offset)
 
         if failure_reason is not None:
             try:
