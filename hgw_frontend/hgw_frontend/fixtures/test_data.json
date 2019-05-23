@@ -249,7 +249,7 @@
       "channel_id": "fF4sG1fgIGY1JcdqRSz91LelfQ6rq7qx",
       "flow_request": 2,
       "source": 1,
-      "status": "CR"
+      "status": "WS"
     }
   },
   {
@@ -259,7 +259,7 @@
       "channel_id": "kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh",
       "flow_request": 2,
       "source": 2,
-      "status": "WS"
+      "status": "AC"
     }
   },
   {

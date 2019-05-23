@@ -156,7 +156,7 @@ class TestConnectorConsumer(TestCase):
 
     def setUp(self):
         self.connector_notification_messages = [{
-            'channel_id': 'consent2'  # This channel is set as WS in the test data
+            'channel_id': 'wrong_consent2'  # This channel is set as WS in the test data
         }]
 
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
