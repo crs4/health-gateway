@@ -96,7 +96,7 @@ class ConfirmConsents extends React.Component {
                                 id={"expire-date-picker-" + k}
                                 disabled={c.expire_date_disabled}
                                 minDate={moment(c.start_validity)}
-                                selected={moment(c.end_validity)}
+                                selected={moment(c.expire_validity)}
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
                             />
                         </td>
@@ -222,7 +222,7 @@ class ConfirmConsents extends React.Component {
             if (consent.checked === true) {
                 consentsData[key] = {
                     'start_validity': consent.start_date_disabled ? null : consent.start_validity,
-                    'end_validity': consent.expire_date_disabled ? null : consent.end_validity
+                    'expire_validity': consent.expire_date_disabled ? null : consent.expire_validity
                 }
             }
         }
@@ -280,7 +280,7 @@ class ConsentsViewer extends React.Component {
                         {moment(c.start_validity).format('L')}
                     </td>
                     <td className="stack-table-cell" data-title="End Transfer Date">
-                        {moment(c.end_validity).format('L')}
+                        {moment(c.expire_validity).format('L')}
                     </td>
                     <td className="stack-table-cell stack-table-cell-modify"
                         onClick={this.callSelectConsent.bind(this, c)}>
@@ -388,7 +388,7 @@ class ConsentManager extends React.Component {
                             <td className='details-table-cell details-table-cell-value'>
                                 <DatePicker
                                     minDate={moment(this.props.consent.start_validity)}
-                                    maxDate={moment(consent.end_validity)}
+                                    maxDate={moment(consent.expire_validity)}
                                     selected={moment(consent.start_validity)}
                                     onChange={this.changeDate.bind(this, 'start')}
                                 />
@@ -401,7 +401,7 @@ class ConsentManager extends React.Component {
                             <td className='details-table-cell details-table-cell-value'>
                                 <DatePicker
                                     minDate={moment(consent.start_validity)}
-                                    selected={moment(consent.end_validity)}
+                                    selected={moment(consent.expire_validity)}
                                     onChange={this.changeDate.bind(this, 'expire')}
                                 />
                             </td>
@@ -463,7 +463,7 @@ class ConsentManager extends React.Component {
 
     canModify() {
         return this.state.consent.status === 'AC' && (this.state.consent.start_validity !== this.props.consent.start_validity ||
-            this.state.consent.end_validity !== this.props.consent.end_validity)
+            this.state.consent.expire_validity !== this.props.consent.expire_validity)
     }
 
     changeDate(startOrEnd, dateObject) {
@@ -508,7 +508,7 @@ class ConsentManager extends React.Component {
             case this.actions.MODIFY:
                 axios.put(`/v1/consents/${consent_id}/`, {
                     'start_validity': this.state.consent.start_validity,
-                    'end_validity': this.state.consent.end_validity
+                    'expire_validity': this.state.consent.expire_validity
                 }, {
                     withCredentials: true,
                     xsrfCookieName: 'csrftoken',

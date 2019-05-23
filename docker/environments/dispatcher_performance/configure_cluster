@@ -75,7 +75,7 @@ def _create_flow_request(flow_request_pk, flow_id, process_id, dest_pk, person_i
             "destination": dest_pk,
             "person_id": person_id,
             "start_validity": "2017-10-23T10:00:00.000Z",
-            "end_validity": "2018-10-23T10:00:00.000Z"
+            "expire_validity": "2018-10-23T10:00:00.000Z"
         }
     }
 
@@ -116,7 +116,7 @@ def _create_channel(pk, consent_id, source, destination, person_id):
             "timestamp": "2018-10-10T10:00:00.000Z",
             "confirmed": "2018-10-10T10:00:00.000Z",
             "start_validity": "2017-10-23T10:00:00.000Z",
-            "end_validity": "2018-10-23T10:00:00.000Z"
+            "expire_validity": "2018-10-23T10:00:00.000Z"
         }
     }
 

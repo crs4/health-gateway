@@ -218,7 +218,7 @@
       "destination": 2,
       "sources": [1],
       "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "end_validity": "2018-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00",
       "person_id": "100001"
     }
   },

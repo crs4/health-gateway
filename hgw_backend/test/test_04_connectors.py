@@ -53,7 +53,7 @@ CONNECTOR = {
     'dest_public_key': DEST_PUBLIC_KEY,
     'channel_id': CHANNEL_MESSAGE['channel_id'],
     'start_validity': '2017-10-23',
-    'end_validity': '2018-10-23',
+    'expire_validity': '2018-10-23',
 }
 
 

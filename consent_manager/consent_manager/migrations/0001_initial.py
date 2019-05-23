@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('timestamp', models.DateTimeField(auto_now_add=True)),
                 ('confirmed', models.DateTimeField(null=True)),
                 ('start_validity', models.DateTimeField(null=True)),
-                ('end_validity', models.DateTimeField(null=True)),
+                ('expire_validity', models.DateTimeField(null=True)),
             ],
         ),
         migrations.CreateModel(

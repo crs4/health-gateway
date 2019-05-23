@@ -155,7 +155,7 @@ class FlowRequestView(ViewSet):
         REST function to create a FlowRequest
         """
         if 'flow_id' not in request.data or \
-                xor(('start_validity' not in request.data), ('end_validity' not in request.data)):
+                xor(('start_validity' not in request.data), ('expire_validity' not in request.data)):
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
 
         # We get the sources. If the client specified a subset it checks if it's correct,
@@ -181,15 +181,15 @@ class FlowRequestView(ViewSet):
             'destination': request.auth.application.destination.pk,
             'sources': sources
         }
-        if 'start_validity' not in request.data and 'end_validity' not in request.data:
+        if 'start_validity' not in request.data and 'expire_validity' not in request.data:
             # Assign default values for the validity range: current datetime + 6 months
             start_datetime = datetime.datetime.now(gettz(TIME_ZONE))
             expire_datetime = start_datetime + datetime.timedelta(days=180)
             data['start_validity'] = start_datetime.strftime(TIME_FORMAT)
-            data['end_validity'] = expire_datetime.strftime(TIME_FORMAT)
+            data['expire_validity'] = expire_datetime.strftime(TIME_FORMAT)
         else:
             data['start_validity'] = request.data['start_validity']
-            data['end_validity'] = request.data['end_validity']
+            data['expire_validity'] = request.data['expire_validity']
 
         fr_serializer = FlowRequestSerializer(data=data)
         if fr_serializer.is_valid():
@@ -317,7 +317,7 @@ def _create_consents(flow_request, destination_endpoint_callback_url, user):
             'profile': ProfileSerializer(source.profile).data,
             'person_id': user.fiscalNumber,
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
-            'end_validity': flow_request.end_validity.strftime(TIME_FORMAT)
+            'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
         logger.debug("Creating consent with data %s", consent_data)
         res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
@@ -417,7 +417,7 @@ def _confirm(request, consent_confirm_id):
             'profile': profile_ser.data,
             'person_id': request.user.fiscalNumber,
             'start_validity': consent['start_validity'],
-            'end_validity': consent['end_validity']
+            'expire_validity': consent['expire_validity']
         }
 
         kafka_producer.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))

@@ -81,7 +81,7 @@ class TestHGWFrontendAPI(TestCase):
             'flow_id': 'f_44444',
             'profile': self.profile,
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00'
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
 
         self.encrypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
@@ -244,7 +244,7 @@ class TestHGWFrontendAPI(TestCase):
                         'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
                     },
                     'start_validity': '2017-10-23T10:00:00+02:00',
-                    'end_validity': '2018-10-23T10:00:00+02:00'
+                    'expire_validity': '2018-10-23T10:00:00+02:00'
                     }
         self.assertDictEqual(res.json(), expected)
 
@@ -274,7 +274,7 @@ class TestHGWFrontendAPI(TestCase):
                         'payload': '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]'
                     },
                     'start_validity': '2017-10-23T10:00:00+02:00',
-                    'end_validity': '2018-10-23T10:00:00+02:00'
+                    'expire_validity': '2018-10-23T10:00:00+02:00'
                     }
         self.assertDictEqual(res.json(), expected)
 
@@ -313,7 +313,7 @@ class TestHGWFrontendAPI(TestCase):
             'flow_id': '11111',
             'profile': None,
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00'
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
         res = self._add_flow_request()
@@ -335,7 +335,7 @@ class TestHGWFrontendAPI(TestCase):
         self.flow_request_data = {
             'flow_id': '11111',
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00'
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
         res = self._add_flow_request()
@@ -387,7 +387,7 @@ class TestHGWFrontendAPI(TestCase):
             'flow_id': '11111',
             'profile': self.profile,
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00'
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         self.flow_request_json_data = json.dumps(self.flow_request_data)
 
@@ -401,7 +401,7 @@ class TestHGWFrontendAPI(TestCase):
         """
         data = self.flow_request_data.copy()
         del data['start_validity']
-        del data['end_validity']
+        del data['expire_validity']
 
         headers = self._get_oauth_header()
         res = self.client.post('/v1/flow_requests/', data=json.dumps(data),
@@ -409,9 +409,9 @@ class TestHGWFrontendAPI(TestCase):
 
         self.assertEqual(res.status_code, 201)
         start_validity = parse(res.json()['start_validity'], ignoretz=True)
-        end_validity = parse(res.json()['end_validity'], ignoretz=True)
+        expire_validity = parse(res.json()['expire_validity'], ignoretz=True)
 
-        self.assertEqual(end_validity, start_validity + timedelta(days=180))
+        self.assertEqual(expire_validity, start_validity + timedelta(days=180))
 
     def test_add_flow_request_only_one_validity_date_provided(self):
         """
@@ -425,7 +425,7 @@ class TestHGWFrontendAPI(TestCase):
 
         self.assertEqual(res.status_code, 400)
         data = self.flow_request_data.copy()
-        del data['end_validity']
+        del data['expire_validity']
         res = self.client.post('/v1/flow_requests/', data=json.dumps(data),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 400)
@@ -573,7 +573,7 @@ class TestHGWFrontendAPI(TestCase):
             'profile': profile,
             'destination': destination,
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00'
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         fr = FlowRequest.objects.create(**data)
         fr.save()
@@ -608,7 +608,7 @@ class TestHGWFrontendAPI(TestCase):
             'profile': profile,
             'destination': destination,
             'start_validity': '2017-10-23T10:00:00+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00'
+            'expire_validity': '2018-10-23T10:00:00+02:00'
         }
         fr = FlowRequest.objects.create(**data)
         fr.save()
@@ -833,7 +833,7 @@ class TestHGWFrontendAPI(TestCase):
             'profile': self.profile,
             'person_id': TEST_PERSON1_ID,
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
-            'end_validity': '2018-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
         }
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], 'control')
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode()), kafka_data)

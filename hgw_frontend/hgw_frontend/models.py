@@ -56,7 +56,7 @@ class FlowRequest(models.Model):
     sources = models.ManyToManyField(Source)
     destination = models.ForeignKey('Destination')
     start_validity = models.DateTimeField(null=False)
-    end_validity = models.DateTimeField(null=False)
+    expire_validity = models.DateTimeField(null=False)
 
     def __unicode__(self):
         return 'Destination: {} - Process ID {} - Status: {}'.\

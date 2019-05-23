@@ -95,7 +95,7 @@ class ConsentView(ViewSet):
                 'source': consent['source'],
                 'status': consent['status'],
                 'start_validity': consent['start_validity'],
-                'end_validity': consent['end_validity']
+                'expire_validity': consent['expire_validity']
             })
         return Response(res)
 
@@ -158,7 +158,7 @@ class ConsentView(ViewSet):
                 'source': serializer.data['source'],
                 'status': serializer.data['status'],
                 'start_validity': serializer.data['start_validity'],
-                'end_validity': serializer.data['end_validity']
+                'expire_validity': serializer.data['expire_validity']
             }
             return Response(res)
 
@@ -281,8 +281,8 @@ class ConsentView(ViewSet):
                         consent.confirmed = datetime.now()
                         if 'start_validity' in consent_data:
                             consent.start_validity = consent_data['start_validity']
-                        if 'end_validity' in consent_data:
-                            consent.end_validity = consent_data['end_validity']
+                        if 'expire_validity' in consent_data:
+                            consent.expire_validity = consent_data['expire_validity']
                         consent.save()
                         confirmed.append(confirm_id)
                         logger.info('consent with id %s confirmed', consent)

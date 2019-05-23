@@ -109,7 +109,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                 'consent_id': consent_id,
                 'confirm_id': confirm_id,
                 'start_validity': '2017-10-23T10:00:54.123000+02:00',
-                'end_validity': '2018-10-23T10:00:00+02:00',
+                'expire_validity': '2018-10-23T10:00:00+02:00',
             }
         else:
             consent_search = re.search(self.WRONG_CONSENT_PATTERN, self.path)

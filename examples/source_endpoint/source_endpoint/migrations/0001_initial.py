@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('channel_id', models.CharField(max_length=256)),
                 ('profile', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='hgw_common.Profile')),
                 ('start_validity', models.DateField(null=True)),
-                ('end_validity', models.DateField(null=True)),
+                ('expire_validity', models.DateField(null=True)),
             ],
         ),
     ]

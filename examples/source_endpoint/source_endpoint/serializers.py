@@ -30,7 +30,7 @@ class ConnectorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Connector
-        fields = ('person_identifier', 'dest_public_key', 'channel_id', 'profile', 'start_validity', 'end_validity')
+        fields = ('person_identifier', 'dest_public_key', 'channel_id', 'profile', 'start_validity', 'expire_validity')
 
     def validate_channel_id(self, value):
         oauth_session, access_token_header = get_oauth_token(CONSENT_MANAGER_URI, CLIENT_ID, CLIENT_SECRET)

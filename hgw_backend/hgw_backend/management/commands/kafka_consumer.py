@@ -70,36 +70,36 @@ class Command(KafkaConsumerCommand):
                     end_channel_validity = channel_data['expire_validity']
                 except KeyError as k:
                     failure_reason = FailedConnector.WRONG_MESSAGE_STRUCTURE
-                    logger.error('Skipping message with id %s: cannot find %s attribute in the message', message.offset, k.args[0])
+                    logger.error('Skipping message with id %s: cannot find %s attribute in the message', msg.offset, k.args[0])
                 else:
                     if start_channel_validity is not None:
                         try:
                             start_channel_validity = parser.parse(channel_data['start_validity']).date().isoformat()
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
-                            logger.error('Skipping message with id %s: wrong start date format', message.offset)
+                            logger.error('Skipping message with id %s: wrong start date format', msg.offset)
 
                     if end_channel_validity is not None:
                         try:
                             end_channel_validity = parser.parse(channel_data['expire_validity']).date().isoformat()
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
-                            logger.error('Skipping message with id %s: wrong end date format', message.offset)
-                            
+                            logger.error('Skipping message with id %s: wrong end date format', msg.offset)
+
                     connector = {
                         'profile': source_endpoint_profile,
                         'person_identifier': person_id,
                         'dest_public_key': destination_kafka_key,
                         'channel_id': channel_id,
                         'start_validity': start_channel_validity,
-                        'end_validity': end_channel_validity
+                        'expire_validity': end_channel_validity
                     }
-                    logger.info("Consumed connector with data %s", connector)
+                    logger.debug("Consumed connector with data %s", connector)
                     res = source.create_connector(connector)
                     if res is None:
                         failure_reason = FailedConnector.SENDING_ERROR
                         retry = True
-                        logger.error('Skipping message with id %s: error ontacting the Source Endpoint', message.offset)
+                        logger.error('Skipping message with id %s: error with contacting the Source Endpoint', msg.offset)
 
         if failure_reason is not None:
             try:

@@ -28,4 +28,4 @@ class Connector(models.Model):
     channel_id = models.CharField(max_length=256)
     profile = models.ForeignKey('hgw_common.Profile')
     start_validity = models.DateField(null=True)
-    end_validity = models.DateField(null=True)
+    expire_validity = models.DateField(null=True)
