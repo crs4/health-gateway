@@ -1,21 +1,24 @@
 import json
 import os
 
-from django.test import TestCase
+from django.test import TestCase, client
 from mock.mock import call, patch
 
 from hgw_common.models import Profile
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
 from hgw_frontend.management.commands.backend_notification_consumer import \
     Command
-from hgw_frontend.models import Source
+from hgw_frontend.models import Channel, ConsentConfirmation, Source
 from hgw_frontend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                    KAFKA_SOURCE_NOTIFICATION_TOPIC)
 
 from . import PROFILE_1, PROFILE_2, SOURCE_3_ID, SOURCE_3_NAME
 
 
-class TestConsumer(TestCase):
+class TestSourceConsumer(TestCase):
+    """
+    Tests consumer for source updates from hgw backend
+    """
     def setUp(self):
         self.source_notification_messages = [{
             'source_id': SOURCE_3_ID,
@@ -82,8 +85,7 @@ class TestConsumer(TestCase):
         """
         Tests that the message is consumed but json decoding fails
         """
-        with patch('hgw_common.utils.KafkaConsumer',
-                   MockKafkaConsumer):
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
             messages = ['(a)']
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, False)
@@ -91,7 +93,7 @@ class TestConsumer(TestCase):
 
             self.assertEqual(Source.objects.count(), 0)
 
-    def test_failure_to_message_structure(self):
+    def test_source_failure_to_message_structure(self):
         """
         Tests that the message is consumed but it doesn't have the correct structure
         """
@@ -105,14 +107,14 @@ class TestConsumer(TestCase):
             }, {
                 'source_id': SOURCE_3_ID,
                 'name': SOURCE_3_NAME,
-            }]
+            }, 'wrong_type']
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
             Command().handle()
 
             self.assertEqual(Source.objects.count(), 0)
 
-    def test_failure_to_invalid_profile_structure(self):
+    def test_source_failure_to_invalid_profile_structure(self):
         """
         Tests that the message is consumed but it doesn't have the correct structure
         """
@@ -144,3 +146,77 @@ class TestConsumer(TestCase):
             Command().handle()
 
             self.assertEqual(Source.objects.count(), 0)
+
+
+class TestConnectorConsumer(TestCase):
+    """
+    Test consumer for connector updates from hgw backend
+    """
+    fixtures = ['test_data.json']
+
+    def setUp(self):
+        self.connector_notification_messages = [{
+            'channel_id': 'consent2'  # This channel is set as WS in the test data
+        }]
+
+    def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
+        mock_kc_klass.FIRST = 0
+        mock_kc_klass.END = 2
+        key = 'key'
+        mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
+                                                 value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
+                                  for i, m in enumerate(messages)}
+
+    def test_correct_connector_notification(self):
+        """
+        Tests that the message is received and the status of the corresponding Channel is set to ACTIVE
+        """
+        for connector in self.connector_notification_messages:
+            channel = ConsentConfirmation.objects.get(consent_id=connector['channel_id']).channel
+            self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.connector_notification_messages,
+                                         KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
+
+            Command().handle()
+
+            for connector in self.connector_notification_messages:
+                channel = ConsentConfirmation.objects.get(consent_id=connector['channel_id']).channel
+                self.assertEqual(channel.status, Channel.ACTIVE)
+
+    def test_failure_when_consent_status_is_wrong(self):
+        """
+        Tests that the message is received but nothing happens because the channel was not in 
+        WAITING_SOURCE_NOTIFICATION status
+        """
+        for connector in self.connector_notification_messages:
+            channel = ConsentConfirmation.objects.get(consent_id=connector['channel_id']).channel
+            channel.status = Channel.CONSENT_REQUESTED
+            channel.save()
+
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.connector_notification_messages,
+                                         KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
+            Command().handle()
+
+            for connector in self.connector_notification_messages:
+                channel = ConsentConfirmation.objects.get(consent_id=connector['channel_id']).channel
+                self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+
+    def test_failure_because_of_channel_not_found(self):
+        """
+        Tests that the message is received but nothing happens because the channel was not found
+        """
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer, [{'channel_id': 'wrong'}],
+                                         KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
+            Command().handle()
+
+    def test_failure_because_of_wrong_structure(self):
+        """
+        Tests that the message is received but nothing happens because the structure of the message was wrong
+        """
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer, [{'wrong': 'str'}, 'wrong'],
+                                         KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
+            Command().handle()

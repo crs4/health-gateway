@@ -18,12 +18,12 @@
 import json
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
-from kafka import KafkaConsumer, TopicPartition
 
 from hgw_common.utils import KafkaConsumerCommand, get_logger
-from hgw_frontend.models import Source
+from hgw_frontend.models import Channel, ConsentConfirmation, Source
 from hgw_frontend.serializers import SourceSerializer
+from hgw_frontend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
+                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
 
 logger = get_logger('backend_notification_consumer')
 
@@ -34,28 +34,59 @@ class Command(KafkaConsumerCommand):
     def __init__(self, *args, **kwargs):
         self.client_id = 'backend_notification_consumer'
         self.group_id = 'backend_notification_consumer'
-        self.topics = [settings.KAFKA_SOURCE_NOTIFICATION_TOPIC]
+        self.topics = [KAFKA_SOURCE_NOTIFICATION_TOPIC,
+                       KAFKA_CONNECTOR_NOTIFICATION_TOPIC]
         super(Command, self).__init__(*args, **kwargs)
 
     def handle_message(self, message):
-        logger.info('Found message')
+        logger.info('Found message for topic %s', message.topic)
         try:
-            source_data = json.loads(message.value.decode('utf-8'))
+            data = json.loads(message.value.decode('utf-8'))
         except json.JSONDecodeError:
-            logger.error('Cannot add Source. JSON Error')
+            logger.error('Cannot handle message. JSON Error')
+        else:
+            if message.topic == settings.KAFKA_SOURCE_NOTIFICATION_TOPIC:
+                return self._handle_source(data)
+            else:
+                return self._handle_connector(data)
+
+    def _handle_source(self, source_data):
+        try:
+            data = {key: source_data[key] for key in ['source_id', 'name', 'profile']}
+        except (KeyError, TypeError):
+            logger.error('Cannot find some source information in the message')
         else:
             try:
-                data = {key: source_data[key] for key in ['source_id', 'name', 'profile']}
-            except KeyError:
-                logger.error('Cannot find some source information in the message')
+                source = Source.objects.get(source_id=data['source_id'])
+            except Source.DoesNotExist:
+                logger.info('Inserting new source with id %s', data['source_id'])
+                source_serializer = SourceSerializer(data=data)
             else:
-                try:
-                    source = Source.objects.get(source_id=data['source_id'])
-                except Source.DoesNotExist:
-                    logger.info('Inserting new source with id %s', data['source_id'])
-                    source_serializer = SourceSerializer(data=data)
+                logger.info('Updating new source with id %s', data['source_id'])
+                source_serializer = SourceSerializer(source, data=data)
+            if source_serializer.is_valid():
+                source_serializer.save()
+                return True
+        return False
+
+    def _handle_connector(self, connector_data):
+        try:
+            consent_id = connector_data['channel_id']
+        except (KeyError, TypeError):
+            logger.error('Cannot find some consent information in the message')
+        else:
+            try:
+                consent_confirmation = ConsentConfirmation.objects.get(consent_id=consent_id)
+            except ConsentConfirmation.DoesNotExist:
+                logger.error('The consent was not found')
+            else:
+                channel = consent_confirmation.channel
+                if channel.status != Channel.WAITING_SOURCE_NOTIFICATION:
+                    logger.critical('Received channel confirmation from source for a channel'
+                                    'not in WAITING_SOURCE_NOTIFICATION status. Channel id is %s', channel.channel_id)
                 else:
-                    logger.info('Updating new source with id %s', data['source_id'])
-                    source_serializer = SourceSerializer(source, data=data)                        
-                if source_serializer.is_valid():
-                    source_serializer.save()
+                    logger.info('Changing Channel status to ACTIVE for channel with id %s', channel.channel_id)
+                    channel.status = Channel.ACTIVE
+                    channel.save()
+                    return True
+        return False

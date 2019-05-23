@@ -183,7 +183,7 @@ class TestConnectorCreation(TestCase):
             MockKafkaProducer().send.assert_called_once()
             self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
             self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                             {'consent_id': CONNECTOR['channel_id']})
+                             {'channel_id': CONNECTOR['channel_id']})
 
     def test_create_connector_oauth2_source_refresh_token_token_expired_exception(self):
         """
@@ -206,7 +206,7 @@ class TestConnectorCreation(TestCase):
             MockKafkaProducer().send.assert_called_once()
             self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
             self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                             {'consent_id': CONNECTOR['channel_id']})
+                             {'channel_id': CONNECTOR['channel_id']})
 
     def test_create_connector_oauth2_source_refresh_token_unauthorized_response(self):
         """
@@ -230,4 +230,4 @@ class TestConnectorCreation(TestCase):
             MockKafkaProducer().send.assert_called_once()
             self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
             self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                             {'consent_id': CONNECTOR['channel_id']})
+                             {'channel_id': CONNECTOR['channel_id']})

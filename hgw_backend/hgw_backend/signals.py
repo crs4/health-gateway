@@ -44,7 +44,7 @@ def source_saved_handler(sender, instance, **kwargs):
 
 def connector_created_handler(connector, **kwargs):
     message = {
-        'consent_id': connector['channel_id']
+        'channel_id': connector['channel_id']
     }
     kafka_producer = get_kafka_producer()
     if kafka_producer is not None:

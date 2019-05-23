@@ -426,7 +426,8 @@ def _confirm(request, consent_confirm_id):
         flow_request.status = FlowRequest.ACTIVE
         flow_request.save()
         channel = consent_confirmation.channel
-        channel.status = Channel.ACTIVE
+        logger.debug("Changing channel status to WAITING_SOURCE_NOTIFICATION for channel with id %s", channel.channel_id)
+        channel.status = Channel.WAITING_SOURCE_NOTIFICATION
         channel.save()
         return True
     return False

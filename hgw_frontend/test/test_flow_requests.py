@@ -27,8 +27,7 @@ from mock import patch
 
 from hgw_common.cipher import Cipher
 from hgw_common.models import AccessToken, Profile
-from hgw_common.utils.mocks import (MockKafkaConsumer, MockMessage,
-                                    get_free_port, start_mock_server)
+from hgw_common.utils.mocks import MockMessage, get_free_port, start_mock_server
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, Destination, FlowRequest,
@@ -37,9 +36,9 @@ from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 from hgw_frontend.serializers import SourceSerializer
 
 from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, TEST_PERSON1_ID,
-               WRONG_CONFIRM_ID, PROFILES_DATA, SOURCES_DATA, DEST_1_ID, DEST_1_NAME,
-               DEST_2_ID, DEST_2_NAME, DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME,
-               SOURCE_2_ID, SOURCE_2_NAME, DISPATCHER_NAME, POWERLESS_NAME)
+               WRONG_CONFIRM_ID, SOURCES_DATA, DEST_1_ID, DEST_1_NAME,
+               DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME,
+               DISPATCHER_NAME, POWERLESS_NAME)
 from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -463,7 +462,6 @@ class TestFlowRequestAPI(TestCase):
         Tests that if the requester, adding a flow request, tries to force the status to ACTIVE,
         the status is still set to PENDING
         """
-        headers = self._get_oauth_header()
         flow_request = self.flow_request.copy()
         flow_request.update({
             'process_id': '22222',
@@ -474,7 +472,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 201)
         res_flow_request = res.json()
         self.assertEqual(res_flow_request['flow_id'], flow_request['flow_id'])
-        self.assertNotEquals(res_flow_request['process_id'], flow_request['process_id'])
+        self.assertNotEqual(res_flow_request['process_id'], flow_request['process_id'])
         self.assertEqual(res_flow_request['status'], 'PE')
         self.assertDictEqual(res_flow_request['profile'], flow_request['profile'])
         self.assertEqual(FlowRequest.objects.all().count(), 4)
@@ -768,8 +766,8 @@ class TestFlowRequestAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
     def test_confirm_add_flow_request_confirmed_consent(self, mocked_kafka_producer):
         """
-        Tests the correct confirmation process. It checks that the FlowRequest and the Channels are set to ACTIVE and that the Kafka
-        message is sent 
+        Tests the correct confirmation process. It checks that the FlowRequest and the Channels are set to 
+        WAITING_SOURCE_NOTIFICATION and that the Kafka message is sent
         """
         self.client.login(username='duck', password='duck')
         # Gets the confirmation code installed with the test data
@@ -782,9 +780,8 @@ class TestFlowRequestAPI(TestCase):
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
         flow_request = c.flow_request
         self.assertEqual(flow_request.status, FlowRequest.ACTIVE)
-        channels = Channel.objects.filter(flow_request=flow_request)
-        for channel in channels:
-            self.assertEqual(channel.status, Channel.ACTIVE)
+        channel = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID).channel
+        self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
 
         destination = flow_request.destination
         kafka_data = {
@@ -834,7 +831,7 @@ class TestFlowRequestAPI(TestCase):
         for confirm_id in confirms_id:
             c = ConsentConfirmation.objects.get(confirmation_id=confirm_id)
             self.assertEqual(c.flow_request.status, FlowRequest.ACTIVE)
-            self.assertEqual(c.channel.status, Channel.ACTIVE)
+            self.assertEqual(c.channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
 
         redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)

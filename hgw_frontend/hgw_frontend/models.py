@@ -68,6 +68,7 @@ class FlowRequest(models.Model):
 
 class Channel(models.Model):
     CONSENT_REQUESTED = 'CR'
+    WAITING_SOURCE_NOTIFICATION = 'WS'
     ACTIVE = 'AC'
 
     STATUS_CHOICES = (

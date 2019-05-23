@@ -18,29 +18,17 @@ import json
 import logging
 import os
 
-from datetime import timedelta, datetime
-
 from Cryptodome.PublicKey import RSA
-from dateutil.parser import parse
 from django.test import TestCase, client
 from mock import patch
 
 from hgw_common.cipher import Cipher
-from hgw_common.models import AccessToken, Profile
 from hgw_common.utils.mocks import (MockKafkaConsumer, MockMessage,
                                     get_free_port, start_mock_server)
-from hgw_frontend import ERRORS_MESSAGE
-from hgw_frontend.models import (Channel, ConfirmationCode,
-                                 ConsentConfirmation, Destination, FlowRequest,
+from hgw_frontend.models import (ConsentConfirmation, Destination, FlowRequest,
                                  RESTClient)
-from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
-
-from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, TEST_PERSON1_ID,
-               WRONG_CONFIRM_ID, PROFILES_DATA, SOURCES_DATA, DEST_1_ID, DEST_1_NAME,
-               DEST_2_ID, DEST_2_NAME, DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME,
-               SOURCE_2_ID, SOURCE_2_NAME, DISPATCHER_NAME, POWERLESS_NAME)
-from .utils import (PROFILES_DATA, SOURCES_DATA, MockBackendRequestHandler,
-                    MockConsentManagerRequestHandler)
+from . import CORRECT_CONFIRM_ID, SOURCES_DATA, PROFILES_DATA
+from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -95,46 +83,40 @@ class TestHGWFrontendAPI(TestCase):
             'start_validity': '2017-10-23T10:00:00+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
         }
-        self.flow_request_with_sources = self.flow_request.copy()
-        self.flow_request_with_sources.update({
-            'sources': [{
-                'source_id': SOURCE_1_ID
-            }]
-        })
 
         self.encrypter = Cipher(public_key=RSA.importKey(DEST_PUBLIC_KEY))
 
         with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_frontend/fixtures/test_data.json'))) as fixtures_file:
             self.fixtures = json.load(fixtures_file)
-        
+
         self.profiles = {obj['pk']: obj['fields'] for obj in self.fixtures
                          if obj['model'] == 'hgw_common.profile'}
         self.sources = {obj['pk']: {
-                'source_id': obj['fields']['source_id'],
-                'name': obj['fields']['name'],
-                'profile':  self.profiles[obj['fields']['profile']]
-            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
+            'source_id': obj['fields']['source_id'],
+            'name': obj['fields']['name'],
+            'profile':  self.profiles[obj['fields']['profile']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
         self.destinations = {obj['pk']: obj['fields'] for obj in self.fixtures
                              if obj['model'] == 'hgw_frontend.destination'}
         self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
                               if obj['model'] == 'hgw_frontend.flowrequest'}
         self.channels = {obj['pk']: {
-                'channel_id': obj['fields']['channel_id'],
-                'source': self.sources[obj['fields']['source']],
-                'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
-                'destination_id':
-                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
+            'channel_id': obj['fields']['channel_id'],
+            'source': self.sources[obj['fields']['source']],
+            'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+            'destination_id':
+            self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
                 'status': obj['fields']['status']
-            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
+        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel'}
 
         self.active_flow_request_channels = {obj['pk']: {
-                'channel_id': obj['fields']['channel_id'],
-                'source': self.sources[obj['fields']['source']],
-                'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
-                'destination_id':
-                    self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
+            'channel_id': obj['fields']['channel_id'],
+            'source': self.sources[obj['fields']['source']],
+            'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+            'destination_id':
+            self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
                 'status': obj['fields']['status']
-            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel' and obj['fields']['flow_request'] == 2}
+        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel' and obj['fields']['flow_request'] == 2}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
@@ -148,11 +130,6 @@ class TestHGWFrontendAPI(TestCase):
     def _get_client_data(client_name=DEST_1_NAME):
         app = RESTClient.objects.get(name=client_name)
         return app.client_id, app.client_secret
-
-    def _add_flow_request(self, client_name=DEST_1_NAME):
-        headers = self._get_oauth_header(client_name)
-        return self.client.post('/v1/flow_requests/', data=self.flow_request_json_data,
-                                content_type='application/json', **headers)
 
     def _get_oauth_header(self, client_name=DEST_1_NAME):
         c_id, c_secret = self._get_client_data(client_name)
@@ -584,7 +561,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': ['not_found']})
-    
+
     def test_get_channels_by_flow_request(self):
         """
         Tests getting channels related to a specific flow_request
@@ -595,7 +572,7 @@ class TestHGWFrontendAPI(TestCase):
         expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
                     if ch_fi['destination_id'] == DEST_2_ID]
         self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))        
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
     def test_get_channels_by_flow_request_filter_by_status(self):
         """
@@ -607,7 +584,7 @@ class TestHGWFrontendAPI(TestCase):
         expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
                     if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
         self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))  
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
     def test_get_channels_by_flow_request_filter_by_status_wrong_status(self):
         """
@@ -625,7 +602,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/nonexistentfr/channels/', **headers)
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': ['not_found']})
-    
+
     def test_get_channels_by_flow_request_channels_not_found(self):
         """
         Tests getting channels related to a specific flow_request when the flow_request has no channels
@@ -634,7 +611,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/p_33333/channels/', **headers)
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': ['not_found']})
-    
+
     def test_get_channels_by_flow_request_not_owner(self):
         """
         Tests getting channels related to a specific flow_request when the flow_request does not
@@ -644,7 +621,7 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/p_22222/channels/', **headers)
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': ['not_found']})
-    
+
     def test_get_channels_by_flow_request_by_superuser(self):
         """
         Tests getting channels related to a specific flow_request
@@ -655,7 +632,7 @@ class TestHGWFrontendAPI(TestCase):
         expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
                     if ch_fi['destination_id'] == DEST_2_ID]
         self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))        
+        self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
     def test_get_channels_by_flow_request_unauthorized(self):
         """
