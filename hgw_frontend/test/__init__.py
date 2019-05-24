@@ -27,8 +27,7 @@ CORRECT_CONFIRM_ID = 'confirmed'
 CORRECT_CONFIRM_ID2 = 'confirmed2'
 WRONG_CONFIRM_ID = 'wrong_confirmed'
 WRONG_CONFIRM_ID2 = 'wrong_confirmed2'
-TEST_PERSON1_ID = '100001'
-TEST_PERSON2_ID = '100002'
+PERSON_ID = 'AAABBB12C34D567E'
 
 PROFILE_1 = {
     'code': 'PROF_001',

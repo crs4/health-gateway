@@ -26,8 +26,8 @@ from hgw_frontend.models import FlowRequest
 from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_ID
 
 from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
-    TEST_PERSON1_ID, CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2, \
-    SOURCES_DATA, PROFILES_DATA
+    CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2, \
+    SOURCES_DATA, PROFILES_DATA, PERSON_ID
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
     """
@@ -41,11 +41,11 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
 
     def do_POST(self):
         if self._path_match(self.CONSENTS_PATTERN):
-            # Mock the consent creation. The behaviour is: if the person is TEST_PERSON1_ID the consent is created.
+            # Mock the consent creation. The behaviour is: if the person is PERSON_ID the consent is created.
             # Otherwise the consent is not created and a 400 status code is returned
             consent_data = self._json_data()
 
-            if TEST_PERSON1_ID == consent_data['person_id']:
+            if PERSON_ID == consent_data['person_id']:
                 payload = {"consent_id": get_random_string(32),
                            "confirm_id": get_random_string(32),
                            "status": "PE"}
@@ -104,7 +104,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                     'name': 'Destination 1'
                 },
                 'profile': profile_data,
-                'person_id': TEST_PERSON1_ID,
+                'person_id': PERSON_ID,
                 'status': FlowRequest.ACTIVE,
                 'consent_id': consent_id,
                 'confirm_id': confirm_id,

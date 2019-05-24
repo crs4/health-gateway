@@ -30,16 +30,15 @@ from hgw_common.models import AccessToken, Profile
 from hgw_common.utils.mocks import MockMessage, get_free_port, start_mock_server
 from hgw_frontend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_frontend import ERRORS_MESSAGE
-from hgw_frontend.models import (Channel, ConfirmationCode,
-                                 ConsentConfirmation, Destination, FlowRequest,
-                                 RESTClient)
+from hgw_frontend.models import Channel, ConfirmationCode, \
+    ConsentConfirmation, Destination, FlowRequest, RESTClient
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 from hgw_frontend.serializers import SourceSerializer
 
-from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, TEST_PERSON1_ID,
-               WRONG_CONFIRM_ID, SOURCES_DATA, DEST_1_ID, DEST_1_NAME,
-               DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME,
-               DISPATCHER_NAME, POWERLESS_NAME)
+from . import CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, PERSON_ID, \
+    WRONG_CONFIRM_ID, SOURCES_DATA, DEST_1_ID, DEST_1_NAME, \
+    DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME, \
+    DISPATCHER_NAME, POWERLESS_NAME
 from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -749,7 +748,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 302)
         self.assertEqual(ConsentConfirmation.objects.count(), previous_consent_confirmation_count + 1)
         flow_request = ConfirmationCode.objects.get(code=confirm_id).flow_request
-        self.assertEqual(flow_request.person_id, '100001')
+        self.assertEqual(flow_request.person_id, PERSON_ID)
 
         channels = Channel.objects.filter(flow_request=flow_request)
         for channel in channels:
@@ -793,7 +792,7 @@ class TestFlowRequestAPI(TestCase):
                 'kafka_public_key': destination.kafka_public_key
             },
             'profile': self.profile,
-            'person_id': TEST_PERSON1_ID,
+            'person_id': PERSON_ID,
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00',
         }
