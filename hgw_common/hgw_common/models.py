@@ -156,3 +156,29 @@ class OAuth2SessionProxy(object):
             for k, v in token_data.items():
                 setattr(access_token, k, v)
             access_token.save()
+
+
+class FailedMessages(models.Model):
+    """
+    Model to store messages that was not notified
+    """
+    # JSON_DECODING = 'JS'
+    # DECODING = 'DE'
+    # SOURCE_NOT_FOUND = 'SN'
+    # WRONG_MESSAGE_STRUCTURE = 'WS'
+    # WRONG_DATE_FORMAT = 'WD'
+    # SENDING_ERROR = 'SE'
+    # UNKNOWN_ERROR = 'UE'
+
+    # FAIL_REASON = ((JSON_DECODING, 'JSON_DECODING'),
+    #                (DECODING, 'DECODING'),
+    #                (SOURCE_NOT_FOUND, 'SOURCE_NOT_FOUND'),
+    #                (WRONG_MESSAGE_STRUCTURE, 'WRONG_MESSAGE_STRUCTURE'),
+    #                (WRONG_DATE_FORMAT, 'WRONG_DATE_FORMAT'),
+    #                (SENDING_ERROR, 'SENDING_ERROR'),
+    #                (UNKNOWN_ERROR, 'UNKNOWN_ERROR'))
+
+    message_type = models.CharField(max_length=30, blank=False, null=False)
+    message = models.CharField(max_length=1500, blank=False, null=False)
+    reason = models.CharField(max_length=10, blank=False, null=False)
+    retry = models.BooleanField(help_text="Boolean indicating if the message delivery should be retried")

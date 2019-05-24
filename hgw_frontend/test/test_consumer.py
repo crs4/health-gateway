@@ -4,19 +4,22 @@ import os
 from django.test import TestCase, client
 from mock.mock import call, patch
 
-from hgw_common.models import Profile
+from hgw_common.models import FailedMessages, Profile
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
 from hgw_frontend.management.commands.backend_notification_consumer import \
     Command as BackendNotificationCommand
+from hgw_frontend.management.commands.consent_manager_notification_consumer import (FAILED_MESSAGE_TYPE,
+                                                                                    FAILED_REASON)
 from hgw_frontend.management.commands.consent_manager_notification_consumer import \
     Command as ConsentNotificationCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Source
-from hgw_frontend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC, \
-    KAFKA_CONNECTOR_NOTIFICATION_TOPIC, KAFKA_SOURCE_NOTIFICATION_TOPIC
+from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
+                                   KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
+                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
 
-from . import CORRECT_CONSENT_ID, DEST_1_ID, DEST_1_NAME, DEST_PUBLIC_KEY, \
-    PERSON_ID, PROFILE_1, PROFILE_2, SOURCE_1_ID, SOURCE_1_NAME, \
-    SOURCE_3_ID, SOURCE_3_NAME
+from . import (CORRECT_CONSENT_ID, DEST_1_ID, DEST_1_NAME, DEST_PUBLIC_KEY,
+               PERSON_ID, PROFILE_1, PROFILE_2, SOURCE_1_ID, SOURCE_1_NAME,
+               SOURCE_3_ID, SOURCE_3_NAME)
 
 
 class TestSourceConsumer(TestCase):
@@ -292,6 +295,7 @@ class TestConsentConsumer(TestCase):
                 self.assertEqual(MockKafkaProducer().send.call_args_list[index][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
                 self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[index][0][1].decode('utf-8')),
                                      self.out_messages[index])
+            self.assertEqual(FailedMessages.objects.count(), 0)
 
     def test_failure_because_of_wrong_input_structure(self):
         """
@@ -313,6 +317,12 @@ class TestConsentConsumer(TestCase):
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
                 self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
             MockKafkaProducer().send.assert_not_called()
+            self.assertEqual(FailedMessages.objects.count(), len(messages))
+            for message in FailedMessages.objects.all():
+                self.assertEqual(message.reason, FAILED_REASON.INVALID_STRUCTURE)
+                self.assertEqual(message.retry, False)
+                self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
+
 
     def test_failure_because_of_unknown_consent(self):
         """
@@ -326,6 +336,11 @@ class TestConsentConsumer(TestCase):
                 patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
             MockKafkaProducer().send.assert_not_called()
+            self.assertEqual(FailedMessages.objects.count(), 1)
+            message = FailedMessages.objects.first()
+            self.assertEqual(message.reason, FAILED_REASON.UNKNOWN_CONSENT)
+            self.assertEqual(message.retry, False)
+            self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
     
     def test_failure_because_of_different_person_id(self):
         """
@@ -342,6 +357,11 @@ class TestConsentConsumer(TestCase):
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
                 self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
             MockKafkaProducer().send.assert_not_called()
+            self.assertEqual(FailedMessages.objects.count(), 1)
+            message = FailedMessages.objects.first()
+            self.assertEqual(message.reason, FAILED_REASON.MISMATCHING_PERSON)
+            self.assertEqual(message.retry, False)
+            self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
     
     def test_failure_because_of_different_source(self):
         """
@@ -358,3 +378,26 @@ class TestConsentConsumer(TestCase):
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
                 self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
             MockKafkaProducer().send.assert_not_called()
+            self.assertEqual(FailedMessages.objects.count(), 1)
+            message = FailedMessages.objects.first()
+            self.assertEqual(message.reason, FAILED_REASON.MISMATCHING_SOURCE)
+            self.assertEqual(message.retry, False)
+            self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
+    
+    def test_failure_because_of_broker_connection_error(self):
+        """
+        Test that no action have been performed becaue the consent has a different person id than the channel
+        """
+        self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
+            ConsentNotificationCommand().handle()
+            for consent in self.in_messages:
+                channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
+                self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
+            self.assertEqual(FailedMessages.objects.count(), 1)
+            message = FailedMessages.objects.first()
+            self.assertEqual(message.reason, FAILED_REASON.FAILED_NOTIFICATION)
+            self.assertEqual(message.retry, True)
+            self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)

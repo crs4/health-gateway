@@ -17,18 +17,31 @@
 
 import json
 
-from hgw_common.notifier import get_notifier
+from hgw_common.notifier import get_notifier, NotificationError
 from hgw_common.utils import KafkaConsumerCommand, get_logger
-from hgw_frontend.models import (Channel, ConsentConfirmation, Destination,
-                                 FlowRequest)
+from hgw_common.models import FailedMessages
+from hgw_frontend.models import Channel, ConsentConfirmation, Destination, \
+    FlowRequest
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
 
+
 logger = get_logger(__file__)
 
+class FAILED_REASON():
+    FAILED_NOTIFICATION = 'FAILED_NOTIFICATION'
+    INVALID_STRUCTURE = 'INVALID_STRUCTURE'
+    JSON_DECODING = 'JSON_DECODING'
+    UNKNOWN_CONSENT = 'UNKNOWN_CONSENT'
+    MISMATCHING_PERSON = 'MISMATCHING_PERSON'
+    MISMATCHING_SOURCE = 'MISMATCHING_SOURCE'
+
+
+FAILED_MESSAGE_TYPE = 'CONSENT'
 
 class Command(KafkaConsumerCommand):
     help = 'Launch Backend Notification Consumer'
+
 
     def __init__(self, *args, **kwargs):
         self.client_id = self.group_id = 'consent_manager_notification_consumer'
@@ -40,27 +53,28 @@ class Command(KafkaConsumerCommand):
         expected_keys = (
             'consent_id', 'person_id', 'status',
             'source', 'destination', 'profile',
-            'start_validity', 'expire_validity')
+            'start_validity', 'expire_validity'
+        )
+
         try:
             for key in expected_keys:
                 assert key in consent
         except AssertionError:
             logger.error('Consent structure missing some keys')
-            return False
+            return FAILED_REASON.INVALID_STRUCTURE
 
         try:
             channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
         except ConsentConfirmation.DoesNotExist:
             logger.error('Cannot find the corresponding consent inside the db')
-            return False
+            return FAILED_REASON.UNKNOWN_CONSENT
 
         if channel.flow_request.person_id != consent['person_id']:
             logger.critical('The person id of the consent does not correspond to the Channel one')
-            return False
+            return FAILED_REASON.MISMATCHING_PERSON
         if channel.source.source_id != consent['source']['id']:
             logger.critical('The source id of the consent does not correspond to the Channel one')
-            return False
-        return True
+            return FAILED_REASON.MISMATCHING_SOURCE
 
     def handle_message(self, message):
         logger.info('Found message for topic %s', message.topic)
@@ -68,8 +82,18 @@ class Command(KafkaConsumerCommand):
             consent = json.loads(message.value.decode('utf-8'))
         except json.JSONDecodeError:
             logger.error('Cannot handle message. JSON Error')
+            FailedMessages.objects.create(
+                message_type=FAILED_MESSAGE_TYPE, message=message,
+                reason=FAILED_REASON.JSON_DECODING, retry=False
+            )
         else:
-            if self._validate_consent(consent):
+            fail_reason = self._validate_consent(consent)
+            if fail_reason:
+                FailedMessages.objects.create(
+                    message_type=FAILED_MESSAGE_TYPE, message=message,
+                    reason=fail_reason, retry=False
+                )
+            else:
                 consent_confirmation = ConsentConfirmation.objects.get(consent_id=consent['consent_id'])
                 channel = consent_confirmation.channel
                 if channel.status == Channel.CONSENT_REQUESTED and consent['status'] == 'AC':
@@ -91,8 +115,14 @@ class Command(KafkaConsumerCommand):
                         'expire_validity': consent['expire_validity']
                     }
 
-                    self.notifier.notify(channel)
+                    try:
+                        self.notifier.notify(channel)
+                    except NotificationError:
+                        FailedMessages.objects.create(
+                            message_type=FAILED_MESSAGE_TYPE, message=message,
+                            reason=FAILED_REASON.FAILED_NOTIFICATION, retry=True
+                        )
 
-                    flow_request = consent_confirmation.flow_request
-                    flow_request.status = FlowRequest.ACTIVE
-                    flow_request.save()
+                    # flow_request = consent_confirmation.flow_request
+                    # flow_request.status = FlowRequest.ACTIVE
+                    # flow_request.save()
