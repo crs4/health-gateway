@@ -5,6 +5,7 @@ import os
 from django.test import TestCase
 from mock.mock import call, patch
 
+from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_backend.management.commands.kafka_consumer import Command
 from hgw_backend.models import FailedConnector, Source
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
@@ -71,7 +72,7 @@ class TestConsumer(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        topic = 'control'.encode('utf-8')
+        topic = KAFKA_CHANNEL_NOTIFICATION_TOPIC.encode('utf-8')
         key = 'key'
         mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))

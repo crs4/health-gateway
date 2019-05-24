@@ -67,12 +67,16 @@ class FlowRequest(models.Model):
 
 
 class Channel(models.Model):
+    # The channel has been created and the corresponding consent has been created in the consent manager
     CONSENT_REQUESTED = 'CR'
+    # The consent has been given and it is waiting for the source to be notified
     WAITING_SOURCE_NOTIFICATION = 'WS'
+    # The source has been notified and the channel is active
     ACTIVE = 'AC'
 
     STATUS_CHOICES = (
         (CONSENT_REQUESTED, 'CONSENT_REQUESTED'),
+        (WAITING_SOURCE_NOTIFICATION, 'WAITING_SOURCE_NOTIFICATION'),
         (ACTIVE, 'ACTIVE')
     )
 

@@ -19,6 +19,7 @@ class TestSourceConsumer(TestCase):
     """
     Tests consumer for source updates from hgw backend
     """
+
     def setUp(self):
         self.source_notification_messages = [{
             'source_id': SOURCE_3_ID,
@@ -220,3 +221,18 @@ class TestConnectorConsumer(TestCase):
             self.set_mock_kafka_consumer(MockKafkaConsumer, [{'wrong': 'str'}, 'wrong'],
                                          KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
             Command().handle()
+
+
+class TestConsentConsumer(TestCase):
+    """
+    Test consumer for consent updates from consent manager
+    """
+
+    def setUp(self):
+        # consent = {
+        #     'consent_id': 'Stdfp5OfR1KXh4c6DP7yspsyncHs7VoD', 
+        #     'status': 'AC', 
+        #     'source': OrderedDict([('id', 'source_3_id'), ('name', 'source_3_name')]), 
+        #     'destination': OrderedDict([('id', 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'), ('name', 'DEST_MOCKUP')]), 'person_id': 'AAABBB12C34D567E', 'profile': OrderedDict([('code', 'PROF002'), ('version', 'hgw.document.profile.v0'), (
+        #     'payload', '[{"clinical_domain": "Laboratory", "filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, {"clinical_domain": "Radiology", "filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, {"clinical_domain": "Emergency", "filters": [{"excludes": "", "includes": ""}]}, {"clinical_domain": "Prescription", "filters": [{"excludes": "", "includes": ""}]}]')]), 'start_validity': None, 'expire_validity': None}
+        return super().setUp()

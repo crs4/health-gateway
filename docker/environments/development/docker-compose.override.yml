@@ -48,4 +48,4 @@ services:
 
 #  kafka:
 #    environment:
-#      - KAFKA_CREATE_TOPICS=control:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC:1:1:hgwbackend:hgwdispatcher
+#      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC:1:1:hgwbackend:hgwdispatcher

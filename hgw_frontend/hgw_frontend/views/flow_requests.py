@@ -23,7 +23,6 @@ from operator import xor
 
 import requests
 import six
-from dateutil import parser
 from dateutil.tz import gettz
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
@@ -52,7 +51,7 @@ from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    HGW_BACKEND_CLIENT_SECRET, HGW_BACKEND_URI,
                                    KAFKA_BROKER, KAFKA_CA_CERT,
                                    KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY,
-                                   KAFKA_SSL, KAFKA_TOPIC, TIME_ZONE)
+                                   KAFKA_SSL, KAFKA_CHANNEL_NOTIFICATION_TOPIC, TIME_ZONE)
 
 logger = logging.getLogger('hgw_frontend')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -136,10 +135,10 @@ class FlowRequestView(ViewSet):
                     source = Source.objects.get(source_id=source_data['source_id'])
                 except Source.DoesNotExist:
                     data = {
-                        'source_id': source_data['source_id'], 
+                        'source_id': source_data['source_id'],
                         'name': source_data['name'],
                         'profile': source_data['profile']
-                    } 
+                    }
                     source_serializer = SourceSerializer(data=data)
                     if source_serializer.is_valid():
                         source = source_serializer.save()
@@ -420,7 +419,7 @@ def _confirm(request, consent_confirm_id):
             'expire_validity': consent['expire_validity']
         }
 
-        kafka_producer.send(KAFKA_TOPIC, json.dumps(channel).encode('utf-8'))
+        kafka_producer.send(KAFKA_CHANNEL_NOTIFICATION_TOPIC, json.dumps(channel).encode('utf-8'))
 
         flow_request = consent_confirmation.flow_request
         flow_request.status = FlowRequest.ACTIVE
@@ -457,12 +456,9 @@ def consents_confirmed(request):
 @require_GET
 @login_required
 def confirm_request(request):
-    logger.debug("Scheme: %s", request.scheme)
-    logger.debug("User: %s", request.user.fiscalNumber)
     if not request.user.fiscalNumber:
         return HttpResponseBadRequest(ERRORS_MESSAGE['MISSING_PERSON_ID'])
     try:
-        logger.debug('request.GET.keys() %s', request.GET.keys())
         fr_confirm_code = request.GET['confirm_id']
         fr_callback_url = request.GET['callback_url']
         action = request.GET['action']
@@ -471,6 +467,7 @@ def confirm_request(request):
     else:
         if action not in CONFIRM_ACTIONS:
             return HttpResponseBadRequest(ERRORS_MESSAGE['UNKNOWN_ACTION'])
+
         try:
             cc = ConfirmationCode.objects.get(code=fr_confirm_code)
         except ConfirmationCode.DoesNotExist:

@@ -28,6 +28,7 @@ from mock import patch
 from hgw_common.cipher import Cipher
 from hgw_common.models import AccessToken, Profile
 from hgw_common.utils.mocks import MockMessage, get_free_port, start_mock_server
+from hgw_frontend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, Destination, FlowRequest,
@@ -796,7 +797,7 @@ class TestFlowRequestAPI(TestCase):
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00',
         }
-        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], 'control')
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode()), kafka_data)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)

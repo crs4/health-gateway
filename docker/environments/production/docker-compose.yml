@@ -68,7 +68,7 @@ services:
       - KAFKA_PORT=9092
       - KAFKA_SSL_PORT=9093
       - KAFKA_ADVERTISED_HOST_NAME=kafka
-      - KAFKA_CREATE_TOPICS=control:1:1:hgwfrontend:hgwbackend
+      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend
       - TZ=CET
     extra_hosts:
       - "kafka:127.0.1.1"
