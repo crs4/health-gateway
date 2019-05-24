@@ -420,7 +420,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_modify(self, mocked_kafka_producer):
         """
         Test consent modification (i.e., update). It can update only the start date and end data
@@ -442,7 +442,7 @@ class TestAPI(TestCase):
         consent_serializer = ConsentSerializer(consent)
         self.assertEqual(consent_serializer.data['start_validity'], updated_data['start_validity'])
         self.assertEqual(consent_serializer.data['expire_validity'], updated_data['expire_validity'])
-        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_TOPIC)
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')),
                              consent_serializer.data)
 
@@ -581,7 +581,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_revoke(self, mocked_kafka_producer):
         """
         Test revoke operation for a single consent. Test that the consent is not revoked in case
@@ -600,7 +600,7 @@ class TestAPI(TestCase):
         consent_serializer = ConsentSerializer(consent)
 
         self.assertEqual(consent.status, Consent.REVOKED)
-        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_TOPIC)
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')),
                              consent_serializer.data)
 
@@ -680,7 +680,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_revoke_list(self, mocked_kafka_producer):
         """
         Tests consents revocation
@@ -709,7 +709,7 @@ class TestAPI(TestCase):
             consent_serializer = ConsentSerializer(consent)
             
             self.assertEqual(consent.status, Consent.REVOKED)
-            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
                                  consent_serializer.data)
 
@@ -890,7 +890,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps(data), content_type='application/json')
         return consents, res
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_confirm_with_correct_notification(self, mocked_kafka_producer):
         """
         Tests correct consent confirmation
@@ -905,11 +905,11 @@ class TestAPI(TestCase):
             consent_serializer = ConsentSerializer(consent_obj)
             self.assertEqual(consent_serializer.data['start_validity'], consent_data['start_validity'])
             self.assertEqual(consent_serializer.data['expire_validity'], consent_data['expire_validity'])
-            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
                                  consent_serializer.data)
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_confirm_with_correct_notification_and_null_validity_dates(self, mocked_kafka_producer):
         """
         Tests correct consent confirmation with start and expire validity set to null
@@ -926,7 +926,8 @@ class TestAPI(TestCase):
             self.assertEqual(consent_serializer.data['start_validity'], None)
             self.assertEqual(consent_serializer.data['expire_validity'], None)
 
-            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_TOPIC)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
+            print(consent_serializer.data)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
                                  consent_serializer.data)
 

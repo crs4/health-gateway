@@ -32,9 +32,9 @@ from rest_framework.viewsets import ViewSet
 
 from consent_manager import serializers
 from consent_manager.models import ConfirmationCode, Consent
-from consent_manager.notifier import NotificationError, get_notifier
 from consent_manager.serializers import ConsentSerializer
-from consent_manager.settings import USER_ID_FIELD
+from consent_manager.settings import USER_ID_FIELD, KAFKA_NOTIFICATION_TOPIC
+from hgw_common.notifier import NotificationError, get_notifier
 from hgw_common.utils import (ERRORS,
                               IsAuthenticatedOrTokenHasResourceDetailedScope,
                               get_logger)
@@ -67,7 +67,7 @@ class ConsentView(ViewSet):
         Method to notify consent changes. If the notifier is None it gets one
         """
         if self._notifier is None:
-            self._notifier = get_notifier()
+            self._notifier = get_notifier(KAFKA_NOTIFICATION_TOPIC)
         consent_serializer = ConsentSerializer(consent)
         self._notifier.notify(consent_serializer.data)
 

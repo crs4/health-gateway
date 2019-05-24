@@ -260,7 +260,7 @@ SWAGGER_SETTINGS = {
 NOTIFICATION_TYPE = cfg['notification']['type']
 if NOTIFICATION_TYPE == 'kafka':
     KAFKA_BROKER = cfg['notification']['kafka']['uri']
-    KAFKA_TOPIC = cfg['notification']['kafka']['topic']
+    KAFKA_NOTIFICATION_TOPIC = cfg['notification']['kafka']['topic']
     KAFKA_SSL = cfg['notification']['kafka']['ssl']
     KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['ca_cert'])
     KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['client_cert'])

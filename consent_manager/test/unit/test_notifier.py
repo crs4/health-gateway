@@ -24,10 +24,8 @@ import json
 from django.test import TestCase
 from mock import patch
 
-import consent_manager
 from consent_manager import settings
-from consent_manager.notifier import (KafkaNotifier, NotificationError,
-                                      UnknownNotifier, get_notifier)
+from hgw_common.notifier import (KafkaNotifier, NotificationError, UnknownNotifier, get_notifier)
 
 
 class TestNotifiers(TestCase):
@@ -35,19 +33,19 @@ class TestNotifiers(TestCase):
     Test notifiers class
     """
 
-    @patch('consent_manager.settings.NOTIFICATION_TYPE', 'unknown')
+    @patch('hgw_common.notifier.settings.NOTIFICATION_TYPE', 'unknown')
     def test_raise_unknown_notifier(self):
         """
         Tests that, when the notifier is unknown the get_notifier function raises an error
         """
-        self.assertRaises(UnknownNotifier, get_notifier)
+        self.assertRaises(UnknownNotifier, get_notifier, settings.KAFKA_NOTIFICATION_TOPIC)
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_get_kafka_notifier(self, mocked_kafka_producer):
         """
         Tests that, when the settings specifies a kafka notifier, the instantiated notifier is KafkaNotifier
         """
-        notifier = get_notifier()
+        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertIsInstance(notifier, KafkaNotifier)
 
 
@@ -60,25 +58,25 @@ class TestKafkaNotifier(TestCase):
         """
         Tests that, if the kafka broker is not accessible, the notify method raises an exception
         """
-        notifier = get_notifier()
+        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertRaises(NotificationError, notifier.notify, {'message': 'fake_message'})
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_fail_json_encoding_error(self, mocked_kafka_producer):
         """
         Tests that, if the json encoding fails the notify method raises an exception
         """
-        notifier = get_notifier()
+        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
         # NB: set are not json serializable so we can use it to cause a json encoding error
         self.assertRaises(NotificationError, notifier.notify, {"wrong_object"})
 
-    @patch('consent_manager.notifier.KafkaProducer')
+    @patch('hgw_common.notifier.KafkaProducer')
     def test_correct_send(self, mocked_kafka_producer):
         """
         Tests that, if the json encoding fails the notify method raises an exception
         """
-        notifier = get_notifier()
+        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
         notifier.notify(message)
-        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_TOPIC)
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')), message)

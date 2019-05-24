@@ -25,11 +25,10 @@ import time
 
 import docker
 from django.test import TestCase
-from kafka import KafkaConsumer, KafkaProducer, TopicPartition
+from kafka import KafkaConsumer, TopicPartition
 
 from consent_manager import settings
-from consent_manager.notifier import (KafkaNotifier, NotificationError,
-                                      UnknownNotifier, get_notifier)
+from hgw_common.notifier import NotificationError, get_notifier
 
 
 class TestKafkaNotifier(TestCase):
@@ -65,7 +64,7 @@ class TestKafkaNotifier(TestCase):
             "KAFKA_SSL_PORT=9093",
             "KAFKA_ADVERTISED_HOST_NAME=kafka",
             "TZ=CET",
-            "KAFKA_CREATE_TOPICS=consent-manager-notifications:1:1::"
+            "KAFKA_CREATE_TOPICS=consent_manager_notification:1:1::"
         ]
 
         certs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/server/')
@@ -104,12 +103,12 @@ class TestKafkaNotifier(TestCase):
         """
         Tests that, if the json encoding fails the notify method raises an exception
         """
-        notifier = get_notifier()
+        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
         notifier.notify(message)
 
         consumer = KafkaConsumer(bootstrap_servers='kafka:9092')
-        partition = TopicPartition('consent-manager-notifications', 0)
+        partition = TopicPartition('consent_manager_notification', 0)
         consumer.assign([partition])
         consumer.seek_to_beginning(partition)
 
@@ -124,6 +123,6 @@ class TestKafkaNotifier(TestCase):
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
-        notifier = get_notifier()
+        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertRaises(NotificationError, notifier.notify, {'message': 'fake_message'})
         container.start()

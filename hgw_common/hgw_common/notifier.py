@@ -20,7 +20,7 @@ import json
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
-from consent_manager import settings
+from django.conf import settings
 
 
 class UnknownNotifier(Exception):
@@ -84,13 +84,13 @@ class KafkaNotifier(GenericNotifier):
             raise NotificationError('Something bad happened notifying the message')
 
 
-def get_notifier():
+def get_notifier(name):
     """
     Methods that returns the correct notifier based on the settings file
     """
     if settings.NOTIFICATION_TYPE == 'kafka':
         return KafkaNotifier(settings.KAFKA_BROKER,
-                             settings.KAFKA_TOPIC,
+                             name,
                              settings.KAFKA_SSL,
                              settings.KAFKA_CA_CERT,
                              settings.KAFKA_CLIENT_CERT,
