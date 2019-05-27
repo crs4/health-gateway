@@ -388,46 +388,9 @@ def _confirm(request, consent_confirm_id):
         return False
 
     if consent['status'] == 'AC':
-        logger.debug("Consent status is AC. Sending message to KAFKA")
-        if KAFKA_SSL:
-            producer_params = {
-                'bootstrap_servers': KAFKA_BROKER,
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': KAFKA_CA_CERT,
-                'ssl_certfile': KAFKA_CLIENT_CERT,
-                'ssl_keyfile': KAFKA_CLIENT_KEY
-            }
-        else:
-            producer_params = {
-                'bootstrap_servers': KAFKA_BROKER
-            }
-        kafka_producer = KafkaProducer(**producer_params)
-
-        destination = Destination.objects.get(destination_id=consent['destination']['id'])
-        profile_ser = ProfileSerializer(consent_confirmation.flow_request.profile)
-        channel = {
-            'channel_id': consent_confirmation.consent_id,
-            'source_id': consent['source']['id'],
-            'destination': {
-                'destination_id': destination.destination_id,
-                'kafka_public_key': destination.kafka_public_key
-            },
-            'profile': profile_ser.data,
-            'person_id': request.user.fiscalNumber,
-            'start_validity': consent['start_validity'],
-            'expire_validity': consent['expire_validity']
-        }
-
-        kafka_producer.send(KAFKA_CHANNEL_NOTIFICATION_TOPIC, json.dumps(channel).encode('utf-8'))
-
         flow_request = consent_confirmation.flow_request
         flow_request.status = FlowRequest.ACTIVE
         flow_request.save()
-        channel = consent_confirmation.channel
-        logger.debug("Changing channel status to WAITING_SOURCE_NOTIFICATION for channel with id %s", channel.channel_id)
-        channel.status = Channel.WAITING_SOURCE_NOTIFICATION
-        channel.save()
         return True
     return False
 
@@ -444,13 +407,8 @@ def consents_confirmed(request):
     flow_request = flow_requests[0]
     logger.debug("Flow request found")
     callback = flow_request.consentconfirmation_set.all()[0].destination_endpoint_callback_url
-    done = False
-    if success:
-        for consent_confirm_id in consent_confirm_ids:
-            logger.debug("Checking consents")
-            done = _confirm(request, consent_confirm_id)
     return HttpResponseRedirect('{}?process_id={}&success={}'.format(
-        callback, flow_request.process_id, json.dumps(done)))
+        callback, flow_request.process_id, json.dumps(True)))
 
 
 @require_GET

@@ -64,6 +64,7 @@ if [ "$1" == "test" ]; then
 else 
     echo "Starting kafka consumer"
     /launch-notification-worker-consumer.sh &
+    /launch-consent-notification-consumer.sh &
     if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
         envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
         nginx
