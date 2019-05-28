@@ -28,9 +28,11 @@ ENV HTTP_PORT=${HTTP_PORT}
 
 COPY resources/docker-entrypoint.sh /custom_entrypoint/
 COPY resources/launch-notification-worker-consumer.sh /
+COPY resources/launch-consent-notification-consumer.sh /
 COPY service/ /container/service/
 
 RUN chmod +x /custom_entrypoint/docker-entrypoint.sh
 RUN chmod +x /launch-notification-worker-consumer.sh
+RUN chmod +x /launch-consent-notification-consumer.sh
 
 EXPOSE ${HTTP_PORT}

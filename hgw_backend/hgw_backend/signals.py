@@ -1,8 +1,10 @@
 import json
+from traceback import format_exc
 
 from django.db.models.signals import post_save
 from django.dispatch import Signal, receiver
-from kafka.errors import KafkaError
+from kafka.errors import (KafkaError, KafkaTimeoutError,
+                          TopicAuthorizationFailedError)
 
 from hgw_backend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
@@ -48,4 +50,20 @@ def connector_created_handler(connector, **kwargs):
     }
     kafka_producer = get_kafka_producer()
     if kafka_producer is not None:
-        kafka_producer.send(KAFKA_CONNECTOR_NOTIFICATION_TOPIC, value=json.dumps(message).encode('utf-8'))
+        try:
+            future = kafka_producer.send(KAFKA_CONNECTOR_NOTIFICATION_TOPIC, value=json.dumps(message).encode('utf-8'))
+        except KafkaTimeoutError:
+            logger.debug('Cannot get topic %s metadata. Probably the token does not exist', KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+            return None
+        # Block for 'synchronous' sends
+        try:
+            future.get(timeout=2)
+        except TopicAuthorizationFailedError:
+            logger.debug('Missing write permission to write in topic %s', KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+            return None
+        except KafkaError:
+            logger.debug('An error occurred sending message to topic %s. Error details %s', KAFKA_CONNECTOR_NOTIFICATION_TOPIC, format_exc())
+            # Decide what to do if produce request failed...
+            return None
+        else:
+            logger.debug('Connector creation notified correctly')        

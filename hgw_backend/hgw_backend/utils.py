@@ -31,8 +31,8 @@ def get_kafka_producer():
     try:
         return KafkaProducer(**consumer_params)
     except NoBrokersAvailable:
-        logger.info('Cannot connect to kafka broker')
+        logger.error('Cannot connect to kafka broker')
         return None
     except SSLError:
-        logger.info('Failed authentication connection to kafka broker. Wrong certs')
+        logger.error('Failed authentication connection to kafka broker. Wrong certs')
         return None

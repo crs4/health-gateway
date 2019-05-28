@@ -139,18 +139,20 @@ class Messages(APIView):
             try:
                 future = producer.send(topic, key=channel_id, value=payload)
             except KafkaTimeoutError:
-                logger.info('Cannot get topic %s metadata. Probably the token does not exist', topic)
+                logger.debug('Cannot get topic %s metadata. Probably the token does not exist', topic)
                 # Topic doesn't exist
                 return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
             # Block for 'synchronous' sends
             try:
                 future.get(timeout=2)
             except TopicAuthorizationFailedError:
-                logger.info('Missing write permission to write in topic %s', topic)
+                logger.debug('Missing write permission to write in topic %s', topic)
                 return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
             except KafkaError:
-                logger.info('An error occurred sending message to topic %s. Error details %s', topic, format_exc())
+                logger.debug('An error occurred sending message to topic %s. Error details %s', topic, format_exc())
                 # Decide what to do if produce request failed...
                 return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                logger.debug('Connector creation notified correctly')
 
         return Response({}, 200)

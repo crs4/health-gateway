@@ -781,23 +781,8 @@ class TestFlowRequestAPI(TestCase):
         flow_request = c.flow_request
         self.assertEqual(flow_request.status, FlowRequest.ACTIVE)
         channel = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID).channel
-        self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
-
-        destination = flow_request.destination
-        kafka_data = {
-            'channel_id': c.consent_id,
-            'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
-            'destination': {
-                'destination_id': destination.destination_id,
-                'kafka_public_key': destination.kafka_public_key
-            },
-            'profile': self.profile,
-            'person_id': PERSON_ID,
-            'start_validity': '2017-10-23T10:00:54.123000+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00',
-        }
-        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
-        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode()), kafka_data)
+        # It remain CR until the consent notification consumer gets the change
+        self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
@@ -820,9 +805,15 @@ class TestFlowRequestAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
     def test_multiple_consent_confirms_request(self, mocked_kafka_producer):
-
+        
         self.client.login(username='duck', password='duck')
         confirms_id = (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2)
+        # First we force the channel status to CONSENT_REQUESTED
+        for confirm_id in confirms_id:
+            c = ConsentConfirmation.objects.get(confirmation_id=confirm_id)
+            c.channel.status = Channel.CONSENT_REQUESTED
+            c.channel.save()
+            
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}&consent_confirm_id={}'.format(
                 *confirms_id))
@@ -831,7 +822,7 @@ class TestFlowRequestAPI(TestCase):
         for confirm_id in confirms_id:
             c = ConsentConfirmation.objects.get(confirmation_id=confirm_id)
             self.assertEqual(c.flow_request.status, FlowRequest.ACTIVE)
-            self.assertEqual(c.channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
+            self.assertEqual(c.channel.status, Channel.CONSENT_REQUESTED)
 
         redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)

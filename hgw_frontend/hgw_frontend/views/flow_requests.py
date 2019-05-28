@@ -407,8 +407,13 @@ def consents_confirmed(request):
     flow_request = flow_requests[0]
     logger.debug("Flow request found")
     callback = flow_request.consentconfirmation_set.all()[0].destination_endpoint_callback_url
+    done = False
+    if success:
+        for consent_confirm_id in consent_confirm_ids:
+            logger.debug("Checking consents")
+            done = _confirm(request, consent_confirm_id)
     return HttpResponseRedirect('{}?process_id={}&success={}'.format(
-        callback, flow_request.process_id, json.dumps(True)))
+        callback, flow_request.process_id, json.dumps(done)))
 
 
 @require_GET
