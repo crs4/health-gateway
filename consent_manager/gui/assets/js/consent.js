@@ -95,29 +95,16 @@ class ConfirmConsents extends React.Component {
                             <CustomDatePicker
                                 id={"expire-date-picker-" + k}
                                 disabled={c.expire_date_disabled}
-                                minDate={moment(c.start_validity)}
                                 selected={moment(c.expire_validity)}
+                                minDate={moment(c.start_validity)}
+                                label="Exclude End Date"
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
-                            />
+                                onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'expire')}/>
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
-                            <ul>
-                                Processing Controller Identity: Inpeco TPM
-                                <li>Processing Controller contact details: info_data_processing@inpecotpm.com</li>
-                                <li>
-                                    Purposes of processing:
-                                    <ul>
-                                        <li>Data transfer to TPM Patient-Driven Health Record (PDHR)</li>
-                                        <li>Data storage in TPM PDHR</li>
-                                        <li>Data displaying for the Data Subject</li>
-                                    </ul>
-                                </li>
-                                <li> The Controller will not transfer personal data to a third Country or international organisation</li>
-                                <li> The Data will be stored in the Data Subject from the Start Vaildity Date to End Vaildity Date.</li>
-                                <li> The Data Subject has the right to request from the Controller access to and rectification or erasure of personal data or restriction of processing concerning the Data Subject or to object to processing as well as the right to data portability.</li>
-                                <li> The Data Subject has the right to withdraw consent at any time.</li>
-                                <li> The Data Subject has the right to lodge a complaint with a supervisory authority</li>
-                            </ul>
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+                            nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                         </td>
                         <td className="stack-table-cell" data-title="Confirm">
                             <input type="checkbox" name="confirm_list" value={c.confirm_id}
@@ -423,23 +410,9 @@ class ConsentManager extends React.Component {
                                 Legal Notice
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
-                                <ul>
-                                    Processing Controller Identity: Inpeco TPM
-                                    <li>Processing Controller contact details: info_data_processing@inpecotpm.com</li>
-                                    <li>
-                                        Purposes of processing:
-                                        <ul>
-                                            <li>Data transfer to TPM Patient-Driven Health Record (PDHR)</li>
-                                            <li>Data storage in TPM PDHR</li>
-                                            <li>Data displaying for the Data Subject</li>
-                                        </ul>
-                                    </li>
-                                    <li> The Controller will not transfer personal data to a third Country or international organisation</li>
-                                    <li> The Data will be stored in the Data Subject from the Start Vaildity Date to End Vaildity Date.</li>
-                                    <li> The Data Subject has the right to request from the Controller access to and rectification or erasure of personal data or restriction of processing concerning the Data Subject or to object to processing as well as the right to data portability.</li>
-                                    <li> The Data Subject has the right to withdraw consent at any time.</li>
-                                    <li> The Data Subject has the right to lodge a complaint with a supervisory authority</li>
-                                </ul>
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+                                nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                             </td>
                         </tr>
                         </tbody>

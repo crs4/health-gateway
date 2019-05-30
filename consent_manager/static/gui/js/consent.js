@@ -95,17 +95,16 @@ class ConfirmConsents extends React.Component {
                             <CustomDatePicker
                                 id={"expire-date-picker-" + k}
                                 disabled={c.expire_date_disabled}
-                                minDate={moment(c.start_validity)}
                                 selected={moment(c.expire_validity)}
+                                minDate={moment(c.start_validity)}
+                                label="Exclude End Date"
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
-                            />
+                                onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'expire')}/>
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-                            labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                            laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-                            voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                            cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+                            nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                         </td>
                         <td className="stack-table-cell" data-title="Confirm">
                             <input type="checkbox" name="confirm_list" value={c.confirm_id}
@@ -412,13 +411,8 @@ class ConsentManager extends React.Component {
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                                incididunt ut
-                                labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                                ullamco
-                                laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-                                in
-                                voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                                cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+                                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+                                nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                             </td>
                         </tr>
                         </tbody>

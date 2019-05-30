@@ -34,8 +34,8 @@ from requests.exceptions import ConnectionError
 from requests_oauthlib import OAuth2Session
 
 from hgw_backend.fields import HostnameURLField
-from hgw_backend.signals import source_saved_handler, connector_created, connector_created_handler
-from hgw_backend.utils import get_kafka_producer
+from hgw_backend.signals import (connector_created, connector_created_handler,
+                                 source_saved_handler)
 from hgw_common.utils import get_logger
 
 logger = get_logger('hgw_backend')
