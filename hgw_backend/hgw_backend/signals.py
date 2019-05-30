@@ -1,15 +1,10 @@
-import json
-from traceback import format_exc
-
-from django.db.models.signals import post_save
-from django.dispatch import Signal, receiver
-from kafka.errors import (KafkaError, KafkaTimeoutError,
-                          TopicAuthorizationFailedError)
+from django.dispatch import Signal
 
 from hgw_backend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
-from hgw_backend.utils import get_kafka_producer
+from hgw_common.notifier import get_notifier
 from hgw_common.utils import get_logger
+
 
 logger = get_logger('hgw_backend')
 
@@ -30,40 +25,19 @@ def source_saved_handler(sender, instance, **kwargs):
             'payload': instance.profile.payload
         }
     }
-    kafka_producer = get_kafka_producer()
-    if kafka_producer is not None:
-        logger.info('Notifying source creation or update')
-        future = kafka_producer.send(KAFKA_SOURCE_NOTIFICATION_TOPIC, value=json.dumps(message).encode('utf-8'))
-        # Block for 'synchronous' sends
-        try:
-            record_metadata = future.get(timeout=10)
-        except KafkaError:
-            # Decide what to do if produce request failed...
-            logger.error('Error notifying source creation or update')
-    else:
-        logger.info('Error notifying source creation or update: failed kafka connection')
+
+    notifier = get_notifier(KAFKA_SOURCE_NOTIFICATION_TOPIC)
+    if notifier.notify(message):
+        logger.info("Souce notified correctly")
 
 
 def connector_created_handler(connector, **kwargs):
+    """
+    Handler for signal create_connector. It notifies the correct operation
+    """
     message = {
         'channel_id': connector['channel_id']
     }
-    kafka_producer = get_kafka_producer()
-    if kafka_producer is not None:
-        try:
-            future = kafka_producer.send(KAFKA_CONNECTOR_NOTIFICATION_TOPIC, value=json.dumps(message).encode('utf-8'))
-        except KafkaTimeoutError:
-            logger.debug('Cannot get topic %s metadata. Probably the token does not exist', KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-            return None
-        # Block for 'synchronous' sends
-        try:
-            future.get(timeout=2)
-        except TopicAuthorizationFailedError:
-            logger.debug('Missing write permission to write in topic %s', KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-            return None
-        except KafkaError:
-            logger.debug('An error occurred sending message to topic %s. Error details %s', KAFKA_CONNECTOR_NOTIFICATION_TOPIC, format_exc())
-            # Decide what to do if produce request failed...
-            return None
-        else:
-            logger.debug('Connector creation notified correctly')        
+    notifier = get_notifier(KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+    if notifier.notify(message):
+        logger.info("Connector notified correctly")

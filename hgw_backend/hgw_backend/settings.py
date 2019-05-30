@@ -181,6 +181,7 @@ OAUTH2_PROVIDER = {
 
 REQUEST_VALIDITY_SECONDS = 60
 
+NOTIFICATION_TYPE = 'kafka'
 KAFKA_BROKER = cfg['kafka']['uri']
 KAFKA_CHANNEL_NOTIFICATION_TOPIC = 'channel_notification'
 KAFKA_SOURCE_NOTIFICATION_TOPIC = 'hgw_backend_source_notification'

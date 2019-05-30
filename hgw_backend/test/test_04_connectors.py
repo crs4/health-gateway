@@ -95,7 +95,7 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector failure because of source endpoint unreachable whne calling /v1/connectors
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             source = self._get_source_from_auth_obj(auth)
             source.url = 'https://localhost:1000'
@@ -107,7 +107,7 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector failure because of wrong connector url
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             source = self._get_source_from_auth_obj(auth)
             source.url = 'http://localhost:40000/wrong_url/'
@@ -120,7 +120,7 @@ class TestConnectorCreation(TestCase):
         Tests creation of new connector failure because of source enpoint unreachable when calling /oauth2/token
         """
 
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             auth.token_url = 'https://localhost:1000/'
             source = self._get_source_from_auth_obj(auth)
@@ -133,7 +133,7 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector failure because of source enpoint wrong oauth2 url
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             auth.token_url = 'http://localhost:40000/wrong_url/'
             source = self._get_source_from_auth_obj(auth)
@@ -146,7 +146,7 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector failure because of token creation failure in case of wrong client id
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             auth.client_id = "unkn"
             source = self._get_source_from_auth_obj(auth)
@@ -159,7 +159,7 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector failure because of token creation failure in case of wrong client secret
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             auth.client_secret = "unkn"
             source = self._get_source_from_auth_obj(auth)
@@ -172,7 +172,7 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector success when creating the first token
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
             self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
             source = self._get_source_from_auth_obj(auth)
@@ -196,11 +196,11 @@ class TestConnectorCreation(TestCase):
 
         auth = OAuth2Authentication.objects.first()
         source = self._get_source_from_auth_obj(auth)
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             res = source.create_connector(CONNECTOR)
             token = AccessToken.objects.get(oauth2_authentication=auth)
             self.assertIsNotNone(token)
-            self.assertNotEquals(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
+            self.assertNotEqual(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
                                  'expired')
             self.assertIsNotNone(res)
             MockKafkaProducer().send.assert_called_once()
@@ -220,7 +220,7 @@ class TestConnectorCreation(TestCase):
                                    expires_at=datetime.now() - timedelta(seconds=3600))
 
         source = self._get_source_from_auth_obj(auth)
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             res = source.create_connector(CONNECTOR)
             token = AccessToken.objects.get(oauth2_authentication=auth)
             self.assertIsNotNone(token)

@@ -443,7 +443,7 @@ class TestAPI(TestCase):
         self.assertEqual(consent_serializer.data['start_validity'], updated_data['start_validity'])
         self.assertEqual(consent_serializer.data['expire_validity'], updated_data['expire_validity'])
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')),
+        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
                              consent_serializer.data)
 
     def test_modify_wrong_status(self):
@@ -601,7 +601,7 @@ class TestAPI(TestCase):
 
         self.assertEqual(consent.status, Consent.REVOKED)
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][0][1].decode('utf-8')),
+        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
                              consent_serializer.data)
 
     def test_revoke_wrong_status(self):
@@ -710,7 +710,7 @@ class TestAPI(TestCase):
             
             self.assertEqual(consent.status, Consent.REVOKED)
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
+            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
                                  consent_serializer.data)
 
     def test_revoke_list_missing_parameters(self):
@@ -906,7 +906,7 @@ class TestAPI(TestCase):
             self.assertEqual(consent_serializer.data['start_validity'], consent_data['start_validity'])
             self.assertEqual(consent_serializer.data['expire_validity'], consent_data['expire_validity'])
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
+            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
                                  consent_serializer.data)
 
     @patch('hgw_common.notifier.KafkaProducer')
@@ -927,8 +927,7 @@ class TestAPI(TestCase):
             self.assertEqual(consent_serializer.data['expire_validity'], None)
 
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-            print(consent_serializer.data)
-            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][0][1].decode('utf-8')),
+            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
                                  consent_serializer.data)
 
     # def test_confirm_failed_notification(self):

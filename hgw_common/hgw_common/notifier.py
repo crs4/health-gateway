@@ -16,11 +16,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import json
-
-from kafka import KafkaProducer
-from kafka.errors import NoBrokersAvailable
+from json.decoder import JSONDecodeError
+from traceback import format_exc
 
 from django.conf import settings
+from kafka import KafkaProducer
+from kafka.errors import KafkaError, KafkaTimeoutError, NoBrokersAvailable, \
+    TopicAuthorizationFailedError
+
+from hgw_common.utils import get_logger
+
+logger = get_logger(__file__)
 
 
 class UnknownNotifier(Exception):
@@ -69,19 +75,50 @@ class KafkaNotifier(GenericNotifier):
                 'bootstrap_servers': broker
             }
         self.producer = None
-        super().__init__()
+        super(KafkaNotifier, self).__init__()
 
-    def notify(self, message):
+    def _create_producer(self):
         try:
             if self.producer is None:
                 self.producer = KafkaProducer(**self.producer_params)
         except NoBrokersAvailable:
             raise NotificationError('Cannot connect to kafka broker')
 
+    def notify(self, message):
+        try:
+            self._create_producer()
+        except NotificationError:
+            return False
+
+        try:
+            future = self.producer.send(self.topic, value=json.dumps(message).encode('utf-8'))
+        except KafkaTimeoutError:
+            logger.error('Cannot get topic %s metadata. Probably the token does not exist', self.topic)
+            return False
+        except (TypeError, JSONDecodeError):
+            logger.error('Error in message structure')
+            return False
+        # Block for 'synchronous' sends
+        try:
+            future.get(timeout=2)
+        except TopicAuthorizationFailedError:
+            logger.debug('Missing write permission to write in topic %s', self.topic)
+            return False
+        except KafkaError:
+            logger.debug('An error occurred sending message to topic %s. Error details %s', self.topic, format_exc())
+            # Decide what to do if produce request failed...
+            return False
+        else:
+            return True
+
+    def notify_async(self, message):
+        self._create_producer()
+
         try:
             self.producer.send(self.topic, json.dumps(message).encode('utf-8'))
         except (TypeError, UnicodeError):
             raise NotificationError('Something bad happened notifying the message')
+
 
 
 def get_notifier(name):

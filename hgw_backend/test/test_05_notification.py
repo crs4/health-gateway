@@ -60,7 +60,7 @@ class TestNotification(TestCase):
         """
         Test that, when a new Source is created, it is notified to kafka
         """
-        with patch('hgw_backend.utils.KafkaProducer') as MockKafkaProducer:
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
             source = Source.objects.create(**self.new_source_data)
             MockKafkaProducer().send.assert_called_once()
             serializer = SourceSerializer(source)

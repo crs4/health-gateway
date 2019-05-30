@@ -158,8 +158,8 @@ class OAuth2Authentication(models.Model):
     def create_connector(self, source, connector):
         try:
             session = self._get_oauth2_session()
-        except (ConnectionError, InvalidClientError, MissingTokenError) as e:
-            logger.debug("Error opening an oauth2 session with the source endpoint: {}".format(e))
+        except (ConnectionError, InvalidClientError, MissingTokenError) as exc:
+            logger.debug("Error opening an oauth2 session with the source endpoint: %s", exc)
             res = None
         else:
             try:
@@ -180,7 +180,7 @@ class OAuth2Authentication(models.Model):
                 res = None
 
         if res is not None and res.status_code != 201:
-            logger.debug("Error opening connector: {} with status code: {}".format(res.content, res.status_code))
+            logger.debug("Error opening connector: %s with status code: %s", res.content, res.status_code)
             return None
         logger.debug("Connector created correctly")
         return res

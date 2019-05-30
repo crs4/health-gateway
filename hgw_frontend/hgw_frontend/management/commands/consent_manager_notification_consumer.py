@@ -115,14 +115,9 @@ class Command(KafkaConsumerCommand):
                         'expire_validity': consent['expire_validity']
                     }
 
-                    try:
-                        self.notifier.notify(channel)
-                    except NotificationError:
+                    notified = self.notifier.notify(channel)
+                    if not notified:
                         FailedMessages.objects.create(
                             message_type=FAILED_MESSAGE_TYPE, message=message,
                             reason=FAILED_REASON.FAILED_NOTIFICATION, retry=True
                         )
-
-                    # flow_request = consent_confirmation.flow_request
-                    # flow_request.status = FlowRequest.ACTIVE
-                    # flow_request.save()

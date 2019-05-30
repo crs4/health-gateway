@@ -124,5 +124,5 @@ class TestKafkaNotifier(TestCase):
 
         container.stop()
         notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertRaises(NotificationError, notifier.notify, {'message': 'fake_message'})
+        self.assertFalse(notifier.notify({'message': 'fake_message'}))
         container.start()

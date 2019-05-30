@@ -293,7 +293,7 @@ class TestConsentConsumer(TestCase):
                 self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=consent['profile']['code']))
                 self.assertEqual(channel.flow_request.person_id, consent['person_id'])
                 self.assertEqual(MockKafkaProducer().send.call_args_list[index][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
-                self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[index][0][1].decode('utf-8')),
+                self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[index][1]['value'].decode('utf-8')),
                                      self.out_messages[index])
             self.assertEqual(FailedMessages.objects.count(), 0)
 
@@ -323,10 +323,9 @@ class TestConsentConsumer(TestCase):
                 self.assertEqual(message.retry, False)
                 self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
 
-
     def test_failure_because_of_unknown_consent(self):
         """
-        Test that no action have been performed becaue the consent has not been found in the db
+        Test that no action has been performed because the consent has not been found in the db
         """
         self.in_messages[0]['consent_id'] = 'UNKNOWN'
         self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
