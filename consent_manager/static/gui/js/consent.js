@@ -86,7 +86,7 @@ class ConfirmConsents extends React.Component {
                                 id={"start-date-picker-" + k}
                                 disabled={c.start_date_disabled}
                                 selected={moment(c.start_validity)}
-                                maxDate={moment(c.start_validity)}
+                                maxDate={moment(c.expire_validity)}
                                 label="Exclude Start Date"
                                 onChangeDate={this.changeDate.bind(this, c.confirm_id, 'start')}
                                 onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'start')}/>
