@@ -70,7 +70,3 @@ services:
 
   hgw_backend:
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
-
-  kafka:
-    environment:
-      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend,consent_manager_notification:1:1:consentmanager:hgwfrontend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:hgwbackend:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,3okDHOMPQ2OpyFrPpNNVn05EmDCvvVUw:1:1:hgwdispatcher:hgwfrontend,hgw_backend_source_notification:1:1:hgwbackend:hgwfrontend,hgw_backend_connector_notification:1:1:hgwbackend:hgwfrontend

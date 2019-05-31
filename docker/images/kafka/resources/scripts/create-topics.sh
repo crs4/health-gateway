@@ -34,21 +34,23 @@ if $start_timeout_exceeded; then
     exit 1
 fi
 
-if [[ -n $KAFKA_CREATE_TOPICS ]]; then
-    IFS=','; for topicToCreate in $KAFKA_CREATE_TOPICS; do
-        echo "creating topics: $topicToCreate"
-        IFS=':' read -a topicConfig <<< "$topicToCreate"
-        JMX_PORT='' kafka-topics.sh --create --zookeeper $KAFKA_ZOOKEEPER_CONNECT \
-            --replication-factor ${topicConfig[2]} --partitions ${topicConfig[1]} --topic "${topicConfig[0]}"
-        if [ ! -z "${topicConfig[3]}" ]; then
-            kafka-acls.sh --authorizer-properties zookeeper.connect=$KAFKA_ZOOKEEPER_CONNECT --add \
-                --allow-principal User:"CN=${topicConfig[3]},ST=Italy,C=IT" \
-                --topic ${topicConfig[0]} --operation Write
-        fi
-        if [ ! -z "${topicConfig[4]}" ]; then
-            kafka-acls.sh --authorizer-properties zookeeper.connect=$KAFKA_ZOOKEEPER_CONNECT --add \
-                --allow-principal User:"CN=${topicConfig[4]},ST=Italy,C=IT" \
-                --topic ${topicConfig[0]} --operation Read --operation Describe
-        fi
-    done
-fi
+python3 /parse_and_create_topics.py -i /kafka_topics.json -z $KAFKA_ZOOKEEPER_CONNECT
+
+# if [[ -n $KAFKA_CREATE_TOPICS ]]; then
+#     IFS=','; for topicToCreate in $KAFKA_CREATE_TOPICS; do
+#         echo "creating topics: $topicToCreate"
+#         IFS=':' read -a topicConfig <<< "$topicToCreate"
+#         JMX_PORT='' kafka-topics.sh --create --zookeeper $KAFKA_ZOOKEEPER_CONNECT \
+#             --replication-factor ${topicConfig[2]} --partitions ${topicConfig[1]} --topic "${topicConfig[0]}"
+#         if [ ! -z "${topicConfig[3]}" ]; then
+#             kafka-acls.sh --authorizer-properties zookeeper.connect=$KAFKA_ZOOKEEPER_CONNECT --add \
+#                 --allow-principal User:"CN=${topicConfig[3]},ST=Italy,C=IT" \
+#                 --topic ${topicConfig[0]} --operation Write
+#         fi
+#         if [ ! -z "${topicConfig[4]}" ]; then
+#             kafka-acls.sh --authorizer-properties zookeeper.connect=$KAFKA_ZOOKEEPER_CONNECT --add \
+#                 --allow-principal User:"CN=${topicConfig[4]},ST=Italy,C=IT" \
+#                 --topic ${topicConfig[0]} --operation Read --operation Describe
+#         fi
+#     done
+# fi

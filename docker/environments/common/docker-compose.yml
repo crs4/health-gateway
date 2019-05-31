@@ -87,6 +87,7 @@ services:
       - KAFKA_PORT=9092
       - KAFKA_SSL_PORT=9093
       - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_CREATE_TOPICS=true
       - TZ=CET
     extra_hosts:
       - "kafka:127.0.1.1"
@@ -95,6 +96,7 @@ services:
       - 9093:9093
     volumes:
       - ../../../certs/ca/kafka/certs/kafka-server/:/container/certs/
+      - ./config_files/kafka_topics.json:/kafka_topics.json
     networks:
       default:
         aliases:
