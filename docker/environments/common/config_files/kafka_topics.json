@@ -1,0 +1,43 @@
+[{
+    "name": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "hgwbackend",
+    "reader": "hgwdispatcher"
+}, {
+    "name": "vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "hgwdispatcher",
+    "reader": "destinationmockup"
+}, {
+    "name": "3okDHOMPQ2OpyFrPpNNVn05EmDCvvVUw",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "hgwdispatcher",
+    "reader": "hgwfrontend"
+}, {
+    "name": "channel_notification",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "hgwfrontend",
+    "reader": "hgwbackend"
+},{
+    "name": "consent_manager_notification",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "consentmanager",
+    "reader": "hgwfrontend"
+}, {
+    "name": "hgw_backend_source_notification",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "hgwbackend",
+    "reader": "hgwfrontend"
+}, {
+    "name": "hgw_backend_connector_notification",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": "hgwbackend",
+    "reader": "hgwfrontend"
+}]

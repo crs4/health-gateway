@@ -121,3 +121,5 @@ class Command(KafkaConsumerCommand):
                             message_type=FAILED_MESSAGE_TYPE, message=message,
                             reason=FAILED_REASON.FAILED_NOTIFICATION, retry=True
                         )
+                    else:
+                        logger.info('Channel notified to backend')

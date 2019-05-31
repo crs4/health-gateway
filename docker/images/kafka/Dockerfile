@@ -23,7 +23,7 @@ RUN apk add --no-cache -t .build-deps curl ca-certificates jq \
 
 
 RUN apk update \
-  && apk add nss
+  && apk add nss python3
 
 ENV PATH /sbin:/opt/kafka/bin/:$PATH
 
