@@ -29,7 +29,7 @@ function tag_new_version() {
         LAST_NUM=${VERSION: -1}
         docker tag crs4/$SERVICE:latest crs4/$SERVICE:1.0.$(($LAST_NUM + 1))
         echo "Tagged new version 1.0.$(($LAST_NUM + 1))"
-        if [ $DEV != "dev" ]; then
+        if [ "$DEV" != "dev" ]; then
             echo -n "1.0.$(($LAST_NUM + 1))" > ${DIR}/VERSION
         fi
     else
