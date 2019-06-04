@@ -14,8 +14,7 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-import copy
-import json
+
 from datetime import datetime
 
 import requests
@@ -169,9 +168,11 @@ class OAuth2Authentication(models.Model):
                     raise TokenExpiredError
             except TokenExpiredError:
                 logger.debug("Token for the source expired. Getting a new one")
-                self._fetch_token(session)
-                logger.debug("Creating connector with the new token")
-                res = session.post(source.url, json=connector)
+                AccessToken.objects.get(oauth2_authentication=self).delete()
+                res = self.create_connector(source, connector)
+                # self._fetch_token(session)
+                # logger.debug("Creating connector with the new token")
+                # res = session.post(source.url, json=connector)
             except ConnectionError:
                 logger.debug("Connection error creating the connector")
                 res = None
@@ -235,9 +236,15 @@ class RESTClient(AbstractApplication):
                               help_text="Space separated scopes to assign to the REST client")
 
     def is_super_client(self):
+        """
+        Check if the RESTClient is a client with special privileges
+        """
         return self.client_role == self.SUPER
 
     def has_scope(self, scope):
+        """
+        Check if the RESTClient has a specific scope
+        """
         return scope in self.scopes
 
 

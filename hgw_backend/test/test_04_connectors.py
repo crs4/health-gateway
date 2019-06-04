@@ -8,7 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, client
 from mock import MagicMock, patch
 
-from hgw_backend.models import AccessToken, OAuth2Authentication, Source
+from hgw_backend.models import (AccessToken, FailedConnector,
+                                OAuth2Authentication, Source)
 from hgw_backend.settings import KAFKA_CONNECTOR_NOTIFICATION_TOPIC
 from hgw_common.utils.mocks import (MockMessage, start_mock_server,
                                     stop_mock_server)
@@ -168,6 +169,75 @@ class TestConnectorCreation(TestCase):
             self.assertIsNone(res)
             MockKafkaProducer().send.assert_not_called()
 
+    def test_create_connector_oauth2_source_fail_refresh_token_connection_error(self):
+        """
+        Tests creation of new connector failure when the token refresh fails becuase of a connection error
+        """
+        # Create an expired token in the db
+        auth_obj = OAuth2Authentication.objects.first()
+        AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='something',
+                                   token_type='Bearer', expires_in=3600, expires_at=datetime.now())
+
+        # Break the OAuth2Authentication object with a wrong url
+        auth = OAuth2Authentication.objects.first()
+        auth.token_url = 'https://localhost:1000/'
+        auth.save()
+
+        source = self._get_source_from_auth_obj(auth)
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+            res = source.create_connector(CONNECTOR)
+            # The token is canceled but recreation fails
+            self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+
+            MockKafkaProducer().send.assert_not_called()
+            self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fail_refresh_token_wrong_client_id(self):
+        """
+        Tests creation of new connector failure when the token refresh fails becuase of a connection error
+        """
+        # Create an expired token in the db
+        auth_obj = OAuth2Authentication.objects.first()
+        AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='something',
+                                   token_type='Bearer', expires_in=3600, expires_at=datetime.now())
+
+        # Break the OAuth2Authentication object with a wrong url
+        auth = OAuth2Authentication.objects.first()
+        auth.client_id = 'wrong_client'
+        auth.save()
+
+        source = self._get_source_from_auth_obj(auth)
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+            res = source.create_connector(CONNECTOR)
+            # The token is canceled but recreation fails
+            self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+
+            MockKafkaProducer().send.assert_not_called()
+            self.assertIsNone(res)
+
+    def test_create_connector_oauth2_source_fail_refresh_token_wrong_client_secret(self):
+        """
+        Tests creation of new connector failure when the token refresh fails becuase of a connection error
+        """
+        # Create an expired token in the db
+        auth_obj = OAuth2Authentication.objects.first()
+        AccessToken.objects.create(oauth2_authentication=auth_obj, access_token='something',
+                                   token_type='Bearer', expires_in=3600, expires_at=datetime.now())
+
+        # Break the OAuth2Authentication object with a wrong url
+        auth = OAuth2Authentication.objects.first()
+        auth.client_secret = 'wrong_client'
+        auth.save()
+
+        source = self._get_source_from_auth_obj(auth)
+        with patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+            res = source.create_connector(CONNECTOR)
+            # The token is canceled but recreation fails
+            self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+
+            MockKafkaProducer().send.assert_not_called()
+            self.assertIsNone(res)
+
     def test_create_connector_oauth2_source_new_token(self):
         """
         Tests creation of new connector success when creating the first token
@@ -201,7 +271,7 @@ class TestConnectorCreation(TestCase):
             token = AccessToken.objects.get(oauth2_authentication=auth)
             self.assertIsNotNone(token)
             self.assertNotEqual(AccessToken.objects.get(oauth2_authentication=auth_obj).access_token,
-                                 'expired')
+                                'expired')
             self.assertIsNotNone(res)
             MockKafkaProducer().send.assert_called_once()
             self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
