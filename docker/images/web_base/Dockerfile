@@ -33,7 +33,8 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	drf_yasg \
 	PyYAML==3.12 \
 	coverage \
-	psycopg2
+	psycopg2 \
+	urllib3==1.25.3
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 
