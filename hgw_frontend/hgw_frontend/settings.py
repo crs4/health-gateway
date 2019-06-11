@@ -17,9 +17,11 @@
 
 
 import os
-
 import sys
+
 import yaml
+from yaml.error import YAMLError
+from yaml.scanner import ScannerError
 
 from hgw_common.saml_config import get_saml_config
 
@@ -38,13 +40,12 @@ _conf_file = None
 for cf in _CONF_FILES_PATH:
     try:
         with open(cf, 'r') as f:
-            cfg = yaml.load(f)
-    except FileNotFoundError:
+            cfg = yaml.load(f, Loader=yaml.FullLoader)
+    except (IOError, ScannerError, YAMLError):
         continue
     else:
         _conf_file = cf
         break
-
 if cfg is None:
     sys.exit("Config file not found")
 

@@ -15,10 +15,10 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 import logging
 from itertools import product
 
+import yaml
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import BaseCommand
@@ -34,6 +34,8 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
+from yaml.error import YAMLError
+from yaml.scanner import ScannerError
 
 
 class TokenHasResourceDetailedScope(TokenHasScope):
@@ -180,6 +182,19 @@ def get_logger(logger_name):
     logger.setLevel(level)
 
     return logger
+
+
+def load_config_file(paths):
+    cfg = None
+    for path in paths:
+        try:
+            with open(path, 'r') as f:
+                cfg = yaml.load(f, Loader=yaml.FullLoader)
+                print(cfg)
+        except (IOError, ScannerError, YAMLError):
+            continue
+        else:
+            return cfg
 
 
 class ERRORS:

@@ -16,9 +16,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
-
 import sys
+
 import yaml
+from yaml.error import YAMLError
+from yaml.scanner import ScannerError
 
 
 def get_path(base_path, file_path):
@@ -35,8 +37,8 @@ _conf_file = None
 for cf in _CONF_FILES_PATH:
     try:
         with open(cf, 'r') as f:
-            cfg = yaml.load(f)
-    except FileNotFoundError:
+            cfg = yaml.load(f, Loader=yaml.FullLoader)
+    except (IOError, ScannerError, YAMLError):
         continue
     else:
         _conf_file = cf

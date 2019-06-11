@@ -19,18 +19,19 @@
 import argparse
 import logging
 import os
+import sys
+import time
+import traceback
 
 import requests
-import sys
-
-import time
-
-import traceback
 import yaml
-from kafka import KafkaConsumer, TopicPartition, KafkaProducer
+from kafka import KafkaConsumer, KafkaProducer, TopicPartition
 from kafka.errors import KafkaError
-from oauthlib.oauth2 import BackendApplicationClient, InvalidClientError, TokenExpiredError
+from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
+                             TokenExpiredError)
 from requests_oauthlib import OAuth2Session
+from yaml.error import YAMLError
+from yaml.scanner import ScannerError
 
 # from hgw_common.models import OAuth2SessionProxy
 
@@ -56,8 +57,8 @@ _conf_file = None
 for cf in _CONF_FILES_PATH:
     try:
         with open(cf, 'r') as f:
-            cfg = yaml.load(f)
-    except FileNotFoundError:
+            cfg = yaml.load(f, Loader=yaml.FullLoader)
+    except (IOError, ScannerError, YAMLError):
         continue
     else:
         _conf_file = cf

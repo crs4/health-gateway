@@ -31,7 +31,7 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	pycryptodomex==3.4.7 \
 	coreapi==2.3.3 \
 	drf_yasg \
-	PyYAML==3.12 \
+	PyYAML==5.1.1 \
 	coverage \
 	psycopg2 \
 	urllib3==1.25.3
