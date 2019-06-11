@@ -63,14 +63,19 @@ class TestKafkaNotifier(TestCase):
             "KAFKA_PORT=9092",
             "KAFKA_SSL_PORT=9093",
             "KAFKA_ADVERTISED_HOST_NAME=kafka",
-            "TZ=CET",
-            "KAFKA_CREATE_TOPICS=consent_manager_notification:1:1::"
+            "KAFKA_CREATE_TOPICS=true",
+            "TZ=CET"
         ]
 
         certs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/server/')
+        kafka_topic_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kafka_topics.json')
         container_volumes = {
             certs_path: {
                 'bind': '/container/certs/',
+                'mode': 'rw'
+            },
+            kafka_topic_path: {
+                'bind': '/kafka_topics.json',
                 'mode': 'rw'
             }
         }

@@ -36,7 +36,7 @@ DIR=$(dirname $SCRIPT_PATH)
 echo $DIR
 export PYTHONPATH=${DIR}/../hgw_common
 
-for module in  hgw_frontend hgw_backend; do
+for module in consent_manager hgw_frontend hgw_backend; do
     echo $'\n*********************'
     echo "Testing $module"
     cd $DIR/../${module}

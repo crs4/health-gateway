@@ -1,0 +1,7 @@
+[{
+    "name": "consent_manager_notification",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": null,
+    "reader": null
+}]
