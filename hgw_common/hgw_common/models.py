@@ -71,23 +71,11 @@ class ProfileSection(models.Model):
     coding_system = models.CharField(max_length=10)
 
 
-class Channel(models.Model):
-    """
-    Class for model Channel
-    """
-    channel_id = models.CharField(max_length=32, blank=False, null=False, default=generate_id)
-    source_id = models.CharField(max_length=32, blank=False, null=False)
-    destination_id = models.CharField(max_length=32, blank=False, null=False)
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    person_id = models.CharField(max_length=100, blank=False, null=False)
-
-
 class AccessToken(models.Model):
     """
     Class for model Consent
     """
-    token_url = models.CharField(
-        max_length=200, null=False, blank=False, unique=True)
+    token_url = models.CharField(max_length=200, null=False, blank=False, unique=True)
     access_token = models.CharField(max_length=1024, null=False, blank=False)
     token_type = models.CharField(max_length=10, null=False, blank=False)
     expires_in = models.IntegerField()

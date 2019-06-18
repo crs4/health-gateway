@@ -199,6 +199,25 @@
       "coding_system": "local"
     }
   },
+
+  {
+    "model": "hgw_frontend.source",
+    "pk": 1,
+    "fields": {
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "name": "source_1",
+      "profile": 1      
+    }
+  },
+  {
+    "model": "hgw_frontend.source",
+    "pk": 2,
+    "fields": {
+      "source_id": "TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS",
+      "name": "source_2",
+      "profile": 2
+    }
+  },
   {
     "model": "hgw_frontend.flowrequest",
     "pk": 1,
@@ -208,9 +227,10 @@
       "status": "PE",
       "profile": 1,
       "destination": 1,
-      "start_validity" : "2017-10-23T10:00:00+02:00",
-      "expire_validity" : "2018-10-23T10:00:00+02:00",
-      "person_id": "100001"
+      "sources": [1],
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00",
+      "person_id": "AAABBB12C34D567E"
     }
   },
   {
@@ -223,8 +243,8 @@
       "profile": 1,
       "destination": 2,
       "sources": [1],
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00",
       "person_id": "AAABBB12C34D567E"
     }
   },
@@ -238,8 +258,8 @@
       "profile": 1,
       "destination": 2,
       "sources": [1],
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00",
       "person_id": "TEST_PERSON1_ID"
     }
   },

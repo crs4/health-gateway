@@ -30,15 +30,33 @@ WRONG_CONFIRM_ID2 = 'wrong_confirmed2'
 PERSON_ID = 'AAABBB12C34D567E'
 
 PROFILE_1 = {
-    'code': 'PROF_001',
-    'version': 'v0',
-    'payload': '[{"clinical_domain": "Laboratory"}]'
+    'code': 'PROF_LAB_0001',
+    'version': '1.0.0',
+    'domains': [{
+        'name': 'Laboratory',
+        'code': 'LAB',
+        'coding_system': 'local',
+        'sections': [{
+            'name': 'Coagulation Studies',
+            'code': 'COS',
+            'coding_system': 'local'
+        }]
+    }]
 }
 
 PROFILE_2 = {
-    'code': 'PROF_002',
-    'version': 'v0',
-    'payload': '[{"clinical_domain": "Radiology"}]'
+    'code': 'PROF_RAD_0001',
+    'version': '1.0.0',
+    'domains': [{
+        'name': 'Radiology',
+        'code': 'RAD',
+        'coding_system': 'local',
+        'sections': [{
+            'name': 'Computed Tomogaphy',
+            'code': 'CT',
+            'coding_system': 'local'
+        }]
+    }]
 }
 
 SOURCE_1_ID = 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT'
@@ -62,20 +80,27 @@ SOURCES_DATA = [
         'profile': PROFILE_2
     }]
 
-PROFILES_DATA = [
-    {
-        'code': 'PROF_001',
-        'version': 'v0',
-        'payload': '[{"clinical_domain": "Laboratory"}]',
-        'sources': [{
-            'source_id': SOURCE_1_ID,
-            'name': SOURCE_1_NAME
-        }, {
-            'source_id': SOURCE_2_ID,
-            'name': SOURCE_2_NAME
+PROFILES_DATA = [{
+    'code': 'PROF_LAB_0001',
+    'version': '1.0.0',
+    'domains': [{
+        'name': 'Laboratory',
+        'code': 'LAB',
+        'coding_system': 'local',
+        'sections': [{
+            'name': 'Coagulation Studies',
+            'code': 'COS',
+            'coding_system': 'local'
         }]
-    }
-]
+    }],
+    'sources': [{
+        'source_id': SOURCE_1_ID,
+        'name': SOURCE_1_NAME
+    }, {
+        'source_id': SOURCE_2_ID,
+        'name': SOURCE_2_NAME
+    }]
+}]
 
 DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
                   'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp4TF/ETwYKG+eAYZz3wo\n' \

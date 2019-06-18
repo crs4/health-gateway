@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
-import hgw_common.models
-import hgw_common.fields
 
 
 class Migration(migrations.Migration):

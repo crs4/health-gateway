@@ -212,7 +212,7 @@ class Dispatcher(object):
     def _get_process_id(self, channel_id):
         try:
             flow_request = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
-                                                     format(HGW_FRONTEND_URI, channel_id))
+                                                               format(HGW_FRONTEND_URI, channel_id))
             if flow_request.status_code == 401:
                 raise TokenExpiredError
         except TokenExpiredError:
@@ -220,7 +220,7 @@ class Dispatcher(object):
             # hgw frontend token expired. Getting a new one
             self._obtain_hgw_frontend_oauth_token()
             flow_request = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
-                                                     format(HGW_FRONTEND_URI, channel_id))
+                                                               format(HGW_FRONTEND_URI, channel_id))
         logger.debug(flow_request.json())
 
         if flow_request.status_code == 200:

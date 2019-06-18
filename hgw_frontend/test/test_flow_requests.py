@@ -28,7 +28,6 @@ from mock import patch
 from hgw_common.cipher import Cipher
 from hgw_common.models import AccessToken, Profile
 from hgw_common.utils.mocks import MockMessage, get_free_port, start_mock_server
-from hgw_frontend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import Channel, ConfirmationCode, \
     ConsentConfirmation, Destination, FlowRequest, RESTClient
@@ -38,7 +37,7 @@ from hgw_frontend.serializers import SourceSerializer
 from . import CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, PERSON_ID, \
     WRONG_CONFIRM_ID, SOURCES_DATA, DEST_1_ID, DEST_1_NAME, \
     DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME, \
-    DISPATCHER_NAME, POWERLESS_NAME
+    DISPATCHER_NAME, POWERLESS_NAME, PROFILE_1
 from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -69,10 +68,20 @@ class TestFlowRequestAPI(TestCase):
         payload = '[{"clinical_domain": "Laboratory"}]'
 
         self.profile = {
-            'code': 'PROF_001',
-            'version': 'v0',
-            'payload': payload
+            'code': 'PROF_LAB_0001',
+            'version': '1.0.0',
+            'domains': [{
+                'name': 'Laboratory',
+                'code': 'LAB',
+                'coding_system': 'local',
+                'sections': [{
+                    'name': 'Coagulation Studies',
+                    'code': 'COS',
+                    'coding_system': 'local'
+                }]
+            }]
         }
+
         self.flow_request = {
             'flow_id': 'f_44444',
             'profile': self.profile,
@@ -82,6 +91,7 @@ class TestFlowRequestAPI(TestCase):
                 'source_id': SOURCE_1_ID
             }]
         }
+
         self.flow_request_without_sources = self.flow_request.copy()
         del self.flow_request_without_sources['sources']
 
@@ -92,15 +102,50 @@ class TestFlowRequestAPI(TestCase):
 
         self.destinations = {obj['pk']: obj['fields'] for obj in self.fixtures
                              if obj['model'] == 'hgw_frontend.destination'}
-        self.profiles = {obj['pk']: obj['fields'] for obj in self.fixtures
-                         if obj['model'] == 'hgw_common.profile'}
-        self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
-                              if obj['model'] == 'hgw_frontend.flowrequest'}
+
+        self.profile_sections = {obj['pk']: {
+            'name': obj['fields']['name'],
+            'code': obj['fields']['code'],
+            'coding_system': obj['fields']['coding_system'],
+            'profile_domain': obj['fields']['profile_domain']
+        } for obj in self.fixtures if obj['model'] == 'hgw_common.profilesection'}
+
+        self.profile_domains = {obj['pk']: {
+            'name': obj['fields']['name'],
+            'code': obj['fields']['code'],
+            'coding_system': obj['fields']['coding_system'],
+            'profile': obj['fields']['profile'],
+            'sections': [s for k, s in self.profile_sections.items() if s['profile_domain'] == obj['pk']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_common.profiledomain'}
+
+        self.profiles = {obj['pk']: {
+            'code': obj['fields']['code'],
+            'version': obj['fields']['version'],
+            'domains': [d for k, d in self.profile_domains.items() if d['profile'] == obj['pk']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_common.profile'}
+
         self.sources = {obj['pk']: {
-                'source_id': obj['fields']['source_id'],
-                'name': obj['fields']['name'],
-                'profile':  self.profiles[obj['fields']['profile']]
-            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
+            'source_id': obj['fields']['source_id'],
+            'name': obj['fields']['name'],
+            'profile':  self.profiles[obj['fields']['profile']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
+
+        for k, d in self.profile_domains.items():
+            del d['profile']
+        for k, s in self.profile_sections.items():
+            del s['profile_domain']
+
+        self.flow_requests = {obj['pk']: {
+            'flow_id': obj['fields']['flow_id'],
+            'process_id': obj['fields']['process_id'],
+            'destination': self.destinations[obj['fields']['destination']],
+            'sources': [self.sources[s] for s in obj['fields']['sources']],
+            'person_id': obj['fields']['person_id'],
+            'status': obj['fields']['status'],
+            'profile': self.profiles[obj['fields']['profile']],
+            'start_validity': obj['fields']['start_validity'],
+            'expire_validity': obj['fields']['expire_validity']
+        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.flowrequest'}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
@@ -168,25 +213,9 @@ class TestFlowRequestAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/flow_requests/p_11111/', **headers)
         self.assertEqual(res.status_code, 200)
-        profile = {
-            'code': 'PROF_001',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Laboratory"}]'
-        }
-        expected = {
-            'flow_id': 'f_11111',
-            'process_id': 'p_11111',
-            'status': 'PE',
-            'profile': profile,
-            'sources': [{
-                'source_id': SOURCE_1_ID,
-                'name': SOURCE_1_NAME,
-                'profile': profile
-            }],
-            'start_validity': '2017-10-23T10:00:00+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00'
-        }
-        self.assertDictEqual(res.json(), expected)
+        self.flow_requests[1].pop('destination')
+        self.flow_requests[1].pop('person_id')
+        self.assertDictEqual(res.json(), self.flow_requests[1])
 
     def test_get_all_flow_requests_as_super_client(self):
         """
@@ -205,20 +234,16 @@ class TestFlowRequestAPI(TestCase):
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/p_11111/', **headers)
         self.assertEqual(res.status_code, 200)
-        profile = {
-            'code': 'PROF_001',
-            'version': 'v0',
-            'payload': '[{"clinical_domain": "Laboratory"}]'
-        }
+        
         expected = {
             'flow_id': 'f_11111',
             'process_id': 'p_11111',
             'status': 'PE',
-            'profile': profile,
+            'profile': PROFILE_1,
             'sources': [{
                 'source_id': SOURCE_1_ID,
                 'name': SOURCE_1_NAME,
-                'profile': profile
+                'profile': PROFILE_1
             }],
             'start_validity': '2017-10-23T10:00:00+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
@@ -262,7 +287,7 @@ class TestFlowRequestAPI(TestCase):
         } for source in SOURCES_DATA]
         serializer = SourceSerializer(sources, many=True)
         self.assertEqual(serializer.data, backend_sources)
-        
+
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_request_with_sources(self):
         """
@@ -736,6 +761,7 @@ class TestFlowRequestAPI(TestCase):
         # TODO: We should check that the post call to consent_manager is performed with the correct params
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
+        print(res.status_code)
         confirm_id = res.json()['confirm_id']
         callback_url = 'http://127.0.0.1/'
         previous_consent_confirmation_count = ConsentConfirmation.objects.count()
@@ -805,7 +831,7 @@ class TestFlowRequestAPI(TestCase):
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.KafkaProducer')
     def test_multiple_consent_confirms_request(self, mocked_kafka_producer):
-        
+
         self.client.login(username='duck', password='duck')
         confirms_id = (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2)
         # First we force the channel status to CONSENT_REQUESTED
@@ -813,7 +839,7 @@ class TestFlowRequestAPI(TestCase):
             c = ConsentConfirmation.objects.get(confirmation_id=confirm_id)
             c.channel.status = Channel.CONSENT_REQUESTED
             c.channel.save()
-            
+
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}&consent_confirm_id={}'.format(
                 *confirms_id))

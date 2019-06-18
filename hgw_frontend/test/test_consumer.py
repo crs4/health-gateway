@@ -1,10 +1,10 @@
 import json
-import os
 
-from django.test import TestCase, client
+from django.test import TestCase
 from mock.mock import call, patch
 
-from hgw_common.models import FailedMessages, Profile
+from hgw_common.models import (FailedMessages, Profile, ProfileDomain,
+                               ProfileSection)
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
 from hgw_frontend.management.commands.backend_notification_consumer import \
     Command as BackendNotificationCommand
@@ -59,22 +59,32 @@ class TestSourceConsumer(TestCase):
                 self.assertEqual(source.name, message['name'])
                 self.assertEqual(source.profile.code, message['profile']['code'])
                 self.assertEqual(source.profile.version, message['profile']['version'])
-                self.assertEqual(source.profile.payload, message['profile']['payload'])
+                domains = ProfileDomain.objects.filter(profile=source.profile)
+                self.assertEqual(domains.count(), 1)
+                self.assertEqual(domains[0].code, PROFILE_1['domains'][0]['code'])
+                self.assertEqual(domains[0].name, PROFILE_1['domains'][0]['name'])
+                self.assertEqual(domains[0].coding_system, PROFILE_1['domains'][0]['coding_system'])
+                sections = ProfileSection.objects.filter(profile_domain=domains[0])
+                self.assertEqual(sections.count(), 1)
+                self.assertEqual(sections[0].code, PROFILE_1['domains'][0]['sections'][0]['code'])
+                self.assertEqual(sections[0].name, PROFILE_1['domains'][0]['sections'][0]['name'])
+                self.assertEqual(sections[0].coding_system, PROFILE_1['domains'][0]['sections'][0]['coding_system'])
 
     def test_correct_source_update(self):
         """
-        Tests that the message is consumed and that a new Source is created in the db
+        Tests that the message is consumed and that the source is updated
         """
         # Adds the source to update
-        profile = Profile.objects.create(**PROFILE_1)
+        profile = Profile.objects.create(code='PROF_LAB_0001', version='1.0.0')
+        domain = ProfileDomain.objects.create(name='Laboratory', code='LAB', coding_system='local', profile=profile)
+        section = ProfileSection.objects.create(name='Coagulation Studies', code='COS', coding_system='local', profile_domain=domain)
         Source.objects.create(source_id=SOURCE_3_ID, name=SOURCE_3_NAME, profile=profile)
         messages = [{
             'source_id': SOURCE_3_ID,
             'name': 'NEW_NAME',
             'profile': PROFILE_2
         }]
-        with patch('hgw_common.utils.KafkaConsumer',
-                   MockKafkaConsumer):
+        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
             BackendNotificationCommand().handle()
@@ -87,7 +97,16 @@ class TestSourceConsumer(TestCase):
                 self.assertEqual(source.name, message['name'])
                 self.assertEqual(source.profile.code, message['profile']['code'])
                 self.assertEqual(source.profile.version, message['profile']['version'])
-                self.assertEqual(source.profile.payload, message['profile']['payload'])
+                domains = ProfileDomain.objects.filter(profile=source.profile)
+                self.assertEqual(domains.count(), 1)
+                self.assertEqual(domains[0].code, PROFILE_2['domains'][0]['code'])
+                self.assertEqual(domains[0].name, PROFILE_2['domains'][0]['name'])
+                self.assertEqual(domains[0].coding_system, PROFILE_2['domains'][0]['coding_system'])
+                sections = ProfileSection.objects.filter(profile_domain=domains[0])
+                self.assertEqual(sections.count(), 1)
+                self.assertEqual(sections[0].code, PROFILE_2['domains'][0]['sections'][0]['code'])
+                self.assertEqual(sections[0].name, PROFILE_2['domains'][0]['sections'][0]['name'])
+                self.assertEqual(sections[0].coding_system, PROFILE_2['domains'][0]['sections'][0]['coding_system'])
 
     def test_failure_to_json_decoding(self):
         """
