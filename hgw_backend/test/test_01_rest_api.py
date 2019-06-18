@@ -61,6 +61,7 @@ def _get_client_data(client_name=SOURCE_ENDPOINT_CLIENT_NAME):
     app = RESTClient.objects.get(name=client_name)
     return app.client_id, app.client_secret
 
+
 class GenericTestCase(TestCase):
     """
     Generic test case class
@@ -78,12 +79,11 @@ class GenericTestCase(TestCase):
     def setUp(self):
         self.maxDiff = None
         self.client = client.Client()
-        
+
     @staticmethod
     def _get_client_data(client_index=0):
         app = RESTClient.objects.all()[client_index]
         return app.client_id, app.client_secret
-
 
     def _call_token_creation(self, data):
         return self.client.post('/oauth2/token/', data=data)
@@ -123,7 +123,7 @@ class TestOAuth2API(GenericTestCase):
         """
         Tests failed token creation due to wrong client_id or client_secret
         """
-        for client_data in [('wrong', _get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[1]), 
+        for client_data in [('wrong', _get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[1]),
                             (_get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[0], 'wrong')]:
             wrong_client_data = {
                 'grant_type': 'client_credentials',
@@ -173,7 +173,33 @@ class TestSourcesAPI(GenericTestCase):
         super(TestSourcesAPI, self).setUp()
         with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/fixtures/test_data.json'))) as fixtures_file:
             self.fixtures = json.load(fixtures_file)
-        self.profiles = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_common.profile']
+
+        self.profile_sections = [{
+            'name': obj['fields']['name'],
+            'code': obj['fields']['code'],
+            'coding_system': obj['fields']['coding_system'],
+            'profile_domain': obj['fields']['profile_domain']
+        } for obj in self.fixtures if obj['model'] == 'hgw_common.profilesection']
+
+        self.profile_domains = [{
+            'name': obj['fields']['name'],
+            'code': obj['fields']['code'],
+            'coding_system': obj['fields']['coding_system'],
+            'profile': obj['fields']['profile'],
+            'sections': [s for s in self.profile_sections if s['profile_domain'] == obj['pk']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_common.profiledomain']
+
+        self.profiles = [{
+            'code': obj['fields']['code'],
+            'version': obj['fields']['version'],
+            'domains': [d for d in self.profile_domains if d['profile'] == obj['pk']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_common.profile']
+
+        for d in self.profile_domains:
+            del d['profile']
+        for s in self.profile_sections:
+            del s['profile_domain']
+
         self.sources = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_backend.source']
 
     def test_get_sources(self):

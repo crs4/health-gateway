@@ -3,8 +3,8 @@ from django.dispatch import Signal
 from hgw_backend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
 from hgw_common.notifier import get_notifier
+from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import get_logger
-
 
 logger = get_logger('hgw_backend')
 
@@ -19,12 +19,9 @@ def source_saved_handler(sender, instance, **kwargs):
     message = {
         'source_id': instance.source_id,
         'name': instance.name,
-        'profile': {
-            'code': instance.profile.code,
-            'version': instance.profile.version,
-            'payload': instance.profile.payload
-        }
+        'profile': ProfileSerializer(instance=instance.profile).data
     }
+
 
     notifier = get_notifier(KAFKA_SOURCE_NOTIFICATION_TOPIC)
     if notifier.notify(message):

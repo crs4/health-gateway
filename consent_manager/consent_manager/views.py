@@ -101,7 +101,7 @@ class ConsentView(ViewSet):
         return Response(res)
 
     @staticmethod
-    def create(self, request):
+    def create(request):
         """
         REST API to create a new consent (i.e., it implements the POST function)
         """

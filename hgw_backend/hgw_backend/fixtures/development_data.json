@@ -21,9 +21,28 @@
     "model": "hgw_common.profile",
     "pk": 1,
     "fields": {
-      "code": "PROF_001",
-      "version": "v0",
-      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"
+      "code": "PROF_LAB_0001",
+      "version": "1.0.0"
+    }
+  },
+  {
+    "model": "hgw_common.profiledomain",
+    "pk": 1,
+    "fields": {
+      "profile": 1,
+      "name": "Laboratory",
+      "code": "LAB",
+      "coding_system": "local"
+    }
+  },
+  {
+    "model": "hgw_common.profilesection",
+    "pk": 1,
+    "fields": {
+      "profile_domain": 1,
+      "name": "Coagulation Studies",
+      "code": "COS",
+      "coding_system": "local"
     }
   },
   {

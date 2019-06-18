@@ -42,11 +42,20 @@ class TestNotification(TestCase):
 
     def setUp(self):
         new_profile_data = {
-            "code": "PROF_003",
-            "version": "v0",
-            "payload": "[{\"clinical_domain\": \"Anatomical pathology\"}]"
+            'code': 'PROF_003',
+            'version': '1.0.0',
+            'domains': [{
+                'name': 'Anatomical Pathology',
+                'code': 'APA',
+                'coding_system': 'local',
+                'sections': [{
+                    'name': 'Biopsy',
+                    'code': 'BIO',
+                    'coding_system': 'local'
+                }]
+            }]
         }
-        self.profile = Profile.objects.create(**new_profile_data)
+        self.profile = Profile.objects.create(code=new_profile_data['code'], version=new_profile_data['version'])
         self.new_source_data = {
             "source_id": "fXSMECPXjKxRKFUaFLS6ioBjSX2Nmyyk",
             "name": "source_3",

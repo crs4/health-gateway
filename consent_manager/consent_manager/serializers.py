@@ -89,7 +89,7 @@ class ConsentSerializer(serializers.ModelSerializer):
                 logger.info('Created profile')
             else:
                 logger.error('Profile not valid')
-                
+        
         source, _ = Endpoint.objects.get_or_create(**validated_data.get('source'))
         destination, _ = Endpoint.objects.get_or_create(**validated_data.get('destination'))
         validated_data['profile'] = profile
