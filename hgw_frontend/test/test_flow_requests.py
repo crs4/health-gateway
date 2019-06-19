@@ -867,38 +867,31 @@ class TestFlowRequestAPI(TestCase):
         self.assertRedirects(res, callback_url, fetch_redirect_response=False)
         self.assertRaises(FlowRequest.DoesNotExist, FlowRequest.objects.get, process_id='p_11111')
 
-    def test_get_flow_request_by_channel_id_with_super_client(self):
+    def test_search_flow_request_by_channel_id_with_super_client(self):
         """
         Tests functionality of getting the flow request by channel id, using a REST client with super client
         """
         # Gets the confirmation code installed with the test data
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
-        self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.consent_id), **headers)
+        res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.channel.channel_id), **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['process_id'], 'p_11111')
         self.assertEqual(res['X-Total-Count'], '1')
 
-    def test_get_flow_request_by_channel_id_with_standard_client(self):
+    def test_search_flow_request_by_channel_id_with_standard_client(self):
         """
         Tests that getting the flow request by channel id, using non admin REST client is forbidden
         """
         # Gets the confirmation code installed with the test data
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
-        self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
-
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.consent_id), **headers)
+        headers = self._get_oauth_header(client_name=DEST_1_NAME)
+        res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.channel.channel_id), **headers)
         self.assertEqual(res.status_code, 403)
 
     def test_get_flow_request_by_channel_id_wrong_channel_id(self):
-        # Gets the confirmation code installed with the test data
-        c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
-        self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
-
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/search/?channel_id=unknown', **headers)
         self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {})
+        self.assertEqual(res.json(), {'errors': ['not_found']})

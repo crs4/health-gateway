@@ -47,6 +47,7 @@ urlpatterns = [
     url(r'^{}/flow_requests/(?P<process_id>\w+)/channels/$'.format(VERSION_REGEX), 
         FlowRequestView.as_view({'get': 'channels'}),
         name='flow_requests_channels'),
+    url(r'^{}/channels/search/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'search'})),
     url(r'^{}/channels/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'list'})),
     url(r'^{}/channels/(?P<channel_id>\w+)/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'retrieve'})),
     url(r'^{}/messages/$'.format(VERSION_REGEX), Messages.as_view({'get': 'list'})),

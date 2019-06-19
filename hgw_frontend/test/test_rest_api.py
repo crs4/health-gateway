@@ -192,11 +192,6 @@ class TestHGWFrontendAPI(TestCase):
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
         self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
-        headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        res = self.client.get('/v1/flow_requests/search/?channel_id=unknown', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {})
-
     def test_get_message(self):
         with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)

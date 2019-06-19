@@ -259,18 +259,18 @@ class FlowRequestView(ViewSet):
 
     def search(self, request):
         """
-        REST function to search FlowRequest
+        REST function to search FlowRequest by channel id
         """
         if 'channel_id' in request.GET:
             try:
-                consent_confirmation = ConsentConfirmation.objects.get(consent_id=request.GET['channel_id'])
-                flow_request = consent_confirmation.flow_request
+                channel = Channel.objects.get(channel_id=request.GET['channel_id'])
+                flow_request = channel.flow_request
                 serializer = FlowRequestSerializer(instance=flow_request)
-            except ConsentConfirmation.DoesNotExist:
-                return Response({}, status.HTTP_404_NOT_FOUND)
+            except Channel.DoesNotExist:
+                raise Http404
             return Response(serializer.data, headers={'X-Total-Count': '1'})
         else:
-            return Response({}, status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': ['missing_parameter']}, status.HTTP_400_BAD_REQUEST)
 
 
 def _get_backend_session():

@@ -17,6 +17,7 @@
 
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -228,7 +229,7 @@ class Dispatcher(object):
         else:
             return None
 
-    def _process_message(self, channel_id, payload):
+    def _process_message(self, channel_id, source_id, payload):
         try:
             logger.debug("Checking the consent manager to get the consent status")
             try:
@@ -253,7 +254,13 @@ class Dispatcher(object):
                     else:
                         if process_id:
                             logger.debug('Sending to destination %s with process_id %s', dest_id, process_id)
-                            future = self.producer.send(dest_id, payload, key=process_id.encode('utf-8'))
+                            message = {
+                                'process_id': process_id,
+                                'source_id': source_id,
+                                'channel_id': channel_id,
+                                'payload': payload.decode('utf-8')
+                            }
+                            future = self.producer.send(dest_id, json.dumps(message).encode('utf-8'))
                             try:
                                 record_metadata = future.get(timeout=5)
                             except KafkaError as e:
@@ -282,7 +289,7 @@ class Dispatcher(object):
                 channel_id = msg.key.decode('utf-8')
                 logger.debug('Received message from %s for channel %s', msg.topic, channel_id)
                 payload = msg.value
-                self._process_message(channel_id, payload)
+                self._process_message(channel_id, msg.topic, payload)
             else:
                 logger.debug('Rejecting message from %s. Channel id not specified', msg.topic)
 

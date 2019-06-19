@@ -14,21 +14,28 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+import json
 import logging
 import os
 import unittest
 from unittest import TestCase
+from unittest.mock import MagicMock, Mock, call, patch
 
 import requests
-from unittest.mock import patch, MagicMock, call, Mock
 from oauthlib.oauth2 import TokenExpiredError
 
-from dispatcher import Dispatcher, OAuth2Session, CONSENT_MANAGER_OAUTH_CLIENT_ID, CONSENT_MANAGER_OAUTH_CLIENT_SECRET, \
-    HGW_FRONTEND_OAUTH_CLIENT_SECRET, HGW_FRONTEND_OAUTH_CLIENT_ID
-from test_data import SOURCES, UNKNOWN_OAUTH_CLIENT, ACTIVE_CHANNEL_ID, DESTINATION, PROCESS_ID, PENDING_CHANNEL_ID, \
-    CHANNEL_WITH_NO_PROCESS_ID, PERSON_ID
-from test_utils import get_free_port, start_mock_server, MockBackendRequestHandler, MockConsentManagerRequestHandler, \
-    MockFrontendRequestHandler
+from dispatcher import (CONSENT_MANAGER_OAUTH_CLIENT_ID,
+                        CONSENT_MANAGER_OAUTH_CLIENT_SECRET,
+                        HGW_FRONTEND_OAUTH_CLIENT_ID,
+                        HGW_FRONTEND_OAUTH_CLIENT_SECRET, Dispatcher,
+                        OAuth2Session)
+from test_data import (ACTIVE_CHANNEL_ID, CHANNEL_WITH_NO_PROCESS_ID,
+                       DESTINATION, PENDING_CHANNEL_ID, PROCESS_ID, SOURCES,
+                       UNKNOWN_OAUTH_CLIENT)
+from test_utils import (MockBackendRequestHandler,
+                        MockConsentManagerRequestHandler,
+                        MockFrontendRequestHandler, get_free_port,
+                        start_mock_server)
 
 logger = logging.getLogger('dispatcher')
 for h in logger.handlers:
@@ -180,6 +187,7 @@ class TestDispatcher(TestCase):
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
 
         self.counter = 0
+
         def get_url(*args):
             res = MagicMock()
             if args[1].startswith(CONSENT_MANAGER_URI) and self.counter == 0:
@@ -223,6 +231,7 @@ class TestDispatcher(TestCase):
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
 
         self.counter = 0
+
         def get_url(*args):
             res = MagicMock()
             if args[1].startswith(CONSENT_MANAGER_URI) and self.counter == 0:
@@ -386,7 +395,7 @@ class TestDispatcher(TestCase):
         d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         sources_id = [s['source_id'] for s in SOURCES]
-        
+
         mocked_kafka_consumer().partitions_for_topic.assert_has_calls([call(s) for s in sources_id])
         mocked_kafka_consumer().subscribe.assert_called_once_with(sources_id)
 
@@ -400,16 +409,25 @@ class TestDispatcher(TestCase):
         Tests that a message is sent correctly to a destination when the channel is active
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
         d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         for m in messages:
-            mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], m.value, key=PROCESS_ID.encode('utf-8'))
+            messages_values = {
+                'payload': m.value.decode('utf-8'),
+                'channel_id': ACTIVE_CHANNEL_ID,
+                'source_id': SOURCES[0]['source_id'],
+                'process_id': PROCESS_ID
+            }
+
+            mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], json.dumps(messages_values).encode('utf-8'))
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')
@@ -430,7 +448,6 @@ class TestDispatcher(TestCase):
         d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
         mocked_kafka_producer().send.assert_not_called()
-
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')
