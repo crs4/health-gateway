@@ -210,49 +210,69 @@ class Dispatcher(object):
         if self.consent_oauth_session is None:
             sys.exit(1)
 
+    def _get_channel_id(self, consent_id):
+        try:
+            channel = self.hgw_frontend_oauth_session.get('{}/v1/channels/search/?consent_id={}'.
+                                                          format(HGW_FRONTEND_URI, consent_id))
+            if channel.status_code == 401:
+                raise TokenExpiredError
+        except TokenExpiredError:
+            logger.debug('Frontend token expired: getting new one')
+            # hgw frontend token expired. Getting a new one
+            self._obtain_hgw_frontend_oauth_token()
+            return self._get_channel_id(consent_id)
+
+        if channel.status_code == 200:
+            return channel.json()['channel_id']
+        else:
+            logger.debug('Frontend returned the error code %s', channel.status_code)
+            return None
+
     def _get_process_id(self, channel_id):
         try:
             flow_request = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
-                                                     format(HGW_FRONTEND_URI, channel_id))
+                                                               format(HGW_FRONTEND_URI, channel_id))
             if flow_request.status_code == 401:
                 raise TokenExpiredError
         except TokenExpiredError:
             logger.debug('Frontend token expired: getting new one')
             # hgw frontend token expired. Getting a new one
             self._obtain_hgw_frontend_oauth_token()
-            flow_request = self.hgw_frontend_oauth_session.get('{}/v1/flow_requests/search/?channel_id={}'.
-                                                     format(HGW_FRONTEND_URI, channel_id))
-        logger.debug(flow_request.json())
+            return self._get_process_id(channel_id)
 
         if flow_request.status_code == 200:
             return flow_request.json()['process_id']
         else:
+            logger.debug('Frontend returned the error code %s', flow_request.status_code)
             return None
 
-    def _process_message(self, channel_id, source_id, payload):
+    def _process_message(self, consent_id, source_id, payload):
         try:
-            logger.debug("Checking the consent manager to get the consent status")
+            # Gets the consent from consent manager
+            logger.debug('Checking the consent manager to get the consent status')
             try:
-                cm_res = self.consent_oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, channel_id))
+                cm_res = self.consent_oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, consent_id))
                 if cm_res.status_code == 401:
                     raise TokenExpiredError
             except TokenExpiredError:
                 logger.debug('Consent token expired: getting new one')
                 self._obtain_consent_oauth_token()
-                cm_res = self.consent_oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, channel_id))
+                cm_res = self.consent_oauth_session.get('{}/v1/consents/{}/'.format(CONSENT_MANAGER_URI, consent_id))
         except requests.exceptions.ConnectionError:
-            logger.error("Cannot connect to the Consent Manager to verify the channel status. Skipping")
+            logger.error('Cannot connect to the Consent Manager to verify the channel status. Skipping')
         else:
-            if cm_res.status_code == 200:
+            if cm_res.status_code == 200:  # checks that the consent is active
                 consent = cm_res.json()
                 if consent['status'] == 'AC':
                     dest_id = consent['destination']['id']
                     try:
+                        # gets from the hgw frontend the channel_id and the process_id
+                        channel_id = self._get_channel_id(consent_id)
                         process_id = self._get_process_id(channel_id)
                     except requests.exceptions.ConnectionError:
-                        logger.error("Cannot connect to HGW Frontend to get the process id. Skipping")
+                        logger.error('Cannot connect to HGW Frontend to get the channel and process id. Skipping')
                     else:
-                        if process_id:
+                        if channel_id and process_id:
                             logger.debug('Sending to destination %s with process_id %s', dest_id, process_id)
                             message = {
                                 'process_id': process_id,
@@ -261,6 +281,7 @@ class Dispatcher(object):
                                 'payload': payload.decode('utf-8')
                             }
                             future = self.producer.send(dest_id, json.dumps(message).encode('utf-8'))
+
                             try:
                                 record_metadata = future.get(timeout=5)
                             except KafkaError as e:
@@ -269,7 +290,9 @@ class Dispatcher(object):
                             else:
                                 logger.info("Sent message to topic: %s", record_metadata.topic)
                         else:
-                            logger.debug('Process id not found for the channel id')
+                            logger.debug('Process or channel id not found for the channel id')
+                            logger.debug('Channel id %s', channel_id)
+                            logger.debug('Process id %s', process_id)
                 elif consent['status'] == 'RE':
                     logger.info('Sent message to a revoked channel')
                 elif consent['status'] == 'PE':
@@ -278,7 +301,7 @@ class Dispatcher(object):
                     logger.info('Sent message to an invalid channel')
             else:
                 logger.error('Error retrieving consent status for the channel %s. Status: %s',
-                             channel_id, cm_res.status_code)
+                             consent_id, cm_res.status_code)
 
     def run(self):
         # partition = TopicPartition(self.consumer_topics[0], 0)
@@ -286,10 +309,10 @@ class Dispatcher(object):
         for msg in self.consumer:
             logger.debug("Read message: %s", msg.key)
             if msg.key:
-                channel_id = msg.key.decode('utf-8')
-                logger.debug('Received message from %s for channel %s', msg.topic, channel_id)
+                consent_id = msg.key.decode('utf-8')
+                logger.debug('Received message from %s for channel %s', msg.topic, consent_id)
                 payload = msg.value
-                self._process_message(channel_id, msg.topic, payload)
+                self._process_message(consent_id, msg.topic.decode('utf-8'), payload)
             else:
                 logger.debug('Rejecting message from %s. Channel id not specified', msg.topic)
 

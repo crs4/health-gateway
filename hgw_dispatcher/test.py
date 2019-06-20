@@ -24,22 +24,17 @@ from unittest.mock import MagicMock, Mock, call, patch
 import requests
 from oauthlib.oauth2 import TokenExpiredError
 
-from dispatcher import (CONSENT_MANAGER_OAUTH_CLIENT_ID,
-                        CONSENT_MANAGER_OAUTH_CLIENT_SECRET,
-                        HGW_FRONTEND_OAUTH_CLIENT_ID,
-                        HGW_FRONTEND_OAUTH_CLIENT_SECRET, Dispatcher,
-                        OAuth2Session)
-from test_data import (ACTIVE_CHANNEL_ID, CHANNEL_WITH_NO_PROCESS_ID,
-                       DESTINATION, PENDING_CHANNEL_ID, PROCESS_ID, SOURCES,
-                       UNKNOWN_OAUTH_CLIENT)
-from test_utils import (MockBackendRequestHandler,
-                        MockConsentManagerRequestHandler,
-                        MockFrontendRequestHandler, get_free_port,
-                        start_mock_server)
+from dispatcher import OAuth2Session, Dispatcher, CONSENT_MANAGER_OAUTH_CLIENT_ID, \
+    CONSENT_MANAGER_OAUTH_CLIENT_SECRET, HGW_FRONTEND_OAUTH_CLIENT_ID, \
+    HGW_FRONTEND_OAUTH_CLIENT_SECRET
+from test_data import ACTIVE_CHANNEL_ID, CONSENT_WITH_NO_PROCESS_ID, \
+    PENDING_CONSENT_ID, ACTIVE_CONSENT_ID, PROCESS_ID, DESTINATION, SOURCES, UNKNOWN_OAUTH_CLIENT
+from test_utils import get_free_port, start_mock_server, MockBackendRequestHandler, \
+    MockConsentManagerRequestHandler, MockFrontendRequestHandler
 
 logger = logging.getLogger('dispatcher')
-for h in logger.handlers:
-    h.setLevel(logging.CRITICAL)
+# for h in logger.handlers:
+#     h.setLevel(logging.CRITICAL)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 HGW_BACKEND_PORT = get_free_port()
 HGW_BACKEND_URI = 'http://localhost:{}'.format(HGW_BACKEND_PORT)
@@ -72,7 +67,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.CONSENT_MANAGER_OAUTH_CLIENT_ID', UNKNOWN_OAUTH_CLIENT)
     def test_fail_with_no_topics(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that if there are no available topics the dispatcher exits
+        Tests that, if there are no available topics, the dispatcher exits
         """
         mocked_kafka_consumer().partitions_for_topic = MagicMock(return_value=None)
         with self.assertRaises(SystemExit) as se:
@@ -87,7 +82,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.CONSENT_MANAGER_OAUTH_CLIENT_ID', UNKNOWN_OAUTH_CLIENT)
     def test_fail_wrong_consent_oauth_client(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that, the dispatcher exits when it cannot get an oauth token from the consent manager because of
+        Tests that the dispatcher exits when it cannot get an oauth token from the consent manager because of
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
@@ -101,7 +96,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.CONSENT_MANAGER_URI', 'http://127.0.0.2')
     def test_fail_consent_oauth_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
+        Tests that the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
@@ -116,7 +111,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.HGW_FRONTEND_OAUTH_CLIENT_ID', UNKNOWN_OAUTH_CLIENT)
     def test_fail_wrong_hgw_frontend_oauth_client(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
+        Tests that the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
@@ -159,7 +154,7 @@ class TestDispatcher(TestCase):
     @patch('dispatcher.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     def test_fail_hgw_backend_oauth_connection(self, mocked_kafka_consumer, mocked_kafka_producer):
         """
-        Tests that, when the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
+        Tests that the dispatcher exits when it cannot get an oauth token from the hgw_frontend because of
         wrong client id
         """
         with self.assertRaises(SystemExit) as se:
@@ -176,9 +171,9 @@ class TestDispatcher(TestCase):
         Tests that, when the consent manager token expires, the dispatcher requires another one
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -220,9 +215,9 @@ class TestDispatcher(TestCase):
         Tests that, when the consent manager token expires, the dispatcher requires another one
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -264,9 +259,11 @@ class TestDispatcher(TestCase):
         Tests that when the hgw frontend token expires, the dispatcher requires another one
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -287,12 +284,17 @@ class TestDispatcher(TestCase):
                 raise TokenExpiredError()
             else:
                 res.status_code = 200
+                # simulates the service with minimum data just to arrive to the point of
+                # getting the hgw_frontend token
                 if args[1].startswith(CONSENT_MANAGER_URI):
-                    # simulates the consent manager with minimum data just to arrive to the point of
-                    # getting the hgw_frontend token
                     res.json.return_value = {
                         'destination': DESTINATION,
                         'status': 'AC'
+                    }
+                else:
+                    res.json.return_value = {
+                        'channel_id': ACTIVE_CHANNEL_ID,
+                        'process_id': PROCESS_ID
                     }
             return res
 
@@ -319,9 +321,11 @@ class TestDispatcher(TestCase):
         Tests that when the hgw frontend token expires, the dispatcher requires another one
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -342,12 +346,17 @@ class TestDispatcher(TestCase):
                 res.status_code = 401
             else:
                 res.status_code = 200
+                # simulates the response with minimum data just to arrive to the point of
+                # getting the hgw_frontend token
                 if args[1].startswith(CONSENT_MANAGER_URI):
-                    # simulates the consent manager with minimum data just to arrive to the point of
-                    # getting the hgw_frontend token
                     res.json.return_value = {
                         'destination': DESTINATION,
                         'status': 'AC'
+                    }
+                else:
+                    res.json.return_value = {
+                        'channel_id': ACTIVE_CHANNEL_ID,
+                        'process_id': PROCESS_ID
                     }
             return res
 
@@ -408,26 +417,32 @@ class TestDispatcher(TestCase):
         """
         Tests that a message is sent correctly to a destination when the channel is active
         """
-        messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'),
+        in_messages = [
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
                         topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
                         topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
-        mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
+        mocked_kafka_consumer().__iter__ = Mock(return_value=iter(in_messages))
         d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
-        for m in messages:
-            messages_values = {
-                'payload': m.value.decode('utf-8'),
-                'channel_id': ACTIVE_CHANNEL_ID,
-                'source_id': SOURCES[0]['source_id'],
-                'process_id': PROCESS_ID
-            }
 
-            mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], json.dumps(messages_values).encode('utf-8'))
+        # check that the topic is correct
+        for call in mocked_kafka_producer().send.call_args_list:
+            self.assertEqual(call[0][0], DESTINATION['id'])
+
+        expected_messages = [{
+            'payload': m.value.decode('utf-8'),
+            'channel_id': ACTIVE_CHANNEL_ID,
+            'source_id': SOURCES[0]['source_id'],
+            'process_id': PROCESS_ID
+        } for m in in_messages]
+
+        out_messages = [json.loads(call[0][1].decode('utf-8')) for call in mocked_kafka_producer().send.call_args_list]
+
+        self.assertEqual(expected_messages, out_messages)
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')
@@ -439,9 +454,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent is in status PENDING the message is not dispatched
         """
         messages = [
-            MockMessage(key=PENDING_CHANNEL_ID.encode('utf-8'), topic=SOURCES[1]['source_id'].encode('utf-8'),
+            MockMessage(key=PENDING_CONSENT_ID.encode('utf-8'), topic=SOURCES[1]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=PENDING_CHANNEL_ID.encode('utf-8'), topic=SOURCES[1]['source_id'].encode('utf-8'),
+            MockMessage(key=PENDING_CONSENT_ID.encode('utf-8'), topic=SOURCES[1]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -459,9 +474,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent manager is unreachable the message is not sent
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -503,9 +518,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent manager is unreachable the message is not sent
         """
         messages = [
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CHANNEL_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -527,9 +542,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent doesn't exists the message is not dispatched
         """
         messages = [
-            MockMessage(key=CHANNEL_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=CONSENT_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
-            MockMessage(key=CHANNEL_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=CONSENT_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))

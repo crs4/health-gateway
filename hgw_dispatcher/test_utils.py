@@ -24,8 +24,10 @@ from threading import Thread
 
 import requests
 
-from test_data import SOURCES, ACTIVE_CHANNEL_ID, PERSON_ID, FLOW_ID, PROCESS_ID, UNKNOWN_OAUTH_CLIENT, DESTINATION, \
-    PENDING_CHANNEL_ID, CHANNEL_WITH_NO_PROCESS_ID
+from test_data import (ACTIVE_CHANNEL_ID, ACTIVE_CONSENT_ID,
+                       CONSENT_WITH_NO_PROCESS_ID, DESTINATION, FLOW_ID,
+                       PENDING_CONSENT_ID, PERSON_ID, PROCESS_ID, SOURCES,
+                       UNKNOWN_OAUTH_CLIENT)
 
 
 class MockRequestHandler(BaseHTTPRequestHandler):
@@ -62,7 +64,7 @@ class MockRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response.encode('utf-8'))
 
     def do_GET(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def log_message(self, *args, **kwargs):
         pass
@@ -84,45 +86,83 @@ class MockBackendRequestHandler(MockRequestHandler):
 
 
 class MockFrontendRequestHandler(MockRequestHandler):
+    CHANNELS_PATTERN = re.compile(r'/v1/channels/search/\?consent_id=(\w+)')
     FLOW_REQUESTS_PATTERN = re.compile(r'/v1/flow_requests/search/\?channel_id=(\w+)')
 
     def do_GET(self):
-        fr = {"flow_id": FLOW_ID,
-              "process_id": PROCESS_ID,
-              "status": "AC",
-              "profile": {"code": "PROF002", "version": "hgw.document.profile.v0",
-                          "payload": "[{\"clinical_domain\": \"Laboratory\", \"filters\": [{\"excludes\": \"HDL\", \"includes\": \"immunochemistry\"}]}, {\"clinical_domain\": \"Radiology\", \"filters\": [{\"excludes\": \"Radiology\", \"includes\": \"Tomography\"}]}, {\"clinical_domain\": \"Emergency\", \"filters\": [{\"excludes\": \"\", \"includes\": \"\"}]}, {\"clinical_domain\": \"Prescription\", \"filters\": [{\"excludes\": \"\", \"includes\": \"\"}]}]"}}
-        found = re.search(self.FLOW_REQUESTS_PATTERN, self.path)
-        if found:
-            channel_id = found.groups()[0]
+        flow_request = {
+            'flow_id': FLOW_ID,
+            'process_id': PROCESS_ID,
+            'status': 'AC',
+            'profile': {'code': 'PROF_001',
+                        'version': 'v0',
+                        'payload': '[{"clinical_domain": "Laboratory"}]'},
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
+            'sources': [{'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT'}]
+        }
+
+        channel = {
+            'channel_id': ACTIVE_CHANNEL_ID,
+            'status': 'CR',
+            'destination_id': 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj',
+            'profile': {
+                'code': 'PROF_001',
+                'version': 'v0',
+                'payload': '[{"clinical_domain": "Laboratory"}]'
+            },
+            'source': {
+                'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
+                'name': 'source_1',
+                'profile': {
+                    'code': 'PROF_001',
+                    'version': 'v0',
+                    'payload': '[{"clinical_domain": "Laboratory"}]'
+                }
+            }
+        }
+
+        payload = None
+        fr_pattern = re.search(self.FLOW_REQUESTS_PATTERN, self.path)
+        if fr_pattern:
+            channel_id = fr_pattern.groups()[0]
+            print("channel_id requested ", channel_id)
             if channel_id == ACTIVE_CHANNEL_ID:
-                payload = fr
+                payload = flow_request
                 status_code = requests.codes.ok
             else:
-                payload = {'details': 'Not Found.'}
+                payload = {'errors': ['not_found']}
                 status_code = requests.codes.not_found
+        else:
+            channel_pattern = re.search(self.CHANNELS_PATTERN, self.path)
+            if channel_pattern:
+                consent_id = channel_pattern.groups()[0]
+                if consent_id == ACTIVE_CONSENT_ID:
+                    payload = channel
+                    status_code = requests.codes.ok
+                else:
+                    payload = {'errors': ['not_found']}
+                    status_code = requests.codes.not_found
 
-            return self._send_response(payload, status_code)
+        return self._send_response(payload, status_code)
 
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
-    CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{}|{})/'.format(ACTIVE_CHANNEL_ID, PENDING_CHANNEL_ID,
-                                                                    CHANNEL_WITH_NO_PROCESS_ID))
+    CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{}|{})/'.format(ACTIVE_CONSENT_ID, PENDING_CONSENT_ID,
+                                                                    CONSENT_WITH_NO_PROCESS_ID))
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
 
     def do_GET(self):
         consent_search = re.search(self.CONSENT_PATTERN, self.path)
         if consent_search:
-            profile_payload = [{'clinical_domain': 'Prescription',
-                                'filters': [{'includes': '', 'excludes': ''}]}]
             profile_data = {
-                'code': 'PROF002',
-                'version': 'hgw.document.profile.v0',
-                'payload': json.dumps(profile_payload)
+                'code': 'PROF_001',
+                'version': 'v0',
+                'payload': '[{"clinical_domain": "Laboratory"}]'
             }
 
             consent_id = consent_search.groups()[0]
-            if consent_id in (ACTIVE_CHANNEL_ID, CHANNEL_WITH_NO_PROCESS_ID):
+            if consent_id in (ACTIVE_CONSENT_ID, CONSENT_WITH_NO_PROCESS_ID):
                 payload = {
                     'source': {
                         'id': SOURCES[0]['source_id'],
@@ -150,7 +190,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                 }
             status_code = requests.codes.ok
         else:
-            payload = {'details': 'Not found.'}
+            payload = {'errors': ['not_found']}
             status_code = requests.codes.not_found
         return self._send_response(payload, status_code)
 
