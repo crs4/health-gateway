@@ -27,7 +27,7 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	django-cors-middleware==1.3.1 \
 	requests==2.18.4 \
 	requests_oauthlib==0.8.0 \
-	kafka_python==1.3.5 \
+	kafka_python==1.4.4 \
 	pycryptodomex==3.4.7 \
 	coreapi==2.3.3 \
 	drf_yasg \

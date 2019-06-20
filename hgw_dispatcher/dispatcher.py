@@ -26,7 +26,7 @@ import traceback
 
 import requests
 import yaml
-from kafka import KafkaConsumer, KafkaProducer, TopicPartition
+from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import KafkaError
 from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
                              TokenExpiredError)
@@ -102,9 +102,9 @@ class Dispatcher(object):
 
         logger.debug("Querying for sources")
         self.consumer_topics = self._get_sources()
-        logger.debug("Found {} sources: ".format(len(self.consumer_topics)))
-        logger.debug("Sources ids are: {}".format(self.consumer_topics))
-        logger.debug("broker_url: {}".format(broker_url))
+        logger.debug("Found %s sources: ", len(self.consumer_topics))
+        logger.debug("Sources ids are: %s", self.consumer_topics)
+        logger.debug("broker_url: %s", broker_url)
         if use_ssl:
             consumer_params = {
                 'bootstrap_servers': broker_url,
@@ -274,13 +274,12 @@ class Dispatcher(object):
                     else:
                         if channel_id and process_id:
                             logger.debug('Sending to destination %s with process_id %s', dest_id, process_id)
-                            message = {
-                                'process_id': process_id,
-                                'source_id': source_id,
-                                'channel_id': channel_id,
-                                'payload': payload.decode('utf-8')
-                            }
-                            future = self.producer.send(dest_id, json.dumps(message).encode('utf-8'))
+                            headers = [
+                                ('process_id', process_id),
+                                ('channel_id', channel_id),
+                                ('source_id', source_id)
+                            ]
+                            future = self.producer.send(dest_id, value=payload, headers=headers)
 
                             try:
                                 record_metadata = future.get(timeout=5)

@@ -45,11 +45,12 @@ CONSENT_MANAGER_URI = 'http://localhost:{}'.format(CONSENT_MANAGER_PORT)
 
 
 class MockMessage(object):
-    def __init__(self, key, topic, value, offset):
+    def __init__(self, topic, value, offset, key=None, headers=None):
         self.key = key
         self.topic = topic
         self.value = value
         self.offset = offset
+        self.headers = headers if headers is not None else []
 
 
 class TestDispatcher(TestCase):
@@ -171,7 +172,8 @@ class TestDispatcher(TestCase):
         Tests that, when the consent manager token expires, the dispatcher requires another one
         """
         messages = [
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
@@ -215,7 +217,8 @@ class TestDispatcher(TestCase):
         Tests that, when the consent manager token expires, the dispatcher requires another one
         """
         messages = [
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'first_message', offset=0),
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
                         value=b'second_message', offset=1),
@@ -429,20 +432,13 @@ class TestDispatcher(TestCase):
         d = Dispatcher('kafka:9093', None, None, None, True)
         d.run()
 
-        # check that the topic is correct
-        for call in mocked_kafka_producer().send.call_args_list:
-            self.assertEqual(call[0][0], DESTINATION['id'])
-
-        expected_messages = [{
-            'payload': m.value.decode('utf-8'),
-            'channel_id': ACTIVE_CHANNEL_ID,
-            'source_id': SOURCES[0]['source_id'],
-            'process_id': PROCESS_ID
-        } for m in in_messages]
-
-        out_messages = [json.loads(call[0][1].decode('utf-8')) for call in mocked_kafka_producer().send.call_args_list]
-
-        self.assertEqual(expected_messages, out_messages)
+        for m in in_messages:
+            headers = [
+                ('process_id', PROCESS_ID),
+                ('channel_id', ACTIVE_CHANNEL_ID),
+                ('source_id', SOURCES[0]['source_id'])
+            ]
+            mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], value=m.value, headers=headers)
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')
