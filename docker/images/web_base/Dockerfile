@@ -16,7 +16,7 @@ ENV CA_DIR=/cacerts/
 ENV DJANGO_DIR=/container/service
 ENV CERT_DIR=/container/certs
 ENV DEV_DJANGO_DIR=/container/devservice
-ARG DJANGO_VERSION=1.11.0
+ARG DJANGO_VERSION=1.11.7
 ARG HTTP_PORT=80
 
 RUN pip3 install Django==${DJANGO_VERSION} \
@@ -25,7 +25,7 @@ RUN pip3 install Django==${DJANGO_VERSION} \
     djangorestframework==3.8.2 \
 	django-oauth-toolkit==0.12.0 \
 	django-cors-middleware==1.3.1 \
-	requests==2.18.4 \
+	requests==2.22.0 \
 	requests_oauthlib==0.8.0 \
 	kafka_python==1.4.4 \
 	pycryptodomex==3.4.7 \

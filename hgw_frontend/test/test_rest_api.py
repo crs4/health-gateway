@@ -19,6 +19,7 @@ import logging
 import os
 
 from Cryptodome.PublicKey import RSA
+import base64
 from django.test import TestCase, client
 from mock import patch
 
@@ -50,13 +51,41 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
                   'XQIDAQAB\n' \
                   '-----END PUBLIC KEY-----'
 
+DEST_PRIVATE_KEY = '-----BEGIN PRIVATE KEY-----\n' \
+                   'MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCnhMX8RPBgob54\n' \
+                   'BhnPfCjwhiqs8iVDLPX/GWOoMPXrZkBgksJh4J+z3JzNxrMLyR5bMZ3n+2fhMXog\n' \
+                   'jSgg0qGQJgupMhWRUYLv+2AflQR79cbW2tFl8yrCXWES9lX7/NqdXRyXsiNNH1qN\n' \
+                   'vVPDBBgw6NxpoFmP7F8PzzinCiBaRxIZMQ4MZ+hUAIeMRcez6hWuIeqziKCCKIxh\n' \
+                   's7tMGOAF72ntkMdJUFte1Dde4YqfGz0xMsiHkv2PFJFv0KAC2/y5uHOza+mcetFW\n' \
+                   'RGh12uTxgcpGvJhxUMdUsAZziytx5dTvOvAAxuNLuayH8srzxkNRZ8hkpm9tXQv7\n' \
+                   '+2im/N1dAgMBAAECggEAXy5ko/qzreQY6e9leOuuA0PoOY34OBvyxfgyFJ2FDTRy\n' \
+                   '/axFgAF2HGcMPStaDic+9UfS1b2V/3DyWE5773JeVB4Z4A/SC1iKEjr9GdS80IYM\n' \
+                   'bYW1Fr08nWUbQ//tSRkZSfJezZ5symQ3OnPJhPPtntSgb++pE8qVFNGD+f0Z9tCh\n' \
+                   'iBzeNst2c0ntCtJ9yr/CFRv/W88R4OMuyW/45oEtwklqyvdTuprXk+y2VctjB22n\n' \
+                   'm4+Bxt97o8LnLJ0SVCarR/M+D4gbEZG+eA+q8X/6/VUghUTIQ2G2Gidy0pV9dC0Z\n' \
+                   'J5Dkogxi9BSerHKiTsIgIyZbXUjkrViLR2oxRBC2QQKBgQDTrCo7hPpn0F7SIUQh\n' \
+                   'HWRek8nTs/9Q8AdL2nOxwCy9+FbI/rlfq4VKmXHM2YoWPa2w0y5KXcVsFTlliFXB\n' \
+                   'oxfIdKVHmB4/eVIPfmUwRZIr+j5ANg4dgKvGiuqQURnENww8FMkPrQaWLiGncmf2\n' \
+                   '47oDgPIPkikeTffsD9j80tSJ8QKBgQDKmYEf0Zpi7SiVr22xMbuWhhRwEgwn3mD4\n' \
+                   'gLa61S/+QJ0ONqYUXm/wDFaOHZL1OxwIVy0e/d7nN8VirEBLiC1PsIFNC7eFGQNf\n' \
+                   'DzT6C57v4xzcu5+ZbdKUiYWSxmun1B1lGDjh04cRXN+IuVPPdC1y5I0+iMZ3RQwX\n' \
+                   'NlMv23x+LQKBgBnV1qXDGkkXfqtJEia0jq6YfTbQrmXzlgBlHl/go9Vf/T+1D20k\n' \
+                   '4zTyu5gUKS2Dw7JkZC8BePozMPk6hbUHsfxueEnfwDlhFmn7tGAK7cdeWMC/mENz\n' \
+                   'lAO8qtqIe4ueaGjg5JV8OeSUptjoNtZEf0y0LVdHMKuZOpxeZs6c8QIRAoGAJjsn\n' \
+                   'WajE+GwGX5C2I1zeKD5u9uMA9jkJlXs8gC8gmlr5CCiZ2HglqWe6oaDFDY+074H7\n' \
+                   '2sBPYtRsY/1bOKWe303QaIiQfgZFU5fcCF9PA7eYx7KEIIDP3wXAdf0JbaciUORs\n' \
+                   'P3kaINWkvPkz7o7e0LJ+UNGgmfsml+7BbeN+L5UCgYBPeqYCs2EW39hlkF9sIRtU\n' \
+                   'VkLwLwfTP6FAPbE+pyQQOLhCVIVd8pKUc7QO2x5d7/eWx9pO9G1UHWzhS9f+i/SK\n' \
+                   '+lkSVcE+K7i10DEz0QYPdh0Ho3OC/X/q0c+gyFK7hDWdQCPJ5Qf0/+FJQ6LEQgBn\n' \
+                   'NwA2kdC+tQFPiTvVvAnjiA==\n' \
+                   '-----END PRIVATE KEY-----'
+
 DEST_1_NAME = 'Destination 1'
 DEST_1_ID = 'vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'
 DEST_2_NAME = 'Destination 2'
 DEST_2_ID = '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3'
 DISPATCHER_NAME = 'Health Gateway Dispatcher'
 POWERLESS_NAME = 'Powerless Client'
-
 
 class TestHGWFrontendAPI(TestCase):
     fixtures = ['test_data.json']
@@ -191,89 +220,6 @@ class TestHGWFrontendAPI(TestCase):
         # Gets the confirmation code installed with the test data
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
         self.client.get('/v1/flow_requests/confirm/?consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
-
-    def test_get_message(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_name=DEST_1_NAME)
-            res = self.client.get('/v1/messages/3/', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(res.json()['message_id'], 3)
-            res = self.client.get('/v1/messages/15/', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(res.json()['message_id'], 15)
-            res = self.client.get('/v1/messages/32/', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(res.json()['message_id'], 32)
-
-    def test_get_messages(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_name=DEST_1_NAME)
-            res = self.client.get('/v1/messages/', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(res['X-Total-Count'], '30')
-            self.assertEqual(res['X-Skipped'], '0')
-            self.assertEqual(len(res.json()), 5)
-
-            res = self.client.get('/v1/messages/?start=6&limit=3', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(len(res.json()), 3)
-            self.assertEqual(res['X-Total-Count'], '30')
-            self.assertEqual(res['X-Skipped'], '3')
-            self.assertEqual(res.json()[0]['message_id'], 6)
-            self.assertEqual(res.json()[1]['message_id'], 7)
-            self.assertEqual(res.json()[2]['message_id'], 8)
-
-    def test_get_messages_max_limit(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_name=DEST_1_NAME)
-            res = self.client.get('/v1/messages/?start=3&limit=11', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(len(res.json()), 10)
-            self.assertEqual(res['X-Total-Count'], '30')
-            self.assertEqual(res['X-Skipped'], '0')
-            for i in range(3, 13):
-                self.assertEqual(res.json()[i - 3]['message_id'], i)
-
-    def test_get_message_not_found(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_name=DEST_1_NAME)
-            res = self.client.get('/v1/messages/33/', **headers)
-            self.assertEqual(res.status_code, 404)
-            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
-
-            res = self.client.get('/v1/messages/0/', **headers)
-            self.assertEqual(res.status_code, 404)
-            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
-
-    def test_get_messages_not_found(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_name=DEST_1_NAME)
-            res = self.client.get('/v1/messages/?start=30&limit=5', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(len(res.json()), 3)
-            self.assertEqual(res['X-Skipped'], '27')
-            self.assertEqual(res['X-Total-Count'], '30')
-
-            res = self.client.get('/v1/messages/?start=0&limit=5', **headers)
-            self.assertEqual(res.status_code, 404)
-            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
-
-    def test_get_messages_info(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer)
-            headers = self._get_oauth_header(client_name=DEST_1_NAME)
-            res = self.client.get('/v1/messages/info/', **headers)
-            self.assertEqual(res.status_code, 200)
-            self.assertEqual(res.json(), {
-                'start_id': 3,
-                'last_id': 32,
-                'count': 30
-            })
 
     def test_rest_forbidden(self):
         """
@@ -645,3 +591,110 @@ class TestHGWFrontendAPI(TestCase):
         res = self.client.get('/v1/flow_requests/33333/channels/', **headers)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
+
+    def _check_message(self, to_be_checked, msg_id):
+        
+        self.assertEqual(to_be_checked['message_id'], msg_id)
+        self.assertEqual(to_be_checked['channel_id'], 'channel')
+        self.assertEqual(to_be_checked['source_id'], 'source')
+        self.assertEqual(to_be_checked['process_id'], 'process')
+        decrypter = Cipher(private_key=RSA.importKey(DEST_PRIVATE_KEY))
+        base64_data = base64.b64decode(to_be_checked['data'])
+        self.assertEqual(decrypter.decrypt(base64_data), 1000 * 'a')
+
+    def set_mock_kafka_consumer(self, mock_kc_klass):
+        mock_kc_klass.FIRST = 3
+        mock_kc_klass.END = 33
+        data = self.encrypter.encrypt(1000 * 'a')
+        headers = [
+            ('channel_id', 'channel'),
+            ('process_id', 'process'),
+            ('source_id', 'source')
+        ]
+
+        mock_kc_klass.MESSAGES = {
+            i: MockMessage(offset=i,
+                           topic=DEST_1_ID.encode('utf-8'),
+                           headers=headers,
+                           value=data) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)
+        }
+
+    def test_get_message(self):
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+
+            for msg_id in (3, 15, 32):
+                res = self.client.get('/v1/messages/{}/'.format(msg_id), **headers)
+                self.assertEqual(res.status_code, 200)
+                self._check_message(res.json(), msg_id)
+
+    def test_get_messages(self):
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/messages/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res['X-Total-Count'], '30')
+            self.assertEqual(res['X-Skipped'], '0')
+            self.assertEqual(len(res.json()), 5)
+            for index, msg in enumerate(res.json()):
+                self._check_message(msg, index + 3)  # the firt index of the mock is 3
+
+            res = self.client.get('/v1/messages/?start=6&limit=3', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(len(res.json()), 3)
+            self.assertEqual(res['X-Total-Count'], '30')
+            self.assertEqual(res['X-Skipped'], '3')
+            for msg_id in range(6, 8):
+                self._check_message(msg, index + 3)
+
+    def test_get_messages_max_limit(self):
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/messages/?start=3&limit=11', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(len(res.json()), 10)
+            self.assertEqual(res['X-Total-Count'], '30')
+            self.assertEqual(res['X-Skipped'], '0')
+            for i in range(3, 13):
+                self.assertEqual(res.json()[i - 3]['message_id'], i)
+
+    def test_get_message_not_found(self):
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/messages/33/', **headers)
+            self.assertEqual(res.status_code, 404)
+            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
+
+            res = self.client.get('/v1/messages/0/', **headers)
+            self.assertEqual(res.status_code, 404)
+            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
+
+    def test_get_messages_not_found(self):
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/messages/?start=30&limit=5', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(len(res.json()), 3)
+            self.assertEqual(res['X-Skipped'], '27')
+            self.assertEqual(res['X-Total-Count'], '30')
+
+            res = self.client.get('/v1/messages/?start=0&limit=5', **headers)
+            self.assertEqual(res.status_code, 404)
+            self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
+
+    def test_get_messages_info(self):
+        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+            self.set_mock_kafka_consumer(MockKafkaConsumer)
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/messages/info/', **headers)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json(), {
+                'start_id': 3,
+                'last_id': 32,
+                'count': 30
+            })

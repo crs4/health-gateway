@@ -55,7 +55,7 @@ for service in consentmanager hgwfrontend hgwbackend ${SERVICES}; do
 done
 
 ./generate_kafka_server_certificates.sh
-for service in hgwbackend hgwdispatcher hgwfrontend ${SERVICES}; do
+for service in hgwbackend hgwdispatcher hgwfrontend consentmanager ${SERVICES}; do
     ./generate_kafka_client_certificates.sh ${service}
 done
 

@@ -67,7 +67,9 @@ class Command(BaseCommand):
         kc.subscribe([settings.KAFKA_TOPIC])
         print('Starting to receive messages for topic: {}'.format(settings.KAFKA_TOPIC))
         for msg in kc:
-            print("Received message with key: {} and value {}".format(msg.key, msg.value))
+            headers = dict(msg.headers)
+            print("Received message with process_id %s, channel_id %s, source_id %s, and id %s",
+                  headers['process_id'], headers['channel_id'], headers['source_id'], msg.offset)
             message = msg.value
             if self.cipher.is_encrypted(message):
                 self._handle_payload(self.cipher.decrypt(message), *args, **options)

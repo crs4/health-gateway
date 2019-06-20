@@ -74,7 +74,9 @@ class TestConsumer(TestCase):
         mock_kc_klass.END = 2
         topic = KAFKA_CHANNEL_NOTIFICATION_TOPIC.encode('utf-8')
         key = 'key'
-        mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
+        mock_kc_klass.MESSAGES = {i: MockMessage(key=key,
+                                                 offset=i,
+                                                 topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 

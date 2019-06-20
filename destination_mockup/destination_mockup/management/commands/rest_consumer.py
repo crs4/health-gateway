@@ -49,7 +49,7 @@ class Command(BaseCommand):
 
     def _handle_payload(self, data, *args, **options):
         docs = json.loads(data)
-        logger.info('\nFound documents for {} person(s)'.format(len(docs)))
+        logger.info('\nFound documents for %s person(s)', len(docs))
 
         unique_filename = str(uuid.uuid4())
         try:
@@ -81,7 +81,8 @@ class Command(BaseCommand):
             if msg.status_code == 200:
                 try:
                     res = msg.json()
-                    logger.info("Received message with key {} and id {}".format(res['process_id'], res['message_id']))
+                    logger.info("Received message with process_id %s, channel_id %s, source_id %s, and id %s",
+                        res['process_id'], res['channel_id'], res['source_id'], res['message_id'])
                     message = base64.b64decode(res['data'])
                     current_id += 1
                     time.sleep(2)

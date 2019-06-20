@@ -69,11 +69,12 @@ class MockOAuth2Session(MagicMock):
 
 
 class MockMessage(object):
-    def __init__(self, key, topic, value, offset=0):
+    def __init__(self, topic, value, offset, key=None, headers=None):
         self.key = key
         self.topic = topic
         self.value = value
         self.offset = offset
+        self.headers = headers if headers is not None else []
 
 
 class MockRequestHandler(BaseHTTPRequestHandler):

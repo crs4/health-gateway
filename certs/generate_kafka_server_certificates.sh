@@ -37,9 +37,9 @@ keytool -keystore ${SERVER_KEYSTORE} -storepass ${PASSKEY} -keypass ${PASSKEY} -
     -dname "CN=kafka,ST=Italy,C=IT"
 
 # Create server truststore and add the CA cert
-# echo "Creating server keystore and adding CA cert"
-# keytool -keystore ${SERVER_TRUSTSTORE} -noprompt -storepass ${PASSKEY} -alias kafkaca -import -file ${KAFKA_CA_CERT}
-# keytool -keystore ${SERVER_TRUSTSTORE} -noprompt -storepass ${PASSKEY} -alias rootca -import -file ${ROOT_CA_CERT}
+echo "Creating server keystore and adding CA cert"
+keytool -keystore ${SERVER_TRUSTSTORE} -noprompt -storepass ${PASSKEY} -alias kafkaca -import -file ${KAFKA_CA_CERT}
+keytool -keystore ${SERVER_TRUSTSTORE} -noprompt -storepass ${PASSKEY} -alias rootca -import -file ${ROOT_CA_CERT}
 
 # Extract the server certificate
 echo "Extract server cert"
