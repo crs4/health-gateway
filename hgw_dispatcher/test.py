@@ -173,9 +173,10 @@ class TestDispatcher(TestCase):
         """
         messages = [
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), 
+                        topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -218,9 +219,10 @@ class TestDispatcher(TestCase):
         """
         messages = [
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), 
+                        topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -263,10 +265,10 @@ class TestDispatcher(TestCase):
         """
         messages = [
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -325,10 +327,10 @@ class TestDispatcher(TestCase):
         """
         messages = [
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         token_res = {'access_token': 'OUfprCnmdJbhYAIk8rGMex4UBLXyf3',
@@ -422,10 +424,10 @@ class TestDispatcher(TestCase):
         """
         in_messages = [
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
             MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
-                        topic=SOURCES[0]['source_id'].encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(in_messages))
@@ -437,8 +439,12 @@ class TestDispatcher(TestCase):
                 ('process_id', PROCESS_ID.encode('utf-8')),
                 ('channel_id', ACTIVE_CHANNEL_ID.encode('utf-8')),
                 ('source_id', SOURCES[0]['source_id'].encode('utf-8'))
+            
             ]
+            # print(mocked_kafka_producer().send.call_args_list)
             mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], value=m.value, headers=headers)
+
+            # ('euTgKE5hIl0pFFT4oqa1yNBymzbXMsLM', headers=[('process_id', b'wjB8AZfCQagtsdeVzRiQXfSS3teI3h4x'), ('channel_id', b'Jad3ZuZIwxQHFaOJI4QoyRfWgAgswbtL'), ('source_id', 'TWNkH3Zi5tdGEpfKJ4d5QmJIbIh34X1H')], value=b'first_message') 
 
     @patch('dispatcher.KafkaProducer')
     @patch('dispatcher.KafkaConsumer')
@@ -450,9 +456,11 @@ class TestDispatcher(TestCase):
         Tests that if the consent is in status PENDING the message is not dispatched
         """
         messages = [
-            MockMessage(key=PENDING_CONSENT_ID.encode('utf-8'), topic=SOURCES[1]['source_id'].encode('utf-8'),
+            MockMessage(key=PENDING_CONSENT_ID.encode('utf-8'), 
+                        topic=SOURCES[1]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key=PENDING_CONSENT_ID.encode('utf-8'), topic=SOURCES[1]['source_id'].encode('utf-8'),
+            MockMessage(key=PENDING_CONSENT_ID.encode('utf-8'), 
+                        topic=SOURCES[1]['source_id'],
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -470,9 +478,11 @@ class TestDispatcher(TestCase):
         Tests that if the consent manager is unreachable the message is not sent
         """
         messages = [
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'),
+                        topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -494,9 +504,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent doesn't exists the message is not dispatched
         """
         messages = [
-            MockMessage(key='UNKNOWN_CHANNEL_ID'.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key='UNKNOWN_CHANNEL_ID'.encode('utf-8'), topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key='UNKNOWN_CHANNEL_ID'.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key='UNKNOWN_CHANNEL_ID'.encode('utf-8'), topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -514,9 +524,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent manager is unreachable the message is not sent
         """
         messages = [
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=ACTIVE_CONSENT_ID.encode('utf-8'), topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
@@ -538,9 +548,9 @@ class TestDispatcher(TestCase):
         Tests that if the consent doesn't exists the message is not dispatched
         """
         messages = [
-            MockMessage(key=CONSENT_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=CONSENT_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'],
                         value=b'first_message', offset=0),
-            MockMessage(key=CONSENT_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'].encode('utf-8'),
+            MockMessage(key=CONSENT_WITH_NO_PROCESS_ID.encode('utf-8'), topic=SOURCES[0]['source_id'],
                         value=b'second_message', offset=1),
         ]
         mocked_kafka_consumer().__iter__ = Mock(return_value=iter(messages))
