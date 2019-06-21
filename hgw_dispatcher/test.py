@@ -434,9 +434,9 @@ class TestDispatcher(TestCase):
 
         for m in in_messages:
             headers = [
-                ('process_id', PROCESS_ID),
-                ('channel_id', ACTIVE_CHANNEL_ID),
-                ('source_id', SOURCES[0]['source_id'])
+                ('process_id', PROCESS_ID.encode('utf-8')),
+                ('channel_id', ACTIVE_CHANNEL_ID.encode('utf-8')),
+                ('source_id', SOURCES[0]['source_id'].encode('utf-8'))
             ]
             mocked_kafka_producer().send.assert_any_call(DESTINATION['id'], value=m.value, headers=headers)
 

@@ -26,15 +26,16 @@ if [[ -z "$KAFKA_LISTENERS" ]]; then
 fi
 if [[ -z "$KAFKA_ADVERTISED_LISTENERS" ]]; then
     export KAFKA_ADVERTISED_LISTENERS="PLAINTEXT://$KAFKA_ADVERTISED_HOST_NAME:$KAFKA_ADVERTISED_PORT,SSL://$KAFKA_ADVERTISED_HOST_NAME:$KAFKA_SSL_PORT"
+    unset KAFKA_ADVERTISED_HOST_NAME
+    unset KAFKA_ADVERTISED_PORT
 fi
 
 if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
     export KAFKA_ZOOKEEPER_CONNECT=$(env | grep ZOOKEEPER.*PORT_2181_TCP= | sed -e 's|.*tcp://||' | paste -sd ,)
     if [[ -z "$KAFKA_ZOOKEEPER_CONNECT" ]]; then
         # Start zookeeper locally.
-        echo "Configuring Zookeeper..."
-#        export ZOOKEEPER_PORT=2181
-#        export ZOOKEEPER_DATA=/tmp/zookeeper
+    		echo "Configuring Zookeeper..."
+    		/configure-zookeeper.sh
         zookeeper-server-start.sh config/zookeeper.properties &
         # wait for zookeeper to start
       	while ! nc -z localhost 2181

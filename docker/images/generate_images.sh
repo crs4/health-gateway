@@ -37,21 +37,21 @@ function tag_new_version() {
     fi
 }
 
-# Create hgw_base, web_base, kafka images
-for image in hgw_base web_base kafka; do
-    docker build -t crs4/$image:latest ${DIR}/$image
-    tag_new_version $image ${DIR}/$image
-done
+# # Create hgw_base, web_base, kafka images
+# for image in hgw_base web_base kafka; do
+#     docker build -t crs4/$image:latest ${DIR}/$image
+#     tag_new_version $image ${DIR}/$image
+# done
 
-for image in consent_manager hgw_backend hgw_frontend hgw_dispatcher; do
-    cp -r health_gateway/$image/ ${DIR}/$image/service
-    if [ "$image" != "hgw_dispatcher" ]; then
-        cp -r health_gateway/hgw_common/hgw_common ${DIR}/$image/service/
-    fi
-    docker build -t crs4/$image:latest ${DIR}/$image
-    tag_new_version $image ${DIR}/$image
-    rm -r  ${DIR}/$image/service
-done
+# for image in consent_manager hgw_backend hgw_frontend hgw_dispatcher; do
+#     cp -r health_gateway/$image/ ${DIR}/$image/service
+#     if [ "$image" != "hgw_dispatcher" ]; then
+#         cp -r health_gateway/hgw_common/hgw_common ${DIR}/$image/service/
+#     fi
+#     docker build -t crs4/$image:latest ${DIR}/$image
+#     tag_new_version $image ${DIR}/$image
+#     rm -r  ${DIR}/$image/service
+# done
 
 # # Create Spid images
 # docker build -t crs4/spid-testenv-identityserver:latest ${DIR}/spid_testenv_identityserver
@@ -61,18 +61,18 @@ done
 # docker build -t crs4/tscns:latest ${DIR}/tscns
 # docker tag crs4/tscns:latest crs4/tscns:$VERSION
 
-# # Create destination_mockup
-# cp -r health_gateway/destination_mockup/ ${DIR}/destination_mockup/service
-# docker build -t crs4/destination_mockup:latest ${DIR}/destination_mockup/
+# Create destination_mockup
+cp -r health_gateway/destination_mockup/ ${DIR}/destination_mockup/service
+docker build -t crs4/destination_mockup:latest ${DIR}/destination_mockup/
 # docker tag crs4/destination_mockup:latest crs4/destination_mockup:$VERSION
-# rm -r ${DIR}/destination_mockup/service
+rm -r ${DIR}/destination_mockup/service
 
 # # Create source_enpoint_mockup
-# cp -r health_gateway/source_endpoint_mockup/ ${DIR}/source_endpoint_mockup/service
-# docker build -t crs4/source_endpoint_mockup:latest ${DIR}/source_endpoint_mockup/
+cp -r health_gateway/source_endpoint_mockup/ ${DIR}/source_endpoint_mockup/service
+docker build -t crs4/source_endpoint_mockup:latest ${DIR}/source_endpoint_mockup/
 # docker tag crs4/source_endpoint_mockup:latest crs4/source_endpoint_mockup:$VERSION
+rm -r ${DIR}/source_endpoint_mockup/service
 
-# rm -r ${DIR}/source_endpoint_mockup/service
 
 # # Create performance_test_endpoint
 # cp -r health_gateway/performance_test_endpoint/ ${DIR}/performance_test_endpoint/service

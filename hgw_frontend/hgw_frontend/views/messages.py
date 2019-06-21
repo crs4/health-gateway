@@ -71,7 +71,7 @@ class Messages(ViewSet):
             'message_id': msg.offset,
             'data': base64.b64encode(msg.value)
         }
-        response.update(dict(msg.headers))
+        response.update(dict((k, v.decode('utf-8')) for (k, v) in msg.headers))
         return response
 
     @check_destination

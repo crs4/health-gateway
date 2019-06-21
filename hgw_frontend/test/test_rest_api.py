@@ -147,14 +147,6 @@ class TestHGWFrontendAPI(TestCase):
                 'status': obj['fields']['status']
         } for obj in self.fixtures if obj['model'] == 'hgw_frontend.channel' and obj['fields']['flow_request'] == 2}
 
-    def set_mock_kafka_consumer(self, mock_kc_klass):
-        mock_kc_klass.FIRST = 3
-        mock_kc_klass.END = 33
-        message = self.encrypter.encrypt(1000000 * 'a')
-        mock_kc_klass.MESSAGES = {i: MockMessage(key="33333".encode('utf-8'), offset=i,
-                                                 topic=DEST_1_ID.encode('utf-8'),
-                                                 value=message) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
-
     @staticmethod
     def _get_client_data(client_name=DEST_1_NAME):
         app = RESTClient.objects.get(name=client_name)
@@ -592,8 +584,7 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
 
-    def _check_message(self, to_be_checked, msg_id):
-        
+    def _check_message(self, to_be_checked, msg_id):        
         self.assertEqual(to_be_checked['message_id'], msg_id)
         self.assertEqual(to_be_checked['channel_id'], 'channel')
         self.assertEqual(to_be_checked['source_id'], 'source')
@@ -607,9 +598,9 @@ class TestHGWFrontendAPI(TestCase):
         mock_kc_klass.END = 33
         data = self.encrypter.encrypt(1000 * 'a')
         headers = [
-            ('channel_id', 'channel'),
-            ('process_id', 'process'),
-            ('source_id', 'source')
+            ('channel_id', b'channel'),
+            ('process_id', b'process'),
+            ('source_id', b'source')
         ]
 
         mock_kc_klass.MESSAGES = {

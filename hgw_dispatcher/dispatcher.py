@@ -27,7 +27,7 @@ import traceback
 import requests
 import yaml
 from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import KafkaError
+from kafka.errors import KafkaError, TopicAuthorizationFailedError
 from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
                              TokenExpiredError)
 from requests_oauthlib import OAuth2Session
@@ -127,6 +127,7 @@ class Dispatcher(object):
             if self.consumer.partitions_for_topic(source_id) is not None:
                 logger.debug("Subscribing to %s topic", source_id)
                 subscriptions.append(source_id)
+        logger.debug(self.consumer.topics())
         if not subscriptions:
             logger.error("There are no topics available. Exiting...")
             sys.exit(2)
@@ -275,9 +276,9 @@ class Dispatcher(object):
                         if channel_id and process_id:
                             logger.debug('Sending to destination %s with process_id %s', dest_id, process_id)
                             headers = [
-                                ('process_id', process_id),
-                                ('channel_id', channel_id),
-                                ('source_id', source_id)
+                                ('process_id', process_id.encode('utf-8')),
+                                ('channel_id', channel_id.encode('utf-8')),
+                                ('source_id', source_id.encode('utf-8'))
                             ]
                             future = self.producer.send(dest_id, value=payload, headers=headers)
 
@@ -302,19 +303,24 @@ class Dispatcher(object):
                 logger.error('Error retrieving consent status for the channel %s. Status: %s',
                              consent_id, cm_res.status_code)
 
-    def run(self):
-        # partition = TopicPartition(self.consumer_topics[0], 0)
-        logger.debug("Starting to consume messages")
+    def consume_messages(self):
         for msg in self.consumer:
             logger.debug("Read message: %s", msg.key)
             if msg.key:
                 consent_id = msg.key.decode('utf-8')
                 logger.debug('Received message from %s for channel %s', msg.topic, consent_id)
                 payload = msg.value
-                self._process_message(consent_id, msg.topic.decode('utf-8'), payload)
+                self._process_message(consent_id, msg.topic, payload)
             else:
                 logger.debug('Rejecting message from %s. Channel id not specified', msg.topic)
 
+    def run(self):
+        # partition = TopicPartition(self.consumer_topics[0], 0)
+        logger.debug("Starting to consume messages")
+        try:
+            self.consume_messages()
+        except TopicAuthorizationFailedError:
+            sys.exit(2)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Dispatch messages from a source to a destination')

@@ -39,7 +39,6 @@ def main():
     parser.add_argument('-z', '--zookeeper', dest='zookeeper', type=str,
                         help='The uri for zookeeper')
     args = parser.parse_args()
-    print(args)
     topics = parse_json(args.input_file)
     create_topics(topics, args.zookeeper)
 
