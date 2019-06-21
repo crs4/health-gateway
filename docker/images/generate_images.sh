@@ -37,21 +37,21 @@ function tag_new_version() {
     fi
 }
 
-# # Create hgw_base, web_base, kafka images
-# for image in hgw_base web_base kafka; do
-#     docker build -t crs4/$image:latest ${DIR}/$image
-#     tag_new_version $image ${DIR}/$image
-# done
+# Create hgw_base, web_base, kafka images
+for image in hgw_base web_base kafka; do
+    docker build -t crs4/$image:latest ${DIR}/$image
+    tag_new_version $image ${DIR}/$image
+done
 
-# for image in consent_manager hgw_backend hgw_frontend hgw_dispatcher; do
-#     cp -r health_gateway/$image/ ${DIR}/$image/service
-#     if [ "$image" != "hgw_dispatcher" ]; then
-#         cp -r health_gateway/hgw_common/hgw_common ${DIR}/$image/service/
-#     fi
-#     docker build -t crs4/$image:latest ${DIR}/$image
-#     tag_new_version $image ${DIR}/$image
-#     rm -r  ${DIR}/$image/service
-# done
+for image in consent_manager hgw_backend hgw_frontend hgw_dispatcher; do
+    cp -r health_gateway/$image/ ${DIR}/$image/service
+    if [ "$image" != "hgw_dispatcher" ]; then
+        cp -r health_gateway/hgw_common/hgw_common ${DIR}/$image/service/
+    fi
+    docker build -t crs4/$image:latest ${DIR}/$image
+    tag_new_version $image ${DIR}/$image
+    rm -r  ${DIR}/$image/service
+done
 
 # # Create Spid images
 # docker build -t crs4/spid-testenv-identityserver:latest ${DIR}/spid_testenv_identityserver
