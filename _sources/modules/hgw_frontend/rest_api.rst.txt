@@ -513,8 +513,10 @@ API Methods
 
     :parameter message_id: the id of the message to get
     :resjson string process_id: the process_id of the Flow Request that the message belongs to.
+    :resjson string source_id: the source_id of the source endpoint the message arrives from
+    :resjson string channel_id: it is the id of the channel that the message refers to  
     :resjson int message_id: the message_id: it is the same as the one in the request url
-    :resjson string message_id: a base64 encoded string representing the encrypted message arrived from the source
+    :resjson string data: a base64 encoded string representing the encrypted message arrived from the source
     :reqheader Authorization: Bearer <oauth_2_access_token>
     :reqheader Accept: application/json
     :resheader Content-Type: application/json
@@ -541,6 +543,8 @@ API Methods
 
         {
             "process_id": "£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb",
+            "source_id": "WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN",
+            "channel_id": "£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb",
             "message_id": 1,
             "data": "<lot_of_data>"
         }
@@ -612,11 +616,15 @@ API Methods
 
         [{
             "process_id": "£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb",
+            "source_id": "WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN",
+            "channel_id": "£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb",
             "message_id": 1,
             "data": "<lot_of_data>"
         },
         {
             "process_id": "gkd34uaSPgjs20xznsbpdmvqDPQ5105GG",
+            "source_id": "WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN",
+            "channel_id": "JyUUH5Av20HI18ty81aTKHoaH26nQYuk",            
             "message_id": 2,
             "data": "<lot_of_data>"
         }]

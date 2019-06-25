@@ -819,8 +819,10 @@ something wrong happens it returns a json response with the list of possible err
 <tr class="field-even field"><th class="field-name" colspan="2">Response JSON Object:</th></tr>
 <tr class="field-even field"><td>&#160;</td><td class="field-body"><ul class="first simple">
 <li><strong>process_id</strong> (<em>string</em>) – the process_id of the Flow Request that the message belongs to.</li>
-<li><strong>message_id</strong> (<em>string</em>) – the message_id: it is the same as the one in the request url</li>
-<li><strong>message_id</strong> – a base64 encoded string representing the encrypted message arrived from the source</li>
+<li><strong>source_id</strong> (<em>string</em>) – the source_id of the source endpoint the message arrives from</li>
+<li><strong>channel_id</strong> (<em>string</em>) – it is the id of the channel that the message refers to</li>
+<li><strong>message_id</strong> (<em>int</em>) – the message_id: it is the same as the one in the request url</li>
+<li><strong>data</strong> (<em>string</em>) – a base64 encoded string representing the encrypted message arrived from the source</li>
 </ul>
 </td>
 </tr>
@@ -860,6 +862,8 @@ something wrong happens it returns a json response with the list of possible err
 
 <span class="p">{</span>
     <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
     <span class="nt">&quot;message_id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
     <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;lot_of_data&gt;&quot;</span>
 <span class="p">}</span>
@@ -949,11 +953,15 @@ items. If something wrong happens it returns a json response with the list of po
 
 <span class="p">[{</span>
     <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;£2Eko7Zw39wPWVNaBbwClzbFpjJ97nHHb&quot;</span><span class="p">,</span>
     <span class="nt">&quot;message_id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
     <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;lot_of_data&gt;&quot;</span>
 <span class="p">},</span>
 <span class="p">{</span>
     <span class="nt">&quot;process_id&quot;</span><span class="p">:</span> <span class="s2">&quot;gkd34uaSPgjs20xznsbpdmvqDPQ5105GG&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;source_id&quot;</span><span class="p">:</span> <span class="s2">&quot;WeiMaK8pjMQ6B9qxDRFm00EcFyi1NyFN&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;channel_id&quot;</span><span class="p">:</span> <span class="s2">&quot;JyUUH5Av20HI18ty81aTKHoaH26nQYuk&quot;</span><span class="p">,</span>
     <span class="nt">&quot;message_id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
     <span class="nt">&quot;data&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;lot_of_data&gt;&quot;</span>
 <span class="p">}]</span>
