@@ -17,8 +17,7 @@
 import json
 import logging
 import os
-
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 from Cryptodome.PublicKey import RSA
 from dateutil.parser import parse
@@ -26,19 +25,19 @@ from django.test import TestCase, client
 from mock import patch
 
 from hgw_common.cipher import Cipher
-from hgw_common.models import AccessToken, Profile
-from hgw_common.utils.mocks import MockMessage, get_free_port, start_mock_server
-from hgw_frontend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
+from hgw_common.models import Profile
+from hgw_common.utils.mocks import (MockMessage, get_free_port,
+                                    start_mock_server)
 from hgw_frontend import ERRORS_MESSAGE
-from hgw_frontend.models import Channel, ConfirmationCode, \
-    ConsentConfirmation, Destination, FlowRequest, RESTClient
-from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
+from hgw_frontend.models import (Channel, ConfirmationCode,
+                                 ConsentConfirmation, Destination, FlowRequest,
+                                 RESTClient, Source)
 from hgw_frontend.serializers import SourceSerializer
+from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 
-from . import CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, PERSON_ID, \
-    WRONG_CONFIRM_ID, SOURCES_DATA, DEST_1_ID, DEST_1_NAME, \
-    DEST_PUBLIC_KEY, SOURCE_1_ID, SOURCE_1_NAME, \
-    DISPATCHER_NAME, POWERLESS_NAME
+from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, DEST_1_ID, DEST_1_NAME,
+               DEST_PUBLIC_KEY, DISPATCHER_NAME, PERSON_ID, POWERLESS_NAME,
+               SOURCE_1_ID, SOURCE_1_NAME, SOURCES_DATA, WRONG_CONFIRM_ID)
 from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -97,10 +96,10 @@ class TestFlowRequestAPI(TestCase):
         self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
                               if obj['model'] == 'hgw_frontend.flowrequest'}
         self.sources = {obj['pk']: {
-                'source_id': obj['fields']['source_id'],
-                'name': obj['fields']['name'],
-                'profile':  self.profiles[obj['fields']['profile']]
-            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
+            'source_id': obj['fields']['source_id'],
+            'name': obj['fields']['name'],
+            'profile':  self.profiles[obj['fields']['profile']]
+        } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
 
     def set_mock_kafka_consumer(self, mock_kc_klass):
         mock_kc_klass.FIRST = 3
@@ -235,7 +234,6 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertDictEqual(res.json(), {'errors': ['not_found']})
 
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_request_with_no_sources(self):
         """
         Tests adding a flow request without specifying the sources.
@@ -254,16 +252,10 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(FlowRequest.objects.all().count(), 4)
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
-        sources = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.all()
-        backend_sources = [{
-            'source_id': source['source_id'],
-            'name': source['name'],
-            'profile': source['profile']
-        } for source in SOURCES_DATA]
-        serializer = SourceSerializer(sources, many=True)
-        self.assertEqual(serializer.data, backend_sources)
-        
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
+        flow_request_sources = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.all()
+        all_sources = Source.objects.all()
+        self.assertEqual(list(flow_request_sources), list(all_sources))
+
     def test_add_flow_request_with_sources(self):
         """
         Tests adding a flow request without specifying the sources. 
@@ -287,7 +279,6 @@ class TestFlowRequestAPI(TestCase):
             {'source_id': SOURCE_1_ID, 'name': SOURCE_1_NAME}
         )
 
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_requests_with_null_profile(self):
         """
         Tests adding a flow request with null profile. It tests that the request is added but its status is set to PENDING
@@ -310,7 +301,6 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
 
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_requests_without_profile(self):
         """
         Tests adding a flow request without profile. It tests that the request is added but its status is set to PENDING
@@ -331,48 +321,6 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(FlowRequest.objects.all().count(), 4)
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
-
-    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
-    def test_add_flow_request_fail_backend_oauth_token(self):
-        """
-        Tests that, if an error occurs when getting the backend oauth2 token because of wrong oauth2 client paramaters, 
-        the request to confirm fails and the client is redirected to the callback url with an error paramater
-        """
-        res = self._add_flow_request()
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': [ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']]})
-
-    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
-    def test_add_flow_request_fail_cannot_contact_backend_when_getting_an_oauth_token(self):
-        """
-        Tests that, if a connection error occurs getting the oauth token from the backend, 
-        the request to confirm fails and the client is redirected to the callback url with an error parameter
-        """
-        # First perform an add request that creates the flow request with status 'PENDING'
-        res = self._add_flow_request()
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': [ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']]})
-
-    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', "https://localhost")
-    def test_add_flow_request_fail_cannot_contact_backend_when_getting_sources(self):
-        """
-        Tests that, if a connection error occurs getting the sources from the backend, 
-        the request to confirm fails and the client is redirected to the callback url with an error parameter
-        """
-        # Inserts a fake access token to skip the request of a new token and the first request will be GET /v1/sources
-        AccessToken.objects.create(token_url='https://localhost/oauth2/token/',
-                                   access_token='C3wxJNSLfeLIwHGwnWiIbZPHLTT9a8',
-                                   token_type='Bearer',
-                                   expires_in=36000,
-                                   expires_at=datetime.now() + timedelta(36000),
-                                   scope=['read', 'write'])
-        res = self._add_flow_request()
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': [ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']]})
 
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_add_flow_requests_unauthorized(self):
@@ -650,8 +598,7 @@ class TestFlowRequestAPI(TestCase):
             self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_FR_STATUS'])
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.KafkaProducer')
-    def test_confirm_missing_person_id(self, mocked_kafka_producer):
+    def test_confirm_missing_person_id(self):
         """
         Tests that if the person logged does not have a correct ID (i.e., fiscalNumber), the confirmation fails
         :return:
@@ -763,8 +710,7 @@ class TestFlowRequestAPI(TestCase):
                              fetch_redirect_response=False)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.KafkaProducer')
-    def test_confirm_add_flow_request_confirmed_consent(self, mocked_kafka_producer):
+    def test_confirm_add_flow_request_confirmed_consent(self):
         """
         Tests the correct confirmation process. It checks that the FlowRequest and the Channels are set to 
         WAITING_SOURCE_NOTIFICATION and that the Kafka message is sent
@@ -785,8 +731,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.KafkaProducer')
-    def test_confirm_add_flow_request_wrong_consent_status(self, mocked_kafka_producer):
+    def test_confirm_add_flow_request_wrong_consent_status(self):
         """
         Tests the behavior when a user try to call the /flow_requests/confirm view with a consent_confirm_id of a
         consent not confirmed. It uses flow_request with 'no_consent' and consent with id 'not_confirmed' (status PE)
@@ -803,9 +748,8 @@ class TestFlowRequestAPI(TestCase):
             channel.status = Channel.CONSENT_REQUESTED
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
-    @patch('hgw_frontend.views.flow_requests.KafkaProducer')
-    def test_multiple_consent_confirms_request(self, mocked_kafka_producer):
-        
+    def test_multiple_consent_confirms_request(self):
+
         self.client.login(username='duck', password='duck')
         confirms_id = (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2)
         # First we force the channel status to CONSENT_REQUESTED
@@ -813,7 +757,7 @@ class TestFlowRequestAPI(TestCase):
             c = ConsentConfirmation.objects.get(confirmation_id=confirm_id)
             c.channel.status = Channel.CONSENT_REQUESTED
             c.channel.save()
-            
+
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}&consent_confirm_id={}'.format(
                 *confirms_id))
@@ -891,6 +835,9 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 403)
 
     def test_get_flow_request_by_channel_id_wrong_channel_id(self):
+        """
+        Test that if the channel id is not found, it returns a 404 error
+        """
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/search/?channel_id=unknown', **headers)
         self.assertEqual(res.status_code, 404)

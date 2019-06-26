@@ -18,7 +18,6 @@
 
 import datetime
 import json
-import logging
 from operator import xor
 
 import requests
@@ -29,7 +28,6 @@ from django.db import IntegrityError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
-from kafka import KafkaProducer
 from oauthlib.oauth2 import InvalidClientError
 from rest_framework import status
 from rest_framework.response import Response
@@ -37,11 +35,10 @@ from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import TokenHasResourceDetailedScope
+from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
-                                 ConsentConfirmation, Destination, FlowRequest,
-                                 Source)
+                                 ConsentConfirmation, FlowRequest, Source)
 from hgw_frontend.serializers import (ChannelSerializer, FlowRequestSerializer,
                                       SourceSerializer)
 from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
@@ -49,17 +46,9 @@ from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    CONSENT_MANAGER_CONFIRMATION_PAGE,
                                    CONSENT_MANAGER_URI, HGW_BACKEND_CLIENT_ID,
                                    HGW_BACKEND_CLIENT_SECRET, HGW_BACKEND_URI,
-                                   KAFKA_BROKER, KAFKA_CA_CERT,
-                                   KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY,
-                                   KAFKA_SSL, KAFKA_CHANNEL_NOTIFICATION_TOPIC, TIME_ZONE)
+                                   TIME_ZONE)
 
-logger = logging.getLogger('hgw_frontend')
-fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(fmt)
-logger.addHandler(ch)
-logger.setLevel(logging.DEBUG)
+logger = get_logger('hgw_frontend')
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
@@ -97,58 +86,6 @@ class FlowRequestView(ViewSet):
         serializer = FlowRequestSerializer(flow_requests, many=True)
         return Response(serializer.data, headers={'X-Total-Count': flow_requests.count()})
 
-    def _get_sources_from_backend(self, required_sources=None):
-        """
-        Get sources from the backend. If :param:`required_sources` is specified, 
-        it gets only the sources in the this list.
-
-        :param required_sources: a list of sources to get
-        """
-        logger.info("Getting sources from backend")
-        try:
-            oauth_backend_session = _get_backend_session()
-        except InvalidClientError:
-            logger.error("Invalid oAuth2 client contacting the backend")
-            return []
-        except requests.exceptions.ConnectionError:
-            logger.error("Backend connection error while getting an oAuth2 tokern")
-            return []
-        else:
-            # gets all sources
-            sources = oauth_backend_session.get('{}/v1/sources/'.format(HGW_BACKEND_URI))
-            # error happened retrieving the sources
-            if sources is None:
-                return []
-            sources = sources.json()
-            logger.info("Found %s sources", len(sources))
-
-            if required_sources is not None:
-                required_sources_id = [s['source_id'] for s in required_sources]
-            res_sources = []
-            for source_data in sources:
-                logger.info(source_data['profile'])
-                if required_sources is not None and source_data['source_id'] not in required_sources_id:
-                    # it means the source is not one of the required so we skip it
-                    continue
-                logger.debug("Source data are %s", source_data)
-                try:
-                    source = Source.objects.get(source_id=source_data['source_id'])
-                except Source.DoesNotExist:
-                    data = {
-                        'source_id': source_data['source_id'],
-                        'name': source_data['name'],
-                        'profile': source_data['profile']
-                    }
-                    source_serializer = SourceSerializer(data=data)
-                    if source_serializer.is_valid():
-                        source = source_serializer.save()
-                res_sources.append({
-                    'source_id': source.source_id,
-                    'name': source.name,
-                    'profile': ProfileSerializer(source.profile).data
-                })
-            return res_sources
-
     def create(self, request):
         """
         REST function to create a FlowRequest
@@ -162,23 +99,22 @@ class FlowRequestView(ViewSet):
         logger.info("Received create flow_request request")
         if 'sources' in request.data:
             logger.info("Required flow request only for sources %s", request.data['sources'])
-            request_sources = request.data['sources']
+            sources = Source.objects.filter(source_id__in=[ s['source_id'] for s in request.data['sources']])
         else:
-            request_sources = None
-        logger.info("Getting sources from backend")
-        sources = self._get_sources_from_backend(request_sources)
-        logger.info("Found %d sources", len(sources))
+            sources = Source.objects.all()
+            logger.info("Source(s) not specified. Using all available sources")
 
         if not sources:
             return Response({'errors': [ERRORS_MESSAGE['INTERNAL_GATEWAY_ERROR']]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        sources_serializer = SourceSerializer(sources, many=True)
         data = {
             'flow_id': request.data['flow_id'],
             'process_id': get_random_string(32),
             'status': FlowRequest.PENDING,
             'profile': request.data['profile'] if 'profile' in request.data else None,
             'destination': request.auth.application.destination.pk,
-            'sources': sources
+            'sources': sources_serializer.data
         }
         if 'start_validity' not in request.data and 'expire_validity' not in request.data:
             # Assign default values for the validity range: current datetime + 6 months
