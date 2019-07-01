@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-Tests notifiers
+Tests senders
 """
 
 import json
@@ -28,12 +28,12 @@ from django.test import TestCase
 from kafka import KafkaConsumer, TopicPartition
 
 from consent_manager import settings
-from hgw_common.messaging.notifier import SendingError, get_sender
+from hgw_common.messaging.sender import SendingError, get_sender
 
 
-class TestKafkaNotifier(TestCase):
+class TestKafkasender(TestCase):
     """
-    Class the tests kafka notifier
+    Class the tests kafka sender
     """
 
     CONTAINER_NAME = "test_kafka"
@@ -108,9 +108,9 @@ class TestKafkaNotifier(TestCase):
         """
         Tests that, if the json encoding fails the notify method raises an exception
         """
-        notifier = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
-        notifier.notify(message)
+        sender.notify(message)
 
         consumer = KafkaConsumer(bootstrap_servers='kafka:9092')
         partition = TopicPartition('consent_manager_notification', 0)
@@ -128,6 +128,6 @@ class TestKafkaNotifier(TestCase):
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
-        notifier = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(notifier.notify({'message': 'fake_message'}))
+        sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertFalse(sender.notify({'message': 'fake_message'}))
         container.start()

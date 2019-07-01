@@ -29,21 +29,21 @@ from hgw_common.utils import get_logger
 logger = get_logger(__file__)
 
 
-class UnknownNotifier(Exception):
+class UnknownSender(Exception):
     """
-    Exception to be raised when it was impossible to get the instantiate the correct notifier
+    Exception to be raised when it was impossible to get the instantiate the correct sender
     """
 
 
-class NotificationError(Exception):
+class SendingError(Exception):
     """
     Exception to be raised when a notification error happens
     """
 
 
-class GenericNotifier():
+class GenericSender():
     """
-    Generic notifier abstract class. Subclass should implement the
+    Generic sender abstract class. Subclass should implement the
     real notification process
     """
 
@@ -54,9 +54,9 @@ class GenericNotifier():
         raise NotImplementedError
 
 
-class KafkaNotifier(GenericNotifier):
+class KafkaSender(GenericSender):
     """
-    A notifier that publish updates in a kafka topic
+    A sender that publish updates in a kafka topic
     """
 
     def __init__(self, broker, topic, ssl, ca_cert, client_cert, client_key):
@@ -75,19 +75,19 @@ class KafkaNotifier(GenericNotifier):
                 'bootstrap_servers': broker
             }
         self.producer = None
-        super(KafkaNotifier, self).__init__()
+        super(KafkaSender, self).__init__()
 
     def _create_producer(self):
         try:
             if self.producer is None:
                 self.producer = KafkaProducer(**self.producer_params)
         except NoBrokersAvailable:
-            raise NotificationError('Cannot connect to kafka broker')
+            raise SendingError('Cannot connect to kafka broker')
 
     def notify(self, message):
         try:
             self._create_producer()
-        except NotificationError:
+        except SendingError:
             return False
 
         try:
@@ -112,25 +112,28 @@ class KafkaNotifier(GenericNotifier):
             return True
 
     def notify_async(self, message):
-        self._create_producer()
+        try:
+            self._create_producer()
+        except SendingError:
+            return False
 
         try:
             self.producer.send(self.topic, json.dumps(message).encode('utf-8'))
         except (TypeError, UnicodeError):
-            raise NotificationError('Something bad happened notifying the message')
+            raise SendingError('Something bad happened notifying the message')
 
 
 
-def get_notifier(name):
+def get_sender(name):
     """
-    Methods that returns the correct notifier based on the settings file
+    Methods that returns the correct sender based on the settings file
     """
     if settings.NOTIFICATION_TYPE == 'kafka':
-        return KafkaNotifier(settings.KAFKA_BROKER,
+        return KafkaSender(settings.KAFKA_BROKER,
                              name,
                              settings.KAFKA_SSL,
                              settings.KAFKA_CA_CERT,
                              settings.KAFKA_CLIENT_CERT,
                              settings.KAFKA_CLIENT_KEY)
 
-    raise UnknownNotifier("Cannot instantiate a notifier")
+    raise UnknownSender("Cannot instantiate a sender")

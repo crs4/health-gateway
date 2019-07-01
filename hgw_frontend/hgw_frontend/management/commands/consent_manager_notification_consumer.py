@@ -17,7 +17,7 @@
 
 import json
 
-from hgw_common.messaging.notifier import get_sender
+from hgw_common.messaging.sender import get_sender
 from hgw_common.utils import KafkaConsumerCommand, get_logger
 from hgw_common.models import FailedMessages
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination, \
@@ -46,7 +46,7 @@ class Command(KafkaConsumerCommand):
     def __init__(self, *args, **kwargs):
         self.client_id = self.group_id = 'consent_manager_notification_consumer'
         self.topics = [KAFKA_CONSENT_NOTIFICATION_TOPIC]
-        self.notifier = get_sender(KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+        self.sender = get_sender(KAFKA_CHANNEL_NOTIFICATION_TOPIC)
         super(Command, self).__init__(*args, **kwargs)
 
     def _validate_consent(self, consent):
@@ -115,7 +115,7 @@ class Command(KafkaConsumerCommand):
                         'expire_validity': consent['expire_validity']
                     }
 
-                    notified = self.notifier.notify(channel)
+                    notified = self.sender.notify(channel)
                     if not notified:
                         FailedMessages.objects.create(
                             message_type=FAILED_MESSAGE_TYPE, message=message,

@@ -284,7 +284,7 @@ class TestConsentConsumer(TestCase):
             channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
             self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
         with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
-                patch('hgw_common.messaging.notifier.KafkaProducer') as MockKafkaProducer:
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
             for index, consent in enumerate(self.in_messages):
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
@@ -311,7 +311,7 @@ class TestConsentConsumer(TestCase):
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
-                patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
             for consent in self.in_messages:
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
@@ -332,7 +332,7 @@ class TestConsentConsumer(TestCase):
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
-                patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
             MockKafkaProducer().send.assert_not_called()
             self.assertEqual(FailedMessages.objects.count(), 1)
@@ -350,7 +350,7 @@ class TestConsentConsumer(TestCase):
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
-                patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
             for consent in self.in_messages:
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
@@ -371,7 +371,7 @@ class TestConsentConsumer(TestCase):
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
-                patch('hgw_common.notifier.KafkaProducer') as MockKafkaProducer:
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
             for consent in self.in_messages:
                 channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel

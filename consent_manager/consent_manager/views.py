@@ -34,7 +34,7 @@ from consent_manager import serializers
 from consent_manager.models import ConfirmationCode, Consent
 from consent_manager.serializers import ConsentSerializer
 from consent_manager.settings import USER_ID_FIELD, KAFKA_NOTIFICATION_TOPIC
-from hgw_common.messaging.notifier import SendingError, get_sender
+from hgw_common.messaging.sender import SendingError, get_sender
 from hgw_common.utils import (ERRORS,
                               IsAuthenticatedOrTokenHasResourceDetailedScope,
                               get_logger)
@@ -51,7 +51,7 @@ class ConsentView(ViewSet):
     required_scopes = ['consent']
 
     def __init__(self, *args, **kwargs):
-        self._notifier = None
+        self._sender = None
         super(ConsentView, self).__init__(*args, **kwargs)
 
     @staticmethod
@@ -64,12 +64,12 @@ class ConsentView(ViewSet):
 
     def _notify_changes(self, consent):
         """
-        Method to notify consent changes. If the notifier is None it gets one
+        Method to notify consent changes. If the sender is None it gets one
         """
-        if self._notifier is None:
-            self._notifier = get_sender(KAFKA_NOTIFICATION_TOPIC)
+        if self._sender is None:
+            self._sender = get_sender(KAFKA_NOTIFICATION_TOPIC)
         consent_serializer = ConsentSerializer(consent)
-        self._notifier.notify(consent_serializer.data)
+        self._sender.notify(consent_serializer.data)
 
     def list(self, request):
         """
