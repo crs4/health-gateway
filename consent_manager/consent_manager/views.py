@@ -34,7 +34,7 @@ from consent_manager import serializers
 from consent_manager.models import ConfirmationCode, Consent
 from consent_manager.serializers import ConsentSerializer
 from consent_manager.settings import USER_ID_FIELD, KAFKA_NOTIFICATION_TOPIC
-from hgw_common.notifier import NotificationError, get_notifier
+from hgw_common.messaging.notifier import SendingError, get_sender
 from hgw_common.utils import (ERRORS,
                               IsAuthenticatedOrTokenHasResourceDetailedScope,
                               get_logger)
@@ -67,7 +67,7 @@ class ConsentView(ViewSet):
         Method to notify consent changes. If the notifier is None it gets one
         """
         if self._notifier is None:
-            self._notifier = get_notifier(KAFKA_NOTIFICATION_TOPIC)
+            self._notifier = get_sender(KAFKA_NOTIFICATION_TOPIC)
         consent_serializer = ConsentSerializer(consent)
         self._notifier.notify(consent_serializer.data)
 
@@ -289,7 +289,7 @@ class ConsentView(ViewSet):
 
                         try:
                             self._notify_changes(consent)
-                        except NotificationError:
+                        except SendingError:
                             # TODO: we should retry to notify the frontend
                             logger.error("It was impossible to notify the message to the HGW Frontend")
 

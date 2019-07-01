@@ -28,7 +28,7 @@ from django.test import TestCase
 from kafka import KafkaConsumer, TopicPartition
 
 from consent_manager import settings
-from hgw_common.notifier import NotificationError, get_notifier
+from hgw_common.messaging.notifier import SendingError, get_sender
 
 
 class TestKafkaNotifier(TestCase):
@@ -108,7 +108,7 @@ class TestKafkaNotifier(TestCase):
         """
         Tests that, if the json encoding fails the notify method raises an exception
         """
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
+        notifier = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
         notifier.notify(message)
 
@@ -128,6 +128,6 @@ class TestKafkaNotifier(TestCase):
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
+        notifier = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertFalse(notifier.notify({'message': 'fake_message'}))
         container.start()
