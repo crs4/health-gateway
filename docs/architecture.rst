@@ -18,7 +18,7 @@ Main Components
 
     * **Destination**
         a Destination is a system where a person would like to forward a set
-        of her/his data from a Source.
+        of their data from a Source.
 
             * **Destination Endpoint**: it is a module of the Destination
               enabling it to receive the data from the authorized Sources.
@@ -53,7 +53,7 @@ Main Components
             it manages the communications with the Destinations; it
             exposes an API which enables the person to open,
             authorize, modify or delete a data flow, redirecting the
-            person to the Consent Manager, after her/his
+            person to the Consent Manager, after their
             secure authentication on the Identity Provider;
             it notifies the Health Gateway Backend with the results
             of the identification/authorization steps to allow the
@@ -75,7 +75,7 @@ Main Components
         authorization for modification or revocation.
 
     * **Identity Provider**:
-        the Identity Provider identifies the person and provides her/his
+        the Identity Provider identifies the person and provides their
         data to permit the Source to match its persons data to the person
         the data flow is related to.
 
@@ -86,30 +86,22 @@ Main Concepts
         it is a tree data structure (as, for example, an openEHR archetype)
         defining what data the person authorizes to be sent to a Destination;
     * **Channel**
-        a Channel object, identified by a unique Channel ID, is defined by
-        the quadruple: (Source Endpoint, Destination Endpoint, Profile,
+        a Channel is a logical connection between a Source and a Destination
+        to tranfer data of a certain type belonging to a person. It is defined
+        by the quadruple: (Source Endpoint, Destination Endpoint, Profile,
         Person ID). When a Channel is active the person’s data specified
         by the Profile are sent from the Source Endpoint to the Destination
         Endpoint.
         All channels have a validity time duration range associated to them.
-        It has to be noticed that only the Consent Manager has the full
-        control and knowledge of all Channel objects metadata.
-        The other involved actors only know a subset of them:
-
-            * a Source Endpoint only knows Profile, Person ID and Channel ID
-            * the HGW Dispatcher only knows Channel ID and Destination ID
-            * a Destination doesn’t know anything about the Channels,
-              only about the Flow Request which gather more than one Channel
-
     * **Flow Request**
         It is a request from a Destination to the HGW to start the process
         of opening one or more Channel for a Person
     * **Consent**
         authorization related to a Channel and given by a person, to transfer
-        her/his data, as selected by the
+        their data, as selected by the
         channel Profile, from a Source to a Destination.
-
-    * **Connector**: a Connector is an object, associated to a Channel,
+    * **Connector**
+        a Connector is an object, associated to a Channel,
         created through a request sent by the Health Gateway Backend to the
         Source Endpoint. A Connector enables the delivering of a person’s data,
         according to the Profile and Destination of the associated Channel.
@@ -136,18 +128,20 @@ Description
 -----------
 A person who wants to allow a data flow to a Destination enters in the
 Destination user interface, selects the data Profiles and starts the
-process to authorize the Destination to receive her/his clinical data.
+process to authorize the Destination to receive their clinical data.
 The Destination inserts a Flow Request (about the Profile requested)
 in the Health Gateway Frontend, which redirects the user to the Identity
-Provider, to perform the authentication, and then to the Consent Manager.
+Provider, to perform the authentication. After that, the HGW instantiates
+the Channels (one per known Source Endpoint), creates the corresponding 
+Consents into to the Consent Manager and redirects the user to the Consent Manager
 The Consent Manager shows the Consents corresponding to the Profile
-initially chosen and the user selects the set of authorizations she/he
-wants to confirm and the list of data Sources. The Consent Manager
+initially chosen and the user selects the set of authorizations they
+want to confirm and the list of data Sources. The Consent Manager
+activates the Consents and informs the Health Gateway Frontend which 
 activates the Channels and redirects the person’s User Agent to the
-Destination via Health Gateway Frontend. Asynchronously,
-the Health Gateway Frontend sends a request to the Health Gateway Backend
-to open Connectors in the Source Endpoints. Before opening a Connector,
-the Source Endpoint must query the Consent Manager in order to
+Destination. Meanwhile the Health Gateway Frontend sends a request to the 
+Health Gateway Backend to open Connectors in the Source Endpoints. Before
+opening a Connector, the Source Endpoint must query the Consent Manager in order to
 ensure that there is an active consent for the Connector’s associated
 Channel. If the Consent Manager confirms there is an active Consent
 associated to the Channel, the data flow can begin, according to the
@@ -247,7 +241,7 @@ The operations are the following:
 
     *
         The person enters the Destination web page with a User Agent and starts
-        the process to authorize the Destination to get her/his clinical data
+        the process to authorize the Destination to get their clinical data
     *
         The Destination inserts a Flow Request in the HGW Frontend,
         specifying the Profile, a callback url, which is a url where the
@@ -271,7 +265,7 @@ The operations are the following:
         service to perform the authentication
     *
         The Identity Provider authenticates the person and sends to the
-        HGW her/his demographics
+        HGW their demographics
     *
         The HGW Frontend gets the list of Sources from the Health Gateway
         Backend.
@@ -289,10 +283,10 @@ The operations are the following:
     *
         The Consent Manager redirects the User Agent again to the Identity
         Provider to identify the person. This time the person doesn’t need
-        to perform the login since she/he is already logged in.
+        to perform the login since they are already logged in.
     *
         The Consent Manager shows the Consents that the user has to confirm
-        and the user selects the set of authorizations she/he wants to
+        and the user selects the set of authorizations they want to
         confirm and the list of Sources to authorize.
     *
         The Consent Manager sets the Channel to ACTIVE state and redirects
