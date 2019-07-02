@@ -27,7 +27,7 @@ def source_saved_handler(sender, instance, **kwargs):
     }
 
     sender = get_sender(KAFKA_SOURCE_NOTIFICATION_TOPIC)
-    if sender.notify(message):
+    if sender.send(message):
         logger.info("Souce notified correctly")
 
 
@@ -39,5 +39,5 @@ def connector_created_handler(connector, **kwargs):
         'channel_id': connector['channel_id']
     }
     sender = get_sender(KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-    if sender.notify(message):
+    if sender.send(message):
         logger.info("Connector notified correctly")

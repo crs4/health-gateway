@@ -106,11 +106,11 @@ class TestKafkasender(TestCase):
 
     def test_correct_send(self):
         """
-        Tests that, if the json encoding fails the notify method raises an exception
+        Tests that, if the json encoding fails the send method raises an exception
         """
         sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
-        sender.notify(message)
+        sender.send(message)
 
         consumer = KafkaConsumer(bootstrap_servers='kafka:9092')
         partition = TopicPartition('consent_manager_notification', 0)
@@ -122,12 +122,12 @@ class TestKafkasender(TestCase):
 
     def test_fail_kafka_producer_connection(self):
         """
-        Tests that, if the kafka broker is not accessible, the notify method raises an exception
+        Tests that, if the kafka broker is not accessible, the send method raises an exception
         """
         docker_client = docker.from_env()
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
         sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(sender.notify({'message': 'fake_message'}))
+        self.assertFalse(sender.send({'message': 'fake_message'}))
         container.start()

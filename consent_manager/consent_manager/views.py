@@ -62,14 +62,14 @@ class ConsentView(ViewSet):
     def _get_person_id(request):
         return getattr(request.user, USER_ID_FIELD)
 
-    def _notify_changes(self, consent):
+    def _send_changes(self, consent):
         """
-        Method to notify consent changes. If the sender is None it gets one
+        Method to send consent changes. If the sender is None it gets one
         """
         if self._sender is None:
             self._sender = get_sender(KAFKA_NOTIFICATION_TOPIC)
         consent_serializer = ConsentSerializer(consent)
-        self._sender.notify(consent_serializer.data)
+        self._sender.send(consent_serializer.data)
 
     def list(self, request):
         """
@@ -137,7 +137,7 @@ class ConsentView(ViewSet):
         serializer = serializers.ConsentSerializer(consent, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            self._notify_changes(consent)
+            self._send_changes(consent)
         else:
             logger.info('Update data are not valid. Errors are: %s', serializer.errors)
             return Response({'errors': serializer.errors}, status=http_status.HTTP_400_BAD_REQUEST)
@@ -180,7 +180,7 @@ class ConsentView(ViewSet):
             logger.info('Consent revoked')
             consent.status = Consent.REVOKED
             consent.save()
-            self._notify_changes(consent)
+            self._send_changes(consent)
 
             return http_status.HTTP_200_OK, {}
 
@@ -288,10 +288,10 @@ class ConsentView(ViewSet):
                         logger.info('consent with id %s confirmed', consent)
 
                         try:
-                            self._notify_changes(consent)
+                            self._send_changes(consent)
                         except SendingError:
-                            # TODO: we should retry to notify the frontend
-                            logger.error("It was impossible to notify the message to the HGW Frontend")
+                            # TODO: we should retry to send the frontend
+                            logger.error("It was impossible to send the message to the HGW Frontend")
 
         return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
 

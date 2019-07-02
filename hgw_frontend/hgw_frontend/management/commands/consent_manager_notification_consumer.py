@@ -115,7 +115,7 @@ class Command(KafkaConsumerCommand):
                         'expire_validity': consent['expire_validity']
                     }
 
-                    notified = self.sender.notify(channel)
+                    notified = self.sender.send(channel)
                     if not notified:
                         FailedMessages.objects.create(
                             message_type=FAILED_MESSAGE_TYPE, message=message,

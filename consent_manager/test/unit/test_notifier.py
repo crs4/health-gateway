@@ -25,11 +25,10 @@ from django.test import TestCase
 from mock import patch
 
 from consent_manager import settings
-from hgw_common.messaging.sender import (KafkaSender, SendingError,
-                                           UnknownSender, get_sender)
+from hgw_common.messaging.sender import KafkaSender, UnknownSender, get_sender
 
 
-class Testsenders(TestCase):
+class TestSenders(TestCase):
     """
     Test senders class
     """
@@ -50,33 +49,33 @@ class Testsenders(TestCase):
         self.assertIsInstance(sender, KafkaSender)
 
 
-class TestKafkasender(TestCase):
+class TestKafkaSender(TestCase):
     """
     Class the tests kafka sender
     """
 
     def test_fail_kafka_producer_connection(self):
         """
-        Tests that, if the kafka broker is not accessible, the notify method raises an exception
+        Tests that, if the kafka broker is not accessible, the send method raises an exception
         """
         sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(sender.notify({'message': 'fake_message'}))
+        self.assertFalse(sender.send({'message': 'fake_message'}))
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_fail_json_encoding_error(self, mocked_kafka_producer):
         """
-        Tests that, if the json encoding fails the notify method raises an exception
+        Tests that, if the json encoding fails the send method raises an exception
         """
         sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(sender.notify({"wrong_object"}))
+        self.assertFalse(sender.send({"wrong_object"}))
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_correct_send(self, mocked_kafka_producer):
         """
-        Tests that, if the json encoding fails the notify method raises an exception
+        Tests that, if the json encoding fails the send method raises an exception
         """
         sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
-        self.assertTrue(sender.notify(message))
+        self.assertTrue(sender.send(message))
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')), message)

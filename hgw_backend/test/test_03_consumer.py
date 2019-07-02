@@ -90,7 +90,7 @@ class TestConsumer(TestCase):
             Command().handle()
             self.assertEqual(FailedConnector.objects.count(), 0)
             calls = []
-            
+
             for m in self.messages:
                 source_obj = Source.objects.get(source_id=m['source_id'])
                 connector = {
