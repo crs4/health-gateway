@@ -34,7 +34,7 @@ from consent_manager import serializers
 from consent_manager.models import ConfirmationCode, Consent
 from consent_manager.serializers import ConsentSerializer
 from consent_manager.settings import USER_ID_FIELD, KAFKA_NOTIFICATION_TOPIC
-from hgw_common.messaging.sender import SendingError, get_sender
+from hgw_common.messaging.sender import SendingError, create_sender
 from hgw_common.utils import (ERRORS,
                               IsAuthenticatedOrTokenHasResourceDetailedScope,
                               get_logger)
@@ -67,7 +67,7 @@ class ConsentView(ViewSet):
         Method to send consent changes. If the sender is None it gets one
         """
         if self._sender is None:
-            self._sender = get_sender(KAFKA_NOTIFICATION_TOPIC)
+            self._sender = create_sender(KAFKA_NOTIFICATION_TOPIC)
         consent_serializer = ConsentSerializer(consent)
         self._sender.send(consent_serializer.data)
 

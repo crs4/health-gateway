@@ -36,6 +36,8 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from yaml.scanner import ScannerError
 
+from hgw_common.messaging.receiver import create_receiver
+
 
 class TokenHasResourceDetailedScope(TokenHasScope):
     """
@@ -107,7 +109,7 @@ class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedSco
                 return False
 
 
-class KafkaConsumerCommand(BaseCommand):
+class ConsumerCommand(BaseCommand):
     """
     This class implements a Django Command that consumes message from a kafka topic.
     It provides connection funcionalities. Subclasses must implement only the 
@@ -115,25 +117,8 @@ class KafkaConsumerCommand(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        consumer_params = {
-            'bootstrap_servers': settings.KAFKA_BROKER,
-            'client_id': self.client_id,
-            'group_id': self.group_id,
-        }
-        if settings.KAFKA_SSL:
-            consumer_params.update({
-                'bootstrap_servers': settings.KAFKA_BROKER,
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': settings.KAFKA_CA_CERT,
-                'ssl_certfile': settings.KAFKA_CLIENT_CERT,
-                'ssl_keyfile': settings.KAFKA_CLIENT_KEY
-            })
-
-        consumer = KafkaConsumer(**consumer_params)
-        partitions = [TopicPartition(topic, 0) for topic in self.topics]
-        consumer.assign(partitions)
-        for msg in consumer:
+        receiver = create_receiver(self.topics[0], self.group_id)
+        for msg in receiver:
             self.handle_message(msg)
 
     def handle_message(self, message):

@@ -14,51 +14,41 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 import json
-import logging
-from datetime import datetime
-from json import JSONDecodeError
 
 from dateutil import parser
-from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.db import transaction
-from kafka import KafkaConsumer, TopicPartition
 
 from hgw_backend.models import FailedConnector, Source
-from hgw_common.utils import KafkaConsumerCommand, get_logger
+from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
+from hgw_common.utils import ConsumerCommand, get_logger
 
 logger = get_logger('backend_kafka_consumer')
 
 
-class Command(KafkaConsumerCommand):
+class Command(ConsumerCommand):
     help = 'Launch a KafkaConsumer'
     def __init__(self, *args, **kwargs):
         self.client_id = 'create_connector_consumer'
         self.group_id = 'create_connector_consumer'
-        self.topics = [settings.KAFKA_CHANNEL_NOTIFICATION_TOPIC]
+        self.topics = [KAFKA_CHANNEL_NOTIFICATION_TOPIC]
         super(Command, self).__init__(*args, **kwargs)
 
     def handle_message(self, message):
+        logger.error("Received message to create a connector")
         failure_reason = None
         retry = False
-        try:
-            # Loads the json message
-            channel_data = json.loads(message.value.decode('utf-8'))
-        except (TypeError, UnicodeError):
-            failure_reason = FailedConnector.DECODING
-            logger.error('Skipping message with id %s: something bad happened', message.offset)
-        except JSONDecodeError:
+        if not message['success']:
             failure_reason = FailedConnector.JSON_DECODING
-            logger.error('Skipping message with id %s: message was not json encoded', message.offset)
+            logger.error('Skipping message with id %s: message was not json encoded', message['id'])
         else:
+            channel_data = message['data']
             try:
                 # Then get the source data
                 source = Source.objects.get(source_id=channel_data['source_id'])
             except Source.DoesNotExist:
                 failure_reason = FailedConnector.SOURCE_NOT_FOUND
-                logger.error('Skipping message with id %s: source with id %s was not found in the db', message.offset, channel_data['source_id'])
+                logger.error('Skipping message with id %s: source with id %s was not found in the db', message['id'], channel_data['source_id'])
             else:
                 try:
                     # Then get the key from the structure
@@ -70,21 +60,21 @@ class Command(KafkaConsumerCommand):
                     end_channel_validity = channel_data['expire_validity']
                 except KeyError as k:
                     failure_reason = FailedConnector.WRONG_MESSAGE_STRUCTURE
-                    logger.error('Skipping message with id %s: cannot find %s attribute in the message', message.offset, k.args[0])
+                    logger.error('Skipping message with id %s: cannot find %s attribute in the message', message['id'], k.args[0])
                 else:
                     if start_channel_validity is not None:
                         try:
                             start_channel_validity = parser.parse(channel_data['start_validity']).date().isoformat()
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
-                            logger.error('Skipping message with id %s: wrong start date format', message.offset)
+                            logger.error('Skipping message with id %s: wrong start date format', message['id'])
 
                     if end_channel_validity is not None:
                         try:
                             end_channel_validity = parser.parse(channel_data['expire_validity']).date().isoformat()
                         except ValueError:
                             failure_reason = FailedConnector.WRONG_DATE_FORMAT
-                            logger.error('Skipping message with id %s: wrong end date format', message.offset)
+                            logger.error('Skipping message with id %s: wrong end date format', message['id'])
 
                     connector = {
                         'profile': source_endpoint_profile,
@@ -99,11 +89,13 @@ class Command(KafkaConsumerCommand):
                     if res is None:
                         failure_reason = FailedConnector.SENDING_ERROR
                         retry = True
-                        logger.error('Skipping message with id %s: error with contacting the Source Endpoint', message.offset)
+                        logger.error('Skipping message with id %s: error contacting the Source Endpoint', message['id'])
 
         if failure_reason is not None:
             try:
+                # print(message['data'])
                 with transaction.atomic():
-                    FailedConnector.objects.create(message=message.value, reason=failure_reason, retry=retry)
-            except:
-                logger.error('Failure saving message with id %s into database', message.offset)
+                    FailedConnector.objects.create(message=json.dumps(message['data']), reason=failure_reason, retry=retry)
+            except Exception as e:
+                logger.error('Failure saving message with id %s into database', message['id'])
+                logger.error(e)

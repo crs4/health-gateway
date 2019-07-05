@@ -17,16 +17,16 @@
 
 import json
 
-from hgw_common.messaging.sender import get_sender
-from hgw_common.utils import KafkaConsumerCommand, get_logger
+from hgw_common.messaging.sender import create_sender
+from hgw_common.utils import ConsumerCommand, get_logger
 from hgw_common.models import FailedMessages
-from hgw_frontend.models import Channel, ConsentConfirmation, Destination, \
-    FlowRequest
+from hgw_frontend.models import Channel, ConsentConfirmation, Destination
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
 
 
 logger = get_logger(__file__)
+
 
 class FAILED_REASON():
     FAILED_NOTIFICATION = 'FAILED_NOTIFICATION'
@@ -39,14 +39,14 @@ class FAILED_REASON():
 
 FAILED_MESSAGE_TYPE = 'CONSENT'
 
-class Command(KafkaConsumerCommand):
-    help = 'Launch Backend Notification Consumer'
 
+class Command(ConsumerCommand):
+    help = 'Launch Backend Notification Consumer'
 
     def __init__(self, *args, **kwargs):
         self.client_id = self.group_id = 'consent_manager_notification_consumer'
         self.topics = [KAFKA_CONSENT_NOTIFICATION_TOPIC]
-        self.sender = get_sender(KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+        self.sender = create_sender(KAFKA_CHANNEL_NOTIFICATION_TOPIC)
         super(Command, self).__init__(*args, **kwargs)
 
     def _validate_consent(self, consent):
@@ -77,23 +77,18 @@ class Command(KafkaConsumerCommand):
             return FAILED_REASON.MISMATCHING_SOURCE
 
     def handle_message(self, message):
-        logger.info('Found message for topic %s', message.topic)
-        try:
-            consent = json.loads(message.value.decode('utf-8'))
-        except json.JSONDecodeError:
+        logger.info('Found message for queue %s', message['queue'])
+        
+        failure_reason = None
+        retry = False
+        if not message['success']:
             logger.error('Cannot handle message. JSON Error')
-            FailedMessages.objects.create(
-                message_type=FAILED_MESSAGE_TYPE, message=message,
-                reason=FAILED_REASON.JSON_DECODING, retry=False
-            )
+            failure_reason = FAILED_REASON.JSON_DECODING
         else:
-            fail_reason = self._validate_consent(consent)
-            if fail_reason:
-                FailedMessages.objects.create(
-                    message_type=FAILED_MESSAGE_TYPE, message=message,
-                    reason=fail_reason, retry=False
-                )
-            else:
+            consent = message['data']
+
+            failure_reason = self._validate_consent(consent)
+            if failure_reason is None:
                 consent_confirmation = ConsentConfirmation.objects.get(consent_id=consent['consent_id'])
                 channel = consent_confirmation.channel
                 if channel.status == Channel.CONSENT_REQUESTED and consent['status'] == 'AC':
@@ -117,9 +112,13 @@ class Command(KafkaConsumerCommand):
 
                     notified = self.sender.send(channel)
                     if not notified:
-                        FailedMessages.objects.create(
-                            message_type=FAILED_MESSAGE_TYPE, message=message,
-                            reason=FAILED_REASON.FAILED_NOTIFICATION, retry=True
-                        )
+                        failure_reason = FAILED_REASON.FAILED_NOTIFICATION
+                        retry = True
                     else:
                         logger.info('Channel notified to backend')
+                        
+        if failure_reason is not None:
+                        FailedMessages.objects.create(
+                message_type=FAILED_MESSAGE_TYPE, message=json.dumps(message),
+                reason=failure_reason, retry=retry
+            )

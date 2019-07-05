@@ -28,7 +28,7 @@ from django.test import TestCase
 from kafka import KafkaConsumer, TopicPartition
 
 from consent_manager import settings
-from hgw_common.messaging.sender import SendingError, get_sender
+from hgw_common.messaging.sender import SendingError, create_sender
 
 
 class TestKafkasender(TestCase):
@@ -108,7 +108,7 @@ class TestKafkasender(TestCase):
         """
         Tests that, if the json encoding fails the send method raises an exception
         """
-        sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
         sender.send(message)
 
@@ -128,6 +128,6 @@ class TestKafkasender(TestCase):
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
-        sender = get_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertFalse(sender.send({'message': 'fake_message'}))
         container.start()

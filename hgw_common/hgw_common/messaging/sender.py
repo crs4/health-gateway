@@ -118,7 +118,7 @@ class KafkaSender(GenericSender):
             return False
 
 
-def get_sender(name):
+def create_sender(name):
     """
     Methods that returns the correct sender based on the settings file
     """
