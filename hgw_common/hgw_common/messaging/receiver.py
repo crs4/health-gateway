@@ -16,6 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
+from typing import collections
 
 from django.conf import settings
 from kafka import KafkaConsumer
@@ -35,6 +36,7 @@ for handler in handlers:
     handler.setLevel(logging.INFO)
     handler.setFormatter(fmt)
     logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 class GenericReceiver():
     """
@@ -74,17 +76,20 @@ class KafkaReceiver(GenericReceiver):
     A very simple kafka receiver. It just creates a KafkaConsumer that consumes
     from the topic specified in input. To consume messages use the iterator
     """
-    def __init__(self, topic: str, config: dict, deserializer):
-        self.topic = topic
+    def __init__(self, topics, config, deserializer):
+        if isinstance(topics, collections.Iterable):
+            self.topics = topics
+        else:
+            self.topics = [topics]
         self.config = config
         try:
             self.consumer = KafkaConsumer(**self.config)
         except NoBrokersAvailable:
             logger.error("Cannot connect to kafka")
             raise BrokerConnectionError
-        logger.info("Subscribed to topic %s", self.topic)
 
-        self.consumer.subscribe([self.topic])
+        self.consumer.subscribe(self.topics)
+        logger.info("Subscribed to topic %s", self.topics)
         self.wait_assignments()
         self.deserializer = deserializer()
         super(KafkaReceiver, self).__init__()
@@ -100,10 +105,10 @@ class KafkaReceiver(GenericReceiver):
         logger.info("Waiting for topic assignment")
         self._force_assignment()
         assignments = [tp.topic for tp in self.consumer.assignment()]
-        while self.topic not in assignments:
+        while set(self.topics) < set(assignments):
             self._force_assignment()
             assignments = [tp.topic for tp in self.consumer.assignment()]
-        logger.info("Topic %s assigned", self.topic)
+        logger.info("Topic %s assigned", self.topics)
 
     def is_last(self):
         return self.consumer.position == self.consumer.highwater

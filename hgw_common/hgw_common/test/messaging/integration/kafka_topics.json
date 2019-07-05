@@ -1,5 +1,11 @@
 [{
-    "name": "test_topic",
+    "name": "test-topic",
+    "replication_factor": 1,
+    "partitions": 1,
+    "writer": null,
+    "reader": null
+}, {
+    "name": "test-topic-2",
     "replication_factor": 1,
     "partitions": 1,
     "writer": null,
