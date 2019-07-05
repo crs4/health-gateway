@@ -420,7 +420,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertDictEqual(res.json(), expected)
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_modify(self, mocked_kafka_producer):
         """
         Test consent modification (i.e., update). It can update only the start date and end data
@@ -581,7 +581,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_revoke(self, mocked_kafka_producer):
         """
         Test revoke operation for a single consent. Test that the consent is not revoked in case
@@ -680,7 +680,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_FOUND]})
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_revoke_list(self, mocked_kafka_producer):
         """
         Tests consents revocation
@@ -890,7 +890,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps(data), content_type='application/json')
         return consents, res
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_confirm_with_correct_notification(self, mocked_kafka_producer):
         """
         Tests correct consent confirmation
@@ -909,7 +909,7 @@ class TestAPI(TestCase):
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
                                  consent_serializer.data)
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_confirm_with_correct_notification_and_null_validity_dates(self, mocked_kafka_producer):
         """
         Tests correct consent confirmation with start and expire validity set to null

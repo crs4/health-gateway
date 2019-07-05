@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-Tests notifiers
+Tests senders
 """
 
 import json
@@ -28,12 +28,12 @@ from django.test import TestCase
 from kafka import KafkaConsumer, TopicPartition
 
 from consent_manager import settings
-from hgw_common.notifier import NotificationError, get_notifier
+from hgw_common.messaging.sender import SendingError, create_sender
 
 
-class TestKafkaNotifier(TestCase):
+class TestKafkasender(TestCase):
     """
-    Class the tests kafka notifier
+    Class the tests kafka sender
     """
 
     CONTAINER_NAME = "test_kafka"
@@ -106,11 +106,11 @@ class TestKafkaNotifier(TestCase):
 
     def test_correct_send(self):
         """
-        Tests that, if the json encoding fails the notify method raises an exception
+        Tests that, if the json encoding fails the send method raises an exception
         """
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
-        notifier.notify(message)
+        sender.send(message)
 
         consumer = KafkaConsumer(bootstrap_servers='kafka:9092')
         partition = TopicPartition('consent_manager_notification', 0)
@@ -122,12 +122,12 @@ class TestKafkaNotifier(TestCase):
 
     def test_fail_kafka_producer_connection(self):
         """
-        Tests that, if the kafka broker is not accessible, the notify method raises an exception
+        Tests that, if the kafka broker is not accessible, the send method raises an exception
         """
         docker_client = docker.from_env()
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(notifier.notify({'message': 'fake_message'}))
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertFalse(sender.send({'message': 'fake_message'}))
         container.start()

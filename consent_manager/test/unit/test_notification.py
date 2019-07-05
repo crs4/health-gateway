@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-Tests notifiers
+Tests senders
 """
 
 import json
@@ -25,57 +25,57 @@ from django.test import TestCase
 from mock import patch
 
 from consent_manager import settings
-from hgw_common.notifier import (KafkaNotifier, NotificationError, UnknownNotifier, get_notifier)
+from hgw_common.messaging.sender import KafkaSender, UnknownSender, create_sender
 
 
-class TestNotifiers(TestCase):
+class TestSenders(TestCase):
     """
-    Test notifiers class
+    Test senders class
     """
 
-    @patch('hgw_common.notifier.settings.NOTIFICATION_TYPE', 'unknown')
-    def test_raise_unknown_notifier(self):
+    @patch('hgw_common.messaging.sender.settings.NOTIFICATION_TYPE', 'unknown')
+    def test_raise_unknown_sender(self):
         """
-        Tests that, when the notifier is unknown the get_notifier function raises an error
+        Tests that, when the sender is unknown the factory function raises an error
         """
-        self.assertRaises(UnknownNotifier, get_notifier, settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertRaises(UnknownSender, create_sender, settings.KAFKA_NOTIFICATION_TOPIC)
 
-    @patch('hgw_common.notifier.KafkaProducer')
-    def test_get_kafka_notifier(self, mocked_kafka_producer):
+    @patch('hgw_common.messaging.sender.KafkaProducer')
+    def test_get_kafka_sender(self, mocked_kafka_producer):
         """
-        Tests that, when the settings specifies a kafka notifier, the instantiated notifier is KafkaNotifier
+        Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertIsInstance(notifier, KafkaNotifier)
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertIsInstance(sender, KafkaSender)
 
 
-class TestKafkaNotifier(TestCase):
+class TestKafkaSender(TestCase):
     """
-    Class the tests kafka notifier
+    Class the tests kafka sender
     """
 
     def test_fail_kafka_producer_connection(self):
         """
-        Tests that, if the kafka broker is not accessible, the notify method raises an exception
+        Tests that, if the kafka broker is not accessible, the send method raises an exception
         """
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(notifier.notify({'message': 'fake_message'}))
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertFalse(sender.send({'message': 'fake_message'}))
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_fail_json_encoding_error(self, mocked_kafka_producer):
         """
-        Tests that, if the json encoding fails the notify method raises an exception
+        Tests that, if the json encoding fails the send method raises an exception
         """
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(notifier.notify({"wrong_object"}))
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertFalse(sender.send({"wrong_object"}))
 
-    @patch('hgw_common.notifier.KafkaProducer')
+    @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_correct_send(self, mocked_kafka_producer):
         """
-        Tests that, if the json encoding fails the notify method raises an exception
+        Tests that, if the json encoding fails the send method raises an exception
         """
-        notifier = get_notifier(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
         message = {'message': 'text'}
-        self.assertTrue(notifier.notify(message))
+        self.assertTrue(sender.send(message))
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')), message)

@@ -27,12 +27,12 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
 class TestConsumer(TestCase):
     fixtures = ['test_data.json']
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestConsumer, cls).setUpClass()
-        for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
-            logger = logging.getLogger(logger_name)
-            logger.setLevel(logging.CRITICAL)
+    # @classmethod
+    # def setUpClass(cls):
+    #     super(TestConsumer, cls).setUpClass()
+    #     for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
+    #         logger = logging.getLogger(logger_name)
+    #         logger.setLevel(logging.CRITICAL)
 
     def setUp(self):
         self.messages = [{
@@ -72,7 +72,7 @@ class TestConsumer(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        topic = KAFKA_CHANNEL_NOTIFICATION_TOPIC.encode('utf-8')
+        topic = KAFKA_CHANNEL_NOTIFICATION_TOPIC
         key = 'key'
         mock_kc_klass.MESSAGES = {i: MockMessage(key=key,
                                                  offset=i,
@@ -84,13 +84,13 @@ class TestConsumer(TestCase):
         """
         Test correct message send
         """
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True) as mocked_create_connector:
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             Command().handle()
             self.assertEqual(FailedConnector.objects.count(), 0)
             calls = []
-            
+
             for m in self.messages:
                 source_obj = Source.objects.get(source_id=m['source_id'])
                 connector = {
@@ -108,7 +108,7 @@ class TestConsumer(TestCase):
         """
         Test failure sending message
         """
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             Command().handle()
             self.assertEqual(FailedConnector.objects.count(), 2)
@@ -122,7 +122,7 @@ class TestConsumer(TestCase):
         Tests failure because of json decode
         """
         messages = ['(a)']
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, False)
             command = Command()
@@ -130,7 +130,7 @@ class TestConsumer(TestCase):
 
             self.assertEqual(FailedConnector.objects.count(), 1)
             f = FailedConnector.objects.first()
-            self.assertEqual(f.message, messages[0])
+            self.assertEqual(f.message, json.dumps(messages[0]))
             self.assertEqual(f.reason, FailedConnector.JSON_DECODING)
             self.assertEqual(f.retry, False)
 
@@ -139,7 +139,7 @@ class TestConsumer(TestCase):
         Tests failure beacuse of incorrect message structure
         """
         del self.messages[0]['channel_id']
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             command = Command()
@@ -156,7 +156,7 @@ class TestConsumer(TestCase):
         Tests failure beacuse of unknown source
         """
         self.messages[0]['source_id'] = 'a' * 32  # generates an unknown source_id. 32 is the character length of a source_id
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             command = Command()
@@ -173,7 +173,7 @@ class TestConsumer(TestCase):
         Tests failure because of unicode decoding error. In this case the message won't be saved on db
         """
         messages = ['(a)']
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, True, 'utf-16')
             command = Command()
@@ -188,7 +188,7 @@ class TestConsumer(TestCase):
         """
         self.messages[0]['start_validity'] = 'WRONG_DATE'
         self.messages[1]['expire_validity'] = 'WRONG_DATE'
-        with patch('hgw_common.utils.KafkaConsumer', MockKafkaConsumer), \
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
             command = Command()

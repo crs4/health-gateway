@@ -2,7 +2,7 @@ from django.dispatch import Signal
 
 from hgw_backend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
-from hgw_common.notifier import get_notifier
+from hgw_common.messaging.sender import create_sender
 from hgw_common.utils import get_logger
 
 
@@ -26,8 +26,8 @@ def source_saved_handler(sender, instance, **kwargs):
         }
     }
 
-    notifier = get_notifier(KAFKA_SOURCE_NOTIFICATION_TOPIC)
-    if notifier.notify(message):
+    sender = create_sender(KAFKA_SOURCE_NOTIFICATION_TOPIC)
+    if sender.send(message):
         logger.info("Souce notified correctly")
 
 
@@ -38,6 +38,6 @@ def connector_created_handler(connector, **kwargs):
     message = {
         'channel_id': connector['channel_id']
     }
-    notifier = get_notifier(KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-    if notifier.notify(message):
+    sender = create_sender(KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+    if sender.send(message):
         logger.info("Connector notified correctly")

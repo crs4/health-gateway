@@ -99,7 +99,7 @@ class FlowRequestView(ViewSet):
         logger.info("Received create flow_request request")
         if 'sources' in request.data:
             logger.info("Required flow request only for sources %s", request.data['sources'])
-            sources = Source.objects.filter(source_id__in=[ s['source_id'] for s in request.data['sources']])
+            sources = Source.objects.filter(source_id__in=[s['source_id'] for s in request.data['sources']])
         else:
             sources = Source.objects.all()
             logger.info("Source(s) not specified. Using all available sources")

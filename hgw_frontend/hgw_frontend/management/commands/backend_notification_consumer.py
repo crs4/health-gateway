@@ -19,7 +19,7 @@ import json
 
 from django.conf import settings
 
-from hgw_common.utils import KafkaConsumerCommand, get_logger
+from hgw_common.utils import ConsumerCommand, get_logger
 from hgw_frontend.models import Channel, ConsentConfirmation, Source
 from hgw_frontend.serializers import SourceSerializer
 from hgw_frontend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
@@ -28,7 +28,7 @@ from hgw_frontend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
 logger = get_logger('backend_notification_consumer')
 
 
-class Command(KafkaConsumerCommand):
+class Command(ConsumerCommand):
     help = 'Launch Backend Notification Consumer'
 
     def __init__(self, *args, **kwargs):
@@ -39,16 +39,14 @@ class Command(KafkaConsumerCommand):
         super(Command, self).__init__(*args, **kwargs)
 
     def handle_message(self, message):
-        logger.info('Found message for topic %s', message.topic)
-        try:
-            data = json.loads(message.value.decode('utf-8'))
-        except json.JSONDecodeError:
-            logger.error('Cannot handle message. JSON Error')
+        logger.info('Found message for topic %s', message['queue'])
+        if not message['success']:
+            logger.error("Errore reading the message")
         else:
-            if message.topic == settings.KAFKA_SOURCE_NOTIFICATION_TOPIC:
-                return self._handle_source(data)
+            if message['queue'] == settings.KAFKA_SOURCE_NOTIFICATION_TOPIC:
+                return self._handle_source(message['data'])
             else:
-                return self._handle_connector(data)
+                return self._handle_connector(message['data'])
 
     def _handle_source(self, source_data):
         try:

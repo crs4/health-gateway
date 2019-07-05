@@ -23,13 +23,13 @@ import json
 import re
 import socket
 import time
-
-from django.utils.crypto import get_random_string
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
+from unittest.mock import MagicMock, Mock
 
 import requests
-from unittest.mock import MagicMock, Mock
+from django.utils.crypto import get_random_string
+from kafka.structs import TopicPartition
 
 
 class MockOAuth2Session(MagicMock):
@@ -132,6 +132,12 @@ class MockKafkaConsumer(object):
     def __init__(self, *args, **kwargs):
         super(MockKafkaConsumer, self).__init__()
         self.counter = 0
+
+    def subscribe(self, topics):
+        self.topics = topics
+
+    def assignment(self):
+        return set([TopicPartition(topic, 0) for topic in self.topics])
 
     def beginning_offsets(self, topics_partition):
         return {topics_partition[0]: self.FIRST}
