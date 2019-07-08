@@ -104,14 +104,14 @@ class KafkaReceiver(GenericReceiver):
         msg = next(self.consumer)
 
         try:
-            data = self.deserializer.deserialize(msg.value.decode('utf-8'))
             success = True
+            data = self.deserializer.deserialize(msg.value)
         except DeserializationError:
-            data = msg.value.decode('utf-8')
             success = False
-        except UnicodeDecodeError:
-            data = msg.value
-            success = False
+            try:
+                data = msg.value.decode('utf-8')
+            except UnicodeDecodeError:
+                data = msg.value
         return {
             'success': success,
             'id': msg.offset,
@@ -121,7 +121,7 @@ class KafkaReceiver(GenericReceiver):
         }
 
 
-def create_receiver(name, client_name, configuration_params):
+def create_receiver(name, client_name, configuration_params, deserializer=JSONDeserializer):
     """
     Methods that returns the correct sender based on the settings file
     """
@@ -136,6 +136,6 @@ def create_receiver(name, client_name, configuration_params):
             'ssl_keyfile': configuration_params['client_key'],
         }
 
-        return KafkaReceiver(name, kafka_config, JSONDeserializer)
+        return KafkaReceiver(name, kafka_config, deserializer)
 
     raise UnknownReceiver("Cannot instantiate a sender")

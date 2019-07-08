@@ -33,10 +33,11 @@ from rest_framework.viewsets import ViewSet
 from consent_manager import serializers
 from consent_manager.models import ConfirmationCode, Consent
 from consent_manager.serializers import ConsentSerializer
-from consent_manager.settings import USER_ID_FIELD, KAFKA_NOTIFICATION_TOPIC
+from consent_manager.settings import KAFKA_NOTIFICATION_TOPIC, USER_ID_FIELD
 from hgw_common.messaging.sender import SendingError, create_sender
 from hgw_common.utils import (ERRORS,
                               IsAuthenticatedOrTokenHasResourceDetailedScope,
+                              create_broker_parameters_from_settings,
                               get_logger)
 
 logger = get_logger('consent_manager')
@@ -67,9 +68,9 @@ class ConsentView(ViewSet):
         Method to send consent changes. If the sender is None it gets one
         """
         if self._sender is None:
-            self._sender = create_sender(KAFKA_NOTIFICATION_TOPIC)
+            self._sender = create_sender(create_broker_parameters_from_settings())
         consent_serializer = ConsentSerializer(consent)
-        self._sender.send(consent_serializer.data)
+        self._sender.send(KAFKA_NOTIFICATION_TOPIC, consent_serializer.data)
 
     def list(self, request):
         """

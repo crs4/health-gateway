@@ -25,14 +25,17 @@ import traceback
 
 import requests
 import yaml
-from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import KafkaError, TopicAuthorizationFailedError
 from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
                              TokenExpiredError)
 from requests_oauthlib import OAuth2Session
 from yaml.error import YAMLError
 from yaml.scanner import ScannerError
-from hgw_common.messaging.receiver import KafkaReceiver
+
+from hgw_common.messaging.receiver import create_receiver
+from hgw_common.messaging.sender import create_sender
+from hgw_common.messaging.serializer import RawSerializer
+from hgw_common.messaging.deserializer import RawDeserializer
 
 logger = logging.getLogger('dispatcher')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -103,57 +106,23 @@ class Dispatcher(object):
         logger.debug("Found %s sources: ", len(self.receiver_topics))
         logger.debug("Sources ids are: %s", self.receiver_topics)
         logger.debug("broker_url: %s", broker_url)
-        
+
+        broker_parameters = {
+            'broker_type': 'kafka',
+            'broker_url': broker_url,
+        }
         if use_ssl:
-            receiver_params = {
-                'bootstrap_servers': broker_url,
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': ca_cert,
-                'ssl_certfile': client_cert,
-                'ssl_keyfile': client_key,
-                'group_id': 'DISPATCHER'
-            }
-        else:
-            receiver_params = {
-                'bootstrap_servers': broker_url,
-                'group_id': 'DISPATCHER'
-            }
+            broker_parameters.update({
+                'ssl': True,
+                'ca_cert': ca_cert,
+                'client_cert': client_cert,
+                'client_key': client_key,
+            })
 
-        self.receiver = KafkaReceiver(self.receiver_topics, receiver_params)
-
-        # subscriptions = []
-        # for source_id in self.receiver_topics:
-        #     if self.receiver.partitions_for_topic(source_id) is not None:
-        #         logger.debug("Subscribing to %s topic", source_id)
-        #         subscriptions.append(source_id)
-        # logger.debug(self.receiver.topics())
-        # if not subscriptions:
-        #     logger.error("There are no topics available. Exiting...")
-        #     sys.exit(2)
-
-        # self.receiver.subscribe(subscriptions)
-        # # TODO: decide if we want it to restart from the beginning or not
-        # # self.receiver.seek_to_beginning(self.receiver.subscription())
-
-        # logger.debug("Subscribed to %s source topics", len(subscriptions))
-
-        if use_ssl:
-            producer_params = {
-                'bootstrap_servers': broker_url,
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': ca_cert,
-                'ssl_certfile': client_cert,
-                'ssl_keyfile': client_key
-            }
-        else:
-            producer_params = {
-                'bootstrap_servers': broker_url
-            }
-        self.producer = KafkaProducer(**producer_params)
         self._obtain_consent_oauth_token()
         self._obtain_hgw_frontend_oauth_token()
+        self.receiver = create_receiver(self.receiver_topics, 'DISPATCHER', broker_parameters, deserializer=RawDeserializer)
+        self.sender = create_sender(broker_parameters, RawSerializer)
 
     def _get_sources(self, loop=True):
         try:
@@ -178,7 +147,7 @@ class Dispatcher(object):
         except InvalidClientError:
             logger.error("Cannot obtain the token from %s. Invalid client", url)
             return None
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             logger.error(traceback.format_exc())
             logger.error("Cannot obtain the token from %s. Connection error", url)
             return None
@@ -280,15 +249,11 @@ class Dispatcher(object):
                                 ('channel_id', channel_id.encode('utf-8')),
                                 ('source_id', source_id.encode('utf-8'))
                             ]
-                            future = self.producer.send(dest_id, value=payload, headers=headers)
-
-                            try:
-                                record_metadata = future.get(timeout=5)
-                            except KafkaError as e:
-                                logger.info("Error sending record")
-                                logger.info(e)
+                            success = self.sender.send(dest_id, payload, headers=headers)
+                            if success:
+                                logger.info("Sent message to topic: %s", dest_id)
                             else:
-                                logger.info("Sent message to topic: %s", record_metadata.topic)
+                                logger.info("Error sending record")
                         else:
                             logger.debug('Process or channel id not found for the channel id')
                             logger.debug('Channel id %s', channel_id)
@@ -305,14 +270,15 @@ class Dispatcher(object):
 
     def consume_messages(self):
         for msg in self.receiver:
-            logger.debug("Read message: %s", msg.key)
-            if msg,key:
-                consent_id = msg.key.decode('utf-8')
-                logger.debug('Received message from %s for channel %s', msg.topic, consent_id)
-                payload = msg.value
-                self._process_message(consent_id, msg.topic, payload)
+            if msg['success']:
+                if msg['key']:
+                    consent_id = msg['key']
+                    logger.debug('Received message from %s for channel %s', msg['queue'], consent_id)
+                    self._process_message(consent_id, msg['queue'], msg['data'])
+                else:
+                    logger.debug('Rejecting message from %s. Channel id not specified', msg['queue'])
             else:
-                logger.debug('Rejecting message from %s. Channel id not specified', msg.topic)
+                logger.debug('Problems reading the message')
 
     def run(self):
         # partition = TopicPartition(self.receiver_topics[0], 0)

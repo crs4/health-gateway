@@ -18,12 +18,13 @@
 import json
 
 from hgw_common.messaging.sender import create_sender
-from hgw_common.utils import ConsumerCommand, get_logger
 from hgw_common.models import FailedMessages
+from hgw_common.utils import (ConsumerCommand,
+                              create_broker_parameters_from_settings,
+                              get_logger)
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
-
 
 logger = get_logger(__file__)
 
@@ -46,7 +47,8 @@ class Command(ConsumerCommand):
     def __init__(self, *args, **kwargs):
         self.client_id = self.group_id = 'consent_manager_notification_consumer'
         self.topics = [KAFKA_CONSENT_NOTIFICATION_TOPIC]
-        self.sender = create_sender(KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+        self.sender_topic = KAFKA_CHANNEL_NOTIFICATION_TOPIC
+        self.sender = create_sender(create_broker_parameters_from_settings())
         super(Command, self).__init__(*args, **kwargs)
 
     def _validate_consent(self, consent):
@@ -110,7 +112,7 @@ class Command(ConsumerCommand):
                         'expire_validity': consent['expire_validity']
                     }
 
-                    notified = self.sender.send(channel)
+                    notified = self.sender.send(self.sender_topic, channel)
                     if not notified:
                         failure_reason = FAILED_REASON.FAILED_NOTIFICATION
                         retry = True

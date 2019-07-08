@@ -69,7 +69,7 @@ class TestSenders(TestCase):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(TOPIC)
+        sender = create_sender(create_broker_parameters_from_settings())
         self.assertIsInstance(sender, KafkaSender)
         expected_config = {
             'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
@@ -79,7 +79,6 @@ class TestSenders(TestCase):
             'ssl_certfile': SettingsSSLMock.KAFKA_CLIENT_CERT,
             'ssl_keyfile': SettingsSSLMock.KAFKA_CLIENT_KEY
         }
-        self.assertEqual(sender.topic, TOPIC)
         self.assertIsInstance(sender.serializer, JSONSerializer)
         self.assertDictEqual(expected_config, sender.config)
 
@@ -89,7 +88,7 @@ class TestSenders(TestCase):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(TOPIC)
+        sender = create_sender(create_broker_parameters_from_settings())
         self.assertIsInstance(sender, KafkaSender)
         expected_config = {
             'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
@@ -99,15 +98,14 @@ class TestSenders(TestCase):
             'ssl_certfile': None,
             'ssl_keyfile': None
         }
-        self.assertEqual(sender.topic, TOPIC)
         self.assertIsInstance(sender.serializer, JSONSerializer)
         self.assertDictEqual(expected_config, sender.config)
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_message_send(self, mocked_kafka_producer):
-        sender = create_sender(TOPIC)
-        self.assertTrue(sender.send('message'))
+        sender = create_sender(create_broker_parameters_from_settings())
+        self.assertTrue(sender.send(TOPIC, 'message'))
         mocked_kafka_producer().send.assert_called_once()
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], TOPIC)
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][1]['value'], b'"message"')
@@ -117,8 +115,8 @@ class TestSenders(TestCase):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is KafkaSender
         """
-        sender = create_sender(TOPIC)
-        self.assertFalse(sender.send('message'))
+        sender = create_sender(create_broker_parameters_from_settings())
+        self.assertFalse(sender.send(TOPIC, 'message'))
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_send_message_fail_no_topic_authorization(self):
@@ -128,8 +126,8 @@ class TestSenders(TestCase):
         future_mock = Mock()
         future_mock.get.side_effect = TopicAuthorizationFailedError
         with patch('hgw_common.messaging.sender.KafkaProducer.send', return_value=future_mock):
-            sender = create_sender(TOPIC)
-            self.assertFalse(sender.send('message'))
+            sender = create_sender(create_broker_parameters_from_settings())
+            self.assertFalse(sender.send(TOPIC, 'message'))
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_send_message_fail_kafka_error(self):
@@ -139,8 +137,8 @@ class TestSenders(TestCase):
         future_mock = Mock()
         future_mock.get.side_effect = KafkaError
         with patch('hgw_common.messaging.sender.KafkaProducer.send', return_value=future_mock):
-            sender = create_sender(TOPIC)
-            self.assertFalse(sender.send('message'))
+            sender = create_sender(create_broker_parameters_from_settings())
+            self.assertFalse(sender.send(TOPIC, 'message'))
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_send_message_fail_timeout_error(self):
@@ -148,17 +146,17 @@ class TestSenders(TestCase):
         Tests failuer in case of no topic authorization
         """
         with patch('hgw_common.messaging.sender.KafkaProducer.send', side_effect=KafkaTimeoutError):
-            sender = create_sender(TOPIC)
-            self.assertFalse(sender.send('message'))
+            sender = create_sender(create_broker_parameters_from_settings())
+            self.assertFalse(sender.send(TOPIC, 'message'))
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_send_message_fail_serialization_error(self):
         """
         Tests failure in case of SerializationError
         """
-        sender = create_sender(TOPIC)
+        sender = create_sender(create_broker_parameters_from_settings())
         # a set is not json serializable so it will raise a TypeError and consequently a serialization error
-        self.assertFalse(sender.send({'message'}))
+        self.assertFalse(sender.send(TOPIC, {'message'}))
 
 
 class TestReceiver(TestCase):

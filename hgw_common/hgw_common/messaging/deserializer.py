@@ -25,6 +25,12 @@ class JSONDeserializer(Deserializer):
         Returns a byte string representing the json serialized object
         """
         try:
-            return json.loads(obj)
-        except (JSONDecodeError, TypeError):
+            return json.loads(obj.decode('utf-8'))
+        except (JSONDecodeError, TypeError, UnicodeDecodeError):
             raise DeserializationError
+
+
+class RawDeserializer(Deserializer):
+    
+    def deserialize(self, obj):
+        return obj

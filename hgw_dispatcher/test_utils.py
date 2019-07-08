@@ -23,6 +23,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
 import requests
+from kafka.structs import TopicPartition
+from mock.mock import MagicMock
 
 from test_data import (ACTIVE_CHANNEL_ID, ACTIVE_CONSENT_ID,
                        CONSENT_WITH_NO_PROCESS_ID, DESTINATION, FLOW_ID,
@@ -194,6 +196,52 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
             status_code = requests.codes.not_found
         return self._send_response(payload, status_code)
 
+
+class MockKafkaConsumer(object):
+    """
+    Simulates a KafkaConsumer
+    """
+
+    MESSAGES = []
+    FIRST = 0
+    END = 1
+
+    def __init__(self, *args, **kwargs):
+        super(MockKafkaConsumer, self).__init__()
+        self.counter = 0
+
+    def subscribe(self, topics):
+        self.topics = topics
+
+    def assignment(self):
+        return set([TopicPartition(topic, 0) for topic in self.topics])
+
+    def beginning_offsets(self, topics_partition):
+        return {topics_partition[0]: self.FIRST}
+
+    def end_offsets(self, topics_partition):
+        return {topics_partition[0]: self.END}
+
+    def seek(self, topics_partition, index):
+        self.counter = index
+
+    def __getattr__(self, item):
+        return MagicMock()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.__next__()
+
+    def __next__(self):
+        try:
+            m = self.MESSAGES[self.counter]
+        except KeyError:
+            raise StopIteration
+        else:
+            self.counter += 1
+            return m
 
 def get_free_port():
     s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)

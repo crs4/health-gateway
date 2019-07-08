@@ -145,9 +145,9 @@ class TestMessaging(TestCase):
         message_num = 10
 
         def sender_fun(num):
-            sender = create_sender(TOPIC_NO_KEY)
+            sender = create_sender(create_broker_parameters_from_settings())
             for _ in range(num):
-                sender.send('message')
+                sender.send(TOPIC_NO_KEY, 'message')
 
         receiver = create_receiver(TOPIC_NO_KEY, 'test_client_no_key', create_broker_parameters_from_settings())
 
@@ -175,9 +175,9 @@ class TestMessaging(TestCase):
         message_num = 10
 
         def sender_fun(num):
-            sender = create_sender(TOPIC_KEY)
+            sender = create_sender(create_broker_parameters_from_settings())
             for _ in range(num):
-                sender.send('message', key='key')
+                sender.send(TOPIC_KEY, 'message', key='key')
 
         receiver = create_receiver(TOPIC_KEY, 'test_client_key', create_broker_parameters_from_settings())
 
@@ -193,20 +193,20 @@ class TestMessaging(TestCase):
             if i + 1 == message_num:
                 break
 
-    @patch('hgw_common.messaging.sender.settings.NOTIFICATION_TYPE', 'unknown')
-    @patch('hgw_common.messaging.sender.settings')
+    @patch('hgw_common.utils.settings.NOTIFICATION_TYPE', 'unknown')
+    @patch('hgw_common.utils.settings')
     def test_raise_unknown_sender(self, mocked_settings):
         """
         Tests that, when the sender is unknown the factory function raises an error
         """
-        self.assertRaises(UnknownSender, create_sender, TOPIC_NO_KEY)
+        self.assertRaises(UnknownSender, create_sender, create_broker_parameters_from_settings())
 
-    @patch('hgw_common.messaging.sender.settings', SettingsSSLMock)
+    @patch('hgw_common.utils.settings', SettingsSSLMock)
     def test_get_kafka_ssl_sender(self):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(TOPIC_NO_KEY)
+        sender = create_sender(create_broker_parameters_from_settings())
         self.assertIsInstance(sender, KafkaSender)
         expected_config = {
             'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
@@ -216,16 +216,15 @@ class TestMessaging(TestCase):
             'ssl_certfile': SettingsSSLMock.KAFKA_CLIENT_CERT,
             'ssl_keyfile': SettingsSSLMock.KAFKA_CLIENT_KEY
         }
-        self.assertEqual(sender.topic, TOPIC_NO_KEY)
         self.assertIsInstance(sender.serializer, JSONSerializer)
         self.assertDictEqual(expected_config, sender.config)
 
-    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     def test_get_kafka_no_ssl_sender(self):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(TOPIC_NO_KEY)
+        sender = create_sender(create_broker_parameters_from_settings())
         self.assertIsInstance(sender, KafkaSender)
         expected_config = {
             'bootstrap_servers': SettingsNoSSLMock.KAFKA_BROKER,
@@ -235,24 +234,23 @@ class TestMessaging(TestCase):
             'ssl_certfile': None,
             'ssl_keyfile': None
         }
-        self.assertEqual(sender.topic, TOPIC_NO_KEY)
         self.assertIsInstance(sender.serializer, JSONSerializer)
         self.assertDictEqual(expected_config, sender.config)
 
-    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     def test_message_send(self):
         """
         Test sending message
         """
-        sender = create_sender(TOPIC_NO_KEY)
+        sender = create_sender(create_broker_parameters_from_settings())
         for _ in range(100):
-            self.assertTrue(sender.send('message'))
+            self.assertTrue(TOPIC_KEY, sender.send(TOPIC_KEY, 'message'))
 
-    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     def test_message_send_with_key(self):
         """
         Test sending message specifying a key
         """
-        sender = create_sender(TOPIC_NO_KEY)
+        sender = create_sender(create_broker_parameters_from_settings())
         for _ in range(100):
-            self.assertTrue(sender.send('message', key='key'))
+            self.assertTrue(TOPIC_NO_KEY, sender.send(TOPIC_NO_KEY, 'message', key='key'))

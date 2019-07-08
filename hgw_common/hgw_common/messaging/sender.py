@@ -37,13 +37,14 @@ logger = logging.getLogger('sender')
 fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handlers = [logging.StreamHandler()]
 
+
 class GenericSender():
     """
     Generic sender abstract class. Subclass should implement the
     real notification process
     """
 
-    def send(self, message):
+    def send(self, message, *args, **kwargs):
         """
         Abstract send method. Subclasses should implement this
         """
@@ -66,8 +67,7 @@ class KafkaSender(GenericSender):
         module
     """
 
-    def __init__(self, topic: str, config: dict, serializer: type):
-        self.topic = topic
+    def __init__(self, config: dict, serializer: type):
         self.config = config
         self.producer = None
         self.serializer = serializer()
@@ -84,7 +84,7 @@ class KafkaSender(GenericSender):
             logger.error('SSLError connecting to kafka broker')
             raise SendingError('SSLError connecting to kafka broker')
 
-    def send(self, message, key=None):
+    def send(self, topic, message, key=None, headers=None):
         try:
             self._create_producer()
         except SendingError:
@@ -92,9 +92,12 @@ class KafkaSender(GenericSender):
             return False
 
         try:
-            future = self.producer.send(self.topic, value=self.serializer.serialize(message), key=key.encode('utf-8') if key is not None else key)
+            future = self.producer.send(topic,
+                                        value=self.serializer.serialize(message),
+                                        key=key.encode('utf-8') if key is not None else key,
+                                        headers=headers)
         except KafkaTimeoutError:
-            logger.error('Cannot get topic %s metadata. Probably the token does not exist', self.topic)
+            logger.error('Cannot get topic %s metadata. Probably the token does not exist', topic)
             return False
         except SerializationError:
             return False
@@ -103,41 +106,41 @@ class KafkaSender(GenericSender):
         try:
             future.get(timeout=2)
         except TopicAuthorizationFailedError:
-            logger.debug('Missing write permission to write in topic %s', self.topic)
+            logger.debug('Missing write permission to write in topic %s', topic)
             return False
         except KafkaError:
-            logger.debug('An error occurred sending message to topic %s. Error details %s', self.topic, format_exc())
+            logger.debug('An error occurred sending message to topic %s. Error details %s', topic, format_exc())
             # Decide what to do if producer request failed...
             return False
         else:
             return True
 
-    def send_async(self, message, key=None):
+    def send_async(self, topic, message, key=None):
         try:
             self._create_producer()
         except SendingError:
             return False
 
         try:
-            self.producer.send(self.topic, value=self.serializer.serialize(message), key=key.encode('utf-8') if key is not None else key)
+            self.producer.send(topic, value=self.serializer.serialize(message), key=key.encode('utf-8') if key is not None else key)
         except SerializationError:
             return False
 
 
-def create_sender(name, serializer=JSONSerializer):
+def create_sender(configuration_params, serializer=JSONSerializer):
     """
     Methods that returns the correct sender based on the settings file
     """
-    if settings.NOTIFICATION_TYPE == 'kafka':
+    if configuration_params['broker_type'] == 'kafka':
         kafka_config = {
-            'bootstrap_servers': settings.KAFKA_BROKER,
-            'security_protocol': 'SSL' if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else 'PLAINTEXT',
+            'bootstrap_servers': configuration_params['broker_url'],
+            'security_protocol': 'SSL' if configuration_params['ssl'] is True else 'PLAINTEXT',
             'ssl_check_hostname': True,
-            'ssl_cafile': settings.KAFKA_CA_CERT if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
-            'ssl_certfile': settings.KAFKA_CLIENT_CERT if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
-            'ssl_keyfile': settings.KAFKA_CLIENT_KEY if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None
+            'ssl_cafile': configuration_params['ca_cert'],
+            'ssl_certfile': configuration_params['client_cert'],
+            'ssl_keyfile': configuration_params['client_key'],
         }
 
-        return KafkaSender(name, kafka_config, serializer)
+        return KafkaSender(kafka_config, serializer)
 
     raise UnknownSender("Cannot instantiate a sender")

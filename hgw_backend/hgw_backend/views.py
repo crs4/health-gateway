@@ -31,7 +31,7 @@ from hgw_common.messaging.sender import create_sender
 from hgw_common.messaging.serializer import RawSerializer
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
+from hgw_common.utils import TokenHasResourceDetailedScope, get_logger, create_broker_parameters_from_settings
 
 from .models import Source
 from .serializers import SourceSerializer
@@ -131,9 +131,9 @@ class Messages(APIView):
             return Response({'error': 'invalid_paramater: channel_id'})
 
         topic = self._get_kafka_topic(request)
-        sender = create_sender(topic, serializer=RawSerializer)
+        sender = create_sender(create_broker_parameters_from_settings(), serializer=RawSerializer)
 
-        success = sender.send(payload, key=channel_id.decode('utf-8'))
+        success = sender.send(topic, payload, key=channel_id.decode('utf-8'))
         if success is False:
             logger.error('Cannot connect to kafka')
             return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)

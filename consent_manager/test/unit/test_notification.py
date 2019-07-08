@@ -26,6 +26,7 @@ from mock import patch
 
 from consent_manager import settings
 from hgw_common.messaging.sender import KafkaSender, UnknownSender, create_sender
+from hgw_common.utils import create_broker_parameters_from_settings
 
 
 class TestSenders(TestCase):
@@ -38,14 +39,14 @@ class TestSenders(TestCase):
         """
         Tests that, when the sender is unknown the factory function raises an error
         """
-        self.assertRaises(UnknownSender, create_sender, settings.KAFKA_NOTIFICATION_TOPIC)
+        self.assertRaises(UnknownSender, create_sender, create_broker_parameters_from_settings())
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_get_kafka_sender(self, mocked_kafka_producer):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(create_broker_parameters_from_settings())
         self.assertIsInstance(sender, KafkaSender)
 
 
@@ -58,24 +59,24 @@ class TestKafkaSender(TestCase):
         """
         Tests that, if the kafka broker is not accessible, the send method raises an exception
         """
-        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(sender.send({'message': 'fake_message'}))
+        sender = create_sender(create_broker_parameters_from_settings())
+        self.assertFalse(sender.send(settings.KAFKA_NOTIFICATION_TOPIC, {'message': 'fake_message'}))
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_fail_json_encoding_error(self, mocked_kafka_producer):
         """
         Tests that, if the json encoding fails the send method raises an exception
         """
-        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(sender.send({"wrong_object"}))
+        sender = create_sender(create_broker_parameters_from_settings())
+        self.assertFalse(sender.send(settings.KAFKA_NOTIFICATION_TOPIC, {"wrong_object"}))
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_correct_send(self, mocked_kafka_producer):
         """
         Tests that, if the json encoding fails the send method raises an exception
         """
-        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(create_broker_parameters_from_settings())
         message = {'message': 'text'}
-        self.assertTrue(sender.send(message))
+        self.assertTrue(sender.send(settings.KAFKA_NOTIFICATION_TOPIC, message))
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')), message)

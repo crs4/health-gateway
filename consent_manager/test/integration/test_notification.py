@@ -29,6 +29,7 @@ from kafka import KafkaConsumer, TopicPartition
 
 from consent_manager import settings
 from hgw_common.messaging.sender import SendingError, create_sender
+from hgw_common.utils import create_broker_parameters_from_settings
 
 
 class TestKafkasender(TestCase):
@@ -108,9 +109,9 @@ class TestKafkasender(TestCase):
         """
         Tests that, if the json encoding fails the send method raises an exception
         """
-        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
+        sender = create_sender(create_broker_parameters_from_settings())
         message = {'message': 'text'}
-        sender.send(message)
+        sender.send(settings.KAFKA_NOTIFICATION_TOPIC, message)
 
         consumer = KafkaConsumer(bootstrap_servers='kafka:9092')
         partition = TopicPartition('consent_manager_notification', 0)
@@ -128,6 +129,6 @@ class TestKafkasender(TestCase):
         container = docker_client.containers.get(self.CONTAINER_NAME)
 
         container.stop()
-        sender = create_sender(settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertFalse(sender.send({'message': 'fake_message'}))
+        sender = create_sender(create_broker_parameters_from_settings())
+        self.assertFalse(sender.send(settings.KAFKA_NOTIFICATION_TOPIC, {'message': 'fake_message'}))
         container.start()
