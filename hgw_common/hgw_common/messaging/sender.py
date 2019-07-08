@@ -17,6 +17,7 @@
 
 import json
 import logging
+from ssl import SSLError
 from json.decoder import JSONDecodeError
 from traceback import format_exc
 
@@ -77,9 +78,13 @@ class KafkaSender(GenericSender):
             if self.producer is None:
                 self.producer = KafkaProducer(**self.config)
         except NoBrokersAvailable:
+            logger.error('Cannot connect to kafka broker')
             raise SendingError('Cannot connect to kafka broker')
+        except SSLError:
+            logger.error('SSLError connecting to kafka broker')
+            raise SendingError('SSLError connecting to kafka broker')
 
-    def send(self, message):
+    def send(self, message, key=None):
         try:
             self._create_producer()
         except SendingError:
@@ -87,7 +92,7 @@ class KafkaSender(GenericSender):
             return False
 
         try:
-            future = self.producer.send(self.topic, value=self.serializer.serialize(message))
+            future = self.producer.send(self.topic, value=self.serializer.serialize(message), key=key.encode('utf-8') if key is not None else key)
         except KafkaTimeoutError:
             logger.error('Cannot get topic %s metadata. Probably the token does not exist', self.topic)
             return False
@@ -107,19 +112,19 @@ class KafkaSender(GenericSender):
         else:
             return True
 
-    def send_async(self, message):
+    def send_async(self, message, key=None):
         try:
             self._create_producer()
         except SendingError:
             return False
 
         try:
-            self.producer.send(self.topic, self.serializer.serialize(message))
+            self.producer.send(self.topic, value=self.serializer.serialize(message), key=key.encode('utf-8') if key is not None else key)
         except SerializationError:
             return False
 
 
-def create_sender(name):
+def create_sender(name, serializer=JSONSerializer):
     """
     Methods that returns the correct sender based on the settings file
     """
@@ -133,6 +138,6 @@ def create_sender(name):
             'ssl_keyfile': settings.KAFKA_CLIENT_KEY if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None
         }
 
-        return KafkaSender(name, kafka_config, JSONSerializer)
+        return KafkaSender(name, kafka_config, serializer)
 
     raise UnknownSender("Cannot instantiate a sender")

@@ -27,7 +27,7 @@ from kafka.errors import (KafkaError, KafkaTimeoutError, NoBrokersAvailable,
 from mock import MagicMock, patch
 from oauth2_provider.settings import oauth2_settings
 
-from _ssl import SSLError
+from ssl import SSLError
 from hgw_backend import settings
 from hgw_backend.models import RESTClient
 from hgw_backend.serializers import SourceSerializer
@@ -254,7 +254,7 @@ class TestMessagesAPI(GenericTestCase):
 
         oauth2_header = self._get_oauth_header()
         source_id = RESTClient.objects.get(pk=1).source.source_id
-        with patch('hgw_backend.utils.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
             self.assertEqual(MockKP().send.call_args_list[0][0][0], source_id)
             self.assertEqual(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
@@ -276,7 +276,7 @@ class TestMessagesAPI(GenericTestCase):
 
         oauth2_header = self._get_oauth_header()
         source_id = RESTClient.objects.get(pk=1).source.source_id
-        with patch('hgw_backend.utils.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
             self.assertEqual(MockKP().send.call_args_list[0][0][0], source_id)
             self.assertEqual(MockKP().send.call_args_list[0][1]['key'], data['channel_id'].encode('utf-8'))
@@ -362,7 +362,7 @@ class TestMessagesAPI(GenericTestCase):
         }
         oauth2_header = self._get_oauth_header()
 
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             MockKP.side_effect = NoBrokersAvailable
             res = self.client.post('/v1/messages/', data, **oauth2_header)
 
@@ -379,7 +379,7 @@ class TestMessagesAPI(GenericTestCase):
         }
         oauth2_header = self._get_oauth_header()
 
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             MockKP.side_effect = SSLError
             res = self.client.post('/v1/messages/', data=data, **oauth2_header)
 
@@ -396,7 +396,7 @@ class TestMessagesAPI(GenericTestCase):
         }
         oauth2_header = self._get_oauth_header()
 
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             MockKP().send.side_effect = KafkaTimeoutError
             res = self.client.post('/v1/messages/', data, **oauth2_header)
 
@@ -413,7 +413,7 @@ class TestMessagesAPI(GenericTestCase):
         }
         oauth2_header = self._get_oauth_header()
 
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             mock_future_record_metadata = MagicMock()
             mock_future_record_metadata().get.side_effect = TopicAuthorizationFailedError
             MockKP().send.side_effect = mock_future_record_metadata
@@ -432,7 +432,7 @@ class TestMessagesAPI(GenericTestCase):
         }
         oauth2_header = self._get_oauth_header()
 
-        with patch('hgw_backend.views.KafkaProducer') as MockKP:
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKP:
             mock_future_record_metadata = MagicMock()
             mock_future_record_metadata().get.side_effect = KafkaError
             MockKP().send.side_effect = mock_future_record_metadata

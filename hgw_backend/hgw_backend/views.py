@@ -14,13 +14,11 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-from _ssl import SSLError
 from traceback import format_exc
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import Http404, HttpResponse
-from kafka import KafkaProducer
-from kafka.errors import (KafkaError, KafkaTimeoutError, NoBrokersAvailable,
+from kafka.errors import (KafkaError, KafkaTimeoutError,
                           TopicAuthorizationFailedError)
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
@@ -28,8 +26,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
-from hgw_backend.utils import get_kafka_producer
 from hgw_common.cipher import is_encrypted
+from hgw_common.messaging.sender import create_sender
+from hgw_common.messaging.serializer import RawSerializer
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
@@ -131,29 +130,12 @@ class Messages(APIView):
         except ValueError:
             return Response({'error': 'invalid_paramater: channel_id'})
 
-        producer = get_kafka_producer()
-        if producer is None:
+        topic = self._get_kafka_topic(request)
+        sender = create_sender(topic, serializer=RawSerializer)
+
+        success = sender.send(payload, key=channel_id.decode('utf-8'))
+        if success is False:
             logger.error('Cannot connect to kafka')
             return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            topic = self._get_kafka_topic(request)
-            try:
-                future = producer.send(topic, key=channel_id, value=payload)
-            except KafkaTimeoutError:
-                logger.error('Cannot get topic %s metadata. Probably the token does not exist', topic)
-                # Topic doesn't exist
-                return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            # Block for 'synchronous' sends
-            try:
-                future.get(timeout=2)
-            except TopicAuthorizationFailedError:
-                logger.error('Missing write permission to write in topic %s', topic)
-                return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            except KafkaError:
-                logger.error('An error occurred sending message to topic %s. Error details %s', topic, format_exc())
-                # Decide what to do if produce request failed...
-                return Response({'error': 'cannot_send_message'}, status.HTTP_500_INTERNAL_SERVER_ERROR)
-            else:
-                logger.info('Message sent correctly')
-
+        
         return Response({}, 200)

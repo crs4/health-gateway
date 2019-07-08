@@ -166,11 +166,10 @@ class TestReceiver(TestCase):
     Test senders class
     """
 
-    def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
+    def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, key=None, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        key = 'key'
-        mock_kc_klass.MESSAGES = {i: MockMessage(key=key,
+        mock_kc_klass.MESSAGES = {i: MockMessage(key=key.encode('utf-8'),
                                                  offset=i,
                                                  topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
@@ -240,6 +239,27 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['success'], True)
                 self.assertEqual(m['id'], i)
                 self.assertEqual(m['data'], 'message_{}'.format(i))
+                self.assertEqual(m['key'], None)
+                self.assertEqual(m['queue'], TOPIC)
+
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
+    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
+    def test_message_receive_with_key(self):
+        """
+        Test correct message receiving
+        """
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
+            messages = ['message_{}'.format(i) for i in range(10)]
+
+            self.set_mock_kafka_consumer(MockKafkaConsumer, messages, TOPIC, 'key')
+
+            receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
+
+            for i, m in enumerate(receiver):
+                self.assertEqual(m['success'], True)
+                self.assertEqual(m['id'], i)
+                self.assertEqual(m['data'], 'message_{}'.format(i))
+                self.assertEqual(m['key'], b'key')
                 self.assertEqual(m['queue'], TOPIC)
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -259,6 +279,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['id'], i)
                 self.assertEqual(m['data'], '(a)')
                 self.assertEqual(m['queue'], TOPIC)
+                self.assertEqual(m['key'], None)
                 self.assertEqual(m['success'], False)
     
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -277,4 +298,5 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['id'], i)
                 self.assertEqual(m['data'], '"(a)"'.encode('utf-16'))
                 self.assertEqual(m['queue'], TOPIC)
+                self.assertEqual(m['key'], None)
                 self.assertEqual(m['success'], False)

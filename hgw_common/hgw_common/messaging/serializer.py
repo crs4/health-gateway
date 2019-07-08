@@ -1,6 +1,8 @@
 import json
 from json import JSONDecodeError
 
+from yaml.serializer import Serializer
+
 from hgw_common.messaging import SerializationError
 
 
@@ -28,3 +30,15 @@ class JSONSerializer(Serializer):
             return json.dumps(obj).encode('utf-8')
         except TypeError:
             raise SerializationError
+
+
+class RawSerializer(Serializer):
+    """
+    It is a Serializer that doesn't serialize at all
+    """
+
+    def serialize(self, obj):
+        """
+        Returns exactly the same object in input
+        """
+        return obj

@@ -17,6 +17,7 @@
 
 import collections.abc
 import logging
+from ssl import SSLError
 from typing import MutableSequence
 
 from django.conf import settings
@@ -66,9 +67,13 @@ class KafkaReceiver(GenericReceiver):
         except NoBrokersAvailable:
             logger.error("Cannot connect to kafka")
             raise BrokerConnectionError
+        except SSLError:
+            logger.error('SSLError connecting to kafka broker')
+            raise BrokerConnectionError('SSLError connecting to kafka broker')
+
 
         self.consumer.subscribe(self.topics)
-        logger.info("Subscribed to topic %s", self.topics)
+        logger.info("Subscribed to topic(s) %s", ", ".join(self.topics))
         self.wait_assignments()
         self.deserializer = deserializer()
         super(KafkaReceiver, self).__init__()
@@ -111,6 +116,7 @@ class KafkaReceiver(GenericReceiver):
             'success': success,
             'id': msg.offset,
             'queue': msg.topic,
+            'key': msg.key,
             'data': data
         }
 

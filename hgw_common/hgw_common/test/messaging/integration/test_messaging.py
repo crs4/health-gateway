@@ -24,9 +24,7 @@ import time
 from unittest import TestCase
 
 import docker
-from kafka.errors import (KafkaError, KafkaTimeoutError,
-                          TopicAuthorizationFailedError)
-from mock import Mock, patch
+from mock.mock import patch
 
 from hgw_common.messaging import UnknownSender
 from hgw_common.messaging.receiver import KafkaReceiver, create_receiver
@@ -34,7 +32,8 @@ from hgw_common.messaging.sender import KafkaSender, create_sender
 from hgw_common.messaging.serializer import JSONSerializer
 from hgw_common.utils import create_broker_parameters_from_settings
 
-TOPIC = 'test-topic'
+TOPIC_KEY = 'test-topic'
+TOPIC_NO_KEY = 'test-topic-no-key'
 CLIENT_KAFKA_CACERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/kafka.chain.cert.pem')
 CLIENT_KAFKA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/client/cert.pem')
 CLIENT_KAFKA_KEY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/client/key.pem')
@@ -137,56 +136,20 @@ class TestMessaging(TestCase):
     def tearDownClass(cls):
         cls._stop_and_remove()
 
-    @patch('hgw_common.utils.settings', SettingsSSLMock)
-    @patch('hgw_common.messaging.sender.settings', SettingsSSLMock)
-    def test_create_kafka_receiver(self):
-        receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
-        self.assertIsInstance(receiver, KafkaReceiver)
-        expected_config = {
-            'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
-            # 'client_id': 'test_client',
-            'group_id': 'test_client',
-            'security_protocol': 'SSL',
-            'ssl_check_hostname': True,
-            'ssl_cafile': SettingsSSLMock.KAFKA_CA_CERT,
-            'ssl_certfile': SettingsSSLMock.KAFKA_CLIENT_CERT,
-            'ssl_keyfile': SettingsSSLMock.KAFKA_CLIENT_KEY
-        }
-        self.assertEqual(receiver.topics, [TOPIC])
-        # self.assertIsInstance(receiver.serializer, JSONSerializer)
-        self.assertDictEqual(expected_config, receiver.config)
-
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
-    def test_create_kafka_receiver_no_ssl(self):
-        receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
-        self.assertIsInstance(receiver, KafkaReceiver)
-        expected_config = {
-            'bootstrap_servers': SettingsNoSSLMock.KAFKA_BROKER,
-            'group_id': 'test_client',
-            'security_protocol': 'PLAINTEXT',
-            'ssl_check_hostname': True,
-            'ssl_cafile': None,
-            'ssl_certfile': None,
-            'ssl_keyfile': None
-        }
-        self.assertEqual(receiver.topics, [TOPIC])
-        self.assertDictEqual(expected_config, receiver.config)
-
-    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
-    def test_message_receive(self):
+    def test_message_receive_none_key(self):
         """
         Test correct message receiving
         """
         message_num = 10
 
         def sender_fun(num):
-            sender = create_sender(TOPIC)
+            sender = create_sender(TOPIC_NO_KEY)
             for _ in range(num):
-                sender.send('message') 
-        
-        receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
+                sender.send('message')
+
+        receiver = create_receiver(TOPIC_NO_KEY, 'test_client_no_key', create_broker_parameters_from_settings())
 
         sender_process = multiprocessing.Process(target=sender_fun, args=(message_num,))
         sender_process.start()
@@ -195,7 +158,38 @@ class TestMessaging(TestCase):
             self.assertEqual(m['success'], True)
             self.assertEqual(m['id'], i)
             self.assertEqual(m['data'], 'message')
-            self.assertEqual(m['queue'], TOPIC)
+            self.assertEqual(m['key'], None)
+            self.assertEqual(m['queue'], TOPIC_NO_KEY)
+            if i + 1 == message_num:
+                break
+
+        sender_process.terminate()
+        sender_process.join()
+
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
+    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
+    def test_message_receive_with_key(self):
+        """
+        Test correct message receiving
+        """
+        message_num = 10
+
+        def sender_fun(num):
+            sender = create_sender(TOPIC_KEY)
+            for _ in range(num):
+                sender.send('message', key='key')
+
+        receiver = create_receiver(TOPIC_KEY, 'test_client_key', create_broker_parameters_from_settings())
+
+        sender_process = multiprocessing.Process(target=sender_fun, args=(message_num,))
+        sender_process.start()
+
+        for i, m in enumerate(receiver):
+            self.assertEqual(m['success'], True)
+            self.assertEqual(m['id'], i)
+            self.assertEqual(m['data'], 'message')
+            self.assertEqual(m['key'], b'key')
+            self.assertEqual(m['queue'], TOPIC_KEY)
             if i + 1 == message_num:
                 break
 
@@ -205,14 +199,14 @@ class TestMessaging(TestCase):
         """
         Tests that, when the sender is unknown the factory function raises an error
         """
-        self.assertRaises(UnknownSender, create_sender, TOPIC)
+        self.assertRaises(UnknownSender, create_sender, TOPIC_NO_KEY)
 
     @patch('hgw_common.messaging.sender.settings', SettingsSSLMock)
     def test_get_kafka_ssl_sender(self):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(TOPIC)
+        sender = create_sender(TOPIC_NO_KEY)
         self.assertIsInstance(sender, KafkaSender)
         expected_config = {
             'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
@@ -222,7 +216,7 @@ class TestMessaging(TestCase):
             'ssl_certfile': SettingsSSLMock.KAFKA_CLIENT_CERT,
             'ssl_keyfile': SettingsSSLMock.KAFKA_CLIENT_KEY
         }
-        self.assertEqual(sender.topic, TOPIC)
+        self.assertEqual(sender.topic, TOPIC_NO_KEY)
         self.assertIsInstance(sender.serializer, JSONSerializer)
         self.assertDictEqual(expected_config, sender.config)
 
@@ -231,7 +225,7 @@ class TestMessaging(TestCase):
         """
         Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
         """
-        sender = create_sender(TOPIC)
+        sender = create_sender(TOPIC_NO_KEY)
         self.assertIsInstance(sender, KafkaSender)
         expected_config = {
             'bootstrap_servers': SettingsNoSSLMock.KAFKA_BROKER,
@@ -241,12 +235,24 @@ class TestMessaging(TestCase):
             'ssl_certfile': None,
             'ssl_keyfile': None
         }
-        self.assertEqual(sender.topic, TOPIC)
+        self.assertEqual(sender.topic, TOPIC_NO_KEY)
         self.assertIsInstance(sender.serializer, JSONSerializer)
         self.assertDictEqual(expected_config, sender.config)
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_message_send(self):
-        sender = create_sender(TOPIC)
+        """
+        Test sending message
+        """
+        sender = create_sender(TOPIC_NO_KEY)
         for _ in range(100):
             self.assertTrue(sender.send('message'))
+
+    @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
+    def test_message_send_with_key(self):
+        """
+        Test sending message specifying a key
+        """
+        sender = create_sender(TOPIC_NO_KEY)
+        for _ in range(100):
+            self.assertTrue(sender.send('message', key='key'))
