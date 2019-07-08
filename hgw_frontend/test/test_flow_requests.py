@@ -105,7 +105,7 @@ class TestFlowRequestAPI(TestCase):
         mock_kc_klass.FIRST = 3
         mock_kc_klass.END = 33
         message = self.encrypter.encrypt(1000000 * 'a')
-        mock_kc_klass.MESSAGES = {i: MockMessage(key="33333".encode('utf-8'), offset=i,
+        mock_kc_klass.MESSAGES = {i: MockMessage(key=b'33333', offset=i,
                                                  topic=DEST_1_ID.encode('utf-8'),
                                                  value=message) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)}
 

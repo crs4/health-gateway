@@ -116,7 +116,7 @@ class KafkaReceiver(GenericReceiver):
             'success': success,
             'id': msg.offset,
             'queue': msg.topic,
-            'key': msg.key,
+            'key': msg.key.decode('utf-8') if msg.key is not None else None,
             'data': data
         }
 

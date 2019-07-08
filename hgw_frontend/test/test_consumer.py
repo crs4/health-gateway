@@ -37,8 +37,7 @@ class TestSourceConsumer(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        key = 'key'
-        mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
+        mock_kc_klass.MESSAGES = {i: MockMessage(offset=i, topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 
@@ -170,8 +169,7 @@ class TestConnectorConsumer(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        key = 'key'
-        mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
+        mock_kc_klass.MESSAGES = {i: MockMessage(offset=i, topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 
@@ -271,8 +269,7 @@ class TestConsentConsumer(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        key = 'key'
-        mock_kc_klass.MESSAGES = {i: MockMessage(key=key, offset=i, topic=topic,
+        mock_kc_klass.MESSAGES = {i: MockMessage(offset=i, topic=topic,
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 

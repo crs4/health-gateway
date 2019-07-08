@@ -188,7 +188,7 @@ class TestMessaging(TestCase):
             self.assertEqual(m['success'], True)
             self.assertEqual(m['id'], i)
             self.assertEqual(m['data'], 'message')
-            self.assertEqual(m['key'], b'key')
+            self.assertEqual(m['key'], 'key')
             self.assertEqual(m['queue'], TOPIC_KEY)
             if i + 1 == message_num:
                 break

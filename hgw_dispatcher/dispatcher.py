@@ -306,7 +306,7 @@ class Dispatcher(object):
     def consume_messages(self):
         for msg in self.receiver:
             logger.debug("Read message: %s", msg.key)
-            if msg.key:
+            if msg,key:
                 consent_id = msg.key.decode('utf-8')
                 logger.debug('Received message from %s for channel %s', msg.topic, consent_id)
                 payload = msg.value

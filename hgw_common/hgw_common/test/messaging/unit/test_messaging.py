@@ -259,7 +259,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['success'], True)
                 self.assertEqual(m['id'], i)
                 self.assertEqual(m['data'], 'message_{}'.format(i))
-                self.assertEqual(m['key'], b'key')
+                self.assertEqual(m['key'], 'key')
                 self.assertEqual(m['queue'], TOPIC)
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
