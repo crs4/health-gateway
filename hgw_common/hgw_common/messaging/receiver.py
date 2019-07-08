@@ -15,13 +15,13 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import collections.abc
 import logging
-from typing import collections
+from typing import MutableSequence
 
 from django.conf import settings
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-from kafka.structs import TopicPartition
 
 from hgw_common.messaging import BrokerConnectionError, DeserializationError
 
@@ -38,6 +38,7 @@ for handler in handlers:
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
+
 class GenericReceiver():
     """
     Generic sender abstract class. Subclass should implement the
@@ -48,36 +49,14 @@ class GenericReceiver():
         raise NotImplementedError
 
 
-# class Delegator(object):
-#     def __getattr__(self, called_method):
-#         def __raise_standard_exception():
-#             raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, called_method))
-
-#         def wrapper(*args, **kwargs):
-#             delegation_config = getattr(self, 'DELEGATED_METHODS', None)
-#             if not isinstance(delegation_config, dict):
-#                 __raise_standard_exception()
-    
-#             for delegate_object_str, delegated_methods in delegation_config.items():
-#                 if called_method in delegated_methods:
-#                     break
-#             else:
-#                 __raise_standard_exception()
-
-#             delegate_object = getattr(self, delegate_object_str, None)
-
-#             return getattr(delegate_object, called_method)(*args, **kwargs)
-
-#         return wrapper
-
-
 class KafkaReceiver(GenericReceiver):
     """
     A very simple kafka receiver. It just creates a KafkaConsumer that consumes
     from the topic specified in input. To consume messages use the iterator
     """
-    def __init__(self, topics, config, deserializer):
-        if isinstance(topics, collections.Iterable):
+
+    def __init__(self, topics, config, deserializer=JSONDeserializer):
+        if isinstance(topics, collections.abc.MutableSequence):
             self.topics = topics
         else:
             self.topics = [topics]
@@ -108,7 +87,7 @@ class KafkaReceiver(GenericReceiver):
         while set(self.topics) < set(assignments):
             self._force_assignment()
             assignments = [tp.topic for tp in self.consumer.assignment()]
-        logger.info("Topic %s assigned", self.topics)
+        logger.info("Topic(s) %s assigned", ', '.join(self.topics))
 
     def is_last(self):
         return self.consumer.position == self.consumer.highwater
@@ -118,44 +97,37 @@ class KafkaReceiver(GenericReceiver):
 
     def __next__(self):
         msg = next(self.consumer)
+
         try:
-            return {
-                'success': True,
-                'id': msg.offset,
-                'queue': msg.topic,
-                'data': self.deserializer.deserialize(msg.value.decode('utf-8'))
-            }
+            data = self.deserializer.deserialize(msg.value.decode('utf-8'))
+            success = True
         except DeserializationError:
-            return {
-                'success': False,
-                'id': msg.offset,
-                'queue': msg.topic,
-                'data': msg.value.decode('utf-8')
-            }
+            data = msg.value.decode('utf-8')
+            success = False
         except UnicodeDecodeError:
-            return {
-                'success': False,
-                'id': msg.offset,
-                'queue': msg.topic,
-                'data': msg.value
-            }
+            data = msg.value
+            success = False
+        return {
+            'success': success,
+            'id': msg.offset,
+            'queue': msg.topic,
+            'data': data
+        }
 
 
-
-def create_receiver(name, client_name):
+def create_receiver(name, client_name, configuration_params):
     """
     Methods that returns the correct sender based on the settings file
     """
-    if settings.NOTIFICATION_TYPE == 'kafka':
+    if configuration_params['broker_type'] == 'kafka':
         kafka_config = {
-            'bootstrap_servers': settings.KAFKA_BROKER,
-            # 'client_id': client_name,
+            'bootstrap_servers': configuration_params['broker_url'],
             'group_id': client_name,
-            'security_protocol': 'SSL' if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else 'PLAINTEXT',
+            'security_protocol': 'SSL' if configuration_params['ssl'] is True else 'PLAINTEXT',
             'ssl_check_hostname': True,
-            'ssl_cafile': settings.KAFKA_CA_CERT if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
-            'ssl_certfile': settings.KAFKA_CLIENT_CERT if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
-            'ssl_keyfile': settings.KAFKA_CLIENT_KEY if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
+            'ssl_cafile': configuration_params['ca_cert'],
+            'ssl_certfile': configuration_params['client_cert'],
+            'ssl_keyfile': configuration_params['client_key'],
         }
 
         return KafkaReceiver(name, kafka_config, JSONDeserializer)

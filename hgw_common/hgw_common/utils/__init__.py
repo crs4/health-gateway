@@ -117,12 +117,31 @@ class ConsumerCommand(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        receiver = create_receiver(self.topics[0], self.group_id)
+        receiver = create_receiver(self.topics, self.group_id, create_broker_parameters_from_settings())
         for msg in receiver:
             self.handle_message(msg)
 
     def handle_message(self, message):
         raise NotImplementedError
+
+
+def create_broker_parameters_from_settings():
+    """
+    Function to create broker parameters from django settings
+    """
+    parameters = {
+        'broker_type': settings.NOTIFICATION_TYPE,
+    }
+    if settings.NOTIFICATION_TYPE == 'kafka':
+        parameters.update({
+            'broker_url': settings.KAFKA_BROKER,
+            'ssl': hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL,
+            'ca_cert': settings.KAFKA_CA_CERT if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
+            'client_cert': settings.KAFKA_CLIENT_CERT if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
+            'client_key': settings.KAFKA_CLIENT_KEY if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
+        })
+    return parameters
+
 
 
 def generate_id():

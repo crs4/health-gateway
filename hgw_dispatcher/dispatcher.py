@@ -17,7 +17,6 @@
 
 
 import argparse
-import json
 import logging
 import os
 import sys
@@ -33,8 +32,7 @@ from oauthlib.oauth2 import (BackendApplicationClient, InvalidClientError,
 from requests_oauthlib import OAuth2Session
 from yaml.error import YAMLError
 from yaml.scanner import ScannerError
-
-# from hgw_common.models import OAuth2SessionProxy
+from hgw_common.messaging.receiver import KafkaReceiver
 
 logger = logging.getLogger('dispatcher')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -101,12 +99,13 @@ class Dispatcher(object):
         #                                           HGW_BACKEND_OAUTH_CLIENT_SECRET)
 
         logger.debug("Querying for sources")
-        self.consumer_topics = self._get_sources()
-        logger.debug("Found %s sources: ", len(self.consumer_topics))
-        logger.debug("Sources ids are: %s", self.consumer_topics)
+        self.receiver_topics = self._get_sources()
+        logger.debug("Found %s sources: ", len(self.receiver_topics))
+        logger.debug("Sources ids are: %s", self.receiver_topics)
         logger.debug("broker_url: %s", broker_url)
+        
         if use_ssl:
-            consumer_params = {
+            receiver_params = {
                 'bootstrap_servers': broker_url,
                 'security_protocol': 'SSL',
                 'ssl_check_hostname': True,
@@ -116,27 +115,28 @@ class Dispatcher(object):
                 'group_id': 'DISPATCHER'
             }
         else:
-            consumer_params = {
+            receiver_params = {
                 'bootstrap_servers': broker_url,
                 'group_id': 'DISPATCHER'
             }
-        self.consumer = KafkaConsumer(**consumer_params)
 
-        subscriptions = []
-        for source_id in self.consumer_topics:
-            if self.consumer.partitions_for_topic(source_id) is not None:
-                logger.debug("Subscribing to %s topic", source_id)
-                subscriptions.append(source_id)
-        logger.debug(self.consumer.topics())
-        if not subscriptions:
-            logger.error("There are no topics available. Exiting...")
-            sys.exit(2)
+        self.receiver = KafkaReceiver(self.receiver_topics, receiver_params)
 
-        self.consumer.subscribe(subscriptions)
-        # TODO: decide if we want it to restart from the beginning or not
-        # self.consumer.seek_to_beginning(self.consumer.subscription())
+        # subscriptions = []
+        # for source_id in self.receiver_topics:
+        #     if self.receiver.partitions_for_topic(source_id) is not None:
+        #         logger.debug("Subscribing to %s topic", source_id)
+        #         subscriptions.append(source_id)
+        # logger.debug(self.receiver.topics())
+        # if not subscriptions:
+        #     logger.error("There are no topics available. Exiting...")
+        #     sys.exit(2)
 
-        logger.debug("Subscribed to %s source topics", len(subscriptions))
+        # self.receiver.subscribe(subscriptions)
+        # # TODO: decide if we want it to restart from the beginning or not
+        # # self.receiver.seek_to_beginning(self.receiver.subscription())
+
+        # logger.debug("Subscribed to %s source topics", len(subscriptions))
 
         if use_ssl:
             producer_params = {
@@ -304,7 +304,7 @@ class Dispatcher(object):
                              consent_id, cm_res.status_code)
 
     def consume_messages(self):
-        for msg in self.consumer:
+        for msg in self.receiver:
             logger.debug("Read message: %s", msg.key)
             if msg.key:
                 consent_id = msg.key.decode('utf-8')
@@ -315,7 +315,7 @@ class Dispatcher(object):
                 logger.debug('Rejecting message from %s. Channel id not specified', msg.topic)
 
     def run(self):
-        # partition = TopicPartition(self.consumer_topics[0], 0)
+        # partition = TopicPartition(self.receiver_topics[0], 0)
         logger.debug("Starting to consume messages")
         try:
             self.consume_messages()

@@ -30,6 +30,7 @@ from hgw_common.messaging.deserializer import JSONDeserializer
 from hgw_common.messaging.receiver import KafkaReceiver, create_receiver
 from hgw_common.messaging.sender import KafkaSender, create_sender
 from hgw_common.messaging.serializer import JSONSerializer
+from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
 
 TOPIC = 'topic'
@@ -109,7 +110,7 @@ class TestSenders(TestCase):
         self.assertTrue(sender.send('message'))
         mocked_kafka_producer().send.assert_called_once()
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], TOPIC)
-        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][1]['data'], b'"message"')
+        self.assertEqual(mocked_kafka_producer().send.call_args_list[0][1]['value'], b'"message"')
 
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_send_message_fail_no_broker(self):
@@ -168,7 +169,6 @@ class TestReceiver(TestCase):
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
         mock_kc_klass.END = 2
-        topic = topic.encode('utf-8')
         key = 'key'
         mock_kc_klass.MESSAGES = {i: MockMessage(key=key,
                                                  offset=i,
@@ -176,11 +176,11 @@ class TestReceiver(TestCase):
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 
-    @patch('hgw_common.messaging.receiver.settings', SettingsSSLMock)
+    @patch('hgw_common.utils.settings', SettingsSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsSSLMock)
     def test_create_kafka_receiver(self):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
-            receiver = create_receiver(TOPIC, 'test_client')
+            receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
         self.assertIsInstance(receiver, KafkaReceiver)
         expected_config = {
             'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
@@ -191,15 +191,15 @@ class TestReceiver(TestCase):
             'ssl_certfile': SettingsSSLMock.KAFKA_CLIENT_CERT,
             'ssl_keyfile': SettingsSSLMock.KAFKA_CLIENT_KEY
         }
-        self.assertEqual(receiver.topic, TOPIC)
+        self.assertEqual(receiver.topics, [TOPIC])
         self.assertIsInstance(receiver.deserializer, JSONDeserializer)
         self.assertDictEqual(expected_config, receiver.config)
 
-    @patch('hgw_common.messaging.receiver.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_create_kafka_receiver_no_ssl(self):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
-            receiver = create_receiver(TOPIC, 'test_client')
+            receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
 
         self.assertIsInstance(receiver, KafkaReceiver)
         expected_config = {
@@ -211,19 +211,19 @@ class TestReceiver(TestCase):
             'ssl_certfile': None,
             'ssl_keyfile': None
         }
-        self.assertEqual(receiver.topic, TOPIC)
+        self.assertEqual(receiver.topics, [TOPIC])
         self.assertIsInstance(receiver.deserializer, JSONDeserializer)
         self.assertDictEqual(expected_config, receiver.config)
 
-    @patch('hgw_common.messaging.receiver.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_message_receive_no_broker_available(self):
         """
         Test correct message receiving
         """
-        self.assertRaises(BrokerConnectionError, create_receiver, TOPIC, 'test_client')
+        self.assertRaises(BrokerConnectionError, create_receiver, TOPIC, 'test_client', create_broker_parameters_from_settings())
 
-    @patch('hgw_common.messaging.receiver.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_message_receive(self):
         """
@@ -234,7 +234,7 @@ class TestReceiver(TestCase):
 
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, TOPIC)
 
-            receiver = create_receiver(TOPIC, 'test_client')
+            receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
 
             for i, m in enumerate(receiver):
                 self.assertEqual(m['success'], True)
@@ -242,7 +242,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['data'], 'message_{}'.format(i))
                 self.assertEqual(m['queue'], TOPIC)
 
-    @patch('hgw_common.messaging.receiver.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_deserialization_error_to_json_decoding(self):
         """
@@ -253,15 +253,15 @@ class TestReceiver(TestCase):
 
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, TOPIC, False)
 
-            receiver = create_receiver(TOPIC, 'test_client')
+            receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
 
             for i, m in enumerate(receiver):
                 self.assertEqual(m['id'], i)
-                self.assertEqual(m['data'], b'(a)')  # notice the byte
+                self.assertEqual(m['data'], '(a)')
                 self.assertEqual(m['queue'], TOPIC)
                 self.assertEqual(m['success'], False)
     
-    @patch('hgw_common.messaging.receiver.settings', SettingsNoSSLMock)
+    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
     def test_consume_message_fail_to_unicode_error(self):
         """
@@ -271,7 +271,7 @@ class TestReceiver(TestCase):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages, TOPIC, True, 'utf-16')
             
-            receiver = create_receiver(TOPIC, 'test_client')
+            receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
 
             for i, m in enumerate(receiver):
                 self.assertEqual(m['id'], i)

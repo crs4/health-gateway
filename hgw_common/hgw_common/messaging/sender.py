@@ -83,6 +83,7 @@ class KafkaSender(GenericSender):
         try:
             self._create_producer()
         except SendingError:
+            logger.error('Error connecting to Kafka')
             return False
 
         try:

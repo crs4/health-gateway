@@ -46,11 +46,11 @@ done
 cd $DIR/../hgw_common/hgw_common
 echo $'\n*********************'
 echo "Testing hgw_common"
-${PYTHON} manage.py test hgw_common.test
+${PYTHON} manage.py test test/
 
-if [ "${PYTHON_VERSION}" ==  "3" ]; then
-    cd $DIR/../hgw_dispatcher/
-    echo $'\n*********************'
-    echo "Testing hgw_dispatcher"
-    python3 -m unittest test
-fi
+# if [ "${PYTHON_VERSION}" ==  "3" ]; then
+#     cd $DIR/../hgw_dispatcher/
+#     echo $'\n*********************'
+#     echo "Testing hgw_dispatcher"
+#     python3 -m unittest test
+# fi
