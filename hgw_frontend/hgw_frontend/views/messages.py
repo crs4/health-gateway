@@ -25,7 +25,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from hgw_common.utils import TokenHasResourceDetailedScope
+from hgw_common.utils.authorization import TokenHasResourceDetailedScope
 from hgw_frontend.models import Destination
 from hgw_frontend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY, KAFKA_SSL
 

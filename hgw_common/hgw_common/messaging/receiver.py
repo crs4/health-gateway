@@ -18,15 +18,14 @@
 import collections.abc
 import logging
 from ssl import SSLError
-from typing import MutableSequence
 
-from django.conf import settings
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, TopicPartition
 from kafka.errors import NoBrokersAvailable
 
-from hgw_common.messaging import BrokerConnectionError, DeserializationError
+from hgw_common.messaging import (BrokerConnectionError, DeserializationError,
+                                  TopicNotAssigned)
 
-from . import UnknownReceiver
+from . import UnknownReceiver, NotInRangeError
 from .deserializer import JSONDeserializer
 
 logger = logging.getLogger('receiver')
@@ -71,7 +70,6 @@ class KafkaReceiver(GenericReceiver):
             logger.error('SSLError connecting to kafka broker')
             raise BrokerConnectionError('SSLError connecting to kafka broker')
 
-
         self.consumer.subscribe(self.topics)
         logger.info("Subscribed to topic(s) %s", ", ".join(self.topics))
         self.wait_assignments()
@@ -82,27 +80,7 @@ class KafkaReceiver(GenericReceiver):
         # force the assignment update. See https://github.com/dpkp/kafka-python/issues/601
         self.consumer.poll()
 
-    def wait_assignments(self):
-        """
-        Wait that the topic is assigned to the consumer
-        """
-        logger.info("Waiting for topic assignment")
-        self._force_assignment()
-        assignments = [tp.topic for tp in self.consumer.assignment()]
-        while set(self.topics) < set(assignments):
-            self._force_assignment()
-            assignments = [tp.topic for tp in self.consumer.assignment()]
-        logger.info("Topic(s) %s assigned", ', '.join(self.topics))
-
-    def is_last(self):
-        return self.consumer.position == self.consumer.highwater
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        msg = next(self.consumer)
-
+    def _construct_message(self, msg):
         try:
             success = True
             data = self.deserializer.deserialize(msg.value)
@@ -119,6 +97,57 @@ class KafkaReceiver(GenericReceiver):
             'key': msg.key.decode('utf-8') if msg.key is not None else None,
             'data': data
         }
+
+    def wait_assignments(self):
+        """
+        Wait that the topic is assigned to the consumer
+        """
+        logger.info("Waiting for topic assignment")
+        self._force_assignment()
+        assignments = [tp.topic for tp in self.consumer.assignment()]
+        while set(self.topics) < set(assignments):
+            self._force_assignment()
+            assignments = [tp.topic for tp in self.consumer.assignment()]
+        logger.info("Topic(s) %s assigned", ', '.join(self.topics))
+
+    def is_last(self):
+        return self.consumer.position == self.consumer.highwater
+
+    def _go_to_id(self, message_id, topic, partition):
+        tp = TopicPartition(topic, partition)
+
+        first_offset = self.get_first_id(topic, partition)
+        last_offset = self.get_last_id(topic, partition)
+        if first_offset <= message_id <= last_offset:
+            self.consumer.seek(tp, message_id)
+        else:
+            return NotInRangeError()
+
+    def get_first_id(self, topic, partition=0):
+        tp = TopicPartition(topic, partition)
+        return self.consumer.beginning_offsets([tp])[tp]
+
+    def get_last_id(self, topic, partition=0):
+        tp = TopicPartition(topic, partition)
+        return self.consumer.end_offsets([tp])[tp]
+
+    def get_by_id(self, message_id, topic, partition=0):
+        self._go_to_id(message_id, topic, partition)
+        msg = next(self.consumer)
+        return self._construct_message(msg)
+
+    def get_range(self, first_id, last_id, topic, partition=0):
+        self._go_to_id(first_id, topic, partition)
+        num = last_id - first_id
+        msgs = [self._construct_message(next(self.consumer)) for _ in range(num)]
+        return msgs
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        msg = next(self.consumer)
+        return self._construct_message(msg)
 
 
 def create_receiver(name, client_name, configuration_params, deserializer=JSONDeserializer):

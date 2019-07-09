@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
-from hgw_common.utils import TokenHasResourceDetailedScope
+from hgw_common.utils.authorization import TokenHasResourceDetailedScope
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, HGW_BACKEND_URI, HGW_BACKEND_CLIENT_SECRET
 

@@ -31,7 +31,8 @@ from hgw_common.messaging.sender import create_sender
 from hgw_common.messaging.serializer import RawSerializer
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import TokenHasResourceDetailedScope, get_logger, create_broker_parameters_from_settings
+from hgw_common.utils.authorization import TokenHasResourceDetailedScope
+from hgw_common.utils import get_logger, create_broker_parameters_from_settings
 
 from .models import Source
 from .serializers import SourceSerializer

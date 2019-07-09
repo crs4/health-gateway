@@ -15,11 +15,11 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import json
-
 from django.conf import settings
 
-from hgw_common.utils import ConsumerCommand, get_logger
+from hgw_common.utils import get_logger
+from hgw_common.utils.management import ConsumerCommand
+
 from hgw_frontend.models import Channel, ConsentConfirmation, Source
 from hgw_frontend.serializers import SourceSerializer
 from hgw_frontend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,

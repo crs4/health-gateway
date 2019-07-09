@@ -35,8 +35,8 @@ from consent_manager.models import ConfirmationCode, Consent
 from consent_manager.serializers import ConsentSerializer
 from consent_manager.settings import KAFKA_NOTIFICATION_TOPIC, USER_ID_FIELD
 from hgw_common.messaging.sender import SendingError, create_sender
+from hgw_common.utils.authorization import IsAuthenticatedOrTokenHasResourceDetailedScope
 from hgw_common.utils import (ERRORS,
-                              IsAuthenticatedOrTokenHasResourceDetailedScope,
                               create_broker_parameters_from_settings,
                               get_logger)
 

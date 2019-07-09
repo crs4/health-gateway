@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from hgw_common.utils import TokenHasResourceDetailedScope
+from hgw_common.utils.authorization import TokenHasResourceDetailedScope
 from hgw_frontend.models import Channel, ConsentConfirmation, FlowRequest
 from hgw_frontend.serializers import ChannelSerializer
 

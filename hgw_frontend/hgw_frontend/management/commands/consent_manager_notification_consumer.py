@@ -19,9 +19,8 @@ import json
 
 from hgw_common.messaging.sender import create_sender
 from hgw_common.models import FailedMessages
-from hgw_common.utils import (ConsumerCommand,
-                              create_broker_parameters_from_settings,
-                              get_logger)
+from hgw_common.utils import create_broker_parameters_from_settings, get_logger
+from hgw_common.utils.management import ConsumerCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)

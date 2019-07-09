@@ -34,12 +34,11 @@ class TestSenders(TestCase):
     Test senders class
     """
 
-    @patch('hgw_common.messaging.sender.settings.NOTIFICATION_TYPE', 'unknown')
     def test_raise_unknown_sender(self):
         """
         Tests that, when the sender is unknown the factory function raises an error
         """
-        self.assertRaises(UnknownSender, create_sender, create_broker_parameters_from_settings())
+        self.assertRaises(UnknownSender, create_sender, {'broker_type': 'unknown'})
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_get_kafka_sender(self, mocked_kafka_producer):

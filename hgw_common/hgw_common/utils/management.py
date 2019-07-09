@@ -15,42 +15,23 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-class UnknownSender(Exception):
+from django.core.management.base import BaseCommand
+
+from hgw_common.messaging.receiver import create_receiver
+from hgw_common.utils import create_broker_parameters_from_settings
+
+
+class ConsumerCommand(BaseCommand):
     """
-    Exception to be raised when it was impossible to instantiate the correct sender
+    This class implements a Django Command that consumes message from a kafka topic.
+    It provides connection funcionalities. Subclasses must implement only the 
+    real handling of the messages
     """
 
-class UnknownReceiver(Exception):
-    """
-    Exception to be raised when it was impossible to instantiate the correct receiver
-    """
+    def handle(self, *args, **options):
+        receiver = create_receiver(self.topics, self.group_id, create_broker_parameters_from_settings())
+        for msg in receiver:
+            self.handle_message(msg)
 
-class NotInRangeError(Exception):
-    """
-    Exception to be raised when an id is not in the correct range
-    """
-
-class TopicNotAssigned(Exception):
-    """
-    Raise when trying to read a topic that is not assigned to the consumer
-    """
-
-class SendingError(Exception):
-    """
-    Exception to be raised when a notification error happens
-    """
-
-class BrokerConnectionError(Exception):
-    """
-    Exception to be raised when the connection to a broker fails
-    """
-
-class SerializationError(Exception):
-    """
-    Exception to be raised when error happens during serialization
-    """
-
-class DeserializationError(Exception):
-    """
-    Exception to be raised when error happens during serialization
-    """
+    def handle_message(self, message):
+        raise NotImplementedError

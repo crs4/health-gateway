@@ -35,7 +35,8 @@ from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import TokenHasResourceDetailedScope, get_logger
+from hgw_common.utils.authorization import TokenHasResourceDetailedScope
+from hgw_common.utils import get_logger
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, FlowRequest, Source)

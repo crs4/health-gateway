@@ -16,113 +16,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import logging
-from itertools import product
 
 import yaml
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
-from django.core.management.base import BaseCommand
 from django.http import Http404
 from django.utils.crypto import get_random_string
 from kafka import KafkaConsumer, TopicPartition
-from oauth2_provider.ext.rest_framework import TokenHasScope
-from oauth2_provider.ext.rest_framework.permissions import SAFE_HTTP_METHODS
-from oauth2_provider.settings import oauth2_settings
+
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
-from yaml.scanner import ScannerError
-
-from hgw_common.messaging.receiver import create_receiver
-
-
-class TokenHasResourceDetailedScope(TokenHasScope):
-    """
-    A different version of TokenHasResourceScope. It allows the View class to specify a custom scope type for
-    actions. If it is specified the view will require also the combined scope.
-    The view_specific_scopes has this structure
-
-    .. python:
-
-        view_custom_instance = {<action_name>: {'read': <list_of_custom_scopes>, 'write': <list_custom_scopes>}}
-
-    For example: if the View class specifies `required_scopes = ['myscope']` and
-    `view_custom_instance = {'myaction': {'read': ['custom']}}`
-    the token must have ['myscope:read', 'myscope:custom'] to access the view
-    """
-
-    def get_scopes(self, request, view):
-
-        try:
-            view_specific_scopes = getattr(view, 'view_specific_scopes')
-        except AttributeError:
-            view_specific_scopes = {}
-
-        try:
-            view_scopes = (
-                super(TokenHasResourceDetailedScope, self).get_scopes(request, view)
-            )
-        except ImproperlyConfigured:
-            view_scopes = []
-
-        if request.method.upper() in SAFE_HTTP_METHODS:
-            scope_type = [oauth2_settings.READ_SCOPE]
-            try:
-                if view.action in view_specific_scopes and 'read' in view_specific_scopes[view.action]:
-                    scope_type.extend(view_specific_scopes[view.action]['read'])
-            except AttributeError:
-                pass
-        else:
-            scope_type = [oauth2_settings.WRITE_SCOPE]
-            try:
-                if view.action in view_specific_scopes and 'write' in view_specific_scopes[view.action]:
-                    scope_type.extend(view_specific_scopes[view.action]['write'])
-            except AttributeError:
-                pass
-
-        required_scopes = [
-            '{0}:{1}'.format(combined_scope[0], combined_scope[1]) for combined_scope in
-            product(view_scopes, scope_type)
-        ]
-
-        return required_scopes
-
-
-class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedScope):
-
-    def has_permission(self, request, view):
-        # The authenticated user can perform all the actions
-        if request.user and not request.user.is_anonymous():
-            return request.user.is_authenticated
-        else:
-            try:
-                # Some actions cannot be performed by external clients
-                if view.action not in view.oauth_views:
-                    return False
-                else:
-                    # Check the scopes
-                    return super(IsAuthenticatedOrTokenHasResourceDetailedScope, self).has_permission(request, view)
-            except AttributeError:
-                return False
-
-
-class ConsumerCommand(BaseCommand):
-    """
-    This class implements a Django Command that consumes message from a kafka topic.
-    It provides connection funcionalities. Subclasses must implement only the 
-    real handling of the messages
-    """
-
-    def handle(self, *args, **options):
-        receiver = create_receiver(self.topics, self.group_id, create_broker_parameters_from_settings())
-        for msg in receiver:
-            self.handle_message(msg)
-
-    def handle_message(self, message):
-        raise NotImplementedError
 
 
 def create_broker_parameters_from_settings():
@@ -141,7 +47,6 @@ def create_broker_parameters_from_settings():
             'client_key': settings.KAFKA_CLIENT_KEY if hasattr(settings, 'KAFKA_SSL') and settings.KAFKA_SSL else None,
         })
     return parameters
-
 
 
 def generate_id():
@@ -185,19 +90,6 @@ def get_logger(logger_name):
     logger.setLevel(level)
 
     return logger
-
-
-def load_config_file(paths):
-    cfg = None
-    for path in paths:
-        try:
-            with open(path, 'r') as f:
-                cfg = yaml.load(f, Loader=yaml.FullLoader)
-                print(cfg)
-        except (IOError, ScannerError, YAMLError):
-            continue
-        else:
-            return cfg
 
 
 class ERRORS:

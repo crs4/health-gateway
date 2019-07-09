@@ -21,7 +21,8 @@ from django.db import transaction
 
 from hgw_backend.models import FailedConnector, Source
 from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
-from hgw_common.utils import ConsumerCommand, get_logger
+from hgw_common.utils import get_logger
+from hgw_common.utils.management import ConsumerCommand
 
 logger = get_logger('backend_kafka_consumer')
 
