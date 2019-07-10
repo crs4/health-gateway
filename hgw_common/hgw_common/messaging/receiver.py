@@ -61,6 +61,11 @@ class KafkaReceiver(GenericReceiver):
         else:
             self.topics = [topics]
         self.config = config
+
+        self.config.update({
+            'auto_offset_reset': 'earliest',
+            'auto_commit_interval_ms': 2000
+        })
         try:
             self.consumer = KafkaConsumer(**self.config)
         except NoBrokersAvailable:
@@ -98,6 +103,15 @@ class KafkaReceiver(GenericReceiver):
             'data': data
         }
 
+    def _go_to_id(self, message_id, topic, partition):
+        tp = TopicPartition(topic, partition)
+        first_offset = self.get_first_id(topic, partition)
+        last_offset = self.get_last_id(topic, partition)
+        if first_offset <= message_id <= last_offset:
+            self.consumer.seek(tp, message_id)
+        else:
+            return NotInRangeError()
+
     def wait_assignments(self):
         """
         Wait that the topic is assigned to the consumer
@@ -113,17 +127,17 @@ class KafkaReceiver(GenericReceiver):
     def is_last(self):
         return self.consumer.position == self.consumer.highwater
 
-    def _go_to_id(self, message_id, topic, partition):
+    def get_current_id(self, topic, partition=0):
+        """
+        Get the id of the last consumed message
+        """
         tp = TopicPartition(topic, partition)
-
-        first_offset = self.get_first_id(topic, partition)
-        last_offset = self.get_last_id(topic, partition)
-        if first_offset <= message_id <= last_offset:
-            self.consumer.seek(tp, message_id)
-        else:
-            return NotInRangeError()
+        return self.consumer.position(tp) - 1
 
     def get_first_id(self, topic, partition=0):
+        """
+        Get the id of the fist available object in a partition
+        """
         tp = TopicPartition(topic, partition)
         return self.consumer.beginning_offsets([tp])[tp]
 
@@ -137,9 +151,20 @@ class KafkaReceiver(GenericReceiver):
         return self._construct_message(msg)
 
     def get_range(self, first_id, last_id, topic, partition=0):
-        self._go_to_id(first_id, topic, partition)
-        num = last_id - first_id
-        msgs = [self._construct_message(next(self.consumer)) for _ in range(num)]
+        """
+        Return messages from the :param:`first_id` to the :param:`last_id`. The :param:`last_id` is not included.
+        """
+        if last_id < first_id:
+            raise Exception
+
+        if last_id > self.get_last_id(topic, partition):
+            last_id = self.get_last_id(topic, partition)
+        if first_id < self.get_first_id(topic, partition):
+            first_id = self.get_first_id(topic, partition)
+
+        msgs = []
+        for msg_id in range(first_id, last_id):
+            msgs.append(self.get_by_id(msg_id, topic, partition))
         return msgs
 
     def __iter__(self):
@@ -148,6 +173,9 @@ class KafkaReceiver(GenericReceiver):
     def __next__(self):
         msg = next(self.consumer)
         return self._construct_message(msg)
+
+    def __del__(self):
+        self.consumer.close()
 
 
 def create_receiver(name, client_name, configuration_params, deserializer=JSONDeserializer):

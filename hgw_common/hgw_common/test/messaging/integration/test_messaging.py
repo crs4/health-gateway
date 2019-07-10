@@ -24,33 +24,15 @@ import time
 from unittest import TestCase
 
 import docker
-from mock.mock import patch
 
-from hgw_common.messaging import UnknownSender
-from hgw_common.messaging.receiver import KafkaReceiver, create_receiver
-from hgw_common.messaging.sender import KafkaSender, create_sender
-from hgw_common.messaging.serializer import JSONSerializer
-from hgw_common.utils import create_broker_parameters_from_settings
+from hgw_common.messaging.receiver import create_receiver
+from hgw_common.messaging.sender import create_sender
 
 TOPIC_KEY = 'test-topic'
 TOPIC_NO_KEY = 'test-topic-no-key'
 CLIENT_KAFKA_CACERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/kafka.chain.cert.pem')
 CLIENT_KAFKA_CERT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/client/cert.pem')
 CLIENT_KAFKA_KEY = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs/client/key.pem')
-
-
-class SettingsSSLMock():
-    NOTIFICATION_TYPE = 'kafka'
-    KAFKA_BROKER = 'kafka:9093'
-    KAFKA_SSL = True
-    KAFKA_CA_CERT = CLIENT_KAFKA_CACERT
-    KAFKA_CLIENT_CERT = CLIENT_KAFKA_CERT
-    KAFKA_CLIENT_KEY = CLIENT_KAFKA_KEY
-
-
-class SettingsNoSSLMock():
-    NOTIFICATION_TYPE = 'kafka'
-    KAFKA_BROKER = 'kafka:9092'
 
 
 class TestMessaging(TestCase):
@@ -107,14 +89,8 @@ class TestMessaging(TestCase):
             }
         }
 
-        extra_hosts = {
-            "kafka": "127.0.1.1"
-        }
-
-        ports = {
-            "9092": "9092",
-            "9093": "9093"
-        }
+        extra_hosts = {"kafka": "127.0.1.1"}
+        ports = {"9092": "9092", "9093": "9093"}
 
         docker_client.containers.run("crs4/kafka",
                                      name=cls.CONTAINER_NAME,
@@ -125,7 +101,7 @@ class TestMessaging(TestCase):
                                      detach=True)
 
         print("Waiting Kafka to be ready")
-        time.sleep(20)
+        time.sleep(10)
 
     @classmethod
     def setUpClass(cls):
@@ -136,145 +112,120 @@ class TestMessaging(TestCase):
     def tearDownClass(cls):
         cls._stop_and_remove()
 
-    @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    def test_message_receive_none_key(self):
-        """
-        Test correct message receiving
-        """
-        message_num = 10
+    def setUp(self):
+        self.config_params_no_ssl = {
+            'broker_type': 'kafka',
+            'broker_url': 'kafka:9092',
+            'ssl': False,
+            'ca_cert': None,
+            'client_cert': None,
+            'client_key': None
+        }
+        self.config_params_ssl = {
+            'broker_type': 'kafka',
+            'broker_url': 'kafka:9092',
+            'ssl': True,
+            'ca_cert': CLIENT_KAFKA_CACERT,
+            'client_cert': CLIENT_KAFKA_CERT,
+            'client_key': CLIENT_KAFKA_KEY
+        }
+        self.message_num = 10
+        self._send_messages(TOPIC_KEY, 'key')
+        self._send_messages(TOPIC_NO_KEY, None)
 
+    def _send_messages(self, topic, key):
         def sender_fun(num):
-            sender = create_sender(create_broker_parameters_from_settings())
-            for i in range(num):
-                sender.send(TOPIC_NO_KEY, 'message_{}'.format(i))
+            sender = create_sender(self.config_params_no_ssl)
+            for _ in range(num):
+                sender.send(topic, 'message', key=key)
 
-        receiver = create_receiver(TOPIC_NO_KEY, 'test_client_no_key', create_broker_parameters_from_settings())
-
-        sender_process = multiprocessing.Process(target=sender_fun, args=(message_num,))
+        sender_process = multiprocessing.Process(target=sender_fun, args=(self.message_num,))
         sender_process.start()
         sender_process.join()
 
-        msg = receiver.get_by_id(3, TOPIC_NO_KEY)
-        self.assertEqual(msg['data'], 'message_3')
+    def test_receive_01_none_key(self):
+        """
+        Test correct message receiving
+        """
+        receiver = create_receiver(TOPIC_NO_KEY, 'test_receive_none_key', self.config_params_no_ssl)
+        for i, m in enumerate(receiver):
+            self.assertEqual(m['success'], True)
+            self.assertEqual(m['id'], i)
+            self.assertEqual(m['data'], 'message')
+            self.assertEqual(m['key'], None)
+            self.assertEqual(m['queue'], TOPIC_NO_KEY)
+            if i + 1 == self.message_num:
+                break
 
+    def test_receive_02_with_key(self):
+        """
+        Test correct message receiving
+        """
+        receiver = create_receiver(TOPIC_KEY, 'test_receive_with_key', self.config_params_no_ssl)
+        for i, m in enumerate(receiver):
+            self.assertEqual(m['success'], True)
+            self.assertEqual(m['id'], i)
+            self.assertEqual(m['data'], 'message')
+            self.assertEqual(m['key'], 'key')
+            self.assertEqual(m['queue'], TOPIC_KEY)
+            if i + 1 == self.message_num:
+                break
 
+    def test_receive_03_by_id(self):
+        """
+        Test correct message receiving
+        """
+        receiver = create_receiver(TOPIC_NO_KEY, 'test_receive_by_id', self.config_params_no_ssl)
+        message = receiver.get_by_id(3, TOPIC_NO_KEY)
+        self.assertEqual(message['success'], True)
+        self.assertEqual(message['id'], 3)
+        self.assertEqual(message['data'], 'message')
+        self.assertEqual(message['key'], None)
+        self.assertEqual(message['queue'], TOPIC_NO_KEY)
 
+    def test_receive_04_range(self):
+        """
+        Test correct message receiving of messages in a range of id
+        """
+        receiver = create_receiver(TOPIC_NO_KEY, 'test_receive_range', self.config_params_no_ssl)
+        messages = receiver.get_range(2, 5, TOPIC_NO_KEY)
+        self.assertEqual(len(messages), 3)
+        for index, message in enumerate(messages):
+            self.assertEqual(message['success'], True)
+            self.assertEqual(message['id'], index + 2)
+            self.assertEqual(message['data'], 'message')
+            self.assertEqual(message['key'], None)
+            self.assertEqual(message['queue'], TOPIC_NO_KEY)
 
-    # @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    # @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
-    # def test_message_receive_none_key(self):
-    #     """
-    #     Test correct message receiving
-    #     """
-    #     message_num = 10
+    def test_receive_05_restart_from_last_offset(self):
+        """
+        Test that when the receiver is deleted and recreated, it restarts consuming messages from the last consumed offset
+        """
+        client_name = 'test_restart_from_last_offset'
+        receiver = create_receiver(TOPIC_NO_KEY, client_name, self.config_params_no_ssl)
+        # first we create a receiver that consumes 5 messages
+        for index, message in enumerate(receiver):
+            if index == self.message_num // 2:
+                break
+            self.assertEqual(message['id'], index)
+        self.assertEqual(receiver.get_current_id(TOPIC_NO_KEY), self.message_num//2)
+        del receiver
+        # create a new receiver that substitute the first
+        receiver = create_receiver(TOPIC_NO_KEY, client_name, self.config_params_no_ssl)
+        self.assertEqual(receiver.get_current_id(TOPIC_NO_KEY), self.message_num//2)
 
-    #     def sender_fun(num):
-    #         sender = create_sender(create_broker_parameters_from_settings())
-    #         for _ in range(num):
-    #             sender.send(TOPIC_NO_KEY, 'message')
+    def test_send(self):
+        """
+        Test sending message
+        """
+        sender = create_sender(self.config_params_no_ssl)
+        for _ in range(100):
+            self.assertTrue(TOPIC_KEY, sender.send(TOPIC_KEY, 'message'))
 
-    #     receiver = create_receiver(TOPIC_NO_KEY, 'test_client_no_key', create_broker_parameters_from_settings())
-
-    #     sender_process = multiprocessing.Process(target=sender_fun, args=(message_num,))
-    #     sender_process.start()
-
-    #     for i, m in enumerate(receiver):
-    #         self.assertEqual(m['success'], True)
-    #         self.assertEqual(m['id'], i)
-    #         self.assertEqual(m['data'], 'message')
-    #         self.assertEqual(m['key'], None)
-    #         self.assertEqual(m['queue'], TOPIC_NO_KEY)
-    #         if i + 1 == message_num:
-    #             break
-
-    #     sender_process.terminate()
-    #     sender_process.join()
-
-    # @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    # @patch('hgw_common.messaging.sender.settings', SettingsNoSSLMock)
-    # def test_message_receive_with_key(self):
-    #     """
-    #     Test correct message receiving
-    #     """
-    #     message_num = 10
-
-    #     def sender_fun(num):
-    #         sender = create_sender(create_broker_parameters_from_settings())
-    #         for _ in range(num):
-    #             sender.send(TOPIC_KEY, 'message', key='key')
-
-    #     receiver = create_receiver(TOPIC_KEY, 'test_client_key', create_broker_parameters_from_settings())
-
-    #     sender_process = multiprocessing.Process(target=sender_fun, args=(message_num,))
-    #     sender_process.start()
-
-    #     for i, m in enumerate(receiver):
-    #         self.assertEqual(m['success'], True)
-    #         self.assertEqual(m['id'], i)
-    #         self.assertEqual(m['data'], 'message')
-    #         self.assertEqual(m['key'], 'key')
-    #         self.assertEqual(m['queue'], TOPIC_KEY)
-    #         if i + 1 == message_num:
-    #             break
-
-    # @patch('hgw_common.utils.settings.NOTIFICATION_TYPE', 'unknown')
-    # @patch('hgw_common.utils.settings')
-    # def test_raise_unknown_sender(self, mocked_settings):
-    #     """
-    #     Tests that, when the sender is unknown the factory function raises an error
-    #     """
-    #     self.assertRaises(UnknownSender, create_sender, create_broker_parameters_from_settings())
-
-    # @patch('hgw_common.utils.settings', SettingsSSLMock)
-    # def test_get_kafka_ssl_sender(self):
-    #     """
-    #     Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
-    #     """
-    #     sender = create_sender(create_broker_parameters_from_settings())
-    #     self.assertIsInstance(sender, KafkaSender)
-    #     expected_config = {
-    #         'bootstrap_servers': SettingsSSLMock.KAFKA_BROKER,
-    #         'security_protocol': 'SSL',
-    #         'ssl_check_hostname': True,
-    #         'ssl_cafile': SettingsSSLMock.KAFKA_CA_CERT,
-    #         'ssl_certfile': SettingsSSLMock.KAFKA_CLIENT_CERT,
-    #         'ssl_keyfile': SettingsSSLMock.KAFKA_CLIENT_KEY
-    #     }
-    #     self.assertIsInstance(sender.serializer, JSONSerializer)
-    #     self.assertDictEqual(expected_config, sender.config)
-
-    # @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    # def test_get_kafka_no_ssl_sender(self):
-    #     """
-    #     Tests that, when the settings specifies a kafka sender, the instantiated sender is Kafkasender
-    #     """
-    #     sender = create_sender(create_broker_parameters_from_settings())
-    #     self.assertIsInstance(sender, KafkaSender)
-    #     expected_config = {
-    #         'bootstrap_servers': SettingsNoSSLMock.KAFKA_BROKER,
-    #         'security_protocol': 'PLAINTEXT',
-    #         'ssl_check_hostname': True,
-    #         'ssl_cafile': None,
-    #         'ssl_certfile': None,
-    #         'ssl_keyfile': None
-    #     }
-    #     self.assertIsInstance(sender.serializer, JSONSerializer)
-    #     self.assertDictEqual(expected_config, sender.config)
-
-    # @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    # def test_message_send(self):
-    #     """
-    #     Test sending message
-    #     """
-    #     sender = create_sender(create_broker_parameters_from_settings())
-    #     for _ in range(100):
-    #         self.assertTrue(TOPIC_KEY, sender.send(TOPIC_KEY, 'message'))
-
-    # @patch('hgw_common.utils.settings', SettingsNoSSLMock)
-    # def test_message_send_with_key(self):
-    #     """
-    #     Test sending message specifying a key
-    #     """
-    #     sender = create_sender(create_broker_parameters_from_settings())
-    #     for _ in range(100):
-    #         self.assertTrue(TOPIC_NO_KEY, sender.send(TOPIC_NO_KEY, 'message', key='key'))
+    def test_send_with_key(self):
+        """
+        Test sending message specifying a key
+        """
+        sender = create_sender(self.config_params_no_ssl)
+        for _ in range(100):
+            self.assertTrue(TOPIC_NO_KEY, sender.send(TOPIC_NO_KEY, 'message', key='key'))
