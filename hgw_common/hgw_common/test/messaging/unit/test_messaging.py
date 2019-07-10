@@ -169,6 +169,7 @@ class TestReceiver(TestCase):
         mock_kc_klass.MESSAGES = {i: MockMessage(key=key.encode('utf-8') if key is not None else key,
                                                  offset=i,
                                                  topic=topic,
+                                                 headers=('header_name', b'header_value'),
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 
@@ -233,6 +234,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['id'], i)
                 self.assertEqual(m['data'], 'message_{}'.format(i))
                 self.assertEqual(m['key'], None)
+                self.assertEqual(m['headers'], ('header_name', b'header_value'))
                 self.assertEqual(m['queue'], TOPIC)
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -252,6 +254,7 @@ class TestReceiver(TestCase):
             self.assertEqual(message['id'], 4)
             self.assertEqual(message['data'], 'message_{}'.format(4))
             self.assertEqual(message['key'], None)
+            self.assertEqual(message['headers'], ('header_name', b'header_value'))
             self.assertEqual(message['queue'], TOPIC)
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -272,6 +275,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(message['id'], index + 2)
                 self.assertEqual(message['data'], 'message_{}'.format(index + 2))
                 self.assertEqual(message['key'], None)
+                self.assertEqual(message['headers'], ('header_name', b'header_value'))
                 self.assertEqual(message['queue'], TOPIC)
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -291,6 +295,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['id'], i)
                 self.assertEqual(m['data'], 'message_{}'.format(i))
                 self.assertEqual(m['key'], 'key')
+                self.assertEqual(m['headers'], ('header_name', b'header_value'))
                 self.assertEqual(m['queue'], TOPIC)
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -302,7 +307,7 @@ class TestReceiver(TestCase):
 
             receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
             self.assertEqual(receiver.get_first_id(TOPIC), 0)
-            self.assertEqual(receiver.get_last_id(TOPIC), 9)            
+            self.assertEqual(receiver.get_last_id(TOPIC), 9)          
 
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
     def test_deserialization_error_to_json_decoding(self):
@@ -321,6 +326,7 @@ class TestReceiver(TestCase):
                 self.assertEqual(m['data'], '(a)')
                 self.assertEqual(m['queue'], TOPIC)
                 self.assertEqual(m['key'], None)
+                self.assertEqual(m['headers'], ('header_name', b'header_value'))
                 self.assertEqual(m['success'], False)
     
     @patch('hgw_common.utils.settings', SettingsNoSSLMock)
@@ -335,9 +341,9 @@ class TestReceiver(TestCase):
             receiver = create_receiver(TOPIC, 'test_client', create_broker_parameters_from_settings())
 
             for i, m in enumerate(receiver):
-                print(m)
-                # self.assertEqual(m['id'], i)
-                # self.assertEqual(m['data'], '"(a)"'.encode('utf-16'))
-                # self.assertEqual(m['queue'], TOPIC)
-                # self.assertEqual(m['key'], None)
-                # self.assertEqual(m['success'], False)
+                self.assertEqual(m['id'], i)
+                self.assertEqual(m['data'], '"(a)"'.encode('utf-16'))
+                self.assertEqual(m['queue'], TOPIC)
+                self.assertEqual(m['key'], None)
+                self.assertEqual(m['headers'], ('header_name', b'header_value'))
+                self.assertEqual(m['success'], False)

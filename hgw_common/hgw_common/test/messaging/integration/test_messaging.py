@@ -189,7 +189,7 @@ class TestMessaging(TestCase):
         """
         receiver = create_receiver(TOPIC_NO_KEY, 'test_receive_range', self.config_params_no_ssl)
         messages = receiver.get_range(2, 5, TOPIC_NO_KEY)
-        self.assertEqual(len(messages), 3)
+        self.assertEqual(len(messages), 4)
         for index, message in enumerate(messages):
             self.assertEqual(message['success'], True)
             self.assertEqual(message['id'], index + 2)

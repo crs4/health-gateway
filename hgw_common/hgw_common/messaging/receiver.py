@@ -100,14 +100,15 @@ class KafkaReceiver(GenericReceiver):
             'id': msg.offset,
             'queue': msg.topic,
             'key': msg.key.decode('utf-8') if msg.key is not None else None,
+            'headers': msg.headers,
             'data': data
         }
 
     def _go_to_id(self, message_id, topic, partition):
         tp = TopicPartition(topic, partition)
-        first_offset = self.get_first_id(topic, partition)
-        last_offset = self.get_last_id(topic, partition)
-        if first_offset <= message_id <= last_offset:
+        first_id = self.get_first_id(topic, partition)
+        last_id = self.get_last_id(topic, partition)
+        if first_id <= message_id <= last_id:
             self.consumer.seek(tp, message_id)
         else:
             return NotInRangeError()
@@ -142,8 +143,11 @@ class KafkaReceiver(GenericReceiver):
         return self.consumer.beginning_offsets([tp])[tp]
 
     def get_last_id(self, topic, partition=0):
+        """
+        Return the id of the last available object in a partition
+        """
         tp = TopicPartition(topic, partition)
-        return self.consumer.end_offsets([tp])[tp]
+        return self.consumer.end_offsets([tp])[tp] - 1
 
     def get_by_id(self, message_id, topic, partition=0):
         self._go_to_id(message_id, topic, partition)
@@ -152,18 +156,17 @@ class KafkaReceiver(GenericReceiver):
 
     def get_range(self, first_id, last_id, topic, partition=0):
         """
-        Return messages from the :param:`first_id` to the :param:`last_id`. The :param:`last_id` is not included.
+        Return messages from the :param:`first_id` to the :param:`last_id` included
         """
         if last_id < first_id:
             raise Exception
-
+        print(last_id, self.get_last_id(topic, partition))
         if last_id > self.get_last_id(topic, partition):
             last_id = self.get_last_id(topic, partition)
         if first_id < self.get_first_id(topic, partition):
             first_id = self.get_first_id(topic, partition)
-
         msgs = []
-        for msg_id in range(first_id, last_id):
+        for msg_id in range(first_id, last_id + 1):
             msgs.append(self.get_by_id(msg_id, topic, partition))
         return msgs
 

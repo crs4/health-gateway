@@ -14,13 +14,13 @@
 # AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+import base64
 import json
 import logging
 import os
 
 from Cryptodome.PublicKey import RSA
-import base64
-from django.test import TestCase, client
+from django.test import TestCase, client, tag
 from mock import patch
 
 from hgw_common.cipher import Cipher
@@ -28,7 +28,8 @@ from hgw_common.utils.mocks import (MockKafkaConsumer, MockMessage,
                                     get_free_port, start_mock_server)
 from hgw_frontend.models import (ConsentConfirmation, Destination, FlowRequest,
                                  RESTClient)
-from . import CORRECT_CONFIRM_ID, SOURCES_DATA, PROFILES_DATA
+
+from . import CORRECT_CONFIRM_ID, PROFILES_DATA, SOURCES_DATA
 from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -378,212 +379,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
 
-    def test_get_channels(self):
-        """
-        Tests getting channels
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/channels/', **headers)
-        self.assertEqual(res.status_code, 200)
-        expected = [ch_fi for ch_pk, ch_fi in self.channels.items()
-                    if ch_fi['destination_id'] == DEST_1_ID]
-        self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
-    def test_get_channels_filter_by_status(self):
-        """
-        Tests getting channels related to a specific flow_request
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/channels/?status=AC', **headers)
-        self.assertEqual(res.status_code, 200)
-        expected = [ch_fi for ch_pk, ch_fi in self.channels.items()
-                    if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
-        self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
-    def test_get_channels_filter_by_status_wrong_status(self):
-        """
-        Tests getting channels related to a specific flow_request
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/channels/?status=WRONG_STATUS', **headers)
-        self.assertEqual(res.status_code, 400)
-
-    def test_get_channels_by_superuser(self):
-        """
-        Tests getting all channels from a superuser
-        """
-        headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        res = self.client.get('/v1/channels/', **headers)
-        self.assertEqual(res.status_code, 200)
-        expected = [ch_fi for ch_pk, ch_fi in self.channels.items()]
-        self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
-    def test_get_channels_unauthorized(self):
-        """
-        Tests get channels unauthorized
-        """
-        res = self.client.get('/v1/channels/')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
-
-    def test_get_channels_forbidden(self):
-        """
-        Tests get channels forbidden
-        """
-        headers = self._get_oauth_header(client_name=POWERLESS_NAME)
-        res = self.client.get('/v1/channels/', **headers)
-        self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'errors': ['forbidden']})
-
-    def test_get_channel(self):
-        """
-        Tests getting channels
-        """
-        target_channel = self.channels[1]
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), target_channel)
-
-    def test_get_channel_unauthorized(self):
-        """
-        Tests get channel unauthorized
-        """
-        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
-
-    def test_get_channel_forbidden(self):
-        """
-        Tests get channels forbidden
-        """
-        headers = self._get_oauth_header(client_name=POWERLESS_NAME)
-        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
-        self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'errors': ['forbidden']})
-
-    def test_get_channel_by_superuser(self):
-        """
-        Tests get channels forbidden
-        """
-        target_channel = self.channels[1]
-        headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), target_channel)
-
-    def test_get_channel_not_found(self):
-        """
-        Tests get channels not found. It tests not found for superclient, for nonexistent channel and for a channel
-        that belongs to another destination
-        """
-        headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        res = self.client.get('/v1/channels/nonexistent_channel/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
-
-        headers = self._get_oauth_header(client_name=DEST_1_NAME)
-        res = self.client.get('/v1/channels/nonexistent_channel/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
-
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
-
-    def test_get_channels_by_flow_request(self):
-        """
-        Tests getting channels related to a specific flow_request
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/flow_requests/p_22222/channels/', **headers)
-        self.assertEqual(res.status_code, 200)
-        expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
-                    if ch_fi['destination_id'] == DEST_2_ID]
-        self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
-    def test_get_channels_by_flow_request_filter_by_status(self):
-        """
-        Tests getting channels related to a specific flow_request
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/flow_requests/p_22222/channels/?status=AC', **headers)
-        self.assertEqual(res.status_code, 200)
-        expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
-                    if ch_fi['destination_id'] == DEST_2_ID and ch_fi['status'] == 'AC']
-        self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
-    def test_get_channels_by_flow_request_filter_by_status_wrong_status(self):
-        """
-        Tests getting channels related to a specific flow_request
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/flow_requests/p_22222/channels/?status=WRONG_STATUS', **headers)
-        self.assertEqual(res.status_code, 400)
-
-    def test_get_channels_by_flow_request_flow_request_not_found(self):
-        """
-        Tests getting channels related to a specific flow_request which is not found
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/flow_requests/nonexistentfr/channels/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
-
-    def test_get_channels_by_flow_request_channels_not_found(self):
-        """
-        Tests getting channels related to a specific flow_request when the flow_request has no channels
-        """
-        headers = self._get_oauth_header(client_name=DEST_2_NAME)
-        res = self.client.get('/v1/flow_requests/p_33333/channels/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
-
-    def test_get_channels_by_flow_request_not_owner(self):
-        """
-        Tests getting channels related to a specific flow_request when the flow_request does not
-        belong to the same Destination
-        """
-        headers = self._get_oauth_header(client_name=DEST_1_NAME)
-        res = self.client.get('/v1/flow_requests/p_22222/channels/', **headers)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(res.json(), {'errors': ['not_found']})
-
-    def test_get_channels_by_flow_request_by_superuser(self):
-        """
-        Tests getting channels related to a specific flow_request
-        """
-        headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        res = self.client.get('/v1/flow_requests/p_22222/channels/', **headers)
-        self.assertEqual(res.status_code, 200)
-        expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
-                    if ch_fi['destination_id'] == DEST_2_ID]
-        self.assertEqual(res.json(), expected)
-        self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
-    def test_get_channels_by_flow_request_unauthorized(self):
-        """
-        Tests get channels unauthorized
-        """
-        res = self.client.get('/v1/flow_requests/33333/channels/')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
-
-    def test_get_channels_by_flow_request_forbidden(self):
-        """
-        Tests get channels forbidden
-        """
-        headers = self._get_oauth_header(client_name=POWERLESS_NAME)
-        res = self.client.get('/v1/flow_requests/33333/channels/', **headers)
-        self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'errors': ['forbidden']})
-
     def _check_message(self, to_be_checked, msg_id):        
         self.assertEqual(to_be_checked['message_id'], msg_id)
         self.assertEqual(to_be_checked['channel_id'], 'channel')
@@ -610,8 +405,9 @@ class TestHGWFrontendAPI(TestCase):
                            value=data) for i in range(mock_kc_klass.FIRST, mock_kc_klass.END)
         }
 
+    @tag('message')
     def test_get_message(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
             headers = self._get_oauth_header(client_name=DEST_1_NAME)
 
@@ -620,8 +416,9 @@ class TestHGWFrontendAPI(TestCase):
                 self.assertEqual(res.status_code, 200)
                 self._check_message(res.json(), msg_id)
 
+    @tag('message')
     def test_get_messages(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
             headers = self._get_oauth_header(client_name=DEST_1_NAME)
             res = self.client.get('/v1/messages/', **headers)
@@ -630,18 +427,19 @@ class TestHGWFrontendAPI(TestCase):
             self.assertEqual(res['X-Skipped'], '0')
             self.assertEqual(len(res.json()), 5)
             for index, msg in enumerate(res.json()):
-                self._check_message(msg, index + 3)  # the firt index of the mock is 3
+                self._check_message(msg, index + 3)  # the first index of the mock is 3
 
             res = self.client.get('/v1/messages/?start=6&limit=3', **headers)
             self.assertEqual(res.status_code, 200)
             self.assertEqual(len(res.json()), 3)
             self.assertEqual(res['X-Total-Count'], '30')
             self.assertEqual(res['X-Skipped'], '3')
-            for msg_id in range(6, 8):
-                self._check_message(msg, index + 3)
+            for i in range(6, 8):
+                self._check_message(res.json()[i - 6], i)
 
+    @tag('message')
     def test_get_messages_max_limit(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
             headers = self._get_oauth_header(client_name=DEST_1_NAME)
             res = self.client.get('/v1/messages/?start=3&limit=11', **headers)
@@ -652,8 +450,9 @@ class TestHGWFrontendAPI(TestCase):
             for i in range(3, 13):
                 self.assertEqual(res.json()[i - 3]['message_id'], i)
 
+    @tag('message')
     def test_get_message_not_found(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
             headers = self._get_oauth_header(client_name=DEST_1_NAME)
             res = self.client.get('/v1/messages/33/', **headers)
@@ -664,8 +463,9 @@ class TestHGWFrontendAPI(TestCase):
             self.assertEqual(res.status_code, 404)
             self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
 
+    @tag('message')
     def test_get_messages_not_found(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
             headers = self._get_oauth_header(client_name=DEST_1_NAME)
             res = self.client.get('/v1/messages/?start=30&limit=5', **headers)
@@ -678,8 +478,9 @@ class TestHGWFrontendAPI(TestCase):
             self.assertEqual(res.status_code, 404)
             self.assertDictEqual(res.json(), {'first_id': 3, 'last_id': 32})
 
+    @tag('message')
     def test_get_messages_info(self):
-        with patch('hgw_frontend.views.messages.KafkaConsumer', MockKafkaConsumer):
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer)
             headers = self._get_oauth_header(client_name=DEST_1_NAME)
             res = self.client.get('/v1/messages/info/', **headers)

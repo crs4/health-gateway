@@ -25,12 +25,18 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
+from hgw_common.messaging.deserializer import RawDeserializer
+from hgw_common.messaging.receiver import create_receiver
+from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.authorization import TokenHasResourceDetailedScope
 from hgw_frontend.models import Destination
-from hgw_frontend.settings import KAFKA_BROKER, KAFKA_CA_CERT, KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY, KAFKA_SSL
+from hgw_frontend.settings import (KAFKA_BROKER, KAFKA_CA_CERT,
+                                   KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY,
+                                   KAFKA_SSL)
 
 DEFAULT_LIMIT = 5
 MAX_LIMIT = 10
+RECEIVER_NAME = 'hgw_frontend_messages_api'
 
 
 def check_destination(f):
@@ -68,26 +74,28 @@ class Messages(ViewSet):
 
     def _construct_correct_response(self, msg):
         response = {
-            'message_id': msg.offset,
-            'data': base64.b64encode(msg.value)
+            'message_id': msg['id'],
+            'data': base64.b64encode(msg['data'])
         }
-        response.update(dict((k, v.decode('utf-8')) for (k, v) in msg.headers))
+        response.update(dict((k, v.decode('utf-8')) for (k, v) in msg['headers']))
         return response
 
     @check_destination
     def retrieve(self, request, message_id):
         message_id = int(message_id)
-        kc, tp = self._get_kafka_consumer(request)
-        first_offset = kc.beginning_offsets([tp])[tp]
-        last_offset = kc.end_offsets([tp])[tp] - 1
-        if first_offset <= message_id <= last_offset:
-            kc.seek(tp, message_id)
-            msg = next(kc)
+
+        topic = request.auth.application.destination.destination_id
+        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), deserializer=RawDeserializer)
+
+        first_id = receiver.get_first_id(topic)
+        last_id = receiver.get_last_id(topic)
+        if first_id <= message_id <= last_id:
+            msg = receiver.get_by_id(message_id, topic)
             return Response(self._construct_correct_response(msg), content_type='application/json')
         else:
             response = {
-                'first_id': first_offset,
-                'last_id': last_offset
+                'first_id': first_id,
+                'last_id': last_id
             }
             return Response(response,
                             status.HTTP_404_NOT_FOUND,
@@ -95,42 +103,43 @@ class Messages(ViewSet):
 
     @check_destination
     def list(self, request):
-        kc, tp = self._get_kafka_consumer(request)
-        kc.assign([tp])
-        first_offset = kc.beginning_offsets([tp])[tp]
-        end_offset = kc.end_offsets([tp])[tp]
-        start = int(request.GET.get('start', first_offset))
+        topic = request.auth.application.destination.destination_id
+        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), deserializer=RawDeserializer)
+
+        first_id = receiver.get_first_id(topic)
+        last_id = receiver.get_last_id(topic)
+
+        start = int(request.GET.get('start', first_id))
         limit = int(request.GET.get('limit', DEFAULT_LIMIT))
+
         if limit > MAX_LIMIT:
             limit = MAX_LIMIT
-        total_count = end_offset - first_offset
-        if start < first_offset:
-            # If the start offset is greater than the first offset available, we answer with not found
-            return Response({'first_id': first_offset,
-                             'last_id': end_offset - 1},
+
+        if start < first_id:
+            # If the start offset is less than the first offset available, we answer with not found
+            return Response({'first_id': first_id,
+                             'last_id': last_id},
                             status.HTTP_404_NOT_FOUND,
                             content_type='application/json')
-        if start + limit > end_offset:
-            limit = end_offset - start
-        kc.seek(tp, start)
-        response = []
-        for i in range(limit):
-            msg = next(kc)
-            response.append(self._construct_correct_response(msg))
+
+        messages = [self._construct_correct_response(msg) for msg in receiver.get_range(start, start + limit - 1, topic)]
         headers = {
-            'X-Skipped': start - first_offset,
-            'X-Total-Count': total_count
+            'X-Skipped': start - first_id,
+            'X-Total-Count': last_id - first_id + 1
         }
-        return Response(response, content_type='application/json', headers=headers)
+        return Response(messages, content_type='application/json', headers=headers)
 
     @check_destination
     def info(self, request):
-        kc, tp = self._get_kafka_consumer(request)
-        first_offset = kc.beginning_offsets([tp])[tp]
-        last_offset = kc.end_offsets([tp])[tp]
-        count = last_offset - first_offset
+        topic = request.auth.application.destination.destination_id
+        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), deserializer=RawDeserializer)
+
+        first_id = receiver.get_first_id(topic)
+        last_id = receiver.get_last_id(topic)
+
+        count = last_id + 1 - first_id
         return Response({
-            'start_id': first_offset,
-            'last_id': last_offset - 1,
+            'start_id': first_id,
+            'last_id': last_id ,
             'count': count
         })
