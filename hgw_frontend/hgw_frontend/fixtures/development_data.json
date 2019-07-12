@@ -99,8 +99,8 @@
     "model": "hgw_frontend.source",
     "pk": 1,
     "fields": {
-      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
-      "name": "source_1",
+      "source_id": "xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7",
+      "name": "SOURCE_ENDPOINT_MOCKUP",
       "profile": 1      
     }
   }
