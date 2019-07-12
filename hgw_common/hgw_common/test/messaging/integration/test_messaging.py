@@ -25,7 +25,8 @@ from unittest import TestCase
 
 import docker
 
-from hgw_common.messaging.receiver import create_receiver
+from hgw_common.messaging import TopicNotAssigned
+from hgw_common.messaging.receiver import KafkaReceiver, create_receiver
 from hgw_common.messaging.sender import create_sender
 
 TOPIC_KEY = 'test-topic'
@@ -213,6 +214,21 @@ class TestMessaging(TestCase):
         # create a new receiver that substitute the first
         receiver = create_receiver(TOPIC_NO_KEY, client_name, self.config_params_no_ssl)
         self.assertEqual(receiver.get_current_id(TOPIC_NO_KEY), self.message_num//2)
+
+    def test_receive_06_not_blocking_receiver_raise_exception(self):
+        """
+        Test that if the receiver is not blocking, it will raise an exception if the topic is not assigned
+        """
+        client_name = 'test_not_blocking_receiver_exception'
+        self.assertRaises(TopicNotAssigned, create_receiver, 'not_exists', client_name, self.config_params_no_ssl, blocking=False)
+
+    def test_receive_06_not_blocking_receiver_success(self):
+        """
+        Test that if the receiver is not blocking, it will raise an exception if the topic is not assigned
+        """
+        client_name = 'test_not_blocking_receiver_success'
+        receiver = create_receiver(TOPIC_NO_KEY, client_name, self.config_params_no_ssl, blocking=False)
+        self.assertIsInstance(receiver, KafkaReceiver)
 
     def test_send(self):
         """

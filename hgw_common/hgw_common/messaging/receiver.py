@@ -53,19 +53,29 @@ class KafkaReceiver(GenericReceiver):
     """
     A very simple kafka receiver. It just creates a KafkaConsumer that consumes
     from the topic specified in input. To consume messages use the iterator
+
+    :param topics: a list of topics name or a string with just the name of the topic from which consume messages
+    :param config: a dict with the kafka configuration for the :class:`KafkaConsumer`
+    :param blocking: if ``True``, the receiver will wait until it gets the authorization to consume from all the topics.
+        if ``False``, it will if the topic is not assigned. By default it is True
+    :param deserializer: the Deserializer class to use to deserializer the messages read
     """
 
-    def __init__(self, topics, config, deserializer=JSONDeserializer):
+    def __init__(self, topics, config, blocking=True, deserializer=JSONDeserializer):
         if isinstance(topics, collections.abc.MutableSequence):
             self.topics = topics
         else:
             self.topics = [topics]
-        self.config = config
 
+        self.config = config
         self.config.update({
             'auto_offset_reset': 'earliest',
             'auto_commit_interval_ms': 2000
         })
+
+        self.blocking = blocking
+        self.deserializer = deserializer()
+
         try:
             self.consumer = KafkaConsumer(**self.config)
         except NoBrokersAvailable:
@@ -77,8 +87,10 @@ class KafkaReceiver(GenericReceiver):
 
         self.consumer.subscribe(self.topics)
         logger.info("Subscribed to topic(s) %s", ", ".join(self.topics))
-        self.wait_assignments()
-        self.deserializer = deserializer()
+        if not blocking and not self._check_assignment():
+            raise TopicNotAssigned()
+        else:
+            self._wait_assignments()
         super(KafkaReceiver, self).__init__()
 
     def _force_assignment(self):
@@ -113,16 +125,21 @@ class KafkaReceiver(GenericReceiver):
         else:
             return NotInRangeError()
 
-    def wait_assignments(self):
+    def _check_assignment(self):
+        """
+        Return True if all the requested topics are correctly assigned
+        """
+        self._force_assignment()
+        assignments = [tp.topic for tp in self.consumer.assignment()]
+        return set(assignments) >= set(self.topics)
+
+    def _wait_assignments(self):
         """
         Wait that the topic is assigned to the consumer
         """
         logger.info("Waiting for topic assignment")
-        self._force_assignment()
-        assignments = [tp.topic for tp in self.consumer.assignment()]
-        while set(assignments) < set(self.topics):
-            self._force_assignment()
-            assignments = [tp.topic for tp in self.consumer.assignment()]
+        while not self._check_assignment():
+            continue
         logger.info("Topic(s) %s assigned", ', '.join(self.topics))
 
     def is_last(self):
@@ -160,7 +177,6 @@ class KafkaReceiver(GenericReceiver):
         """
         if last_id < first_id:
             raise Exception
-        print(last_id, self.get_last_id(topic, partition))
         if last_id > self.get_last_id(topic, partition):
             last_id = self.get_last_id(topic, partition)
         if first_id < self.get_first_id(topic, partition):
@@ -181,7 +197,7 @@ class KafkaReceiver(GenericReceiver):
         self.consumer.close()
 
 
-def create_receiver(name, client_name, configuration_params, deserializer=JSONDeserializer):
+def create_receiver(name, client_name, configuration_params, blocking=True, deserializer=JSONDeserializer):
     """
     Methods that returns the correct sender based on the settings file
     """
@@ -196,6 +212,6 @@ def create_receiver(name, client_name, configuration_params, deserializer=JSONDe
             'ssl_keyfile': configuration_params['client_key'],
         }
 
-        return KafkaReceiver(name, kafka_config, deserializer)
+        return KafkaReceiver(name, kafka_config, blocking=blocking, deserializer=deserializer)
 
     raise UnknownReceiver("Cannot instantiate a sender")

@@ -85,8 +85,8 @@ class Messages(ViewSet):
         message_id = int(message_id)
 
         topic = request.auth.application.destination.destination_id
-        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), deserializer=RawDeserializer)
-
+        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), 
+                                   blocking=False, deserializer=RawDeserializer)
         first_id = receiver.get_first_id(topic)
         last_id = receiver.get_last_id(topic)
         if first_id <= message_id <= last_id:
@@ -104,7 +104,8 @@ class Messages(ViewSet):
     @check_destination
     def list(self, request):
         topic = request.auth.application.destination.destination_id
-        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), deserializer=RawDeserializer)
+        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), 
+                                   blocking=False, deserializer=RawDeserializer)
 
         first_id = receiver.get_first_id(topic)
         last_id = receiver.get_last_id(topic)
@@ -132,7 +133,8 @@ class Messages(ViewSet):
     @check_destination
     def info(self, request):
         topic = request.auth.application.destination.destination_id
-        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), deserializer=RawDeserializer)
+        receiver = create_receiver(topic, RECEIVER_NAME, create_broker_parameters_from_settings(), 
+                                   blocking=False, deserializer=RawDeserializer)
 
         first_id = receiver.get_first_id(topic)
         last_id = receiver.get_last_id(topic)
