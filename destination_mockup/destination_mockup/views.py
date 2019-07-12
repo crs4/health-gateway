@@ -57,19 +57,12 @@ def flow_requests(request, pk=None):
             res = oauth_session.get('{}/v1/flow_requests/'.format(HGW_FRONTEND_URI),
                                     headers=access_token_header)
     elif action == 'post':
-        payload = '[{"clinical_domain": "Laboratory", ' \
-                  '"filters": [{"excludes": "HDL", "includes": "immunochemistry"}]}, ' \
-                  '{"clinical_domain": "Radiology", ' \
-                  '"filters": [{"excludes": "Radiology", "includes": "Tomography"}]}, ' \
-                  '{"clinical_domain": "Emergency", ' \
-                  '"filters": [{"excludes": "", "includes": ""}]}, ' \
-                  '{"clinical_domain": "Prescription", ' \
-                  '"filters": [{"excludes": "", "includes": ""}]}]'
+        payload = '[{"clinical_domain": "Laboratory"}]'
         data = {
             'flow_id': generate_flow_id(),
             'profile': {
-                'code': 'PROF002',
-                'version': 'hgw.document.profile.v0',
+                'code': 'PROF_001',
+                'version': 'v0',
                 'payload': payload
             }
         }
