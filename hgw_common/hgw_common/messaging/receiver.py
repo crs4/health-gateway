@@ -120,7 +120,7 @@ class KafkaReceiver(GenericReceiver):
         logger.info("Waiting for topic assignment")
         self._force_assignment()
         assignments = [tp.topic for tp in self.consumer.assignment()]
-        while set(self.topics) < set(assignments):
+        while set(assignments) < set(self.topics):
             self._force_assignment()
             assignments = [tp.topic for tp in self.consumer.assignment()]
         logger.info("Topic(s) %s assigned", ', '.join(self.topics))
