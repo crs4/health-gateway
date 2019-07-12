@@ -11,7 +11,7 @@ script:
   - python consent_manager/manage.py test consent_manager/test/unit/
   - python hgw_frontend/manage.py test hgw_frontend/test
   - python hgw_backend/manage.py test hgw_backend/test
-  - python hgw_common/hgw_common/manage.py test hgw_common/hgw_common/test
+  - python hgw_common/hgw_common/manage.py test hgw_common/hgw_common/test/unit/
   - cd hgw_dispatcher
   - python -m unittest test
 branches:
