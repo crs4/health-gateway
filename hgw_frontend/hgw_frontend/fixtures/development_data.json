@@ -86,5 +86,22 @@
       "destination": 2,
       "scopes": "flow_request:read flow_request:write messages:read sources:read"
     }
+  },
+  {
+    "model": "hgw_common.profile",
+    "pk": 1,
+    "fields": {
+      "code": "PROF_001",
+      "version": "v0",
+      "payload": "[{\"clinical_domain\": \"Laboratory\"}]"}
+  },
+  {
+    "model": "hgw_frontend.source",
+    "pk": 1,
+    "fields": {
+      "source_id": "iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT",
+      "name": "source_1",
+      "profile": 1      
+    }
   }
 ]
