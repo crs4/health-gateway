@@ -132,8 +132,6 @@ class KafkaReceiver(GenericReceiver):
         """
         self._force_assignment()
         assignments = [tp.topic for tp in self.consumer.assignment()]
-        logger.info(assignments)
-        logger.info(self.topics)
         return set(assignments) >= set(self.topics)
 
     def _wait_assignments(self):
@@ -141,11 +139,8 @@ class KafkaReceiver(GenericReceiver):
         Wait that the topic is assigned to the consumer
         """
         logger.info("Waiting for topic assignment")
-        self._force_assignment()
-        assignments = [tp.topic for tp in self.consumer.assignment()]
-        while set(assignments) < set(self.topics):
-            self._force_assignment()
-            assignments = [tp.topic for tp in self.consumer.assignment()]
+        while not self._check_assignment():
+            continue
         logger.info("Topic(s) %s assigned", ', '.join(self.topics))
 
     def is_last(self):
