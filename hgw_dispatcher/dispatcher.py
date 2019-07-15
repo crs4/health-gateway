@@ -110,14 +110,11 @@ class Dispatcher(object):
         broker_parameters = {
             'broker_type': 'kafka',
             'broker_url': broker_url,
+            'ssl': use_ssl,
+            'ca_cert': ca_cert if use_ssl else None,
+            'client_cert': client_cert if use_ssl else None,
+            'client_key': client_key if use_ssl else None
         }
-        if use_ssl:
-            broker_parameters.update({
-                'ssl': True,
-                'ca_cert': ca_cert,
-                'client_cert': client_cert,
-                'client_key': client_key,
-            })
 
         self._obtain_consent_oauth_token()
         self._obtain_hgw_frontend_oauth_token()

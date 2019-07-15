@@ -17,12 +17,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-python3 manage.py backend_notification_consumer
+python3 manage.py connector_notification_consumer
 STATUS=$?
 while [ ${STATUS} != 0 ]; do
     echo "Not ready. Sleeping 5 seconds"
     sleep 5
-    python3 manage.py backend_notification_consumer
+    python3 manage.py connector_notification_consumer
     STATUS=$?
     echo "STATUS: $STATUS"
 done

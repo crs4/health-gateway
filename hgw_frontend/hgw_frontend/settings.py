@@ -279,10 +279,10 @@ HGW_BACKEND_CLIENT_SECRET = cfg['hgw_backend']['client_secret']
 NOTIFICATION_TYPE = 'kafka'
 if NOTIFICATION_TYPE == 'kafka':
     KAFKA_BROKER = cfg['kafka']['uri']
-    KAFKA_CHANNEL_NOTIFICATION_TOPIC = 'channel_notification'
-    KAFKA_SOURCE_NOTIFICATION_TOPIC = 'hgw_backend_source_notification'
-    KAFKA_CONNECTOR_NOTIFICATION_TOPIC = 'hgw_backend_connector_notification'
-    KAFKA_CONSENT_NOTIFICATION_TOPIC = 'consent_manager_notification'
+    KAFKA_CHANNEL_NOTIFICATION_TOPIC = 'channel-notification'
+    KAFKA_SOURCE_NOTIFICATION_TOPIC = 'hgw-backend-source-notification'
+    KAFKA_CONNECTOR_NOTIFICATION_TOPIC = 'hgw-backend-connector-notification'
+    KAFKA_CONSENT_NOTIFICATION_TOPIC = 'consent-manager-notification'
     KAFKA_SSL = cfg['kafka']['ssl']
     KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
     KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])

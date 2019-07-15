@@ -63,7 +63,8 @@ if [ "$1" == "test" ]; then
     python manage.py test test
 else 
     echo "Starting kafka consumer"
-    /launch-notification-worker-consumer.sh &
+    /launch-connector-notification-consumer.sh &
+    /launch-source-notification-consumer.sh &
     /launch-consent-notification-consumer.sh &
     if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
         envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf

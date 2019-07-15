@@ -8,8 +8,8 @@ django:
     name: /container/devservice/hgw_backend_db.sqlite3
 
 kafka:
-  uri: kafka:9093
-  ssl: true
+  uri: kafka:9092
+  ssl: false
   ca_cert: /container/client_certs/kafka.chain.cert.pem
   client_cert: /container/client_certs/cert.pem
   client_key: /container/client_certs/key.pem

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright (c) 2017-2018 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -16,25 +17,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-FROM crs4/web_base:latest
-LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
-
-
-ARG HTTP_PORT=8000
-
-ENV DJANGO_APP_NAME=hgw_frontend
-ENV HTTP_PORT=${HTTP_PORT}
-
-
-COPY resources/docker-entrypoint.sh /custom_entrypoint/
-COPY resources/launch-source-notification-consumer.sh /
-COPY resources/launch-connector-notification-consumer.sh /
-COPY resources/launch-consent-notification-consumer.sh /
-COPY service/ /container/service/
-
-RUN chmod +x /custom_entrypoint/docker-entrypoint.sh
-RUN chmod +x /launch-source-notification-consumer.sh
-RUN chmod +x /launch-connector-notification-consumer.sh
-RUN chmod +x /launch-consent-notification-consumer.sh
-
-EXPOSE ${HTTP_PORT}
+python3 manage.py source_notification_consumer
+STATUS=$?
+while [ ${STATUS} != 0 ]; do
+    echo "Not ready. Sleeping 5 seconds"
+    sleep 5
+    python3 manage.py source_notification_consumer
+    STATUS=$?
+    echo "STATUS: $STATUS"
+done

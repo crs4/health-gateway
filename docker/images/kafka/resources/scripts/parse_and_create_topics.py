@@ -14,11 +14,6 @@ def parse_json(topics_file_name):
 
 def create_topics(topics, zookeeper):
     for topic in topics:
-        os.system('kafka-topics.sh --create --zookeeper {zookeeper} '
-                  '--replication-factor {repl_fact} --partitions {partitions} --topic {topic_name}'
-                  .format(zookeeper=zookeeper, repl_fact=topic['replication_factor'],
-                          partitions=topic['partitions'], topic_name=topic['name']))
-
         if topic['writer'] is not None:
             os.system('kafka-acls.sh --authorizer-properties zookeeper.connect={zookeeper} --add '
                       '--allow-principal User:"CN={writer},ST=Italy,C=IT" '
@@ -30,6 +25,11 @@ def create_topics(topics, zookeeper):
                       '--allow-principal User:"CN={reader},ST=Italy,C=IT" '
                       '--topic {topic_name} --operation Read --operation Describe'
                       .format(zookeeper=zookeeper, reader=topic['reader'], topic_name=topic['name']))
+
+        os.system('kafka-topics.sh --create --zookeeper {zookeeper} '
+                  '--replication-factor {repl_fact} --partitions {partitions} --topic {topic_name}'
+                  .format(zookeeper=zookeeper, repl_fact=topic['replication_factor'],
+                          partitions=topic['partitions'], topic_name=topic['name']))
 
 
 def main():

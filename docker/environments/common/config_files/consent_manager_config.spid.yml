@@ -18,7 +18,7 @@ notification:
   type: 'kafka'
   kafka:
     uri: kafka:9093
-    topic: consent_manager_notification
+    topic: consent-manager-notification
     ssl: false
     ca_cert: /container/client_certs/kafka.chain.cert.pem
     client_cert: /container/client_certs/cert.pem

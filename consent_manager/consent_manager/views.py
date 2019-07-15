@@ -290,6 +290,7 @@ class ConsentView(ViewSet):
 
                         try:
                             self._send_changes(consent)
+                            logger.info("Consent creation notified correctly")
                         except SendingError:
                             # TODO: we should retry to send the frontend
                             logger.error("It was impossible to send the message to the HGW Frontend")

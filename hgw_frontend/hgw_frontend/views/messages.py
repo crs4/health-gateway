@@ -52,26 +52,6 @@ class Messages(ViewSet):
     permission_classes = (TokenHasResourceDetailedScope,)
     required_scopes = ['messages']
 
-    def _get_kafka_consumer(self, request):
-        topic = request.auth.application.destination.destination_id
-        if KAFKA_SSL:
-            consumer_params = {
-                'bootstrap_servers': KAFKA_BROKER,
-                'security_protocol': 'SSL',
-                'ssl_check_hostname': True,
-                'ssl_cafile': KAFKA_CA_CERT,
-                'ssl_certfile': KAFKA_CLIENT_CERT,
-                'ssl_keyfile': KAFKA_CLIENT_KEY
-            }
-        else:
-            consumer_params = {
-                'bootstrap_servers': KAFKA_BROKER
-            }
-        kc = KafkaConsumer(**consumer_params)
-        tp = TopicPartition(topic, 0)
-        kc.assign([tp])
-        return kc, tp
-
     def _construct_correct_response(self, msg):
         response = {
             'message_id': msg['id'],

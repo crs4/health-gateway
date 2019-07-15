@@ -44,7 +44,7 @@ class Command(ConsumerCommand):
     help = 'Launch Backend Notification Consumer'
 
     def __init__(self, *args, **kwargs):
-        self.client_id = self.group_id = 'consent_manager_notification_consumer'
+        self.group_id = 'consent_manager_notification_consumer'
         self.topics = [KAFKA_CONSENT_NOTIFICATION_TOPIC]
         self.sender_topic = KAFKA_CHANNEL_NOTIFICATION_TOPIC
         self.sender = create_sender(create_broker_parameters_from_settings())
