@@ -6,8 +6,10 @@ from mock.mock import patch
 
 from hgw_common.models import FailedMessages, Profile
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
-from hgw_frontend.management.commands.backend_notification_consumer import \
-    Command as BackendNotificationCommand
+from hgw_frontend.management.commands.source_notification_consumer import \
+    Command as SourceNotificationCommand
+from hgw_frontend.management.commands.connector_notification_consumer import \
+    Command as ConnectorNotificationCommand
 from hgw_frontend.management.commands.consent_manager_notification_consumer import (FAILED_MESSAGE_TYPE,
                                                                                     FAILED_REASON)
 from hgw_frontend.management.commands.consent_manager_notification_consumer import \
@@ -48,7 +50,7 @@ class TestSourceConsumer(TestCase):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.source_notification_messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            SourceNotificationCommand().handle()
 
             for message in self.source_notification_messages:
                 sources = Source.objects.filter(source_id=message['source_id'])
@@ -76,7 +78,7 @@ class TestSourceConsumer(TestCase):
                    MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            SourceNotificationCommand().handle()
 
             for message in messages:
                 sources = Source.objects.filter(source_id=message['source_id'])
@@ -96,7 +98,7 @@ class TestSourceConsumer(TestCase):
             messages = ['(a)']
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, False)
-            BackendNotificationCommand().handle()
+            SourceNotificationCommand().handle()
 
             self.assertEqual(Source.objects.count(), 0)
             
@@ -117,7 +119,7 @@ class TestSourceConsumer(TestCase):
             }, 'wrong_type']
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            SourceNotificationCommand().handle()
 
             self.assertEqual(Source.objects.count(), 0)
 
@@ -150,7 +152,7 @@ class TestSourceConsumer(TestCase):
             }]
             self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
                                          KAFKA_SOURCE_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            SourceNotificationCommand().handle()
 
             self.assertEqual(Source.objects.count(), 0)
 
@@ -184,7 +186,7 @@ class TestConnectorConsumer(TestCase):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.connector_notification_messages,
                                          KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
 
-            BackendNotificationCommand().handle()
+            ConnectorNotificationCommand().handle()
 
             for connector in self.connector_notification_messages:
                 channel = ConsentConfirmation.objects.get(consent_id=connector['channel_id']).channel
@@ -203,7 +205,7 @@ class TestConnectorConsumer(TestCase):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.connector_notification_messages,
                                          KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            ConnectorNotificationCommand().handle()
 
             for connector in self.connector_notification_messages:
                 channel = ConsentConfirmation.objects.get(consent_id=connector['channel_id']).channel
@@ -216,7 +218,7 @@ class TestConnectorConsumer(TestCase):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, [{'channel_id': 'wrong'}],
                                          KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            ConnectorNotificationCommand().handle()
 
     def test_failure_because_of_wrong_structure(self):
         """
@@ -225,7 +227,7 @@ class TestConnectorConsumer(TestCase):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             self.set_mock_kafka_consumer(MockKafkaConsumer, [{'wrong': 'str'}, 'wrong'],
                                          KAFKA_CONNECTOR_NOTIFICATION_TOPIC, True)
-            BackendNotificationCommand().handle()
+            ConnectorNotificationCommand().handle()
 
 
 class TestConsentConsumer(TestCase):
