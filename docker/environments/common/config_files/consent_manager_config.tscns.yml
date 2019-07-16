@@ -5,8 +5,12 @@ django:
   port: 8002
   timezone: Europe/Rome
   database:
-    engine: sqlite3
-    name: /container/devservice/consent_manager_db.sqlite3
+    engine: mysql
+    name: consentmanager
+    user: hgwuser
+    password: hgwpwd
+    host: mysql
+    port: 3306
 
 saml:
   service: tscns
