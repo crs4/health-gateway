@@ -64,9 +64,3 @@ services:
       default:
         aliases:
           - source-endpoint-mockup
-
-  hgw_frontend:
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "spid-testenv-identityserver:9443", "--", "/docker-entrypoint.sh"]
-
-  hgw_backend:
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]

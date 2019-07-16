@@ -5,6 +5,7 @@ django:
   port: 8003
   timezone: Europe/Rome
   database:
+    engine: sqlite3
     name: ../hgw_backend_db.sqlite3
 
 kafka:
