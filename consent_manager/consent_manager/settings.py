@@ -137,12 +137,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'consent_manager.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DEFAULT_DB_NAME,
+DB_ENGINE = cfg['django']['database']['engine']
+if DB_ENGINE == 'sqlite3':
+    DEFAULT_DB_NAME = os.environ.get('DEFAULT_DB_NAME') or get_path(BASE_CONF_DIR, cfg['django']['database']['name'])
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.{}'.format(DB_ENGINE),
+            'NAME': DEFAULT_DB_NAME
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.{}'.format(DB_ENGINE),
+            'NAME': cfg['django']['database']['name'],
+            'USER': cfg['django']['database']['user'],
+            'PASSWORD': cfg['django']['database']['password'],
+            'HOST': cfg['django']['database']['host'],
+            'PORT': cfg['django']['database']['port'],
+        }
+    }
+
 
 AUTH_PASSWORD_VALIDATORS = []
 

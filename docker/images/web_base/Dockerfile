@@ -9,13 +9,14 @@ LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 RUN apk update && apk add --no-cache gcc make python3 python3-dev py3-pip \
 	ca-certificates libressl-dev bash xmlsec xmlsec-dev libc-dev libxml2-dev \
 	libffi-dev python2-dev expect \
-    git postgresql-libs postgresql-dev
+    git postgresql-libs postgresql-dev mysql-client mariadb-dev
 
 ENV CONTAINER_DIR=/container/
 ENV CA_DIR=/cacerts/
 ENV DJANGO_DIR=/container/service
 ENV CERT_DIR=/container/certs
 ENV DEV_DJANGO_DIR=/container/devservice
+ENV FIXTURES_DIR=/container/fixtures
 ARG DJANGO_VERSION=1.11.7
 ARG HTTP_PORT=80
 
@@ -34,7 +35,8 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	PyYAML==5.1.1 \
 	coverage \
 	psycopg2 \
-	urllib3==1.25.3
+	urllib3==1.25.3 \
+	mysqlclient
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 
@@ -48,6 +50,7 @@ RUN mkdir /custom_entrypoint/
 RUN mkdir ${DJANGO_DIR} && chown -R gunicorn:gunicorn ${DJANGO_DIR}
 RUN mkdir ${CERT_DIR}
 RUN mkdir ${DEV_DJANGO_DIR}
+RUN mkdir ${FIXTURES_DIR}
 
 RUN echo hgwpwd > /etc/nginx/passw
 RUN chown nginx:nginx /etc/nginx/passw && chmod 600 /etc/nginx/passw

@@ -1,5 +1,19 @@
 version: '3.0'
 services:
+  mysql:
+    image: mysql:5.7
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./config_files/mysql_init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=hgwpwd
+      - MYSQL_USER=hgwuser 
+      - MYSQL_PASSWORD=hgwpwd
+    networks:
+      default:
+        aliases:
+          - tscns
+
   tscns:
     image: crs4/tscns:latest
     ports:
@@ -33,6 +47,8 @@ services:
     depends_on:
       - kafka
       - hgw_backend
+      - mysql
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "tscns:443", "--", "/custom_entrypoint/wait-for-it.sh", "mysql:3306", "--" ,"/docker-entrypoint.sh"]
     environment:
       - HTTP_PORT=8000
       - DJANGO_APP_NAME=hgw_frontend
@@ -42,6 +58,7 @@ services:
       - ../../../hgw_frontend/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
+      - ../../../hgw_frontend/hgw_frontend/fixtures/development_data.json:/container/fixtures/development_data.json
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -58,7 +75,8 @@ services:
     image: crs4/hgw_backend:latest
     depends_on:
       - kafka
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
+      - mysql
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh", "mysql:3306", "--" ,"/docker-entrypoint.sh"]
     environment:
       - HTTP_PORT=8003
       - DJANGO_APP_NAME=hgw_backend
@@ -69,6 +87,7 @@ services:
       - ../../../hgw_backend/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_backend_config.yml:/etc/hgw_service/hgw_backend_config.yml
+      - ../../../hgw_backend/hgw_backend/fixtures/development_data.json:/container/fixtures/development_data.json
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
@@ -85,16 +104,20 @@ services:
 
   consent_manager:
     image: crs4/consent_manager:latest
+    depends_on:
+      - mysql
     environment:
       - HTTP_PORT=8002
       - DJANGO_APP_NAME=consent_manager
       - TZ=CET
     ports:
       - 8002:8002
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "mysql:3306", "--", "/docker-entrypoint.sh"]
     volumes:
       - ../../../consent_manager/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/consent_manager_config.tscns.yml:/etc/hgw_service/consent_manager_config.yml
+      - ../../../consent_manager/consent_manager/fixtures/development_data.json:/container/fixtures/development_data.json
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem

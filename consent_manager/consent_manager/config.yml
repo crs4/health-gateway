@@ -5,6 +5,7 @@ django:
   port: 8002
   timezone: Europe/Rome
   database:
+    engine: sqlite3
     name: ../consent_manager_db.sqlite3
 
 saml:
