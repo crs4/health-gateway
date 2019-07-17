@@ -12,6 +12,9 @@ django:
     host: mysql
     port: 3306
 
+logging:
+  level: DEBUG
+
 saml:
   service: tscns
   idp_url: https://tscns/idp/shibboleth

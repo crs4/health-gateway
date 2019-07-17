@@ -8,6 +8,9 @@ django:
     engine: sqlite3
     name: ../hgw_backend_db.sqlite3
 
+logging:
+  level: DEBUG
+
 kafka:
   uri: kafka:9093
   ssl: true

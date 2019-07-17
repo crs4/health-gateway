@@ -12,6 +12,9 @@ django:
     host: mysql
     port: 3306
 
+logging:
+  level: DEBUG
+
 kafka:
   uri: kafka:9092
   ssl: false

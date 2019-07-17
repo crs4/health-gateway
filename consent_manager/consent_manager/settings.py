@@ -59,6 +59,7 @@ ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
 HOSTNAME = ALLOWED_HOSTS[0]
 
 DEBUG = cfg['django']['debug']
+LOG_LEVEL = cfg['logging']['level']
 
 ALLOWED_HOSTS = ['*']
 

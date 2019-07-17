@@ -25,7 +25,7 @@ from hgw_frontend.models import Channel, ConsentConfirmation, Destination
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
 
-logger = get_logger(__file__)
+logger = get_logger('consent_manager_notification_consumer')
 
 
 class FAILED_REASON():

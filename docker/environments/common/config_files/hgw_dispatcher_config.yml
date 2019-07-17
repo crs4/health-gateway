@@ -1,3 +1,6 @@
+logging:
+  level: DEBUG
+
 hgw_frontend:
   uri: https://hgwfrontend:8000
   client_id: VCDkhstCfeJUP3uJMWusiOrA0LkVe4rJWy7WQDHO

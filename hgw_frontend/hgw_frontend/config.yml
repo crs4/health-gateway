@@ -9,6 +9,9 @@ django:
     engine: sqlite3
     name: ../hgw_frontend_db.sqlite3
 
+logging:
+  level: DEBUG
+
 saml:
   service: tscns
   idp_url: https://tscns/idp/shibboleth

@@ -37,14 +37,6 @@ from hgw_common.messaging.sender import create_sender
 from hgw_common.messaging.serializer import RawSerializer
 from hgw_common.messaging.deserializer import RawDeserializer
 
-logger = logging.getLogger('dispatcher')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
-
-
 def get_path(base_path, file_path):
     return file_path if os.path.isabs(file_path) else os.path.join(base_path, file_path)
 
@@ -67,6 +59,14 @@ for cf in _CONF_FILES_PATH:
         break
 if cfg is None:
     sys.exit("Config file not found")
+
+logger = logging.getLogger('dispatcher')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(cfg['logging']['level'])
+
 
 BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 

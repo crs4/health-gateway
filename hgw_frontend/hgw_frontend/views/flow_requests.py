@@ -255,7 +255,7 @@ def _create_consents(flow_request, destination_endpoint_callback_url, user):
             'start_validity': flow_request.start_validity.strftime(TIME_FORMAT),
             'expire_validity': flow_request.expire_validity.strftime(TIME_FORMAT)
         }
-        logger.debug("Creating consent with data %s", consent_data)
+        logger.info("Creating consent with data %s", consent_data)
         res = oauth_consent_session.post('{}/v1/consents/'.format(CONSENT_MANAGER_URI), json=consent_data)
         if res is not None:
             json_res = res.json()
@@ -265,10 +265,10 @@ def _create_consents(flow_request, destination_endpoint_callback_url, user):
                                                    destination_endpoint_callback_url=destination_endpoint_callback_url)
                 confirm_ids.append(json_res['confirm_id'])
             else:
-                logger.debug('Consent not created. Response is: %s, %s', res.status_code, res.content)
+                logger.error('Consent not created. Response is: %s, %s', res.status_code, res.content)
         else:
             connection_errors += 1
-            logger.debug('Consent not created. Error occurred contacting the consent manager')
+            logger.error('Consent not created. Error occurred contacting the consent manager')
     if not confirm_ids:
         return confirm_ids, ERRORS_MESSAGE['ALL_CONSENTS_ALREADY_CREATED']
     return confirm_ids, ""

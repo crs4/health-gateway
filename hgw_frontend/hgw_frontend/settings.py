@@ -53,12 +53,11 @@ SECRET_KEY = cfg['django']['secret_key']
 
 BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
-
 ALLOWED_HOSTS = cfg['django']['hostname'].split(',')
 HOSTNAME = ALLOWED_HOSTS[0]
 
 DEBUG = cfg['django']['debug']
-
+LOG_LEVEL = cfg['logging']['level']
 
 MAX_API_VERSION = 1
 

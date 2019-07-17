@@ -12,6 +12,9 @@ django:
     host: mysql
     port: 3306
 
+logging:
+  level: DEBUG
+
 saml:
   service: spid
   idp_url: https://spid-testenv-identityserver:9443/samlsso

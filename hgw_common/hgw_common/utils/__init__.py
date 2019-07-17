@@ -76,7 +76,7 @@ def get_logger(logger_name):
     """
     Create, configure and returns a logger
     """
-    level = logging.DEBUG if settings.DEBUG is True else logging.INFO
+    level = settings.LOG_LEVEL
     logger = logging.getLogger(logger_name)
     fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handlers = [logging.StreamHandler()]

@@ -34,10 +34,10 @@ fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handlers = [logging.StreamHandler()]
 
 for handler in handlers:
-    handler.setLevel(logging.INFO)
+    handler.setLevel(logging.DEBUG)
     handler.setFormatter(fmt)
     logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class GenericReceiver():
