@@ -75,7 +75,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'hgw_common',
     'hgw_frontend',
-    'drf_yasg'
 ]
 
 if 'port' in cfg['django']:

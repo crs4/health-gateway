@@ -8,7 +8,6 @@ requests_oauthlib==0.8.0
 kafka_python==1.4.4
 pycryptodomex==3.4.7
 coreapi==2.3.3
-drf_yasg
 PyYAML==5.1.1
 djangosaml2==0.16.10
 psycopg2==2.8.2

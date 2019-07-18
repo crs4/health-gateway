@@ -20,25 +20,11 @@ from django.conf.urls import url, include
 from django.conf.urls.static import static
 from django.contrib import admin
 
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from consent_manager import settings, views
 from gui import views as fr_views
 from hgw_common.settings import VERSION_REGEX
-
-
-schema_view = get_schema_view(
-   openapi.Info(
-      title='Consent Manager API',
-      default_version='v1',
-      description='REST API of the Consent Manager',
-      contact=openapi.Contact(email="vittorio.meloni@crs4.it"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
-)
 
 
 urlpatterns = [
@@ -47,8 +33,6 @@ urlpatterns = [
     url(r'^logout/$', fr_views.perform_logout),
     url(r'^admin/', admin.site.urls),
     url(r'^saml2/', include('djangosaml2.urls')),
-    url(r'^swagger(?P<format>.json|.yaml)$', schema_view.without_ui(cache_timeout=None), name='schema-json'),
-    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=None), name='schema-swagger-consent_manager'),
     url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
     url(r'^confirm_consents/$', views.confirm_consent),

@@ -78,7 +78,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'hgw_common',
     'corsheaders',
-    'drf_yasg',
     'webpack_loader',
     'consent_manager',
     'gui'
