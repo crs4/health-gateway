@@ -49,7 +49,7 @@ SECRET_KEY = cfg['django']['secret_key']
 BASE_CONF_DIR = os.path.dirname(os.path.abspath(_conf_file))
 
 DEBUG = True
-
+LOG_LEVEL = 'DEBUG'
 HOSTNAME = cfg['django']['hostname']
 
 ALLOWED_HOSTS = [HOSTNAME]

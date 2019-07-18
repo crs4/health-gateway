@@ -81,17 +81,16 @@ class OAuth2SessionProxy(object):
         """
         try:
             logger.debug('Performing request with method %s to %s', method, url)
-            if method == 'POST':
-                res = self._session.post(url, **kwargs)
-            else:
-                res = self._session.get(url, **kwargs)
+            meth = getattr(self._session, method.lower())
+            res = meth(url, **kwargs)            
             if res.status_code == 401:
                 raise TokenExpiredError
         except TokenExpiredError:
             logger.debug('Token expired. Getting a new one')
             self._fetch_token(self._session)
             logger.debug('Retrying to perform the request')
-            res = self._session.get(url)
+            meth = getattr(self._session, method.lower())
+            res = meth(url, **kwargs)
         except RequestsConnectionError:
             logger.debug('Connection error performing %s on %s', method, url)
             res = None

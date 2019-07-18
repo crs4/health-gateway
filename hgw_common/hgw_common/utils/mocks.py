@@ -40,7 +40,8 @@ class MockOAuth2Session(MagicMock):
         super(MockOAuth2Session, self).__init__(*args, **kwargs)
         self.token = None
         self.fetch_token = Mock(side_effect=self._fetch_token)
-        self.get = Mock(side_effect=self._get)
+        self.get = Mock(side_effect=self._request)
+        self.post = Mock(side_effect=self._request)
         self._get_counter = 0
 
     def _fetch_token(self, **kwargs):
@@ -56,7 +57,7 @@ class MockOAuth2Session(MagicMock):
         else:
             raise self.RAISES()
 
-    def _get(self, url, *args, **kwargs):
+    def _request(self, url, *args, **kwargs):
         res = self.RESPONSES[self._get_counter % len(self.RESPONSES)]
         self._get_counter += 1
 

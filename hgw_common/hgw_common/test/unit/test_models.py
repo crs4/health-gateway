@@ -81,37 +81,73 @@ class OAuthProxyTest(TestCase):
             self.assertEqual(AccessToken.objects.count(), 1)
             self.assertEqual(first_token, second_token, third_token)
 
-    def test_access_token_refreshed_for_401_response(self):
+    def test_access_token_refreshed_for_401_response_with_get_method(self):
         """
         Tests that, when the response is 401 (Unauthorized), another token is created and the call is perfomed again
         """
         with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
             MockOAuth2Session.RESPONSES = [401]
             proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
-            m = proxy._session
-            first_token = m.token['access_token']
+            session = proxy._session
+            first_token = session.token['access_token']
             proxy.get("/fake_url/1/")
-            second_token = m.token['access_token']
-            self.assertEqual(len(m.get.call_args_list), 2)  # Number of calls
-            self.assertEqual(len(m.fetch_token.call_args_list), 2)  # Number of calls
-            m.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
+            second_token = session.token['access_token']
+            self.assertEqual(len(session.get.call_args_list), 2)  # Number of calls
+            self.assertEqual(len(session.fetch_token.call_args_list), 2)  # Number of calls
+            session.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
+            self.assertEqual(AccessToken.objects.count(), 1)
+            self.assertNotEquals(first_token, second_token)
+    
+    def test_access_token_refreshed_for_401_response_with_post_method(self):
+        """
+        Tests that, when the response is 401 (Unauthorized), another token is created and the call is perfomed again
+        """
+        with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
+            MockOAuth2Session.RESPONSES = [401]
+            proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
+            session = proxy._session
+            first_token = session.token['access_token']
+            proxy.post("/fake_url/1/")
+            second_token = session.token['access_token']
+            self.assertEqual(len(session.post.call_args_list), 2)  # Number of calls
+            self.assertEqual(len(session.fetch_token.call_args_list), 2)  # Number of calls
+            session.post.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
             self.assertEqual(AccessToken.objects.count(), 1)
             self.assertNotEquals(first_token, second_token)
 
-    def test_access_token_refreshed_for_token_expired(self):
+    def test_access_token_refreshed_for_token_expired_with_get_method(self):
         """
         Tests that, when the response is 401 (Unauthorized), another token is created and the call is perfomed again
         """
         with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
             MockOAuth2Session.RESPONSES = [TokenExpiredError(), 200]
             proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
-            m = proxy._session
-            first_token = m.token['access_token']
+            session = proxy._session
+            first_token = session.token['access_token']
             # m.token['expires_at'] = m.token['expires_at'] - 36001
             proxy.get("/fake_url/1/")
-            second_token = m.token['access_token']
-            self.assertEqual(len(m.get.call_args_list), 2)  # Number of calls
-            self.assertEqual(len(m.fetch_token.call_args_list), 2)  # Number of calls
-            m.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
+            second_token = session.token['access_token']
+            self.assertEqual(len(session.get.call_args_list), 2)  # Number of calls
+            self.assertEqual(len(session.fetch_token.call_args_list), 2)  # Number of calls
+            session.get.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
+            self.assertEqual(AccessToken.objects.count(), 1)
+            self.assertNotEquals(first_token, second_token)
+
+
+    def test_access_token_refreshed_for_token_expired_with_post_method(self):
+        """
+        Tests that, when the response is 401 (Unauthorized), another token is created and the call is perfomed again
+        """
+        with patch('hgw_common.models.OAuth2Session', MockOAuth2Session):
+            MockOAuth2Session.RESPONSES = [TokenExpiredError(), 200]
+            proxy = OAuth2SessionProxy(self.service_url, self.client_id, self.client_secret)
+            session = proxy._session
+            first_token = session.token['access_token']
+            # m.token['expires_at'] = m.token['expires_at'] - 36001
+            proxy.post("/fake_url/1/")
+            second_token = session.token['access_token']
+            self.assertEqual(len(session.post.call_args_list), 2)  # Number of calls
+            self.assertEqual(len(session.fetch_token.call_args_list), 2)  # Number of calls
+            session.post.assert_has_calls([call('/fake_url/1/'), call('/fake_url/1/')])
             self.assertEqual(AccessToken.objects.count(), 1)
             self.assertNotEquals(first_token, second_token)

@@ -62,7 +62,7 @@ KAFKA_CLIENT_KEY = getattr(settings, 'KAFKA_CLIENT_KEY',
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+LOG_LEVEL = 'DEBUG'
 # TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'destinationmockup']

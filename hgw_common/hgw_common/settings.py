@@ -19,6 +19,7 @@
 from django.conf import settings
 
 SECRET_KEY = '1'
+LOG_LEVEL = 'DEBUG'
 MAX_API_VERSION = getattr(settings, 'MAX_API_VERSION', 1)
 VERSION_REGEX = 'v{}'.format('1' if MAX_API_VERSION == 1 else '[1-{}]'.format(MAX_API_VERSION))
 CUSTOM_READ_SCOPES = getattr(settings, 'CUSTOM_READ_SCOPES', [])
