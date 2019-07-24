@@ -86,7 +86,8 @@ class Channel(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
 
     def __str__(self):
-        return "{}: {} - {} - {}".format(self.channel_id, self.flow_request.destination.name, self.source.name, self.status)
+        return "{}: {} - {} - {} - {}".format(self.channel_id, self.flow_request.person_id,
+                                              self.flow_request.destination.name, self.source.name, self.status)
 
     class Meta:
         unique_together = ('flow_request', 'source')
