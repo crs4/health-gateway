@@ -5,12 +5,8 @@ django:
   port: 8003
   timezone: Europe/Rome
   database:
-    engine: mysql
-    name: hgwbackend
-    user: hgwuser
-    password: hgwpwd
-    host: mysql
-    port: 3306
+    engine: sqlite3
+    name: /container/devservice/hgw_backend_db.sqlite3
 
 logging:
   level: DEBUG

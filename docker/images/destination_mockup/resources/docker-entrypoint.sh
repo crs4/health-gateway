@@ -16,25 +16,44 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# It checks if there are files in the development directory (1 because ls -l print at least the number of files)
 if [ `ls -l ${DEV_DJANGO_DIR} | wc -l` == 1 ]; then
     echo "USING PROD DIR"
     export BASE_SERVICE_DIR=${DJANGO_DIR}
-
-    cd ${BASE_SERVICE_DIR}
-
-    INITIALIZED="/container/initialized"
-
-    if [ ! -e "$INITIALIZED" ]; then
-        python3 manage.py migrate
-        touch ${INITIALIZED}
-
-    fi
+    USER=gunicorn
 else
     echo "USING DEV DIR"
     export BASE_SERVICE_DIR=${DEV_DJANGO_DIR}
+    USER=root
+fi
 
-    cd ${BASE_SERVICE_DIR}
+cd ${BASE_SERVICE_DIR}
+
+INITIALIZED="/container/initialized"
+
+if [ ! -e "$INITIALIZED" ]; then
+    python3 manage.py migrate
+    FIXTURES_DIR=/container/fixtures
+
+    if [ -d ${FIXTURES_DIR} ]; then
+        if [ -z ${ENVIRONMENT} ] || [ "${ENVIRONMENT}" == "DEVELOPMENT"  ]; then
+            python3 manage.py loaddata ${FIXTURES_DIR}/development_data.json
+        elif [[ "${ENVIRONMENT}" == "STAGE" ]]; then
+            python3 manage.py loaddata ${FIXTURES_DIR}/stage_data.json
+        elif [[ "${ENVIRONMENT}" == "PRODUCTION" ]]; then
+            python3 manage.py loaddata ${FIXTURES_DIR}/production_data.json
+        fi
+    fi
+
+    if [[ ! -z ${TEST} ]]; then
+        TEST_FIXTURES_DIR=/container/test_fixtures
+        if [ -d ${TEST_FIXTURES_DIR} ]; then
+            for fixture in `ls ${TEST_FIXTURES_DIR}/*.json`; do
+                python3 manage.py loaddata ${fixture}
+            done
+        fi
+    fi
+
+    touch ${INITIALIZED}
 fi
 
 CONSUMER_TYPE=$1

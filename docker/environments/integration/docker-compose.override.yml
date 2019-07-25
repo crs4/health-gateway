@@ -1,24 +1,24 @@
 version: '3.0'
 services:
-  kafka_destination_mockup:
-    image: crs4/destination_mockup:latest
-    depends_on:
-      - kafka
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh", "kafka"]
-    environment:
-      - HTTP_PORT=8001
-      - DJANGO_APP_NAME=destination_mockup
-      - TZ=CET
-    ports:
-      - 8001:8001
-    volumes:
-      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
-      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
-      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../destination_mockup/:/container/devservice/
-      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
-      - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
-      - ../../../certs/:/container/certs/
+  # kafka_destination_mockup:
+  #   image: crs4/destination_mockup:latest
+  #   depends_on:
+  #     - kafka
+  #   entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh", "kafka"]
+  #   environment:
+  #     - HTTP_PORT=8001
+  #     - DJANGO_APP_NAME=destination_mockup
+  #     - TZ=CET
+  #   ports:
+  #     - 8001:8001
+  #   volumes:
+  #     - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+  #     - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+  #     - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+  #     - ../../../destination_mockup/:/container/devservice/
+  #     - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
+  #     - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
+  #     - ../../../certs/:/container/certs/
 
   rest_destination_mockup:
     image: crs4/destination_mockup:latest
