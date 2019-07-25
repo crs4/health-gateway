@@ -59,4 +59,4 @@ for service in hgwbackend hgwdispatcher hgwfrontend consentmanager ${SERVICES}; 
     ./generate_kafka_client_certificates.sh ${service}
 done
 
-mv ca ${OUTPUT_DIR}
+mv ca/* ${OUTPUT_DIR}
