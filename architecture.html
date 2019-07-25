@@ -212,7 +212,7 @@ to the Channels</li>
 of their data from a Source.</p>
 <blockquote class="last">
 <div><ul>
-<li><p class="first"><strong>Destination Endpoint</strong>: it is a module of the Destination
+<li><p class="first"><strong>Destination Endpoint (DE)</strong>: it is a module of the Destination
 enabling it to receive the data from the authorized Sources.
 It is composed of the following subcomponents:</p>
 <blockquote>
@@ -236,8 +236,8 @@ receives the authorized data from the Sources.</li>
 the person to release a set of them to Destinations.</p>
 <blockquote class="last">
 <div><ul>
-<li><p class="first"><strong>Source Endpoint</strong>: it is a module of the Source enabling it
-to send the data to the authorized
+<li><p class="first"><strong>Source Endpoint (SE)</strong>: it is a module of the Source enabling
+it to send the data to the authorized
 Destinations. It is composed of the following subcomponents:</p>
 <blockquote>
 <div><ul class="simple">
@@ -255,14 +255,14 @@ which retrieve the authorized data from the Source.</li>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><strong>Health Gateway (HGW)</strong></dt>
+<dt><strong>Health Gateway (HG)</strong></dt>
 <dd><p class="first">The Health Gateway acts as an intermediary to allow a person to
 authorize the exchange of his/her data between the Destination
 and the Source. It also handles data routing from Sources to
 Destinations. It is composed of three sub-components:</p>
 <ul class="last simple">
 <li><dl class="first docutils">
-<dt>Health Gateway Frontend</dt>
+<dt>Health Gateway Frontend (HGF)</dt>
 <dd>it manages the communications with the Destinations; it
 exposes an API which enables the person to open,
 authorize, modify or delete a data flow, redirecting the
@@ -275,7 +275,7 @@ requested by the person (as data flows opening, modification,…);</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>Health Gateway Backend</dt>
+<dt>Health Gateway Backend (HGB)</dt>
 <dd>it manages the communications with the Sources; it receives
 the authorized requests for operations to be performed on data
 flows (as data flows opening, modification,…) from the Health
@@ -283,7 +283,7 @@ Gateway Frontend and forwards them to the Source Endpoint;</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt>Health Gateway Dispatcher</dt>
+<dt>Health Gateway Dispatcher (HGD)</dt>
 <dd>it handles data dispatching from Sources to Destinations.</dd>
 </dl>
 </li>
@@ -292,8 +292,8 @@ Gateway Frontend and forwards them to the Source Endpoint;</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><strong>Consent Manager</strong></dt>
-<dd><p class="first last">the Consent Manager is the system that handles the authorization
+<dt><strong>Consent Manager (CM)</strong></dt>
+<dd><p class="first last">it is the system that handles the authorization
 process. It informs the person about the data that will be
 exchanged between a Destination and the Sources and allows
 her/him to accept or not the data transfer. It also handles
@@ -302,7 +302,7 @@ authorization for modification or revocation.</p>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><strong>Identity Provider</strong>:</dt>
+<dt><strong>Identity Provider (IDP)</strong>:</dt>
 <dd><p class="first last">the Identity Provider identifies the person and provides their
 data to permit the Source to match its persons data to the person
 the data flow is related to.</p>
@@ -349,7 +349,7 @@ channel Profile, from a Source to a Destination.</dd>
 <li><dl class="first docutils">
 <dt><strong>Connector</strong></dt>
 <dd>a Connector is an object, associated to a Channel,
-created through a request sent by the Health Gateway Backend to the
+created through a request sent by the HGB to the
 Source Endpoint. A Connector enables the delivering of a person’s data,
 according to the Profile and Destination of the associated Channel.
 Its life-cycle corresponds to the one of the Channel associated: when
@@ -364,13 +364,11 @@ it expires the Source Endpoint stops sending the related data.</dd>
 <div class="section" id="preconditions">
 <h3>Preconditions<a class="headerlink" href="#preconditions" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>The Destinations are registered as possible data targets in the Consent
-Manager</li>
-<li>The Sources are registered as possible data origin in the Consent Manager</li>
-<li>The Health Gateway and the Consent Manager are connected to the same Identity
-Provider which is recognized by the Sources as a trusted person demographics
-owner</li>
-<li>The Destinations, the Sources and the Consent Manager share a set of valid
+<li>The Destinations are registered as possible data targets in the CM</li>
+<li>The Sources are registered as possible data origin in the CM</li>
+<li>The HG and the CM are connected to the same IDP which is recognized
+by the Sources as a trusted person demographics owner</li>
+<li>The Destinations, the Sources and the CM share a set of valid
 Profiles among which the person can choose to decide which data she/he wants
 to share</li>
 </ul>
@@ -381,20 +379,21 @@ to share</li>
 Destination user interface, selects the data Profiles and starts the
 process to authorize the Destination to receive their clinical data.
 The Destination inserts a Flow Request (about the Profile requested)
-in the Health Gateway Frontend, which redirects the user to the Identity
+in the HGF, which redirects the user to the Identity
 Provider, to perform the authentication. After that, the HGW instantiates
 the Channels (one per known Source Endpoint), creates the corresponding
-Consents into to the Consent Manager and redirects the user to the Consent Manager
-The Consent Manager shows the Consents corresponding to the Profile
+Consents into to the CM and redirects the user to the
+CM
+The CM shows the Consents corresponding to the Profile
 initially chosen and the user selects the set of authorizations they
-want to confirm and the list of data Sources. The Consent Manager
-activates the Consents and informs the Health Gateway Frontend which
+want to confirm and the list of data Sources. The CM
+activates the Consents and informs the HGF which
 activates the Channels and redirects the person’s User Agent to the
-Destination. Meanwhile the Health Gateway Frontend sends a request to the
-Health Gateway Backend to open Connectors in the Source Endpoints. Before
-opening a Connector, the Source Endpoint must query the Consent Manager in order to
-ensure that there is an active consent for the Connector’s associated
-Channel. If the Consent Manager confirms there is an active Consent
+Destination. Meanwhile, the HGF sends a request to the
+HGB to open Connectors in the Source Endpoints. Before
+opening a Connector, the Source Endpoint must query the CM in
+order to ensure that there is an active consent for the Connector’s associated
+Channel. If the CM confirms there is an active Consent
 associated to the Channel, the data flow can begin, according to the
 Consent parameters (data profile, duration, …).</p>
 </div>
@@ -433,8 +432,40 @@ message flow still has a valid consent.</p>
 <h3>Control Layer<a class="headerlink" href="#control-layer" title="Permalink to this headline">¶</a></h3>
 <p>The <strong>Control Layer</strong> concerns all the operations to fulfill to create and
 activate the Channels between a Destination and one or more available
-Sources for a person. It is based on REST communications between the
-components of the system.</p>
+Sources for a person. It is based on communications between the
+components of the system which is illustrated in the figure below:</p>
+<img alt="_images/component_communications.svg" src="_images/component_communications.svg" /><p>As we can see we have two type of communications:</p>
+<ul>
+<li><p class="first"><strong>REST communication</strong>: it means that the services exposes REST endpoints
+to perform some actions. This kind of communication is used for:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Flow Request creation from the DE to the HGF</li>
+<li>Consents creation from HGF to CM</li>
+<li>Connector creation from the HGB to a SE</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>Messaging</strong>: when an operation is asynchronous the Control Layer uses
+messaging with a message broker. Kafka is the broker of choice, but others
+can be used.
+This type of communications is used for:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Consents notification: used by the CM to notify to the HGF
+changes about the Consents status</li>
+<li>Channels notification: used by the HGF to notify to the HGB
+changes about Channels</li>
+<li>Connector notification: used by the HGB to notify to the HGF
+changes about Connector</li>
+<li>Source notification: used by the HGB to synchronize Sources
+database in HGF. Infact, the master of the Sources’ database is
+the HGB, but the HGF uses its own copy with fewer details about
+the Sources.</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
 <div class="section" id="destination-and-source-enrollment">
 <h4>Destination and Source enrollment<a class="headerlink" href="#destination-and-source-enrollment" title="Permalink to this headline">¶</a></h4>
 <p>The Health Gateway can interact only with known Destinations and Sources.
@@ -499,74 +530,91 @@ the Sources needs a them to connect to Kafka</dd>
 </div>
 <div class="section" id="channels-creation">
 <h4>Channels Creation<a class="headerlink" href="#channels-creation" title="Permalink to this headline">¶</a></h4>
-<p>The following diagram describes the process of Channels creation for a
-Destination for a person (i.e. it describes the Control Layer)</p>
-<img alt="_images/channel_instantiation.svg" src="_images/channel_instantiation.svg" /><p>The operations are the following:</p>
+<p>The process of Channel(s) creation is performed in two phases, the first
+involving the User and the secondo asynchronously</p>
+<p>The following sequence diagram describes the first phase</p>
+<img alt="_images/channel_instantiation_1.svg" src="_images/channel_instantiation_1.svg" /><p>The operations are the following:</p>
 <blockquote>
 <div><ul class="simple">
-<li>The person enters the Destination web page with a User Agent and starts
+<li>The person enters the Destination web page with a User and starts
 the process to authorize the Destination to get their clinical data</li>
-<li>The Destination inserts a Flow Request in the HGW Frontend,
-specifying the Profile, a callback url, which is a url where the
-User Agent will be redirected at the end of the process, and
-the flow_id which is an identifier of the Flow Request
-created by the Destination.</li>
-<li>The HGW creates the Flow Request which stays in PENDING status until
-the user authorizes it. It returns to the Destination a process_id
-and a confirmation_id: the process_id is the identifier of the
-Flow Request in the HGW and it will be used as the identifier of the
-messages sent to the Destination belonging to the Channels created;
-the confirmation_id is a temporary ID that the Destination needs to
-include as parameter to the HGW Frontend confirmation URL to confirm
+<li>The Destination creates a Flow Request in the HGF,
+specifying the Profile, a <cite>callback_url</cite>, which is a url where the
+User will be redirected at the end of the process, and
+the <cite>flow_id</cite> which is an identifier of the Flow Request
+created by the Destination. It is possible to specify a subset of the
+Sources to be considered for the request.</li>
+<li>The HGF sets the Flow Request in PENDING status until
+the user authorizes it. It returns to the Destination a <cite>process_id</cite>
+and a <cite>confirmation_id</cite>: the <cite>process_id</cite> is the identifier of the
+Flow Request in the HGF and it will be used as the identifier of the
+messages sent to the Destination referring to the Channels created;
+the <cite>confirmation_id</cite> is a temporary ID that the Destination needs to
+include as parameter to the HGF confirmation URL to confirm
 the request.</li>
-<li>The Destination redirects the User Agent to the HGW Frontend
+<li>The Destination redirects the User to the HGF
 confirmation url specifying the confirmation ID.</li>
-<li>The HGW Frontend redirects the User Agent to the Identity Provider
+<li>The HGF redirects the User to the IDP
 service to perform the authentication</li>
-<li>The Identity Provider authenticates the person and sends to the
-HGW their demographics</li>
-<li>The HGW Frontend gets the list of Sources from the Health Gateway
-Backend.</li>
-<li>The HGW Frontend creates a Channel for every Source and a
-corresponding Consent into the Consent Manager.
-The Channels and the Consents are set in PENDING status.</li>
-<li>The Consent Manager returns a temporary confirmation_id to be sent to
+<li>The IDP authenticates the person and sends to the
+HGF their demographics</li>
+<li>The HGF creates a Channel for every Source and for every
+Channel calls the CM to create a corresponding Consent.
+The Channel is set to <code class="docutils literal notranslate"><span class="pre">CONSENT_REQUESTED</span> <span class="pre">(CR)</span></code> status, while the
+Consent is set to <code class="docutils literal notranslate"><span class="pre">PENDING</span></code> status by the CM</li>
+<li>The CM returns a temporary <cite>confirmation_id</cite> to be sent to
 its confirmation url,
 in a similar way as done for the Flow Request confirmation.</li>
-<li>The Health Gateway Frontend redirects the User Agent to the Consent
+<li>The HGF redirects the User to the Consent
 Manager confirmation url.</li>
-<li>The Consent Manager redirects the User Agent again to the Identity
-Provider to identify the person. This time the person doesn’t need
+<li>The CM redirects the User again to the IDP
+to identify the person. This time the person doesn’t need
 to perform the login since they are already logged in.</li>
-<li>The Consent Manager shows the Consents that the user has to confirm
+<li>The CM shows the Consents that the user has to confirm
 and the user selects the set of authorizations they want to
 confirm and the list of Sources to authorize.</li>
-<li>The Consent Manager sets the Channel to ACTIVE state and redirects
-the User Agent to the HGW Frontend
+<li>The CM sets the Consents to ACTIVE state and redirects
+the User to the HGF
 which redirects again to the Destination callback page</li>
 </ul>
-<p>At this point the Channel has not been completely established. In fact the
-Health Gateway has to inform the Source Endpoint of the creation of the
-Channel (i.e., it has to open a Connector into the Source Endpoint). This
-process follows the following steps:</p>
+<p>From User’s point of view the process is done, but at this moment,
+the Channel object is not ACTIVE (i.e., the clinical documents related
+to the Channel are not sent from the Source to the Destination).
+In fact only the corresponding Consent
+has been set to ACTIVE and the Source has not been notified about the
+Channel creation. To complete the Channel activation, the
+asynchronous communication among the CM, the HGF and the HGB starts.
+The following sequence diagram describes the second phase</p>
+<img alt="_images/channel_instantiation_2.svg" src="_images/channel_instantiation_2.svg" /><p>The operation are the following:</p>
 <ul class="simple">
-<li>The Health Gateway creates the Connector into the Source Endpoint</li>
-<li>The Source Endpoint queries the Consent Manager to check if there
-actually is a Consent related to the Connector</li>
-<li>If the Consent is present, the Source starts to send the data</li>
+<li>The CM sends a Consent Update message to the Health
+Gateway Frontend notifying that the Consent has been confirmed by
+the User</li>
+<li>The HGF sets the Channel’s status to
+<code class="docutils literal notranslate"><span class="pre">WAITING_SOURCE_NOTIFICATION</span> <span class="pre">(WS)</span></code>, which means that it is waiting that
+the Source is notified about the Channel creation event</li>
+<li>The HGF sends a message to the Health Gateway
+Backend with the data of the Channel</li>
+<li>The HGB receives the message and calls the REST endpoint
+of the SE to create a Connector.</li>
+<li>The SE, before accepting the Connector creation, queries the
+CM to check if there actually is an active Consent for the Connector</li>
+<li>If the operation is accomplished, the HGB send a message to the
+HGF, notifying that the Source has been connected correctly</li>
+<li>The HGF sets the Channel status to ACTIVE</li>
 </ul>
 </div></blockquote>
 </div>
 <div class="section" id="security">
 <h4>Security<a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h4>
 <p>The Control Layer is secured by using HTTPS connection for all the
-communications among the components. Also, the HGW Frontend and the
-Consent Manager are secured using OAuth2 client-credentials
+communications among the components. Also, the HGF and the
+CM are secured using OAuth2 client-credentials
 authentication (<a class="reference external" href="https://tools.ietf.org/html/rfc6749#section-4.4">https://tools.ietf.org/html/rfc6749#section-4.4</a>).
-This means that a Destination Endpoint has to obtain an OAuth2 access token,
+This means that a DE has to obtain an OAuth2 access token,
 before continuing the process of Flow Request creation.
 The Source Endpoint is also required to implement an authentication
-mechanism for the Health Gateway, for example using OAuth2 or
+mechanism for the HGB, for example using OAuth2 or
 client certificates.</p>
 </div>
 </div>
@@ -588,7 +636,7 @@ sends data to its topic while a Destination consumes data from
 its topic.</li>
 <li>Destinations can decide to consume its data in two ways:
 by implementing a Kafka Consumer for its topic or by using
-a REST API exposed by the HGW Frontend. The two options
+a REST API exposed by the HGF. The two options
 are mutually exclusive.</li>
 <li>The Destinations doesn’t know the Sources from which the data come
 from, unless the Source itself inserts the information in the
@@ -596,12 +644,12 @@ data payload.</li>
 <li>The Sources include the channel_id as the Kafka message key to allow
 the HGW dispatcher to route the message
 to the correct Destination.</li>
-<li>The HGW Dispatcher uses the process_id as the Kafka message key to
+<li>The HGD uses the process_id as the Kafka message key to
 allow the Destination to know to which person assign the message.</li>
-<li>The HGW Dispatcher is unaware of the data that transit between a
+<li>The HGD is unaware of the data that transit between a
 Source and a Destination, since the payload of the message is
 encrypted by the Source and only the Destination can decrypt it.
-The only information that HGW Dispatcher knows is the Destination
+The only information that HGD knows is the Destination
 to which route the message.</li>
 </ul>
 </div></blockquote>
@@ -617,22 +665,22 @@ to which route the message.</li>
 (see <a class="reference internal" href="#data-encryption-label"><span class="std std-ref">Data Encryption</span></a> for the details)</li>
 <li>The Source sends a message to its topic (i.e., the topic with name
 <cite>source_id</cite>) specifying the <cite>channel_id</cite> as the key</li>
-<li>The HGW Dispatcher consume the message from the Source topic and
+<li>The HGD consume the message from the Source topic and
 gets the <cite>channel_id</cite>.</li>
-<li>The HGW Dispatcher queries the Consent Manager for the status of
+<li>The HGD queries the CM for the status of
 the Channel</li>
-<li>If the Channel is active the HGW Dispatcher queries the HGW
+<li>If the Channel is active the HGD queries the HGW
 Frontend for the <cite>process_id</cite> related to the <cite>channel_id</cite></li>
-<li>The HGW Dispatcher sends a message to the Destination’s topic
+<li>The HGD sends a message to the Destination’s topic
 (i.e., the topic with name <cite>destination_id</cite>) specifying the
 <cite>process_id</cite> as the message key</li>
-<li>The HGW Dispatcher sends a message to the Destination’s topic
+<li>The HGD sends a message to the Destination’s topic
 (i.e., the topic with name destination_id)
 specifying the process_id as the message key.
 The Destination gets the message from its topic and decrypts it
 with its private key. It can consume messages directly from its topic
 implementing a Kafka Consumer or it can use the REST API of the
-HGW Frontend.</li>
+HGF.</li>
 </ol>
 </div></blockquote>
 </div>
@@ -656,11 +704,11 @@ and Access Control List to the topics. When a Destination is configured to
 consume messages as Kafka Consumer, the Kafka ACL permits only the
 Destination’s Consumer to access its topic. In the case
 of Destination is configured to use a REST API, the ACL is configured
-to give access to the topic just to the HGW Frontend. In this case it is
+to give access to the topic just to the HGF. In this case it is
 guaranteed that only the correct Destination can get the data by using
 the OAuth2 protocol: the REST API requires an OAuth2 access token,
 which is associated to the Destination and so to the topic,
-and so the HGW Frontend knows the correct topic to use when it
+and so the HGF knows the correct topic to use when it
 receives REST requests.</p>
 <p>The second level of encryption guarantees that the data that go through
 the HGW can be decrypted only from the correct Destination. During the
@@ -718,7 +766,7 @@ or not</p>
 </div>
 <div class="section" id="user-authentication">
 <h3>User authentication<a class="headerlink" href="#user-authentication" title="Permalink to this headline">¶</a></h3>
-<p>As explained before, the Health Gateway and the Consent Manager, delegate an
+<p>As explained before, the Health Gateway and the CM, delegate an
 external service for user authentication. In fact they are implemented as
 <a class="reference external" href="https://en.wikipedia.org/wiki/SAML_2.0">SAML2</a> Service Providers, so
 they can easily be configured to use all standard Identity Providers.
