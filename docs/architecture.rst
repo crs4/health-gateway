@@ -33,8 +33,8 @@ Main Components
         a Source is a system which holds person’s data and is authorized by
         the person to release a set of them to Destinations.
 
-            * **Source Endpoint (SE)**: it is a module of the Source enabling it
-              to send the data to the authorized
+            * **Source Endpoint (SE)**: it is a module of the Source enabling
+              it to send the data to the authorized
               Destinations. It is composed of the following subcomponents:
 
                 * **Source HGW API**: the module which interacts with the
@@ -196,14 +196,15 @@ As we can see we have two type of communications:
 
 *
     **REST communication**: it means that the services exposes REST endpoints
-    to perform some actions. This kinf of communication is used for:
+    to perform some actions. This kind of communication is used for:
 
-    *
-        Flow Request creation from the DE to the HGF
-    *
-        Consents creation from HGF to CM
-    *
-        Connector creation from the HGB to a SE
+        *
+            Flow Request creation from the DE to the HGF
+        *
+            Consents creation from HGF to CM
+        *
+            Connector creation from the HGB to a SE
+
 *
     **Messaging**: when an operation is asynchronous the Control Layer uses
     messaging with a message broker. Kafka is the broker of choice, but others
@@ -267,20 +268,22 @@ Sources will have:
 Channels Creation
 #################
 
-The following sequence diagram describes the process of Channels creation for a
-Destination for a person
+The process of Channel(s) creation is performed in two phases, the first
+involving the User and the secondo asynchronously
 
-.. image:: _static/channel_instantiation.svg
+The following sequence diagram describes the first phase
+
+.. image:: _static/channel_instantiation_1.svg
 
 The operations are the following:
 
     *
-        The person enters the Destination web page with a User Agent and starts
+        The person enters the Destination web page with a User and starts
         the process to authorize the Destination to get their clinical data
     *
         The Destination creates a Flow Request in the HGF,
         specifying the Profile, a `callback_url`, which is a url where the
-        User Agent will be redirected at the end of the process, and
+        User will be redirected at the end of the process, and
         the `flow_id` which is an identifier of the Flow Request
         created by the Destination. It is possible to specify a subset of the
         Sources to be considered for the request.
@@ -294,10 +297,10 @@ The operations are the following:
         include as parameter to the HGF confirmation URL to confirm
         the request.
     *
-        The Destination redirects the User Agent to the HGF
+        The Destination redirects the User to the HGF
         confirmation url specifying the confirmation ID.
     *
-        The HGF redirects the User Agent to the IDP
+        The HGF redirects the User to the IDP
         service to perform the authentication
     *
         The IDP authenticates the person and sends to the
@@ -305,17 +308,17 @@ The operations are the following:
     *
         The HGF creates a Channel for every Source and for every
         Channel calls the CM to create a corresponding Consent.
-        The Channel is set to ``CONSENT_REQUESTED`` status, while the
+        The Channel is set to ``CONSENT_REQUESTED (CR)`` status, while the
         Consent is set to ``PENDING`` status by the CM
     *
         The CM returns a temporary `confirmation_id` to be sent to
         its confirmation url,
         in a similar way as done for the Flow Request confirmation.
     *
-        The HGF redirects the User Agent to the Consent
+        The HGF redirects the User to the Consent
         Manager confirmation url.
     *
-        The CM redirects the User Agent again to the IDP
+        The CM redirects the User again to the IDP
         to identify the person. This time the person doesn’t need
         to perform the login since they are already logged in.
     *
@@ -324,14 +327,20 @@ The operations are the following:
         confirm and the list of Sources to authorize.
     *
         The CM sets the Consents to ACTIVE state and redirects
-        the User Agent to the HGF
+        the User to the HGF
         which redirects again to the Destination callback page
 
     From User's point of view the process is done, but at this moment,
-    the Channel object is not ACTIVE. In fact only the corresponding Consent
+    the Channel object is not ACTIVE (i.e., the clinical documents related
+    to the Channel are not sent from the Source to the Destination).
+    In fact only the corresponding Consent
     has been set to ACTIVE and the Source has not been notified about the
     Channel creation. To complete the Channel activation, the
     asynchronous communication among the CM, the HGF and the HGB starts.
+    The following sequence diagram describes the second phase
+
+    .. image:: _static/channel_instantiation_2.svg
+
     The operation are the following:
 
     *
@@ -340,7 +349,7 @@ The operations are the following:
         the User
     *
         The HGF sets the Channel's status to
-        WAITING_SOURCE_NOTIFICATION, which means that it is waiting that
+        ``WAITING_SOURCE_NOTIFICATION (WS)``, which means that it is waiting that
         the Source is notified about the Channel creation event
     *
         The HGF sends a message to the Health Gateway
