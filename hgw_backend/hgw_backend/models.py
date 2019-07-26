@@ -106,11 +106,14 @@ class OAuth2Authentication(models.Model):
     def _get_token(self):
         try:
             ac = AccessToken.objects.get(oauth2_authentication=self)
+            logger.debug("Found token in cache for the source")
         except AccessToken.DoesNotExist:
+            logger.debug("No token found in cache for the source")
             return None
         return ac.to_python()
 
     def _fetch_token(self, oauth_session):
+        logger.debug("Fetching a new token from the source")
         if self.basic_auth is True:
             auth = HTTPBasicAuth(self.auth_username, self.auth_password)
             oauth_session.fetch_token(token_url=self.token_url,
@@ -121,10 +124,12 @@ class OAuth2Authentication(models.Model):
             oauth_session.fetch_token(token_url=self.token_url,
                                       client_id=self.client_id,
                                       client_secret=self.client_secret)
-
+        if oauth_session.token is not None:
+            logger.debug("Token acquired")
         self._save_token(oauth_session.token)
 
     def _save_token(self, token_data):
+        logger.debug("Saving token in the cache db")
         new_token_data = {
             'access_token': token_data['access_token'],
             'token_type': token_data['token_type'],
@@ -154,7 +159,7 @@ class OAuth2Authentication(models.Model):
 
         return oauth_session
 
-    def create_connector(self, source, connector):
+    def create_connector(self, source, connector, count=0):
         try:
             session = self._get_oauth2_session()
         except (ConnectionError, InvalidClientError, MissingTokenError) as exc:
@@ -164,15 +169,17 @@ class OAuth2Authentication(models.Model):
             try:
                 logger.debug("Creating connector with data %s", connector)
                 res = session.post(source.url, json=connector)
+                logger.debug("Status code while opening connector: %s", res.status_code)
                 if res.status_code == 401:
                     raise TokenExpiredError
             except TokenExpiredError:
-                logger.debug("Token for the source expired. Getting a new one")
-                AccessToken.objects.get(oauth2_authentication=self).delete()
-                res = self.create_connector(source, connector)
-                # self._fetch_token(session)
-                # logger.debug("Creating connector with the new token")
-                # res = session.post(source.url, json=connector)
+                if count == 2:
+                    logger.debug("Source returned 401 for the second time. Failing connector opening")
+                    res = None
+                else:
+                    logger.debug("Token for the source expired. Getting a new one")
+                    AccessToken.objects.get(oauth2_authentication=self).delete()
+                    res = self.create_connector(source, connector, count=count+1)
             except ConnectionError:
                 logger.debug("Connection error creating the connector")
                 res = None
@@ -180,10 +187,14 @@ class OAuth2Authentication(models.Model):
                 logger.debug("Missing token for the source endpoint")
                 res = None
 
-        if res is not None and res.status_code != 201:
+        if res is not None and res.status_code == 201:
+            logger.debug("Connector created correctly")
+        elif res is not None:
             logger.debug("Error opening connector: %s with status code: %s", res.content, res.status_code)
-            return None
-        logger.debug("Connector created correctly")
+            res = None
+        else:
+            logger.debug("Error opening connector")
+            res = None
         return res
 
     def __str__(self):

@@ -4,24 +4,19 @@
 
 Health Gateway is a system that allows a citizen to authorize the tranfer of his/her clinical data from a Source to a Destination
 
-# Requirements
+# Run Health Gateway locally
 
-Health Gateway is mainly written using Python 3. To install Python requirements launch 
-
-```bash
-pip3 install -r requirements
-```
-
-To create certs from the scripts in  `certs` directory you will need openssl and keytool
-
-Finally to launch integration\_tests you will need `nmap` 
-
-# Get started
+To run Health Gateway locally you will need docker [https://www.docker.com/] and docker-compose.
+The development environment we'll run, with all the hgw services, one Destination and one Source.
+To run the HGW follow this steps
 
 1. Clone the repository
-2. Move into `certs` dir and generate all necessary certificates
-3. Move to `docker/environments/development` directory and launch `make build` and `make init_db_run` to run a 
-   developement environment
+2. Create the development certs:
+    1. move into certs/ dir and then follow one of the two steps
+        1. METHOD 1: run the script `generate_development.sh`. This will create a ca/ directory with all the      n  necessary files
+        2: METHOD 2: if you don't have bash (i.e., you're using Windows) you can build the docker images by running `docker build -t hgw_certs and .`
+    
+3. Move to `docker/environments/integration` directory and launch `make_run_with_tscns` to run all the services
 
 ## File host
 
