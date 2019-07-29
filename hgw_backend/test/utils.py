@@ -22,6 +22,8 @@ import cgi
 
 from hgw_common.utils.mocks import MockRequestHandler
 
+EXPIRED_CONSENT_CHANNEL = 'expired_consent'
+
 
 class MockSourceEndpointHandler(MockRequestHandler):
     WRITER_CLIENT_ID = 'writer'
@@ -62,7 +64,8 @@ class MockSourceEndpointHandler(MockRequestHandler):
             self._send_response(payload, status_code)
             return True
         elif self._path_match(self.CONNECTORS_PATTERN):
-            if 'expired' in self.headers['Authorization']:
+            data_string = self.rfile.read(int(self.headers['Content-Length']))
+            if EXPIRED_CONSENT_CHANNEL.encode('utf-8') in data_string or 'expired' in self.headers['Authorization']:
                 status_code = 401
                 payload = {'detail': 'Authentication credentials were not provided.'}
             else:

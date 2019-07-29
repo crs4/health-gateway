@@ -18,8 +18,6 @@ from traceback import format_exc
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import Http404, HttpResponse
-from kafka.errors import (KafkaError, KafkaTimeoutError,
-                          TopicAuthorizationFailedError)
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -31,8 +29,8 @@ from hgw_common.messaging.sender import create_sender
 from hgw_common.messaging.serializer import RawSerializer
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
+from hgw_common.utils import create_broker_parameters_from_settings, get_logger
 from hgw_common.utils.authorization import TokenHasResourceDetailedScope
-from hgw_common.utils import get_logger, create_broker_parameters_from_settings
 
 from .models import Source
 from .serializers import SourceSerializer

@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from test.utils import MockSourceEndpointHandler
+from test.utils import MockSourceEndpointHandler, EXPIRED_CONSENT_CHANNEL
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, client
@@ -53,6 +53,16 @@ CONNECTOR = {
     'person_identifier': PERSON_ID,
     'dest_public_key': DEST_PUBLIC_KEY,
     'channel_id': CHANNEL_MESSAGE['channel_id'],
+    'start_validity': '2017-10-23',
+    'expire_validity': '2018-10-23',
+}
+
+# Connector to test 
+EXPIRED_CONSENT_CONNECTOR = {
+    'profile': PROFILE,
+    'person_identifier': PERSON_ID,
+    'dest_public_key': DEST_PUBLIC_KEY,
+    'channel_id': EXPIRED_CONSENT_CHANNEL,
     'start_validity': '2017-10-23',
     'expire_validity': '2018-10-23',
 }
@@ -301,3 +311,16 @@ class TestConnectorCreation(TestCase):
             self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
             self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
                              {'channel_id': CONNECTOR['channel_id']})
+
+    def test_create_connector_max_retries_on_401(self):
+        """
+        Tests that, when the Source Endpoint keeps returning 401 when opening a connector,
+        the HGW retries max twice.
+        """
+        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            auth = OAuth2Authentication.objects.first()
+            self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+            source = self._get_source_from_auth_obj(auth)
+            res = source.create_connector(EXPIRED_CONSENT_CHANNEL)
+            self.assertIsNone(res)
+            MockKafkaProducer().send.assert_not_called()
