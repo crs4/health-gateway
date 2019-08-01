@@ -21,18 +21,20 @@ from datetime import datetime, timedelta
 
 from Cryptodome.PublicKey import RSA
 from dateutil.parser import parse
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from django.test import TestCase, client
-from mock import patch
+from mock import Mock, NonCallableMock, patch
 
 from hgw_common.cipher import Cipher
 from hgw_common.models import Profile
+from hgw_common.utils import ERRORS
 from hgw_common.utils.mocks import (MockMessage, get_free_port,
                                     start_mock_server)
 from hgw_frontend import ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, Destination, FlowRequest,
                                  RESTClient, Source)
-from hgw_frontend.serializers import SourceSerializer
 from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 
 from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, DEST_1_ID, DEST_1_NAME,
@@ -132,6 +134,16 @@ class TestFlowRequestAPI(TestCase):
         res = self.client.post('/oauth2/token/', data=params)
         access_token = res.json()['access_token']
         return {"Authorization": "Bearer {}".format(access_token)}
+
+    def _get_db_error_mock(self):
+        mock = NonCallableMock()
+        mock.objects = NonCallableMock()
+        mock.objects.all = Mock(side_effect=DatabaseError)
+        mock.objects.filter = Mock(side_effect=DatabaseError)
+        mock.objects.get = Mock(side_effect=DatabaseError)
+        mock.objects.create = Mock(side_effect=DatabaseError)
+        mock.objects.get_or_create = Mock(side_effect=DatabaseError)
+        return mock
 
     def test_oauth_flow_request_not_authorized(self):
         res = self.client.get('/v1/flow_requests/search/', content_type='application/json')
@@ -234,6 +246,48 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertDictEqual(res.json(), {'errors': ['not_found']})
 
+    def test_get_all_flow_requests_db_error(self):
+        """
+        Tests error 500 in case of an error with the db
+        """
+        # The flow requests are already present in test data
+        headers = self._get_oauth_header()
+        mock = self._get_db_error_mock()
+        with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
+            res = self.client.get('/v1/flow_requests/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+    def test_get_all_flow_requests_db_error_superclient(self):
+        """
+        Tests error 500 in case of an error with the db
+        """
+        # The flow requests are already present in test data
+        headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
+        mock = self._get_db_error_mock()
+        with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
+            res = self.client.get('/v1/flow_requests/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+    def test_get_one_flow_request_db_error(self):
+        mock = self._get_db_error_mock()
+        with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
+            mock.DoesNotExist = ObjectDoesNotExist
+            headers = self._get_oauth_header()
+            res = self.client.get('/v1/flow_requests/p_11111/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+    def test_get_one_flow_request_as_superuser_db_error(self):
+        mock = self._get_db_error_mock()
+        with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
+            mock.DoesNotExist = ObjectDoesNotExist
+            headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
+            res = self.client.get('/v1/flow_requests/p_11111/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_add_flow_request_with_no_sources(self):
         """
         Tests adding a flow request without specifying the sources.
@@ -255,6 +309,31 @@ class TestFlowRequestAPI(TestCase):
         flow_request_sources = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.all()
         all_sources = Source.objects.all()
         self.assertEqual(list(flow_request_sources), list(all_sources))
+
+    def test_add_flow_request_db_error(self):
+        """
+        Test the response in case of database error
+        """
+        mock = self._get_db_error_mock()
+        with patch('hgw_frontend.views.flow_requests.Source', mock):
+            for flow_request in (self.flow_request, self.flow_request_without_sources):
+                res = self._add_flow_request(flow_request=flow_request)
+                self.assertEqual(res.status_code, 500)
+                self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+        with patch('hgw_frontend.views.flow_requests.FlowRequest', mock) and \
+            patch('hgw_frontend.serializers.FlowRequest', mock):
+            mock.PENDING = 'PE'
+            for flow_request in (self.flow_request, self.flow_request_without_sources):
+                res = self._add_flow_request(flow_request=flow_request)
+                self.assertEqual(res.status_code, 500)
+                self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+        
+        with patch('hgw_frontend.serializers.Profile', mock):
+            for flow_request in (self.flow_request, self.flow_request_without_sources):
+                res = self._add_flow_request(flow_request=flow_request)
+                self.assertEqual(res.status_code, 500)
+                self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_add_flow_request_with_sources(self):
         """
@@ -833,6 +912,17 @@ class TestFlowRequestAPI(TestCase):
         headers = self._get_oauth_header(client_name=DEST_1_NAME)
         res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.channel.channel_id), **headers)
         self.assertEqual(res.status_code, 403)
+
+    def test_search_flow_request_by_channel_id_db_error(self):
+        c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
+
+        mock = self._get_db_error_mock()
+        with patch('hgw_frontend.views.flow_requests.Channel', mock):
+            mock.DoesNotExist = ObjectDoesNotExist
+            headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
+            res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.channel.channel_id), **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_get_flow_request_by_channel_id_wrong_channel_id(self):
         """

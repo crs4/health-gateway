@@ -24,7 +24,7 @@ import requests
 import six
 from dateutil.tz import gettz
 from django.contrib.auth.decorators import login_required
-from django.db import IntegrityError
+from django.db import DatabaseError, IntegrityError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_GET
@@ -35,8 +35,8 @@ from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
+from hgw_common.utils import ERRORS, get_logger
 from hgw_common.utils.authorization import TokenHasResourceDetailedScope
-from hgw_common.utils import get_logger
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
                                  ConsentConfirmation, FlowRequest, Source)
@@ -74,6 +74,7 @@ class FlowRequestView(ViewSet):
             else:
                 return FlowRequest.objects.get(destination=request.auth.application.destination, process_id=process_id)
         except FlowRequest.DoesNotExist:
+            logger.warning("Flow request not found")
             raise Http404
 
     def list(self, request):
@@ -167,31 +168,22 @@ class FlowRequestView(ViewSet):
         res = {k: v for k, v in six.iteritems(serializer.data) if k != 'destination'}
         return Response(res)
 
-    @staticmethod
-    def channels(request, process_id):
+    def channels(self, request, process_id):
         """
         Returns a list of Channels belonging to the FlowRequest identified by :param:`process_id`
         """
-        logger.warning("Requested channels for flow_request %s", process_id)
-        try:
-            if request.auth.application.is_super_client():
-                flow_request = FlowRequest.objects.get(process_id=process_id)
-            else:
-                flow_request = FlowRequest.objects.get(destination=request.auth.application.destination, process_id=process_id)
-        except FlowRequest.DoesNotExist:
-            logger.warning("Flow request not found")
-            raise Http404
+        logger.info("Requested channels for flow_request %s", process_id)
+        flow_request = self.get_flow_request(request, process_id)
+        if 'status' in request.GET:
+            if request.GET['status'] not in list(zip(*Channel.STATUS_CHOICES))[0]:
+                return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+            channels = Channel.objects.filter(flow_request=flow_request, status=request.GET['status'])
         else:
-            if 'status' in request.GET:
-                if request.GET['status'] not in list(zip(*Channel.STATUS_CHOICES))[0]:
-                    return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
-                channels = Channel.objects.filter(flow_request=flow_request, status=request.GET['status'])
-            else:
-                channels = Channel.objects.filter(flow_request=flow_request)
-            count = channels.count()
-            if count == 0:
-                raise Http404
-            serializer = ChannelSerializer(channels, many=True)
+            channels = Channel.objects.filter(flow_request=flow_request)
+        count = channels.count()
+        if count == 0:
+            raise Http404
+        serializer = ChannelSerializer(channels, many=True)
         return Response(serializer.data, headers={'X-Total-Count': count})
 
     def search(self, request):

@@ -36,7 +36,7 @@ class Command(ConsumerCommand):
         logger.info('Found message for topic %s', message['queue'])
         if not message['success']:
             logger.error("Errore reading the message")
-        else:            
+        else:       
             try:
                 connector_data = message['data']
                 consent_id = connector_data['channel_id']

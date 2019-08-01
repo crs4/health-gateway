@@ -19,15 +19,16 @@ import logging
 
 import yaml
 from django.conf import settings
+from django.db import DatabaseError
 from django.http import Http404
 from django.utils.crypto import get_random_string
 from kafka import KafkaConsumer, TopicPartition
-
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.response import Response
+from rest_framework.status import HTTP_500_INTERNAL_SERVER_ERROR
 from rest_framework.views import exception_handler
 
 
@@ -98,13 +99,16 @@ class ERRORS:
     NOT_AUTHENTICATED = 'not_authenticated'
     NOT_FOUND = 'not_found'
     DUPLICATED = 'duplicated'
+    DB_ERROR = 'database_error'
 
 
 def custom_exception_handler(exc, context):
     """
     Configures the Django Rest Framework return messages
     """
-    if isinstance(exc, Http404):
+    if isinstance(exc, DatabaseError):
+        response = Response({'errors': [ERRORS.DB_ERROR]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    elif isinstance(exc, Http404):
         response = Response({'errors': [ERRORS.NOT_FOUND]}, status=status.HTTP_404_NOT_FOUND)
     elif isinstance(exc, NotAuthenticated):
         response = Response({'errors': [ERRORS.NOT_AUTHENTICATED]}, status=status.HTTP_401_UNAUTHORIZED)
