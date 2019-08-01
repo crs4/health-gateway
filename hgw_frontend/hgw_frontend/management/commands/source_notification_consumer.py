@@ -15,9 +15,10 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from django.db import DatabaseError
+
 from hgw_common.utils import get_logger
 from hgw_common.utils.management import ConsumerCommand
-
 from hgw_frontend.models import Source
 from hgw_frontend.serializers import SourceSerializer
 from hgw_frontend.settings import KAFKA_SOURCE_NOTIFICATION_TOPIC
@@ -46,6 +47,8 @@ class Command(ConsumerCommand):
             else:
                 try:
                     source = Source.objects.get(source_id=data['source_id'])
+                except DatabaseError:
+                    logger.critical('Cannot access to the DB')
                 except Source.DoesNotExist:
                     logger.info('Inserting new source with id %s', data['source_id'])
                     source_serializer = SourceSerializer(data=data)

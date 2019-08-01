@@ -1,19 +1,21 @@
 import json
 import os
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from django.test import TestCase
-from mock.mock import patch
+from mock.mock import Mock, NonCallableMock, patch
 
 from hgw_common.models import FailedMessages, Profile
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
-from hgw_frontend.management.commands.source_notification_consumer import \
-    Command as SourceNotificationCommand
 from hgw_frontend.management.commands.connector_notification_consumer import \
     Command as ConnectorNotificationCommand
-from hgw_frontend.management.commands.consent_manager_notification_consumer import (FAILED_MESSAGE_TYPE,
-                                                                                    FAILED_REASON)
+from hgw_frontend.management.commands.consent_manager_notification_consumer import (
+    FAILED_MESSAGE_TYPE, FAILED_REASON)
 from hgw_frontend.management.commands.consent_manager_notification_consumer import \
     Command as ConsentNotificationCommand
+from hgw_frontend.management.commands.source_notification_consumer import \
+    Command as SourceNotificationCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Source
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
@@ -23,6 +25,17 @@ from . import (CORRECT_CONSENT_ID, DEST_1_ID, DEST_1_NAME, DEST_PUBLIC_KEY,
                PERSON_ID, PROFILE_1, PROFILE_2, SOURCE_1_ID, SOURCE_1_NAME,
                SOURCE_3_ID, SOURCE_3_NAME)
 
+
+def _get_db_error_mock():
+    mock = NonCallableMock()
+    mock.DoesNotExist = ObjectDoesNotExist
+    mock.objects = NonCallableMock()
+    mock.objects.all = Mock(side_effect=DatabaseError)
+    mock.objects.filter = Mock(side_effect=DatabaseError)
+    mock.objects.get = Mock(side_effect=DatabaseError)
+    mock.objects.create = Mock(side_effect=DatabaseError)
+    mock.objects.get_or_create = Mock(side_effect=DatabaseError)
+    return mock
 
 class TestSourceConsumer(TestCase):
     """
@@ -89,6 +102,20 @@ class TestSourceConsumer(TestCase):
                 self.assertEqual(source.profile.code, message['profile']['code'])
                 self.assertEqual(source.profile.version, message['profile']['version'])
                 self.assertEqual(source.profile.payload, message['profile']['payload'])
+
+    def test_failure_to_db_error(self):
+        """
+        Tests that the message is consumed but db error occurs
+        """
+        mock = _get_db_error_mock()
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_frontend.management.commands.source_notification_consumer.Source', mock):
+            messages = ['(a)']
+            self.set_mock_kafka_consumer(MockKafkaConsumer, messages,
+                                         KAFKA_SOURCE_NOTIFICATION_TOPIC, False)
+            SourceNotificationCommand().handle()
+
+            self.assertEqual(Source.objects.count(), 0)
 
     def test_failure_to_json_decoding(self):
         """
