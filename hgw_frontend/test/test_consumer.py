@@ -89,7 +89,7 @@ class TestSourceConsumer(TestCase):
                 self.assertEqual(source.profile.code, message['profile']['code'])
                 self.assertEqual(source.profile.version, message['profile']['version'])
                 self.assertEqual(source.profile.payload, message['profile']['payload'])
-    
+
     def test_failure_to_json_decoding(self):
         """
         Tests that the message is consumed but json decoding fails
@@ -101,7 +101,7 @@ class TestSourceConsumer(TestCase):
             SourceNotificationCommand().handle()
 
             self.assertEqual(Source.objects.count(), 0)
-            
+
     def test_source_failure_to_message_structure(self):
         """
         Tests that the message is consumed but it doesn't have the correct structure

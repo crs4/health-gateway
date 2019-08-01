@@ -20,9 +20,13 @@ import os
 
 from Cryptodome.PublicKey import RSA
 from django.test import TestCase, client
+from mock import patch
 
 from hgw_common.cipher import Cipher
+from hgw_common.utils import ERRORS
 from hgw_frontend.models import RESTClient
+
+from .utils import get_db_error_mock
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -135,6 +139,17 @@ class TestChannelsAPI(TestCase):
         self.assertEqual(res.json(), expected)
         self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
+    def test_get_db_error(self):
+        """
+        Tests getting channels error response in case of db error
+        """
+        mock = get_db_error_mock()
+        with patch('hgw_frontend.views.channels.Channel', mock):
+            headers = self._get_oauth_header()
+            res = self.client.get('/v1/channels/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_get_filter_by_status(self):
         """
         Tests getting channels related to a specific flow_request
@@ -166,6 +181,17 @@ class TestChannelsAPI(TestCase):
         self.assertEqual(res.json(), expected)
         self.assertEqual(res['X-Total-Count'], str(len(expected)))
 
+    def test_get_db_error_by_superuser(self):
+        """
+        Tests getting channels error response in case of db error
+        """
+        mock = get_db_error_mock()
+        with patch('hgw_frontend.views.channels.Channel', mock):
+            headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
+            res = self.client.get('/v1/channels/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_get_unauthorized(self):
         """
         Tests get channels unauthorized
@@ -183,7 +209,7 @@ class TestChannelsAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
 
-    def test_get_channel(self):
+    def test_retrieve_channel(self):
         """
         Tests getting channels
         """
@@ -192,6 +218,17 @@ class TestChannelsAPI(TestCase):
         res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), target_channel)
+    
+    def test_retrieve_channel_db_error(self):
+        """
+        Tests getting channels db error
+        """
+        mock = get_db_error_mock()
+        with patch('hgw_frontend.views.channels.Channel', mock):
+            headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
+            res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_retrieve_unauthorized(self):
         """
@@ -338,6 +375,23 @@ class TestChannelsAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), self.channels[1])
         self.assertEqual(res['X-Total-Count'], '1')
+
+    def test_search_by_consent_db_error(self):
+        """
+        Tests searching channel by consent_id db error.
+        """
+        mock = get_db_error_mock()
+        with patch('hgw_frontend.views.channels.ConsentConfirmation', mock):
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/channels/search/?consent_id=consent', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+        with patch('hgw_frontend.views.channels.FlowRequest', mock):
+            headers = self._get_oauth_header(client_name=DEST_1_NAME)
+            res = self.client.get('/v1/channels/search/?consent_id=consent', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_search_unauthorized(self):
         """

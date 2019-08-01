@@ -19,15 +19,21 @@
 import json
 import re
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from django.utils.crypto import get_random_string
+from mock.mock import Mock, NonCallableMock
 
 from hgw_common.utils.mocks import MockRequestHandler
 from hgw_frontend.models import FlowRequest
-from hgw_frontend.settings import HGW_BACKEND_CLIENT_ID, CONSENT_MANAGER_CLIENT_ID
+from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
+                                   HGW_BACKEND_CLIENT_ID)
 
-from . import CORRECT_CONSENT_ID, WRONG_CONFIRM_ID, CORRECT_CONFIRM_ID, WRONG_CONSENT_ID, \
-    CORRECT_CONSENT_ID2, WRONG_CONSENT_ID2, CORRECT_CONFIRM_ID2, WRONG_CONFIRM_ID2, \
-    SOURCES_DATA, PROFILES_DATA, PERSON_ID
+from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, CORRECT_CONSENT_ID,
+               CORRECT_CONSENT_ID2, PERSON_ID, PROFILES_DATA, SOURCES_DATA,
+               WRONG_CONFIRM_ID, WRONG_CONFIRM_ID2, WRONG_CONSENT_ID,
+               WRONG_CONSENT_ID2)
+
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
     """
@@ -168,3 +174,15 @@ class MockBackendRequestHandler(MockRequestHandler):
             else:
                 payload = {}
         return self._send_response(payload)
+
+
+def get_db_error_mock():
+    mock = NonCallableMock()
+    mock.DoesNotExist = ObjectDoesNotExist
+    mock.objects = NonCallableMock()
+    mock.objects.all = Mock(side_effect=DatabaseError)
+    mock.objects.filter = Mock(side_effect=DatabaseError)
+    mock.objects.get = Mock(side_effect=DatabaseError)
+    mock.objects.create = Mock(side_effect=DatabaseError)
+    mock.objects.get_or_create = Mock(side_effect=DatabaseError)
+    return mock

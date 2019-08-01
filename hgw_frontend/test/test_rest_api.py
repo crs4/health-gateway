@@ -24,13 +24,15 @@ from django.test import TestCase, client, tag
 from mock import patch
 
 from hgw_common.cipher import Cipher
+from hgw_common.utils import ERRORS
 from hgw_common.utils.mocks import (MockKafkaConsumer, MockMessage,
                                     get_free_port, start_mock_server)
 from hgw_frontend.models import (ConsentConfirmation, Destination, FlowRequest,
                                  RESTClient)
 
 from . import CORRECT_CONFIRM_ID, PROFILES_DATA, SOURCES_DATA
-from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
+from .utils import (MockBackendRequestHandler,
+                    MockConsentManagerRequestHandler, get_db_error_mock)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -88,6 +90,7 @@ DEST_2_ID = '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3'
 DISPATCHER_NAME = 'Health Gateway Dispatcher'
 POWERLESS_NAME = 'Powerless Client'
 
+
 class TestHGWFrontendAPI(TestCase):
     fixtures = ['test_data.json']
 
@@ -126,6 +129,7 @@ class TestHGWFrontendAPI(TestCase):
             'name': obj['fields']['name'],
             'profile':  self.profiles[obj['fields']['profile']]
         } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source'}
+        
         self.destinations = {obj['pk']: obj['fields'] for obj in self.fixtures
                              if obj['model'] == 'hgw_frontend.destination'}
         self.flow_requests = {obj['pk']: obj['fields'] for obj in self.fixtures
@@ -229,7 +233,6 @@ class TestHGWFrontendAPI(TestCase):
             res = self.client.get('/v1/messages/info/', **headers)
             self.assertEqual(res.status_code, 403)
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_sources(self):
         """
         Tests get sources endpoint
@@ -237,9 +240,19 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/sources/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), SOURCES_DATA)
+        self.assertEqual(res.json(), list(self.sources.values()))
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+    def test_get_sources_db_error(self):
+        """
+        Tests get sources endpoint db error
+        """
+        mock = get_db_error_mock()
+        with patch('hgw_frontend.views.sources.Source', mock):
+            headers = self._get_oauth_header()
+            res = self.client.get('/v1/sources/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_get_sources_unauthorized(self):
         """
         Tests get sources endpoint
@@ -248,7 +261,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_sources_forbidden(self):
         """
         Tests get sources endpoint
@@ -256,28 +268,7 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header(client_name=POWERLESS_NAME)
         res = self.client.get('/v1/sources/', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'errors': ['forbidden']})
-
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
-    def test_get_sources_fail_backend_access_token(self):
-        """
-        Tests get sources endpoint
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/sources/', **headers)
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': ['invalid_backend_client']})
-
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
-    def test_get_sources_fail_backend_connection_error(self):
-        """
-        Tests get sources endpoint
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/sources/', **headers)
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
+        self.assertEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_profiles(self):
@@ -287,9 +278,27 @@ class TestHGWFrontendAPI(TestCase):
         headers = self._get_oauth_header()
         res = self.client.get('/v1/profiles/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json(), PROFILES_DATA)
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
+        profiles = self.profiles.copy()
+        for pk, p in profiles.items():
+            p['sources'] = [{
+                'source_id': obj['fields']['source_id'],
+                'name': obj['fields']['name']
+            } for obj in self.fixtures if obj['model'] == 'hgw_frontend.source' and obj['fields']['profile'] == pk]
+
+        self.assertEqual(res.json(), list(profiles.values()))
+
+    def test_get_profiles_db_error(self):
+        """
+        Tests get sources endpoint db error
+        """
+        mock = get_db_error_mock()
+        with patch('hgw_frontend.views.sources.Source', mock):
+            headers = self._get_oauth_header()
+            res = self.client.get('/v1/sources/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_get_profiles_unauthorized(self):
         """
         Tests get sources endpoint
@@ -298,7 +307,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_profiles_forbidden(self):
         """
         Tests get sources endpoint
@@ -308,28 +316,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
-    def test_get_profiles_fail_backend_access_token(self):
-        """
-        Tests get sources endpoint
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/profiles/', **headers)
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': ['invalid_backend_client']})
-
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
-    def test_get_profiles_fail_backend_connection_error(self):
-        """
-        Tests get sources endpoint
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/profiles/', **headers)
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
-
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_source(self):
         """
         Tests get sources endpoint
@@ -339,7 +325,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), SOURCES_DATA[0])
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_source_unauthorized(self):
         """
         Tests get sources endpoint
@@ -348,7 +333,6 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
     def test_get_source_forbidden(self):
         """
         Tests get sources endpoint
@@ -358,28 +342,7 @@ class TestHGWFrontendAPI(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json(), {'errors': ['forbidden']})
 
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', HGW_BACKEND_URI)
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_CLIENT_ID', 'wrong_client_id')
-    def test_get_source_fail_backend_access_token(self):
-        """
-        Tests get sources endpoint
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': ['invalid_backend_client']})
-
-    @patch('hgw_frontend.views.sources.HGW_BACKEND_URI', 'http://localhost')
-    def test_get_source_fail_backend_connection_error(self):
-        """
-        Tests get sources endpoint
-        """
-        headers = self._get_oauth_header()
-        res = self.client.get('/v1/sources/{}/'.format(SOURCES_DATA[0]['source_id']), **headers)
-        self.assertEqual(res.status_code, 500)
-        self.assertEqual(res.json(), {'errors': ['backend_connection_error']})
-
-    def _check_message(self, to_be_checked, msg_id):        
+    def _check_message(self, to_be_checked, msg_id):
         self.assertEqual(to_be_checked['message_id'], msg_id)
         self.assertEqual(to_be_checked['channel_id'], 'channel')
         self.assertEqual(to_be_checked['source_id'], 'source')

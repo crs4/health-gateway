@@ -17,14 +17,12 @@
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from Cryptodome.PublicKey import RSA
 from dateutil.parser import parse
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import DatabaseError
 from django.test import TestCase, client
-from mock import Mock, NonCallableMock, patch
+from mock import patch
 
 from hgw_common.cipher import Cipher
 from hgw_common.models import Profile
@@ -39,8 +37,8 @@ from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 
 from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, DEST_1_ID, DEST_1_NAME,
                DEST_PUBLIC_KEY, DISPATCHER_NAME, PERSON_ID, POWERLESS_NAME,
-               SOURCE_1_ID, SOURCE_1_NAME, SOURCES_DATA, WRONG_CONFIRM_ID)
-from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler
+               SOURCE_1_ID, SOURCE_1_NAME, WRONG_CONFIRM_ID)
+from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler, get_db_error_mock
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -134,16 +132,6 @@ class TestFlowRequestAPI(TestCase):
         res = self.client.post('/oauth2/token/', data=params)
         access_token = res.json()['access_token']
         return {"Authorization": "Bearer {}".format(access_token)}
-
-    def _get_db_error_mock(self):
-        mock = NonCallableMock()
-        mock.objects = NonCallableMock()
-        mock.objects.all = Mock(side_effect=DatabaseError)
-        mock.objects.filter = Mock(side_effect=DatabaseError)
-        mock.objects.get = Mock(side_effect=DatabaseError)
-        mock.objects.create = Mock(side_effect=DatabaseError)
-        mock.objects.get_or_create = Mock(side_effect=DatabaseError)
-        return mock
 
     def test_oauth_flow_request_not_authorized(self):
         res = self.client.get('/v1/flow_requests/search/', content_type='application/json')
@@ -252,7 +240,7 @@ class TestFlowRequestAPI(TestCase):
         """
         # The flow requests are already present in test data
         headers = self._get_oauth_header()
-        mock = self._get_db_error_mock()
+        mock = get_db_error_mock()
         with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
             res = self.client.get('/v1/flow_requests/', **headers)
             self.assertEqual(res.status_code, 500)
@@ -264,25 +252,23 @@ class TestFlowRequestAPI(TestCase):
         """
         # The flow requests are already present in test data
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
-        mock = self._get_db_error_mock()
+        mock = get_db_error_mock()
         with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
             res = self.client.get('/v1/flow_requests/', **headers)
             self.assertEqual(res.status_code, 500)
             self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_get_one_flow_request_db_error(self):
-        mock = self._get_db_error_mock()
+        mock = get_db_error_mock()
         with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
-            mock.DoesNotExist = ObjectDoesNotExist
             headers = self._get_oauth_header()
             res = self.client.get('/v1/flow_requests/p_11111/', **headers)
             self.assertEqual(res.status_code, 500)
             self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_get_one_flow_request_as_superuser_db_error(self):
-        mock = self._get_db_error_mock()
+        mock = get_db_error_mock()
         with patch('hgw_frontend.views.flow_requests.FlowRequest', mock):
-            mock.DoesNotExist = ObjectDoesNotExist
             headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
             res = self.client.get('/v1/flow_requests/p_11111/', **headers)
             self.assertEqual(res.status_code, 500)
@@ -314,7 +300,7 @@ class TestFlowRequestAPI(TestCase):
         """
         Test the response in case of database error
         """
-        mock = self._get_db_error_mock()
+        mock = get_db_error_mock()
         with patch('hgw_frontend.views.flow_requests.Source', mock):
             for flow_request in (self.flow_request, self.flow_request_without_sources):
                 res = self._add_flow_request(flow_request=flow_request)
@@ -916,9 +902,8 @@ class TestFlowRequestAPI(TestCase):
     def test_search_flow_request_by_channel_id_db_error(self):
         c = ConsentConfirmation.objects.get(confirmation_id=CORRECT_CONFIRM_ID)
 
-        mock = self._get_db_error_mock()
+        mock = get_db_error_mock()
         with patch('hgw_frontend.views.flow_requests.Channel', mock):
-            mock.DoesNotExist = ObjectDoesNotExist
             headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
             res = self.client.get('/v1/flow_requests/search/?channel_id={}'.format(c.channel.channel_id), **headers)
             self.assertEqual(res.status_code, 500)
