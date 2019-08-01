@@ -19,19 +19,22 @@ import json
 import logging
 import os
 import sys
+from ssl import SSLError
 
 from Cryptodome.PublicKey import RSA
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from django.test import TestCase, client
 from kafka.errors import (KafkaError, KafkaTimeoutError, NoBrokersAvailable,
                           TopicAuthorizationFailedError)
-from mock import MagicMock, patch
+from mock import MagicMock, Mock, NonCallableMock, patch
 from oauth2_provider.settings import oauth2_settings
 
-from ssl import SSLError
 from hgw_backend import settings
 from hgw_backend.models import RESTClient
 from hgw_backend.serializers import SourceSerializer
 from hgw_common.cipher import Cipher
+from hgw_common.utils import ERRORS
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -97,6 +100,18 @@ class GenericTestCase(TestCase):
     def _get_oauth_header(self, client_name=SOURCE_ENDPOINT_CLIENT_NAME):
         res = self._get_oauth_token(client_name)
         return {'Authorization': 'Bearer {}'.format(res['access_token'])}
+    
+    def _get_db_error_mock(self):
+        mock = NonCallableMock()
+        mock.DoesNotExist = ObjectDoesNotExist
+        mock.objects = NonCallableMock()
+        mock.objects.all = Mock(side_effect=DatabaseError)
+        mock.objects.filter = Mock(side_effect=DatabaseError)
+        mock.objects.get = Mock(side_effect=DatabaseError)
+        mock.objects.create = Mock(side_effect=DatabaseError)
+        mock.objects.get_or_create = Mock(side_effect=DatabaseError)
+        return mock
+
 
 
 class TestOAuth2API(GenericTestCase):
@@ -189,6 +204,17 @@ class TestSourcesAPI(GenericTestCase):
             req_source['profile'] = self.profiles[int(s['profile'] - 1)]
             self.assertEqual(ret_source, req_source)
 
+    def test_get_sources_db_error(self):
+        """
+        Tests get sources endpoint db error
+        """
+        mock = self._get_db_error_mock()
+        with patch('hgw_backend.views.Source', mock):
+            oauth2_header = self._get_oauth_header(client_name=HGW_FRONTEND_CLIENT_NAME)
+            res = self.client.get('/v1/sources/', **oauth2_header)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_get_sources_forbidden(self):
         """
         Test error getting sources using a client without the correct scope
@@ -217,6 +243,17 @@ class TestSourcesAPI(GenericTestCase):
         self.assertEqual(len(res.json()), 2)
         for profile in res.json():
             self.assertEqual(len(profile['sources']), 1)
+
+    def test_get_profiles_db_error(self):
+        """
+        Tests get sources endpoint db error
+        """
+        mock = self._get_db_error_mock()
+        with patch('hgw_backend.views.Source', mock):
+            oauth2_header = self._get_oauth_header(client_name=HGW_FRONTEND_CLIENT_NAME)
+            res = self.client.get('/v1/sources/', **oauth2_header)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_get_profiles_forbidden(self):
         """
@@ -337,7 +374,7 @@ class TestMessagesAPI(GenericTestCase):
 
         res = self.client.post('/v1/messages/', data=data, **oauth2_header)
         self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json(), {'detail': 'Authentication credentials were not provided.'})
+        self.assertEqual(res.json(), {'errors': ['not_authenticated']})
 
     def test_send_message_forbidden(self):
         channel_id = 'channel_id'
@@ -350,7 +387,7 @@ class TestMessagesAPI(GenericTestCase):
 
         res = self.client.post('/v1/messages/', data=data, **oauth2_header)
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json(), {'detail': 'You do not have permission to perform this action.'})
+        self.assertEqual(res.json(), {'errors': ['forbidden']})
 
     def test_send_message_no_broker_available(self):
         channel_id = 'channel_id'

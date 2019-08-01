@@ -30,7 +30,7 @@ from hgw_common.utils.mocks import (MockKafkaConsumer, MockMessage,
 from hgw_frontend.models import (ConsentConfirmation, Destination, FlowRequest,
                                  RESTClient)
 
-from . import CORRECT_CONFIRM_ID, PROFILES_DATA, SOURCES_DATA
+from . import CORRECT_CONFIRM_ID, SOURCES_DATA
 from .utils import (MockBackendRequestHandler,
                     MockConsentManagerRequestHandler, get_db_error_mock)
 
