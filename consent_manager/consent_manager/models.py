@@ -57,8 +57,8 @@ class Consent(models.Model):
     expire_validity = models.DateTimeField(null=True)
 
     def __str__(self):
-        return 'Consent ID: {} - Status {}'.format(self.consent_id, self.status)
-        
+        return 'Consent ID: {} - Person: {} - Status {}'.format(self.consent_id, self.person_id, self.status)
+
 
 def get_validity():
     """
@@ -101,6 +101,9 @@ class Endpoint(models.Model):
     """
     id = models.CharField(max_length=32, blank=False, null=False, primary_key=True)
     name = models.CharField(max_length=100, blank=False, null=False, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class RESTClient(AbstractApplication):
