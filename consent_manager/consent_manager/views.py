@@ -57,7 +57,10 @@ class ConsentView(ViewSet):
 
     @staticmethod
     def _get_consent(consent_id):
-        return get_object_or_404(Consent, consent_id=consent_id)
+        try:
+            return Consent.objects.get(consent_id=consent_id)
+        except Consent.DoesNotExist:
+            raise Http404
 
     @staticmethod
     def _get_person_id(request):
@@ -153,7 +156,6 @@ class ConsentView(ViewSet):
         if request.auth.application.is_super_client():
             return Response(serializer.data)
         else:
-            logger.info(serializer.data)
             res = {
                 'consent_id': serializer.data['consent_id'],
                 'source': serializer.data['source'],

@@ -34,4 +34,3 @@ urlpatterns = [
     url(r'^{}/profiles/$'.format(VERSION_REGEX), views.Profiles.as_view({'get': 'list'})),
     url(r'^{}/messages/$'.format(VERSION_REGEX), views.Messages.as_view()),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-

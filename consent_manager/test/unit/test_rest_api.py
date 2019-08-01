@@ -19,8 +19,10 @@ import json
 import os
 from datetime import datetime, timedelta
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import DatabaseError
 from django.test import TestCase, client
-from mock.mock import patch
+from mock import MagicMock, Mock, NonCallableMock, patch
 
 from consent_manager import settings
 from consent_manager.models import ConfirmationCode, Consent, RESTClient
@@ -92,6 +94,17 @@ class TestAPI(TestCase):
         access_token = res['access_token']
         return {'Authorization': 'Bearer {}'.format(access_token)}
 
+    def _get_db_error_mock(self):
+        mock = NonCallableMock()
+        mock.DoesNotExist = ObjectDoesNotExist
+        mock.objects = NonCallableMock()
+        mock.objects.all = Mock(side_effect=DatabaseError)
+        mock.objects.filter = Mock(side_effect=DatabaseError)
+        mock.objects.get = Mock(side_effect=DatabaseError)
+        mock.objects.create = Mock(side_effect=DatabaseError)
+        mock.objects.get_or_create = Mock(side_effect=DatabaseError)
+        return mock
+
     def test_oauth_scopes(self):
         """
         Tests that the oauth token scopes are taken from the RESTClient field or from default in case it is blank
@@ -131,6 +144,21 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json(), expected)
 
+    def test_get_consents_db_error(self):
+        """
+        Tests get functionality with not all details
+        """
+        mock = self._get_db_error_mock()
+        with patch('consent_manager.views.Consent', mock):
+            headers = self._get_oauth_header(client_index=2)
+            res = self.client.get('/v1/consents/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+            res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_get_consents_by_super_client(self):
         """
         Tests get functionality when the restclient is a super client
@@ -165,6 +193,21 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
         self.assertEqual(res.status_code, 200)
         self.assertDictEqual(res.json(), expected)
+
+    def test_get_consent_by_superclient_db_error(self):
+        """
+        Tests get functionality with not all details
+        """
+        mock = self._get_db_error_mock()
+        with patch('consent_manager.views.Consent', mock):
+            headers = self._get_oauth_header(client_index=1)
+            res = self.client.get('/v1/consents/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
+            res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_get_consent_not_found(self):
         """
@@ -218,6 +261,16 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 201)
         self.assertEqual(set(res.json().keys()), {'consent_id', 'confirm_id'})
         self.assertDictEqual(serializer.data, expected)
+
+    def test_add_db_error(self):
+        """
+        Test add in case of db error
+        """
+        mock = self._get_db_error_mock()
+        with patch('consent_manager.serializers.Consent', mock):
+            res = self._add_consent()
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_add_other_timezone(self):
         """
@@ -445,7 +498,25 @@ class TestAPI(TestCase):
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
                              consent_serializer.data)
+    
+    @patch('hgw_common.messaging.sender.KafkaProducer')
+    def test_modify_db_error(self, mocked_kafka_producer):
+        res = self._add_consent(status=Consent.ACTIVE)
+        consent_id = res.json()['consent_id']
 
+        updated_data = {
+            'start_validity': '2017-09-23T10:00:54.123000+02:00',
+            'expire_validity': '2018-09-23T10:00:00+02:00'
+        }
+
+        mock = self._get_db_error_mock()
+        with patch('consent_manager.views.Consent', mock):
+            self.client.login(username='duck', password='duck')
+            res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
+                                content_type='application/json')
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+            
     def test_modify_wrong_status(self):
         """
         Test consent modification failure when the client specifies a consent in the wrong status
@@ -604,6 +675,19 @@ class TestAPI(TestCase):
         self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
                              consent_serializer.data)
 
+    @patch('hgw_common.messaging.sender.KafkaProducer')
+    def test_revoke_db_error(self, mocked_kafka_producer):
+        res = self._add_consent(status=Consent.ACTIVE)
+        consent_id = res.json()['consent_id']
+
+        mock = self._get_db_error_mock()
+        with patch('consent_manager.views.Consent', mock):
+            self.client.login(username='duck', password='duck')
+            res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id),
+                                   content_type='application/json')
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
+
     def test_revoke_wrong_status(self):
         """
         Test revoke operation for a single consent. Test that the consent is not revoked in case
@@ -707,7 +791,7 @@ class TestAPI(TestCase):
         for index, consent in enumerate(consents):
             consent = Consent.objects.get(consent_id=consent)
             consent_serializer = ConsentSerializer(consent)
-            
+
             self.assertEqual(consent.status, Consent.REVOKED)
             self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
             self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
@@ -818,6 +902,19 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
+
+    def test_find_unauthorized_db_error(self):
+        res = self._add_consent()
+
+        confirm_id = res.json()['confirm_id']
+        callback_url = 'http://127.0.0.1/'
+
+        mock = self._get_db_error_mock()
+        with patch('consent_manager.views.ConfirmationCode', mock):
+            self.client.login(username='duck', password='duck')
+            res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
+            self.assertEqual(res.status_code, 500)
+            self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
 
     def test_find_with_oauth_token(self):
         res = self._add_consent()
