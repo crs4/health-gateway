@@ -5,10 +5,13 @@ import os
 from django.test import TestCase
 from mock.mock import call, patch
 
-from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_backend.management.commands.kafka_consumer import Command
 from hgw_backend.models import FailedConnector, Source
+from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
+
+from . import (HGW_FRONTEND_CLIENT_NAME, SOURCE_ENDPOINT_CLIENT_NAME,
+               GenericTestCase)
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -24,7 +27,7 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
                   '-----END PUBLIC KEY-----'
 
 
-class TestConsumer(TestCase):
+class TestConsumer(GenericTestCase):
     fixtures = ['test_data.json']
 
     # @classmethod
@@ -101,6 +104,24 @@ class TestConsumer(TestCase):
                 }
                 calls.append(call(source_obj, connector))
             mocked_create_connector.assert_has_calls(calls)
+
+    def test_message_failure_db_error(self):
+        """
+        Test correct message send
+        """
+
+        mock = self._get_db_error_mock()
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True) as mocked_create_connector, \
+                patch('hgw_backend.management.commands.kafka_consumer.Source', mock):
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+            Command().handle()
+            mocked_create_connector.assert_not_called()
+        self.assertEqual(FailedConnector.objects.count(), len(self.messages))
+        for index, failed in enumerate(FailedConnector.objects.all()):
+            self.assertEqual(json.loads(failed.message), self.messages[index])
+            self.assertEqual(failed.reason, FailedConnector.DATABASE_ERROR)
+            self.assertEqual(failed.retry, True)
 
     def test_send_message_fail(self):
         """

@@ -16,18 +16,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import json
-import logging
 import os
 import sys
 from ssl import SSLError
 
 from Cryptodome.PublicKey import RSA
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import DatabaseError
-from django.test import TestCase, client
 from kafka.errors import (KafkaError, KafkaTimeoutError, NoBrokersAvailable,
                           TopicAuthorizationFailedError)
-from mock import MagicMock, Mock, NonCallableMock, patch
+from mock import patch, MagicMock
 from oauth2_provider.settings import oauth2_settings
 
 from hgw_backend import settings
@@ -35,6 +31,9 @@ from hgw_backend.models import RESTClient
 from hgw_backend.serializers import SourceSerializer
 from hgw_common.cipher import Cipher
 from hgw_common.utils import ERRORS
+
+from . import (HGW_FRONTEND_CLIENT_NAME, SOURCE_ENDPOINT_CLIENT_NAME,
+               GenericTestCase)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -51,68 +50,6 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
                   '8YHKRryYcVDHVLAGc4srceXU7zrwAMbjS7msh/LK88ZDUWfIZKZvbV0L+/topvzd\n' \
                   'XQIDAQAB\n' \
                   '-----END PUBLIC KEY-----'
-
-SOURCE_ENDPOINT_CLIENT_NAME = 'SOURCE MOCK'
-HGW_FRONTEND_CLIENT_NAME = 'HGW FRONTEND'
-
-
-def _get_client_data(client_name=SOURCE_ENDPOINT_CLIENT_NAME):
-    app = RESTClient.objects.get(name=client_name)
-    return app.client_id, app.client_secret
-
-class GenericTestCase(TestCase):
-    """
-    Generic test case class
-    """
-
-    fixtures = ['test_data.json']
-
-    @classmethod
-    def setUpClass(cls):
-        for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
-            logger = logging.getLogger(logger_name)
-            logger.setLevel(logging.CRITICAL)
-        return super(GenericTestCase, cls).setUpClass()
-
-    def setUp(self):
-        self.maxDiff = None
-        self.client = client.Client()
-        
-    @staticmethod
-    def _get_client_data(client_index=0):
-        app = RESTClient.objects.all()[client_index]
-        return app.client_id, app.client_secret
-
-
-    def _call_token_creation(self, data):
-        return self.client.post('/oauth2/token/', data=data)
-
-    def _get_oauth_token(self, client_name=SOURCE_ENDPOINT_CLIENT_NAME):
-        c_id, c_secret = _get_client_data(client_name)
-        params = {
-            'grant_type': 'client_credentials',
-            'client_id': c_id,
-            'client_secret': c_secret
-        }
-        res = self._call_token_creation(params)
-        return res.json()
-
-    def _get_oauth_header(self, client_name=SOURCE_ENDPOINT_CLIENT_NAME):
-        res = self._get_oauth_token(client_name)
-        return {'Authorization': 'Bearer {}'.format(res['access_token'])}
-    
-    def _get_db_error_mock(self):
-        mock = NonCallableMock()
-        mock.DoesNotExist = ObjectDoesNotExist
-        mock.objects = NonCallableMock()
-        mock.objects.all = Mock(side_effect=DatabaseError)
-        mock.objects.filter = Mock(side_effect=DatabaseError)
-        mock.objects.get = Mock(side_effect=DatabaseError)
-        mock.objects.create = Mock(side_effect=DatabaseError)
-        mock.objects.get_or_create = Mock(side_effect=DatabaseError)
-        return mock
-
-
 
 class TestOAuth2API(GenericTestCase):
     """
@@ -134,8 +71,8 @@ class TestOAuth2API(GenericTestCase):
         """
         Tests failed token creation due to wrong client_id or client_secret
         """
-        for client_data in [('wrong', _get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[1]), 
-                            (_get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[0], 'wrong')]:
+        for client_data in [('wrong', self._get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[1]), 
+                            (self._get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)[0], 'wrong')]:
             wrong_client_data = {
                 'grant_type': 'client_credentials',
                 'client_id': client_data[0],
@@ -149,7 +86,7 @@ class TestOAuth2API(GenericTestCase):
         """
         Tests failed token creation due to wrong grant_type
         """
-        client_id, client_secret = _get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)
+        client_id, client_secret = self._get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)
         wrong_client_data = {
             'grant_type': 'wrong',
             'client_id': client_id,
@@ -163,7 +100,7 @@ class TestOAuth2API(GenericTestCase):
         """
         Tests failed token creation due to wrong grant_type
         """
-        client_id, client_secret = _get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)
+        client_id, client_secret = self._get_client_data(SOURCE_ENDPOINT_CLIENT_NAME)
         wrong_client_data = {
             'grant_type': 'client_credentials',
             'client_id': client_id,

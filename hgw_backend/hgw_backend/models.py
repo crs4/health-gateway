@@ -218,6 +218,7 @@ class FailedConnector(models.Model):
     WRONG_DATE_FORMAT = 'WD'
     SENDING_ERROR = 'SE'
     UNKNOWN_ERROR = 'UE'
+    DATABASE_ERROR = 'DB'
 
     FAIL_REASON = ((JSON_DECODING, 'JSON_DECODING'),
                    (DECODING, 'DECODING'),
@@ -225,7 +226,8 @@ class FailedConnector(models.Model):
                    (WRONG_MESSAGE_STRUCTURE, 'WRONG_MESSAGE_STRUCTURE'),
                    (WRONG_DATE_FORMAT, 'WRONG_DATE_FORMAT'),
                    (SENDING_ERROR, 'SENDING_ERROR'),
-                   (UNKNOWN_ERROR, 'UNKNOWN_ERROR'))
+                   (UNKNOWN_ERROR, 'UNKNOWN_ERROR'),
+                   (DATABASE_ERROR, 'DATABASE_ERROR'))
 
     message = models.CharField(max_length=1500, blank=False, null=False)
     reason = models.CharField(max_length=2, choices=FAIL_REASON)

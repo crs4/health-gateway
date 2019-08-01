@@ -17,7 +17,7 @@
 import json
 
 from dateutil import parser
-from django.db import transaction
+from django.db import DatabaseError, transaction
 
 from hgw_backend.models import FailedConnector, Source
 from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
@@ -47,6 +47,10 @@ class Command(ConsumerCommand):
             try:
                 # Then get the source data
                 source = Source.objects.get(source_id=channel_data['source_id'])
+            except DatabaseError:
+                failure_reason = FailedConnector.DATABASE_ERROR
+                retry = True
+                logger.error('Skipping message with id %s: error reading data from db', message['id'])
             except Source.DoesNotExist:
                 failure_reason = FailedConnector.SOURCE_NOT_FOUND
                 logger.error('Skipping message with id %s: source with id %s was not found in the db', message['id'], channel_data['source_id'])
