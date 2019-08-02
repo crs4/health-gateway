@@ -9,7 +9,7 @@ LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 RUN apk update && apk add --no-cache gcc make python3 python3-dev py3-pip \
 	ca-certificates libressl-dev bash xmlsec xmlsec-dev libc-dev libxml2-dev \
 	libffi-dev python2-dev expect \
-    git postgresql-libs postgresql-dev mysql-client mariadb-dev
+    git postgresql-libs postgresql-dev mysql-client mariadb-dev sqlite
 
 ENV CONTAINER_DIR=/container/
 ENV CA_DIR=/cacerts/
