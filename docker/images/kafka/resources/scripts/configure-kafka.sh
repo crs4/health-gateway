@@ -6,9 +6,8 @@
 KAFKA_PORT=${KAFKA_PORT:-9092}
 KAFKA_SSL_PORT=${KAFKA_SSL_PORT:-9093}
 
-if [[ -z "$KAFKA_LOG_DIRS" ]]; then
-    export KAFKA_LOG_DIRS="/kafka/kafka-logs/$HOSTNAME"
-fi
+export KAFKA_LOG_DIRS="/kafka/kafka-logs/"
+
 
 if [[ -z "$KAFKA_ADVERTISED_PORT" ]]; then
     echo "DOCKER_KAFKA_PORT" "$(docker port `hostname` $KAFKA_PORT | sed -r "s/.*:(.*)/\1/g")"

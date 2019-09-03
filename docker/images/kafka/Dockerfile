@@ -8,3 +8,5 @@ RUN apk update && \
 COPY resources/config/server.properties /opt/kafka/config/
 COPY resources/scripts /
 
+VOLUME "/kafka/kafka-logs/"
+VOLUME "/tmp/zookeeper/"

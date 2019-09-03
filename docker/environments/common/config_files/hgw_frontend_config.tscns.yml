@@ -6,8 +6,8 @@ django:
   request_validity_seconds: 60
   timezone: Europe/Rome
   database:
-    engine: mysql
-    name: hgwfrontend
+    engine: sqlite3
+    name: /container/devservice/hgw_frontend_db.sqlite3
     user: hgwuser
     password: hgwpwd
     host: mysql
