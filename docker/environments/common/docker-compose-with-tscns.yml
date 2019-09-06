@@ -49,6 +49,7 @@ services:
       - kafka
       - hgw_backend
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "tscns:443", "--", "/docker-entrypoint.sh"]
+    # entrypoint: ["/docker-entrypoint.sh", "cleartokens"]
     environment:
       - HTTP_PORT=8000
       - DJANGO_APP_NAME=hgw_frontend
@@ -145,7 +146,6 @@ services:
       - ./config_files/kafka_topics.json:/kafka_topics.json
       - ./zookeeper:/tmp/zookeeper/
       - ./kafka-logs:/kafka/kafka-logs/
-
 
   hgw_dispatcher:
     image: crs4/hgw_dispatcher:latest

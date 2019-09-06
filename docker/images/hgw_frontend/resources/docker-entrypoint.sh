@@ -59,6 +59,8 @@ fi
 
 if [ "$1" == "test" ]; then
     python manage.py test test
+elif [ "$1" == "cleartokens" ]; then
+    python manage.py cleartokens
 else 
     echo "Starting kafka consumer"
     /launch-connector-notification-consumer.sh &

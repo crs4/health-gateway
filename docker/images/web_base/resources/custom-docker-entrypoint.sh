@@ -59,6 +59,8 @@ fi
 
 if [ "$1" == "test" ]; then
     python manage.py test test
+elif [ "$1" == "cleartokens" ]; then
+    python manage.py cleartokens
 elif [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
     envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf
     nginx
