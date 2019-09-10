@@ -17,8 +17,8 @@
     "css-loader": "^3.2.0",
     "file-loader": "^1.1.11",
     "jquery": "^3.4.1",
-    "react": "^16.3.2",
-    "react-dom": "^16.3.2",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
     "sass-loader": "^7.0.1",
     "style-loader": "^0.21.0",
     "url-loader": "^1.0.1",
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "axios": "^0.18.1",
+    "deep-extend": "^0.5.1",
     "django-react-csrftoken": "^1.0.3",
     "history": "^4.7.2",
     "moment": "^2.22.1",
