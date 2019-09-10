@@ -1,3 +1,5 @@
+import moment from "moment";
+
 export const arrayToObject = (array, keyField, update) =>
     array.reduce((obj, item) => {
         if (update) {
@@ -17,4 +19,12 @@ export function* iterate(obj) {
 
 export function copy(obj) {
     return Object.assign({}, obj);
+}
+
+export function getDate(date) {
+    return date == null ? null : moment(date);
+}
+
+export function getFormattedDate(date) {
+    return date == null ? null : moment(date).format('L')
 }

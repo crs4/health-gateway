@@ -9,6 +9,7 @@ class CustomDatePicker extends React.Component {
             <div className="custom-date-picker">
                 <Label className="custom-date-picker-label">
                     <Input type="checkbox"
+                        checked={this.props.disabled}
                         id={this.props.id + "-checkbox"}
                         onChange={this.props.onChangeExclude}/>
                         {this.props.label}

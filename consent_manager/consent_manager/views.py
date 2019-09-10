@@ -131,10 +131,10 @@ class ConsentView(ViewSet):
         logger.info('Received update request for consent with id %s', consent_id)
         consent = self._get_consent(consent_id)
         if consent.status != Consent.ACTIVE:
-            logger.info('Consent is not ACTIVE. Not revoked')
+            logger.info('Consent is not ACTIVE. Not updated')
             return Response({'errors': ['wrong_consent_status']}, status=http_status.HTTP_400_BAD_REQUEST)
         elif consent.person_id != self._get_person_id(request):
-            logger.warning('Consent doesn\'t belong to the logged in person so it is not revoked')
+            logger.warning('Consent doesn\'t belong to the logged in person so it has not been changed')
             return Response({'errors': ['wrong_person']}, status=http_status.HTTP_400_BAD_REQUEST)
 
         logger.info('Update data: %s', request.data)

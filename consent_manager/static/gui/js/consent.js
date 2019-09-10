@@ -21,7 +21,7 @@ import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
 import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
 import moment from 'moment';
-import {arrayToObject, copy, iterate} from './utils';
+import {arrayToObject, copy, iterate, getDate, getFormattedDate} from './utils';
 import Pencil from 'react-icons/lib/fa/pencil';
 import PropTypes from 'prop-types';
 import NotificationManager from './notificationManager';
@@ -85,21 +85,21 @@ class ConfirmConsents extends React.Component {
                             <CustomDatePicker
                                 id={"start-date-picker-" + k}
                                 disabled={c.start_date_disabled}
-                                selected={moment(c.start_validity)}
-                                maxDate={moment(c.expire_validity)}
+                                selected={getDate(c.start_validity)}
+                                maxDate={getDate(c.expire_validity)}
                                 label="Exclude Start Date"
                                 onChangeDate={this.changeDate.bind(this, c.confirm_id, 'start')}
-                                onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'start')}/>
+                                onChangeExclude={this.toggleDateSelection.bind(this, c.confirm_id, 'start')}/>
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Ending">
                             <CustomDatePicker
                                 id={"expire-date-picker-" + k}
                                 disabled={c.expire_date_disabled}
-                                selected={moment(c.expire_validity)}
-                                minDate={moment(c.start_validity)}
+                                selected={getDate(c.expire_validity)}
+                                minDate={getDate(c.start_validity)}
                                 label="Exclude End Date"
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
-                                onChangeExclude={this.checkDate.bind(this, c.confirm_id, 'expire')}/>
+                                onChangeExclude={this.toggleDateSelection.bind(this, c.confirm_id, 'expire')}/>
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
@@ -182,7 +182,7 @@ class ConfirmConsents extends React.Component {
         });
     }
 
-    checkDate(confirmId, startOrEnd, event) {
+    toggleDateSelection(confirmId, startOrEnd, event) {
         let consents = copy(this.state.consents);
         consents[confirmId][`${startOrEnd}_date_disabled`] = event.target.checked;
         this.setState({
@@ -225,7 +225,6 @@ class ConfirmConsents extends React.Component {
                 }
             }
         }
-        console.log(consentsData)
 
         axios.post('/v1/consents/confirm/', {
             consents: consentsData,
@@ -276,10 +275,10 @@ class ConsentsViewer extends React.Component {
                         <Profile data={c.profile}/>
                     </td>
                     <td className="stack-table-cell" data-title="Start Transfer Date">
-                        {moment(c.start_validity).format('L')}
+                        {getFormattedDate(c.start_validity)}
                     </td>
                     <td className="stack-table-cell" data-title="End Transfer Date">
-                        {moment(c.expire_validity).format('L')}
+                        {getFormattedDate(c.expire_validity)}
                     </td>
                     <td className="stack-table-cell stack-table-cell-modify"
                         onClick={this.callSelectConsent.bind(this, c)}>
@@ -334,14 +333,19 @@ class ConsentManager extends React.Component {
                     'Do you want to continue?',
             'modify': 'This action will change the consent data. Are you sure you want to continue?'
         };
+        let originalConsent = copy(this.props.consent)
+        originalConsent['start_date_disabled'] = this.props.consent['start_validity'] == null;
+        originalConsent['expire_date_disabled'] = this.props.consent['expire_validity'] == null;
+
         this.state = {
-            consent: copy(this.props.consent),
+            originalConsent: originalConsent,
+            currentConsent: copy(originalConsent),
             modal: null
         };
     }
 
     render() {
-        const consent = this.state.consent;
+        const consent = this.state.currentConsent;
         return (
             <div>
                 <div className='table-responsive-md details-table-container'>
@@ -385,12 +389,14 @@ class ConsentManager extends React.Component {
                                 Start Date
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
-                                <DatePicker
-                                    minDate={moment(this.props.consent.start_validity)}
-                                    maxDate={moment(consent.expire_validity)}
-                                    selected={moment(consent.start_validity)}
-                                    onChange={this.changeDate.bind(this, 'start')}
-                                />
+                                <CustomDatePicker
+                                    label="Exclude Start Date"
+                                    id={"start-date-picker"}
+                                    disabled={consent.start_date_disabled}
+                                    selected={getDate(consent.start_validity)}
+                                    maxDate={getDate(consent.expire_validity)}
+                                    onChangeDate={this.changeDate.bind(this, 'start')}
+                                    onChangeExclude={this.toggleDateSelection.bind(this, 'start')}/>
                             </td>
                         </tr>
                         <tr className='details-table-row'>
@@ -398,11 +404,14 @@ class ConsentManager extends React.Component {
                                 End Date
                             </td>
                             <td className='details-table-cell details-table-cell-value'>
-                                <DatePicker
-                                    minDate={moment(consent.start_validity)}
-                                    selected={moment(consent.expire_validity)}
-                                    onChange={this.changeDate.bind(this, 'expire')}
-                                />
+                                <CustomDatePicker
+                                    label="Exclude End Date"
+                                    id={"end-date-picker"}
+                                    disabled={consent.expire_date_disabled}
+                                    selected={getDate(consent.expire_validity)}
+                                    minDate={getDate(consent.start_validity)}
+                                    onChangeDate={this.changeDate.bind(this, 'expire')}
+                                    onChangeExclude={this.toggleDateSelection.bind(this, 'expire')}/>
                             </td>
                         </tr>
                         <tr className='details-table-row'>
@@ -456,30 +465,42 @@ class ConsentManager extends React.Component {
     }
 
     canModify() {
-        return this.state.consent.status === 'AC' && (this.state.consent.start_validity !== this.props.consent.start_validity ||
-            this.state.consent.expire_validity !== this.props.consent.expire_validity)
+        let current = this.state.currentConsent;
+        let original = this.state.originalConsent;
+        console.log(current);
+        console.log(original);
+        return current.status === 'AC' && 
+            (
+            (current.start_validity != original.start_validity && !current.start_date_disabled) ||
+            (current.expire_validity != original.expire_validity && !current.expire_date_disabled) ||
+            (current.start_date_disabled != original.start_date_disabled && current.start_validity != null) || 
+            (current.expire_date_disabled != original.expire_date_disabled && current.expire_validity != null));
+
+    }
+
+    toggleDateSelection(startOrEnd, event) {
+        let consent = copy(this.state.currentConsent);
+        consent[`${startOrEnd}_date_disabled`] = event.target.checked;
+        this.setState({
+            currentConsent: consent
+        }); 
     }
 
     changeDate(startOrEnd, dateObject) {
-        if (startOrEnd === 'S') {
-            startOrEnd = 'start'
-        }
-        else {
-            startOrEnd = 'expire'
-        }
-        let consent = copy(this.state.consent);
+        let consent = copy(this.state.currentConsent);
         consent[`${startOrEnd}_validity`] = dateObject.format();
         this.setState({
-            consent: consent
+            currentConsent: consent
         });
     }
 
     goBack() {
-        this.props.goBack(this.state.consent);
+        this.props.goBack(this.state.originalConsent);
     }
 
     sendCommand(action) {
-        const consent_id = this.state.consent.consent_id;
+        const consent_id = this.state.currentConsent.consent_id;
+        
         switch (action) {
             case this.actions.REVOKE:
                 axios.post(`/v1/consents/${consent_id}/revoke/`, {}, {
@@ -487,10 +508,11 @@ class ConsentManager extends React.Component {
                     xsrfCookieName: 'csrftoken',
                     xsrfHeaderName: 'X-CSRFToken'
                 }).then(() => {
-                    let consent = copy(this.state.consent);
+                    let consent = copy(this.state.currentConsent);
                     consent.status = 'RE';
                     this.setState({
-                        consent: consent,
+                        originalConsent: consent,
+                        currentConsent: consent,
                     });
                     this.toggleModal(action);
                     this.props.notifier.success('Consent revoked correctly');
@@ -500,15 +522,28 @@ class ConsentManager extends React.Component {
                 });
                 break;
             case this.actions.MODIFY:
+                const start_validity = this.state.currentConsent.start_date_disabled ? null :  
+                                       this.state.currentConsent.start_validity;
+                const expire_validity = this.state.currentConsent.expire_date_disabled ? null : 
+                                        this.state.currentConsent.expire_validity;
+
                 axios.put(`/v1/consents/${consent_id}/`, {
-                    'start_validity': this.state.consent.start_validity,
-                    'expire_validity': this.state.consent.expire_validity
+                    'start_validity': start_validity,
+                    'expire_validity': expire_validity
                 }, {
                     withCredentials: true,
                     xsrfCookieName: 'csrftoken',
                     xsrfHeaderName: 'X-CSRFToken'
                 }).then(() => {
                     this.toggleModal(action);
+                    let originalConsent = copy(this.state.currentConsent);
+                    originalConsent['start_validity'] = start_validity;
+                    originalConsent['expire_validity'] = expire_validity;
+                    let newCurrentConsent = copy(originalConsent);
+                    this.setState({
+                        originalConsent: originalConsent,
+                        currentConsent: newCurrentConsent,
+                    });
                     this.props.notifier.success('Consent modified correctly');
                 }).catch(() => {
                     this.toggleModal(action);
