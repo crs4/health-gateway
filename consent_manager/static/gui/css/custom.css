@@ -15,3 +15,7 @@ body {
 .custom-date-picker-label {
   padding-left: 20px;
 }
+
+.react-datepicker-wrapper {
+  display: block;
+}

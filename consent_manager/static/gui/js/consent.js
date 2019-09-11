@@ -19,9 +19,9 @@ import React from 'react';
 import Profile from './profile';
 import DjangoCSRFToken from 'django-react-csrftoken';
 import axios from 'axios';
-import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from 'reactstrap';
 import moment from 'moment';
-import {arrayToObject, copy, iterate, getDate, getFormattedDate} from './utils';
+import { arrayToObject, copy, iterate, getDate, getFormattedDate } from './utils';
 import Pencil from 'react-icons/lib/fa/pencil';
 import PropTypes from 'prop-types';
 import NotificationManager from './notificationManager';
@@ -50,14 +50,18 @@ function sortConsents(a, b) {
     return 0;
 }
 
+/**
+ * Consent confirmation class. It shows the Consents and allows the user to 
+ * accept them
+ */
 class ConfirmConsents extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            consents: arrayToObject(this.props.data, 'confirm_id', 
-                {'checked': false, 'start_date_disabled': false, 'expire_date_disabled': false}),
-            sent: false,    
+            consents: arrayToObject(this.props.data, 'confirm_id',
+                { 'checked': false, 'start_date_disabled': false, 'expire_date_disabled': false }),
+            sent: false,
             modal: false
         };
     }
@@ -79,7 +83,7 @@ class ConfirmConsents extends React.Component {
                             {c.source.name}
                         </td>
                         <td className="stack-table-cell" data-title="Data Profile">
-                            <Profile data={c.profile}/>
+                            <Profile data={c.profile} />
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Starting">
                             <CustomDatePicker
@@ -89,7 +93,7 @@ class ConfirmConsents extends React.Component {
                                 maxDate={getDate(c.expire_validity)}
                                 label="Exclude Start Date"
                                 onChangeDate={this.changeDate.bind(this, c.confirm_id, 'start')}
-                                onChangeExclude={this.toggleDateSelection.bind(this, c.confirm_id, 'start')}/>
+                                onChangeExclude={this.toggleDateSelection.bind(this, c.confirm_id, 'start')} />
                         </td>
                         <td className="stack-table-cell" data-title="Data Transfer Ending">
                             <CustomDatePicker
@@ -99,7 +103,7 @@ class ConfirmConsents extends React.Component {
                                 minDate={getDate(c.start_validity)}
                                 label="Exclude End Date"
                                 onChange={this.changeDate.bind(this, c.confirm_id, 'expire')}
-                                onChangeExclude={this.toggleDateSelection.bind(this, c.confirm_id, 'expire')}/>
+                                onChangeExclude={this.toggleDateSelection.bind(this, c.confirm_id, 'expire')} />
                         </td>
                         <td className="stack-table-cell" data-title="Legal Notice">
                             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
@@ -108,8 +112,8 @@ class ConfirmConsents extends React.Component {
                         </td>
                         <td className="stack-table-cell" data-title="Confirm">
                             <input type="checkbox" name="confirm_list" value={c.confirm_id}
-                                   disabled={this.state.sent}
-                                   checked={c.checked} onChange={this.checkBoxHandler.bind(this)}/>
+                                disabled={this.state.sent}
+                                checked={c.checked} onChange={this.checkBoxHandler.bind(this)} />
                         </td>
                     </tr>
                 )
@@ -117,32 +121,32 @@ class ConfirmConsents extends React.Component {
         }
         return (
             <form>
-                <DjangoCSRFToken/>
+                <DjangoCSRFToken />
                 <table className="sheru-cp-section stack-table">
                     <thead className="stack-table-head">
-                    <tr className="stack-table-row">
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Destination</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Transfer Starting</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Starting</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Legal notice</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">
-                            <input type="checkbox" name="confirm_all"
-                                   disabled={this.state.sent}
-                                   checked={checkedCounter === Object.keys(this.state.consents).length}
-                                   onChange={this.checkBoxAllHandler.bind(this)}/>
-                        </th>
-                    </tr>
+                        <tr className="stack-table-row">
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Destination</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Data Transfer Starting</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Starting</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Legal notice</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">
+                                <input type="checkbox" name="confirm_all"
+                                    disabled={this.state.sent}
+                                    checked={checkedCounter === Object.keys(this.state.consents).length}
+                                    onChange={this.checkBoxAllHandler.bind(this)} />
+                            </th>
+                        </tr>
                     </thead>
                     <tbody className="stack-table-body">
-                    {rows}
+                        {rows}
                     </tbody>
                 </table>
                 <Button id='btn-confirm-consents'
-                        color='primary'
-                        onClick={this.toggle.bind(this)}
-                        disabled={!this.canSubmit()}>Accept Conditions for Selected Consent(s)</Button>
+                    color='primary'
+                    onClick={this.toggle.bind(this)}
+                    disabled={!this.canSubmit()}>Accept Conditions for Selected Consent(s)</Button>
                 <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
                     <ModalHeader toggle={this.toggle.bind(this)}>Are you sure?</ModalHeader>
                     <ModalBody>
@@ -151,9 +155,9 @@ class ConfirmConsents extends React.Component {
                     </ModalBody>
                     <ModalFooter>
                         <Button color="primary" id="btn-modal-confirm-consents"
-                                onClick={this.sendConfirmed.bind(this)}>Authorize</Button>{' '}
+                            onClick={this.sendConfirmed.bind(this)}>Authorize</Button>{' '}
                         <Button color="secondary" id="btn-modal-cancel-consents"
-                                onClick={this.toggle.bind(this)}>Cancel</Button>
+                            onClick={this.toggle.bind(this)}>Cancel</Button>
                     </ModalFooter>
                 </Modal>
             </form>
@@ -187,7 +191,7 @@ class ConfirmConsents extends React.Component {
         consents[confirmId][`${startOrEnd}_date_disabled`] = event.target.checked;
         this.setState({
             consents: consents
-        }); 
+        });
     }
 
     checkBoxHandler(event) {
@@ -248,7 +252,10 @@ class ConfirmConsents extends React.Component {
     }
 }
 
-class ConsentsViewer extends React.Component {
+/**
+ * Consents list class. It shows the list of consents for the user
+ */
+class ConsentsList extends React.Component {
     render() {
         let rows = [];
         let currentDest = "";
@@ -256,8 +263,9 @@ class ConsentsViewer extends React.Component {
             if (c.destination.name !== currentDest) {
                 rows.push(
                     <tr key={`${k}head`} className="stack-table-row">
-                        <th className="stack-table-cell stack-table-cell-header
-                        stack-table-cell-spanned" colSpan="6">{c.destination.name}
+                        <th className="stack-table-cell stack-table-cell-header stack-table-cell-spanned"
+                            colSpan="6">
+                            {c.destination.name}
                         </th>
                     </tr>
                 );
@@ -272,7 +280,7 @@ class ConsentsViewer extends React.Component {
                         {status[c.status]}
                     </td>
                     <td className="stack-table-cell" data-title="Data Profile">
-                        <Profile data={c.profile}/>
+                        <Profile data={c.profile} />
                     </td>
                     <td className="stack-table-cell" data-title="Start Transfer Date">
                         {getFormattedDate(c.start_validity)}
@@ -282,8 +290,7 @@ class ConsentsViewer extends React.Component {
                     </td>
                     <td className="stack-table-cell stack-table-cell-modify"
                         onClick={this.callSelectConsent.bind(this, c)}>
-                        <Pencil
-                            size={20}/>
+                        <Pencil size={20} />
                     </td>
                 </tr>
             );
@@ -292,17 +299,17 @@ class ConsentsViewer extends React.Component {
             <form>
                 <table className="sheru-cp-section stack-table">
                     <thead className="stack-table-head">
-                    <tr className="stack-table-row">
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Status</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">Start Transfer Date</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Date</th>
-                        <th className="stack-table-cell stack-table-cell-header" scope="col"/>
-                    </tr>
+                        <tr className="stack-table-row">
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Source</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Status</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Data Profile</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">Start Transfer Date</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col">End Transfer Date</th>
+                            <th className="stack-table-cell stack-table-cell-header" scope="col" />
+                        </tr>
                     </thead>
                     <tbody className="stack-table-body">
-                    {rows}
+                        {rows}
                     </tbody>
                 </table>
             </form>
@@ -314,12 +321,16 @@ class ConsentsViewer extends React.Component {
     }
 }
 
-ConsentsViewer.propTypes = {
+ConsentsList.propTypes = {
     consents: PropTypes.object,
     selectConsent: PropTypes.func.isRequired
 };
 
-class ConsentManager extends React.Component {
+/**
+ * Consent details class. It shows the details of a consent and allows operation like
+ * revoking or modifying the datetime range
+ */
+class ConsentDetails extends React.Component {
     constructor(props) {
         super(props);
         this.actions = {
@@ -328,11 +339,12 @@ class ConsentManager extends React.Component {
         };
         this.alertMessages = {
             'revoke': 'If you revoke the consent all the messages incoming from the source ' +
-                    'will not be sent to the destination anymore.\n' +
-                    'The data already sent to the destination will be kept\n' +
-                    'Do you want to continue?',
+                'will not be sent to the destination anymore.\n' +
+                'The data already sent to the destination will be kept\n' +
+                'Do you want to continue?',
             'modify': 'This action will change the consent data. Are you sure you want to continue?'
         };
+
         let originalConsent = copy(this.props.consent)
         originalConsent['start_date_disabled'] = this.props.consent['start_validity'] == null;
         originalConsent['expire_date_disabled'] = this.props.consent['expire_validity'] == null;
@@ -349,103 +361,103 @@ class ConsentManager extends React.Component {
         return (
             <div>
                 <div className='table-responsive-md details-table-container'>
-                    <DjangoCSRFToken/>
+                    <DjangoCSRFToken />
                     <table className='sheru-cp-section details-table'>
                         <tbody className='details-table-body'>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                Destination
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    Destination
                             </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                {consent.destination.name}
+                                <td className='details-table-cell details-table-cell-value'>
+                                    {consent.destination.name}
+                                </td>
+                            </tr>
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    Source
                             </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                Source
+                                <td className='details-table-cell details-table-cell-value'>
+                                    {consent.source.name}
+                                </td>
+                            </tr>
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    Status
                             </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                {consent.source.name}
+                                <td className='details-table-cell details-table-cell-value'>
+                                    {status[consent.status]}
+                                </td>
+                            </tr>
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    Data Profile
                             </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                Status
+                                <td className='details-table-cell details-table-cell-value'>
+                                    <Profile data={consent.profile} />
+                                </td>
+                            </tr>
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    Start Date
                             </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                {status[consent.status]}
+                                <td className='details-table-cell details-table-cell-value'>
+                                    <CustomDatePicker
+                                        label="Exclude Start Date"
+                                        id={"start-date-picker"}
+                                        disabled={consent.start_date_disabled}
+                                        selected={getDate(consent.start_validity)}
+                                        maxDate={getDate(consent.expire_validity)}
+                                        onChangeDate={this.setDate.bind(this, 'start')}
+                                        onChangeExclude={this.toggleExcludeDate.bind(this, 'start')} />
+                                </td>
+                            </tr>
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    End Date
                             </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                Data Profile
+                                <td className='details-table-cell details-table-cell-value'>
+                                    <CustomDatePicker
+                                        label="Exclude End Date"
+                                        id={"end-date-picker"}
+                                        disabled={consent.expire_date_disabled}
+                                        selected={getDate(consent.expire_validity)}
+                                        minDate={getDate(consent.start_validity)}
+                                        onChangeDate={this.setDate.bind(this, 'expire')}
+                                        onChangeExclude={this.toggleExcludeDate.bind(this, 'expire')} />
+                                </td>
+                            </tr>
+                            <tr className='details-table-row'>
+                                <td className='details-table-cell details-table-cell-key'>
+                                    Legal Notice
                             </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                <Profile data={consent.profile}/>
+                                <td className='details-table-cell details-table-cell-value'>
+                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                                    incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+                                    nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                             </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                Start Date
-                            </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                <CustomDatePicker
-                                    label="Exclude Start Date"
-                                    id={"start-date-picker"}
-                                    disabled={consent.start_date_disabled}
-                                    selected={getDate(consent.start_validity)}
-                                    maxDate={getDate(consent.expire_validity)}
-                                    onChangeDate={this.changeDate.bind(this, 'start')}
-                                    onChangeExclude={this.toggleDateSelection.bind(this, 'start')}/>
-                            </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                End Date
-                            </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                <CustomDatePicker
-                                    label="Exclude End Date"
-                                    id={"end-date-picker"}
-                                    disabled={consent.expire_date_disabled}
-                                    selected={getDate(consent.expire_validity)}
-                                    minDate={getDate(consent.start_validity)}
-                                    onChangeDate={this.changeDate.bind(this, 'expire')}
-                                    onChangeExclude={this.toggleDateSelection.bind(this, 'expire')}/>
-                            </td>
-                        </tr>
-                        <tr className='details-table-row'>
-                            <td className='details-table-cell details-table-cell-key'>
-                                Legal Notice
-                            </td>
-                            <td className='details-table-cell details-table-cell-value'>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-                                nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                            </td>
-                        </tr>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
                 <Button id='btn-back'
-                        color='info'
-                        onClick={this.goBack.bind(this)}>
+                    color='info'
+                    onClick={this.goBack.bind(this)}>
                     Back
                 </Button>{' '}
                 <Button id='btn-modify'
-                        color='primary'
-                        disabled={!this.canModify()}
-                        onClick={this.toggleModal.bind(this, this.actions.MODIFY)}>
+                    color='primary'
+                    disabled={!this.canSubmit()}
+                    onClick={this.toggleModal.bind(this, this.actions.MODIFY)}>
                     Modify
                 </Button>{' '}
                 <Button id='btn-revoke'
-                        color='success'
-                        disabled={consent.status !== 'AC'}
-                        onClick={this.toggleModal.bind(this, this.actions.REVOKE)}>
+                    color='success'
+                    disabled={consent.status !== 'AC'}
+                    onClick={this.toggleModal.bind(this, this.actions.REVOKE)}>
                     Revoke
                 </Button>{' '}
                 <Button id='btn-delete'
-                        color='danger'>
+                    color='danger'>
                     Delete all data
                 </Button>
                 <Modal isOpen={this.state.modal !== null} toggle={this.toggleModal.bind(this, this.state.modal)}>
@@ -455,38 +467,49 @@ class ConsentManager extends React.Component {
                     </ModalBody>
                     <ModalFooter>
                         <Button color="primary" id="btn-modal-ok"
-                                onClick={this.sendCommand.bind(this, this.state.modal)}>OK</Button>{' '}
+                            onClick={this.sendCommand.bind(this, this.state.modal)}>OK</Button>{' '}
                         <Button color="secondary" id="btn-modal-cancel"
-                                onClick={this.toggleModal.bind(this, this.state.modal)}>Cancel</Button>
+                            onClick={this.toggleModal.bind(this, this.state.modal)}>Cancel</Button>
                     </ModalFooter>
                 </Modal>
             </div>
         )
     }
 
-    canModify() {
+    /**
+     * Method to check if it is possible to submit the changes
+     */
+    canSubmit() {
         let current = this.state.currentConsent;
         let original = this.state.originalConsent;
-        console.log(current);
-        console.log(original);
-        return current.status === 'AC' && 
-            (
+        return current.status === 'AC' && (
             (current.start_validity != original.start_validity && !current.start_date_disabled) ||
             (current.expire_validity != original.expire_validity && !current.expire_date_disabled) ||
-            (current.start_date_disabled != original.start_date_disabled && current.start_validity != null) || 
-            (current.expire_date_disabled != original.expire_date_disabled && current.expire_validity != null));
+            (current.start_date_disabled != original.start_date_disabled && current.start_validity != null) ||
+            (current.expire_date_disabled != original.expire_date_disabled && current.expire_validity != null)
+        );
 
     }
 
-    toggleDateSelection(startOrEnd, event) {
+    /**
+     * Change the current state of the consent according to the "Exclude date" checkbox
+     * @param {string} startOrExpire the date to toggle. It must be `start` or `end`
+     * @param {Object} event the event that triggered the method call
+     */
+    toggleExcludeDate(startOrExpire, event) {
         let consent = copy(this.state.currentConsent);
-        consent[`${startOrEnd}_date_disabled`] = event.target.checked;
+        consent[`${startOrExpire}_date_disabled`] = event.target.checked;
         this.setState({
             currentConsent: consent
-        }); 
+        });
     }
 
-    changeDate(startOrEnd, dateObject) {
+    /**
+     * Set the value of the start or end date
+     * @param {string} startOrEnd the date to set. It must be `start` or `end`
+     * @param {Date} dateObject the new date value
+     */
+    setDate(startOrEnd, dateObject) {
         let consent = copy(this.state.currentConsent);
         consent[`${startOrEnd}_validity`] = dateObject.format();
         this.setState({
@@ -494,72 +517,88 @@ class ConsentManager extends React.Component {
         });
     }
 
-    goBack() {
-        this.props.goBack(this.state.originalConsent);
-    }
-
-    sendCommand(action) {
-        const consent_id = this.state.currentConsent.consent_id;
-        
-        switch (action) {
-            case this.actions.REVOKE:
-                axios.post(`/v1/consents/${consent_id}/revoke/`, {}, {
-                    withCredentials: true,
-                    xsrfCookieName: 'csrftoken',
-                    xsrfHeaderName: 'X-CSRFToken'
-                }).then(() => {
-                    let consent = copy(this.state.currentConsent);
-                    consent.status = 'RE';
-                    this.setState({
-                        originalConsent: consent,
-                        currentConsent: consent,
-                    });
-                    this.toggleModal(action);
-                    this.props.notifier.success('Consent revoked correctly');
-                }).catch(() => {
-                    this.toggleModal(action);
-                    this.props.notifier.error('Errors happened revoking consent');
-                });
-                break;
-            case this.actions.MODIFY:
-                const start_validity = this.state.currentConsent.start_date_disabled ? null :  
-                                       this.state.currentConsent.start_validity;
-                const expire_validity = this.state.currentConsent.expire_date_disabled ? null : 
-                                        this.state.currentConsent.expire_validity;
-
-                axios.put(`/v1/consents/${consent_id}/`, {
-                    'start_validity': start_validity,
-                    'expire_validity': expire_validity
-                }, {
-                    withCredentials: true,
-                    xsrfCookieName: 'csrftoken',
-                    xsrfHeaderName: 'X-CSRFToken'
-                }).then(() => {
-                    this.toggleModal(action);
-                    let originalConsent = copy(this.state.currentConsent);
-                    originalConsent['start_validity'] = start_validity;
-                    originalConsent['expire_validity'] = expire_validity;
-                    let newCurrentConsent = copy(originalConsent);
-                    this.setState({
-                        originalConsent: originalConsent,
-                        currentConsent: newCurrentConsent,
-                    });
-                    this.props.notifier.success('Consent modified correctly');
-                }).catch(() => {
-                    this.toggleModal(action);
-                    this.props.notifier.error('Errors happened modifying consent');
-                });
-        }
-    }
-
+    /**
+     * Open or close the confirmation modal window
+     * @param {} action 
+     */
     toggleModal(action) {
         this.setState({
             modal: this.state.modal === null ? action : null
         })
     }
+
+    goBack() {
+        this.props.goBack(this.state.originalConsent);
+    }
+
+    sendCommand(action) {
+        const consentId = this.state.currentConsent.consent_id;
+
+        switch (action) {
+            case this.actions.REVOKE:
+                this.revoke(consentId);
+                break;
+            case this.actions.MODIFY:
+                this.modify(consentId);
+                break;
+        }
+    }
+
+    revoke(consentId) {
+        axios.post(`/v1/consents/${consentId}/revoke/`, {}, {
+            withCredentials: true,
+            xsrfCookieName: 'csrftoken',
+            xsrfHeaderName: 'X-CSRFToken'
+        }).then(() => {
+            let consent = copy(this.state.currentConsent);
+            consent.status = 'RE';
+            this.setState({
+                originalConsent: consent,
+                currentConsent: consent,
+            });
+            this.toggleModal(this.actions.REVOKE);
+            this.props.notifier.success('Consent revoked correctly');
+        }).catch(() => {
+            this.toggleModal(this.actions.REVOKE);
+            this.props.notifier.error('Errors happened revoking consent');
+        });
+    }
+
+    modify(consentId) {
+        const start_validity = this.state.currentConsent.start_date_disabled ? null :
+            this.state.currentConsent.start_validity;
+        const expire_validity = this.state.currentConsent.expire_date_disabled ? null :
+            this.state.currentConsent.expire_validity;
+
+        axios.put(`/v1/consents/${consentId}/`, {
+            'start_validity': start_validity,
+            'expire_validity': expire_validity
+        }, {
+            withCredentials: true,
+            xsrfCookieName: 'csrftoken',
+            xsrfHeaderName: 'X-CSRFToken'
+        }).then(() => {
+            this.toggleModal(this.actions.MODIFY);
+
+            let originalConsent = copy(this.state.currentConsent);
+            originalConsent['start_validity'] = start_validity;
+            originalConsent['expire_validity'] = expire_validity;
+            let newCurrentConsent = copy(originalConsent);
+
+            this.setState({
+                originalConsent: originalConsent,
+                currentConsent: newCurrentConsent,
+            });
+
+            this.props.notifier.success('Consent modified correctly');
+        }).catch(() => {
+            this.toggleModal(this.actions.MODIFY);
+            this.props.notifier.error('Errors happened modifying consent');
+        });
+    }
 }
 
-ConsentManager.propTypes = {
+ConsentDetails.propTypes = {
     consent: PropTypes.object,
     notifier: PropTypes.instanceOf(NotificationManager),
     goBack: PropTypes.func.isRequired
@@ -572,20 +611,20 @@ class ConsentsController extends React.Component {
         super(props);
         let consents = this.props.data.sort(sortConsents);
         this.state = {
-            consents: arrayToObject(consents, 'consent_id', {'collapsed': true}),
+            consents: arrayToObject(consents, 'consent_id', { 'collapsed': true }),
             currentConsent: null
         }
     }
 
     render() {
         if (this.state.currentConsent === null) {
-            return (<ConsentsViewer consents={this.state.consents}
-                                    selectConsent={this.selectConsent.bind(this)}/>)
+            return (<ConsentsList consents={this.state.consents}
+                selectConsent={this.selectConsent.bind(this)} />)
         }
         else {
-            return (<ConsentManager consent={this.state.currentConsent}
-                                    notifier={this.props.notifier}
-                                    goBack={this.doneModify.bind(this)}/>)
+            return (<ConsentDetails consent={this.state.currentConsent}
+                notifier={this.props.notifier}
+                goBack={this.doneModify.bind(this)} />)
         }
     }
 
@@ -610,4 +649,4 @@ ConsentsController.propTypes = {
     notifier: PropTypes.instanceOf(NotificationManager)
 };
 
-export {ConfirmConsents, ConsentsController, ConsentManager};
+export { ConfirmConsents, ConsentsController, ConsentDetails as ConsentManager };
