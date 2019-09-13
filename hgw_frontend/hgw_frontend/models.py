@@ -54,7 +54,7 @@ class FlowRequest(models.Model):
     person_id = models.CharField(max_length=20, blank=True, null=True)
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE, null=True)
     sources = models.ManyToManyField(Source)
-    destination = models.ForeignKey('Destination')
+    destination = models.ForeignKey('Destination', on_delete=models.PROTECT)
     start_validity = models.DateTimeField(null=False)
     expire_validity = models.DateTimeField(null=False)
 
@@ -81,8 +81,8 @@ class Channel(models.Model):
     )
 
     channel_id = models.CharField(max_length=32, blank=False)
-    flow_request = models.ForeignKey(FlowRequest, null=False)
-    source = models.ForeignKey(Source, null=False)
+    flow_request = models.ForeignKey(FlowRequest, null=False, on_delete=models.PROTECT)
+    source = models.ForeignKey(Source, null=False, on_delete=models.PROTECT)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
 
     def __str__(self):
@@ -168,7 +168,7 @@ class RESTClient(AbstractApplication):
         ('SU', SUPER)
     )
 
-    destination = models.OneToOneField('Destination', null=True, blank=True)
+    destination = models.OneToOneField('Destination', null=True, blank=True, on_delete=models.CASCADE)
     client_role = models.CharField(max_length=2, choices=ROLE_CHOICES, null=False, blank=False, default=STANDARD)
     scopes = models.CharField(max_length=100, blank=False, null=False, default=" ".join(DEFAULT_SCOPES),
                               help_text="Space separated scopes to assign to the REST client")
