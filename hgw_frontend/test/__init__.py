@@ -19,8 +19,8 @@
 import os
 
 BASE_DIR = os.path.dirname(__file__)
-CORRECT_CONSENT_ID = 'consent'
-CORRECT_CONSENT_ID2 = 'consent2'
+CORRECT_CONSENT_ID_CR = 'consent' # correct consent in status CR
+CORRECT_CONSENT_ID_AC = 'consent2' # correct consent in status AC
 WRONG_CONSENT_ID = 'wrong_consent'
 WRONG_CONSENT_ID2 = 'wrong_consent2'
 CORRECT_CONFIRM_ID = 'confirmed'

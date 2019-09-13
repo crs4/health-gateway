@@ -229,7 +229,9 @@
       "channel_id": "nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b",
       "flow_request": 1,
       "source": 1,
-      "status": "CR"
+      "status": "CR",
+      "start_validity": "2017-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00"
     }
   },
   {
@@ -239,7 +241,9 @@
       "channel_id": "07rm7LqdFUqRUZz5zBZ2FPkzb7mXbj3u",
       "flow_request": 1,
       "source": 2,
-      "status": "AC"
+      "status": "AC",
+      "start_validity": "2017-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00"
     }
   },
   {
@@ -249,7 +253,9 @@
       "channel_id": "fF4sG1fgIGY1JcdqRSz91LelfQ6rq7qx",
       "flow_request": 2,
       "source": 1,
-      "status": "WS"
+      "status": "WS",
+      "start_validity": "2017-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00"
     }
   },
   {
@@ -259,7 +265,9 @@
       "channel_id": "kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh",
       "flow_request": 2,
       "source": 2,
-      "status": "AC"
+      "status": "AC",
+      "start_validity": "2017-10-23T10:00:00.000+02:00",
+      "expire_validity": "2018-10-23T10:00:00.000+02:00"
     }
   },
   {

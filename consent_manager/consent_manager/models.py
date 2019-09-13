@@ -40,7 +40,7 @@ class Consent(models.Model):
     NOT_VALID = 'NV'
 
     STATUS_CHOICES = (
-        (REVOKED, 'REVOKED'),  # Status set to a Consent that was never confirmed
+        (REVOKED, 'REVOKED'),
         (PENDING, 'PENDING'),
         (ACTIVE, 'ACTIVE'),
         (NOT_VALID, 'NOT_VALID'),
@@ -59,6 +59,19 @@ class Consent(models.Model):
 
     def __str__(self):
         return 'Consent ID: {} - Person: {} - Status {}'.format(self.consent_id, self.person_id, self.status)
+
+
+# class ConsentHistory(models.Model):
+#     """
+#     This models stores the history of a Consent in order to keep track of the changes occurred
+#     """
+#     consent = models.ForeignKey('Consent')
+#     status = models.CharField(max_length=2, choices=Consent.STATUS_CHOICES, null=False)
+#     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE)
+#     start_validity = models.DateTimeField(null=True)
+#     expire_validity = models.DateTimeField(null=True)
+#     start_date = models.DateTimeField(null=True, desc="The start date the of the validity of this version of the consent")
+#     end_date = models.DateTimeField(null=True, desc="The end date the of the validity of this version of the consent")
 
 
 def get_validity():
