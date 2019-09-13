@@ -26,6 +26,6 @@ class Connector(models.Model):
     person_identifier = models.CharField(max_length=256)
     dest_public_key = models.CharField(max_length=500)
     channel_id = models.CharField(max_length=256)
-    profile = models.ForeignKey('hgw_common.Profile')
+    profile = models.ForeignKey('hgw_common.Profile', on_delete=models.PROTECT)
     start_validity = models.DateField(null=True)
     expire_validity = models.DateField(null=True)

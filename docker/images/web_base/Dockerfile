@@ -17,7 +17,7 @@ ENV DJANGO_DIR=/container/service
 ENV CERT_DIR=/container/certs
 ENV DEV_DJANGO_DIR=/container/devservice
 ENV FIXTURES_DIR=/container/fixtures
-ARG DJANGO_VERSION=1.11.7
+ARG DJANGO_VERSION=2.2.5
 ARG HTTP_PORT=80
 
 RUN pip3 install Django==${DJANGO_VERSION} \
@@ -32,6 +32,7 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	pycryptodomex==3.4.7 \
 	coreapi==2.3.3 \
 	PyYAML==5.1.1 \
+	pysaml2==4.6.0 \
 	coverage \
 	psycopg2 \
 	urllib3==1.25.3 \
