@@ -45,6 +45,7 @@ services:
 
   hgw_frontend:
     image: crs4/hgw_frontend:latest
+    # image: crs4/hgw_frontend:1.0.11
     depends_on:
       - kafka
       - hgw_backend
@@ -56,6 +57,7 @@ services:
     ports:
       - 8000:8000
     volumes:
+      # - ../../../hgw_frontend/saml2/:/container/certs/
       - ../../../hgw_frontend/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
@@ -67,6 +69,7 @@ services:
       - ../../../certs/ca/kafka/certs/hgwfrontend/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/hgwfrontend/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
+      - /home/vitto/versioning/crs4/djangosaml2:/usr/lib/python3.6/site-packages/djangosaml2-0.16.10-py3.6.egg/
     networks:
       default:
         aliases:
@@ -103,6 +106,7 @@ services:
           - hgwbackend
 
   consent_manager:
+    # image: crs4/consent_manager:1.0.8
     image: crs4/consent_manager:latest
     environment:
       - HTTP_PORT=8002
@@ -122,6 +126,8 @@ services:
       - ../../../certs/ca/kafka/certs/consentmanager/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/consentmanager/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
+      - /home/vitto/versioning/crs4/djangosaml2:/usr/lib/python3.6/site-packages/djangosaml2-0.17.2-py3.6.egg/
+
     networks:
       default:
         aliases:

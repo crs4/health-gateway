@@ -91,7 +91,7 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file, saml_service, 
                 'want_response_signed': True,
                 'name': sp_name,
                 'name_id_format': saml.NAMEID_FORMAT_TRANSIENT,
-                'requested_attributes': REQ_ATTRIBUTES[saml_service],
+                # 'requested_attributes': REQ_ATTRIBUTES[saml_service],
                 'required_attributes': [attr['name'] for attr in REQ_ATTRIBUTES[saml_service]],
                 'endpoints': {
                     # url and binding to the assetion consumer service view

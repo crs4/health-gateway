@@ -20,6 +20,7 @@ import os
 import sys
 
 import yaml
+from django.conf.global_settings import LOGIN_REDIRECT_URL
 from yaml.error import YAMLError
 from yaml.scanner import ScannerError
 
@@ -108,6 +109,27 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'consent_manager': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+        },
+        'djangosaml2': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+        },
+    }
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',
                                        'rest_framework.authentication.SessionAuthentication'),
@@ -173,6 +195,7 @@ AUTH_USER_MODEL = 'consent_manager.ConsentManagerUser'
 USER_ID_FIELD = 'fiscalNumber'
 STATIC_URL = '/static/'
 LOGIN_URL = '/saml2/login/'
+# LOGIN_REDIRECT_URL = '/'
 STATIC_ROOT = os.path.join(BASE_DIR, '../static/')
 STATICFILES_DIRS = (
     ('gui', os.path.join(BASE_DIR, '../gui/assets/')),

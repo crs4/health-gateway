@@ -102,6 +102,27 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'hgw_frontend': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+        },
+        'djangosaml2': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+        },
+    }
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',),
     'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),
@@ -170,6 +191,7 @@ STATICFILES_DIRS = (
     # ('hgw_frontend', os.path.abspath(os.path.join(BASE_DIR, '../static/'))),
 )
 LOGIN_URL = '/saml2/login/'
+# LOGIN_REDIRECT_URL = '/'
 
 SESSION_COOKIE_NAME = 'hgw_frontend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
