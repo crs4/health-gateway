@@ -7,7 +7,7 @@ django:
   timezone: Europe/Rome
   database:
     engine: sqlite3
-    name: /container/devservice/hgw_frontend_db.sqlite3
+    name: /container/hgw_frontend_db.sqlite3
     user: hgwuser
     password: hgwpwd
     host: mysql
@@ -22,6 +22,8 @@ saml:
   sp_name: HGW Frontend Service Provider
   sp_cert: /container/devservice/saml2/saml2.cert.pem
   sp_key: /container/devservice/saml2/saml2.key.pem
+  # sp_cert: /container/certs/saml2.cert.pem
+  # sp_key: /container/certs/saml2.key.pem
 
 consent_manager:
   uri: https://consentmanager:8002

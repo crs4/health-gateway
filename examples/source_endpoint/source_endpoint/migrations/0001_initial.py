@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('person_identifier', models.CharField(max_length=256)),
                 ('dest_public_key', models.CharField(max_length=500)),
                 ('channel_id', models.CharField(max_length=256)),
-                ('profile', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='hgw_common.Profile')),
+                ('profile', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='hgw_common.Profile')),
                 ('start_validity', models.DateField(null=True)),
                 ('expire_validity', models.DateField(null=True)),
             ],

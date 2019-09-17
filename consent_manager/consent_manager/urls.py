@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from django.conf.urls import url, include
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.contrib import admin
 
@@ -28,24 +28,24 @@ from hgw_common.settings import VERSION_REGEX
 
 
 urlpatterns = [
-    url(r'^$', fr_views.home),
-    url(r'^login/$', fr_views.perform_login),
-    url(r'^logout/$', fr_views.perform_logout),
-    url(r'^admin/', admin.site.urls),
-    url(r'^saml2/', include('djangosaml2.urls')),
-    url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
-    url(r'^confirm_consents/$', views.confirm_consent),
-    url(r'^{}/consents/confirm/$'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'confirm'})),
-    url(r'^{}/consents/revoke/$'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke_list'}),
+    path(r'', fr_views.home),
+    path(r'login/', fr_views.perform_login),
+    path(r'logout/', fr_views.perform_logout),
+    path(r'admin/', admin.site.urls),
+    path(r'saml2/', include('djangosaml2.urls')),
+    path(r'oauth2/', include('oauth2_provider.urls')),
+    path(r'protocol/', include('hgw_common.urls')),
+    path(r'confirm_consents/', views.confirm_consent),
+    path(r'{}/consents/confirm/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'confirm'})),
+    path(r'{}/consents/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke_list'}),
         name='consents_revoke'),
-    url(r'^{}/consents/find/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'find'}),
+    path(r'{}/consents/find/'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'find'}),
         name='consents_find'),
-    url(r'^{}/consents/$'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'list', 'post': 'create'}),
+    path(r'{}/consents/'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'list', 'post': 'create'}),
         name='consents'),
-    url(r'^{}/consents/(?P<consent_id>\w+)/revoke/$'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke'}),
+    path(r'{}/consents/<str:consent_id>/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke'}),
         name='consents_retrieve'),
-    url(r'^{}/consents/(?P<consent_id>\w+)/$'.format(VERSION_REGEX),
+    path(r'{}/consents/<str:consent_id>/'.format(VERSION_REGEX),
         views.ConsentView.as_view({'get': 'retrieve', 'put': 'update'}),
         name='consents_retrieve'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

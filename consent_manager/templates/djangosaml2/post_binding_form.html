@@ -9,7 +9,11 @@ Please click the button below if you're not redirected automatically within a fe
 </p>
 <form method="post" action="{{ target_url }}" name="SSO_Login">
 	{% for key, value in params.items %}
-	    <input type="hidden" name="{{ key|safe }}" value="{{ value|safe }}" />
+	    {% if key == "SAMLRequest" %}
+	    	<input type="hidden" name="{{ key|safe }}" value="{{ value.decode|safe }}" />
+		{% else %}
+			<input type="hidden" name="{{ key|safe }}" value="{{ value|safe }}" />
+		{% endif %}
 	{% endfor %}
     <input type="submit" value="Log in" />
 </form>

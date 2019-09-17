@@ -16,16 +16,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from django.conf.urls import include, url
+from django.urls import include, path
 from django.contrib import admin
 
 from destination_mockup import views
 
 urlpatterns = (
-    url(r'^$', views.home),
-    url(r'^protocol/$', views.protocol),
-    url(r'^flow_requests/$', views.flow_requests),
-    url(r'^flow_requests/(?P<pk>[0-9]+)/$', views.flow_requests),
-    url(r'^flow_request_callback/$', views.flow_request_callback),
-    url(r'^admin/', include(admin.site.urls)),
+    path(r'', views.home),
+    path(r'protocol/', views.protocol),
+    path(r'flow_requests/', views.flow_requests),
+    path(r'flow_requests/<int:pk>/', views.flow_requests),
+    path(r'flow_request_callback/', views.flow_request_callback),
+    path(r'admin/', admin.site.urls),
 )

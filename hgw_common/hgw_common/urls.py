@@ -16,10 +16,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from django.conf.urls import url
+from django.urls import path
 
 from hgw_common import views
 
 urlpatterns = [
-    url(r'^version/', views.ProtocolVersion.as_view(), name='protocol'),
+    path(r'version/', views.ProtocolVersion.as_view(), name='protocol'),
 ]

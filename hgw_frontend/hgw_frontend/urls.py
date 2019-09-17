@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from django.conf.urls import url, include
+from django.urls import include, path
 from django.conf.urls.static import static
 from django.contrib import admin
 from rest_framework import routers
@@ -29,31 +29,31 @@ from .views import confirm_request, consents_confirmed, FlowRequestView, Message
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
 
-
+app_name = 'hgw_frontend'
 urlpatterns = [
-    url(r'^', admin.site.urls),
-    url(r'^saml2/', include('djangosaml2.urls')),
-    url(r'^oauth2/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    url(r'^protocol/', include('hgw_common.urls', namespace='protocol')),
-    url(r'^{}/flow_requests/confirm/$'.format(VERSION_REGEX), confirm_request),
-    url(r'^{}/flow_requests/consents_confirmed/$'.format(VERSION_REGEX), consents_confirmed),
-    url(r'^{}/flow_requests/search/$'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'search'}),
+    path(r'', admin.site.urls),
+    path(r'saml2/', include('djangosaml2.urls')),
+    path(r'oauth2/', include('oauth2_provider.urls')),
+    path(r'protocol/', include('hgw_common.urls')),
+    path(r'{}/flow_requests/confirm/'.format(VERSION_REGEX), confirm_request),
+    path(r'{}/flow_requests/consents_confirmed/'.format(VERSION_REGEX), consents_confirmed),
+    path(r'{}/flow_requests/search/'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'search'}),
         name='flow_requests_search'),
-    url(r'^{}/flow_requests/$'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'list', 'post': 'create'}),
+    path(r'{}/flow_requests/'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'list', 'post': 'create'}),
         name='flow_requests_list'),
-    url(r'^{}/flow_requests/(?P<process_id>\w+)/$'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'retrieve',
+    path(r'{}/flow_requests/<str:process_id>/'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'retrieve',
                                                                                                    'delete': 'delete'}),
         name='flow_requests_detail'),
-    url(r'^{}/flow_requests/(?P<process_id>\w+)/channels/$'.format(VERSION_REGEX), 
+    path(r'{}/flow_requests/<str:process_id>/channels/'.format(VERSION_REGEX), 
         FlowRequestView.as_view({'get': 'channels'}),
         name='flow_requests_channels'),
-    url(r'^{}/channels/search/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'search'})),
-    url(r'^{}/channels/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'list'})),
-    url(r'^{}/channels/(?P<channel_id>\w+)/$'.format(VERSION_REGEX), ChannelView.as_view({'get': 'retrieve'})),
-    url(r'^{}/messages/$'.format(VERSION_REGEX), Messages.as_view({'get': 'list'})),
-    url(r'^{}/messages/info/$'.format(VERSION_REGEX), Messages.as_view({'get': 'info'})),
-    url(r'^{}/messages/(?P<message_id>\d+)/?$'.format(VERSION_REGEX), Messages.as_view({'get': 'retrieve'})),
-    url(r'^{}/sources/$'.format(VERSION_REGEX), Sources.as_view({'get': 'list'})),
-    url(r'^{}/sources/(?P<source_id>\w+)/$'.format(VERSION_REGEX), Sources.as_view({'get': 'retrieve'})),
-    url(r'^{}/profiles/$'.format(VERSION_REGEX), Profiles.as_view({'get': 'list'})),
+    path(r'{}/channels/search/'.format(VERSION_REGEX), ChannelView.as_view({'get': 'search'})),
+    path(r'{}/channels/'.format(VERSION_REGEX), ChannelView.as_view({'get': 'list'})),
+    path(r'{}/channels/<str:channel_id>/'.format(VERSION_REGEX), ChannelView.as_view({'get': 'retrieve'})),
+    path(r'{}/messages/'.format(VERSION_REGEX), Messages.as_view({'get': 'list'})),
+    path(r'{}/messages/info/'.format(VERSION_REGEX), Messages.as_view({'get': 'info'})),
+    path(r'{}/messages/<int:message_id>/'.format(VERSION_REGEX), Messages.as_view({'get': 'retrieve'})),
+    path(r'{}/sources/'.format(VERSION_REGEX), Sources.as_view({'get': 'list'})),
+    path(r'{}/sources/<str:source_id>/'.format(VERSION_REGEX), Sources.as_view({'get': 'retrieve'})),
+    path(r'{}/profiles/'.format(VERSION_REGEX), Profiles.as_view({'get': 'list'})),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -850,31 +850,31 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
 
-    def test_delete_flow_requests(self):
-        headers = self._get_oauth_header()
+    # def test_delete_flow_requests(self):
+    #     headers = self._get_oauth_header()
 
-        res = self.client.delete('/v1/flow_requests/p_11111/', **headers)
-        self.assertEqual(res.status_code, 202)
-        self.assertTrue('confirm_id' in res.json())
-        self.assertEqual(FlowRequest.objects.all().count(), 3)
-        self.assertEqual(FlowRequest.objects.get(process_id='p_11111').status, FlowRequest.DELETE_REQUESTED)
+    #     res = self.client.delete('/v1/flow_requests/p_11111/', **headers)
+    #     self.assertEqual(res.status_code, 202)
+    #     self.assertTrue('confirm_id' in res.json())
+    #     self.assertEqual(FlowRequest.objects.all().count(), 3)
+    #     self.assertEqual(FlowRequest.objects.get(process_id='p_11111').status, FlowRequest.DELETE_REQUESTED)
 
-    def test_confirm_delete_flow_requests(self):
-        headers = self._get_oauth_header()
+    # def test_confirm_delete_flow_requests(self):
+    #     headers = self._get_oauth_header()
 
-        res = self.client.delete('/v1/flow_requests/p_11111/', **headers)
+    #     res = self.client.delete('/v1/flow_requests/p_11111/', **headers)
 
-        # Then confirm the request
-        confirm_id = res.json()['confirm_id']
-        callback_url = 'http://127.0.0.1/'
+    #     # Then confirm the request
+    #     confirm_id = res.json()['confirm_id']
+    #     callback_url = 'http://127.0.0.1/'
 
-        self.client.login(username='duck', password='duck')
-        res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=delete'.format(
-            confirm_id,
-            callback_url
-        ))
-        self.assertRedirects(res, callback_url, fetch_redirect_response=False)
-        self.assertRaises(FlowRequest.DoesNotExist, FlowRequest.objects.get, process_id='p_11111')
+    #     self.client.login(username='duck', password='duck')
+    #     res = self.client.get('/v1/flow_requests/confirm/?confirm_id={}&callback_url={}&action=delete'.format(
+    #         confirm_id,
+    #         callback_url
+    #     ))
+    #     self.assertRedirects(res, callback_url, fetch_redirect_response=False)
+    #     self.assertRaises(FlowRequest.DoesNotExist, FlowRequest.objects.get, process_id='p_11111')
 
     def test_search_flow_request_by_channel_id_with_super_client(self):
         """

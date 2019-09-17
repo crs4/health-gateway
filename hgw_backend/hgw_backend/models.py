@@ -243,7 +243,7 @@ class RESTClient(AbstractApplication):
         ('SU', SUPER)
     )
 
-    source = models.OneToOneField('Source', null=True, blank=True)
+    source = models.OneToOneField('Source', null=True, blank=True, on_delete=models.CASCADE)
     client_role = models.CharField(max_length=2, choices=ROLE_CHOICES, null=False, blank=False, default=STANDARD)
     scopes = models.CharField(max_length=100, blank=False, null=False, default=" ".join(settings.DEFAULT_SCOPES),
                               help_text="Space separated scopes to assign to the REST client")
@@ -262,7 +262,7 @@ class RESTClient(AbstractApplication):
 
 
 class AccessToken(models.Model):
-    oauth2_authentication = models.ForeignKey(OAuth2Authentication)
+    oauth2_authentication = models.ForeignKey(OAuth2Authentication, on_delete=models.CASCADE)
     access_token = models.CharField(max_length=1024, null=False, blank=False)
     token_type = models.CharField(max_length=10, null=False, blank=False)
     expires_in = models.IntegerField()

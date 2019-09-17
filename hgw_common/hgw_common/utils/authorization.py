@@ -79,7 +79,7 @@ class IsAuthenticatedOrTokenHasResourceDetailedScope(TokenHasResourceDetailedSco
 
     def has_permission(self, request, view):
         # The authenticated user can perform all the actions
-        if request.user and not request.user.is_anonymous():
+        if request.user and not request.user.is_anonymous:
             return request.user.is_authenticated
         else:
             try:
