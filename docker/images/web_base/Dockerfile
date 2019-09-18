@@ -23,7 +23,7 @@ ARG HTTP_PORT=80
 RUN pip3 install Django==${DJANGO_VERSION} \
     gunicorn==19.7.1 \
 	mock==2.0.0 \
-    djangorestframework==3.8.2 \
+    djangorestframework==3.10.3 \
 	django-oauth-toolkit==0.12.0 \
 	django-cors-middleware==1.3.1 \
 	requests==2.22.0 \

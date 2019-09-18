@@ -36,7 +36,7 @@ class Command(ConsumerCommand):
         super(Command, self).__init__(*args, **kwargs)
 
     def handle_message(self, message):
-        logger.error("Received message to create a connector")
+        logger.info("Received message to create a connector")
         failure_reason = None
         retry = False
         if not message['success']:
