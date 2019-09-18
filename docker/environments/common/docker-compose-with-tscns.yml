@@ -1,19 +1,19 @@
 version: '3.0'
 services:
-  mysql:
-    image: mysql:5.7
-    command: --default-authentication-plugin=mysql_native_password
-    volumes:
-      - ./config_files/mysql_init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./config_files/custom.cnf:/etc/mysql/conf.d/custom.cnf
-    environment:
-      - MYSQL_ROOT_PASSWORD=hgwpwd
-      - MYSQL_USER=hgwuser 
-      - MYSQL_PASSWORD=hgwpwd
-    networks:
-      default:
-        aliases:
-          - tscns
+  # mysql:
+  #   image: mysql:5.7
+  #   command: --default-authentication-plugin=mysql_native_password
+  #   volumes:
+  #     - ./config_files/mysql_init.sql:/docker-entrypoint-initdb.d/init.sql
+  #     - ./config_files/custom.cnf:/etc/mysql/conf.d/custom.cnf
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=hgwpwd
+  #     - MYSQL_USER=hgwuser 
+  #     - MYSQL_PASSWORD=hgwpwd
+  #   networks:
+  #     default:
+  #       aliases:
+  #         - tscns
           
   tscns:
     image: crs4/tscns:3.3.3
@@ -45,7 +45,6 @@ services:
 
   hgw_frontend:
     image: crs4/hgw_frontend:latest
-    # image: crs4/hgw_frontend:1.0.11
     depends_on:
       - kafka
       - hgw_backend
@@ -57,7 +56,6 @@ services:
     ports:
       - 8000:8000
     volumes:
-      # - ../../../hgw_frontend/saml2/:/container/certs/
       - ../../../hgw_frontend/:/container/devservice/
       - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ./config_files/hgw_frontend_config.tscns.yml:/etc/hgw_service/hgw_frontend_config.yml
@@ -106,7 +104,6 @@ services:
           - hgwbackend
 
   consent_manager:
-    # image: crs4/consent_manager:1.0.8
     image: crs4/consent_manager:latest
     environment:
       - HTTP_PORT=8002
