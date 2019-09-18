@@ -15,6 +15,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import logging
 from datetime import datetime
 
 import requests
@@ -35,9 +36,8 @@ from requests_oauthlib import OAuth2Session
 from hgw_backend.fields import HostnameURLField
 from hgw_backend.signals import (connector_created, connector_created_handler,
                                  source_saved_handler)
-from hgw_common.utils import get_logger
 
-logger = get_logger('hgw_backend')
+logger = logging.getLogger('hgw_backend.models')
 
 
 def get_source_id():

@@ -63,7 +63,35 @@ KAFKA_CLIENT_KEY = getattr(settings, 'KAFKA_CLIENT_KEY',
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 LOG_LEVEL = 'DEBUG'
-# TEMPLATE_DEBUG = True
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '{asctime} - {name} - {levelname} - {message}',
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        },
+    },
+    'loggers': {
+        'destination_mockup': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': True
+        },
+        'hgw_common': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': True
+        }
+    }
+}
 
 ALLOWED_HOSTS = ['localhost', 'destinationmockup']
 

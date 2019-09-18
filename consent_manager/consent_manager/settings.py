@@ -112,21 +112,30 @@ MIDDLEWARE = [
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '{asctime} - {name} - {levelname} - {message}',
+            'style': '{'
+        }
+    },
     'handlers': {
         'console': {
             'level': LOG_LEVEL,
             'class': 'logging.StreamHandler',
+            'formatter': 'default',
         },
     },
     'loggers': {
         'consent_manager': {
             'handlers': ['console'],
             'level': LOG_LEVEL,
+            'propagate': True
         },
-        'djangosaml2': {
+        'hgw_common': {
             'handlers': ['console'],
             'level': LOG_LEVEL,
-        },
+            'propagate': True
+        }
     }
 }
 

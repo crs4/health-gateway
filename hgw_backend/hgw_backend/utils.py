@@ -1,13 +1,14 @@
+import logging
+from _ssl import SSLError
+
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 
-from _ssl import SSLError
 from hgw_backend.settings import (KAFKA_BROKER, KAFKA_CA_CERT,
                                   KAFKA_CLIENT_CERT, KAFKA_CLIENT_KEY,
                                   KAFKA_SSL)
-from hgw_common.utils import get_logger
 
-logger = get_logger('hgw_backend')
+logger = logging.getLogger('hgw_backend.utils')
 
 
 def get_kafka_producer():

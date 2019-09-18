@@ -15,8 +15,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import logging
-
 import yaml
 from django.conf import settings
 from django.db import DatabaseError
@@ -71,26 +69,6 @@ def get_oauth_token(server_uri, client_id, client_secret):
     access_token = access_token["access_token"]
     access_token_header = {"Authorization": "Bearer {}".format(access_token)}
     return oauth_session, access_token_header
-
-
-def get_logger(logger_name):
-    """
-    Create, configure and returns a logger
-    """
-    level = settings.LOG_LEVEL if hasattr(settings, 'LOG_LEVEL') else 'DEBUG'
-    logger = logging.getLogger(logger_name)
-    fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handlers = [logging.StreamHandler()]
-    if hasattr(settings, 'LOG_FILE'):
-        handlers.append(logging.handlers.RotatingFileHandler(settings.LOG_FILE))
-
-    for handler in handlers:
-        handler.setLevel(level)
-        handler.setFormatter(fmt)
-        logger.addHandler(handler)
-    logger.setLevel(level)
-
-    return logger
 
 
 class ERRORS:

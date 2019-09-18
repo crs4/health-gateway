@@ -1,11 +1,13 @@
+import logging
+
 from django.dispatch import Signal
 
 from hgw_backend.settings import (KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                   KAFKA_SOURCE_NOTIFICATION_TOPIC)
 from hgw_common.messaging.sender import create_sender
-from hgw_common.utils import create_broker_parameters_from_settings, get_logger
+from hgw_common.utils import create_broker_parameters_from_settings
 
-logger = get_logger('hgw_backend')
+logger = logging.getLogger('hgw_backend.signals')
 
 connector_created = Signal(providing_args=['connector'])
 

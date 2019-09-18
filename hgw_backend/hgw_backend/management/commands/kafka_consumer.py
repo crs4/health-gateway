@@ -15,16 +15,16 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import json
+import logging
 
 from dateutil import parser
 from django.db import DatabaseError, transaction
 
 from hgw_backend.models import FailedConnector, Source
 from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
-from hgw_common.utils import get_logger
 from hgw_common.utils.management import ConsumerCommand
 
-logger = get_logger('backend_kafka_consumer')
+logger = logging.getLogger('hgw_backend.backend_kafka_consumer')
 
 
 class Command(ConsumerCommand):

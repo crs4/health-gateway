@@ -29,16 +29,7 @@ from hgw_common.messaging import (BrokerConnectionError, DeserializationError,
 from . import NotInRangeError, UnknownReceiver
 from .deserializer import JSONDeserializer
 
-logger = logging.getLogger('receiver')
-fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handlers = [logging.StreamHandler()]
-
-for handler in handlers:
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(fmt)
-    logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)
-
+logger = logging.getLogger('hgw_common.receiver')
 
 class GenericReceiver():
     """

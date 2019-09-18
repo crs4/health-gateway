@@ -16,14 +16,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+import logging
+
 from rest_framework import serializers
 
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import get_logger
 from hgw_frontend.models import Channel, FlowRequest, Source
 
-logger = get_logger("hgw_frontend")
+logger = logging.getLogger("hgw_frontend.serializers")
 
 
 class SourceSerializer(serializers.ModelSerializer):

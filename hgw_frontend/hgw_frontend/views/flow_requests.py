@@ -18,6 +18,7 @@
 
 import datetime
 import json
+import logging
 from operator import xor
 
 import requests
@@ -35,7 +36,7 @@ from rest_framework.viewsets import ViewSet
 
 from hgw_common.models import OAuth2SessionProxy
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import ERRORS, get_logger
+from hgw_common.utils import ERRORS
 from hgw_common.utils.authorization import TokenHasResourceDetailedScope
 from hgw_frontend import CONFIRM_ACTIONS, ERRORS_MESSAGE
 from hgw_frontend.models import (Channel, ConfirmationCode,
@@ -49,7 +50,7 @@ from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    HGW_BACKEND_CLIENT_SECRET, HGW_BACKEND_URI,
                                    TIME_ZONE)
 
-logger = get_logger('hgw_frontend')
+logger = logging.getLogger('hgw_frontend.flow_request')
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 

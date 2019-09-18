@@ -123,6 +123,36 @@ LOGGING = {
     }
 }
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            'format': '{asctime} - {name} - {levelname} - {message}',
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        },
+    },
+    'loggers': {
+        'hgw_frontend': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': True
+        },
+        'hgw_common': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': True
+        }
+    }
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('oauth2_provider.ext.rest_framework.authentication.OAuth2Authentication',),
     'DEFAULT_PERMISSION_CLASSES': ('oauth2_provider.ext.rest_framework.permissions.TokenHasScope',),

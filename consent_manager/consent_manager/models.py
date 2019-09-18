@@ -16,6 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+import logging
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser
@@ -23,10 +24,10 @@ from django.db import models
 from django.utils import timezone
 from oauth2_provider.models import AbstractApplication
 
-from consent_manager.settings import REQUEST_VALIDITY_SECONDS, DEFAULT_SCOPES
-from hgw_common.utils import generate_id, get_logger
+from consent_manager.settings import DEFAULT_SCOPES, REQUEST_VALIDITY_SECONDS
+from hgw_common.utils import generate_id
 
-logger = get_logger('consent_manager')
+logger = logging.getLogger('consent_manager.models')
 
 
 class Consent(models.Model):

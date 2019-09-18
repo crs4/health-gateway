@@ -16,16 +16,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import json
+import logging
 
 from hgw_common.messaging.sender import create_sender
 from hgw_common.models import FailedMessages
-from hgw_common.utils import create_broker_parameters_from_settings, get_logger
+from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.management import ConsumerCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination
 from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
 
-logger = get_logger('consent_manager_notification_consumer')
+logger = logging.getLogger('hgw_frontend.consent_manager_notification_consumer')
 
 
 class FAILED_REASON():

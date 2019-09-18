@@ -18,6 +18,7 @@
 
 import base64
 import json
+import logging
 import os
 import time
 import uuid
@@ -28,12 +29,11 @@ from django.core.management.base import BaseCommand
 
 from destination_mockup import settings
 from hgw_common.cipher import Cipher
-from hgw_common.utils import get_logger
 
 MAGIC_BYTES = '\xdf\xbb'
 
 
-logger = get_logger('rest_consumer')
+logger = logging.getLogger('destination_mockup.rest_consumer')
 
 
 class Command(BaseCommand):

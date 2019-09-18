@@ -27,13 +27,8 @@ from hgw_common.messaging import (SendingError, SerializationError,
                                   UnknownSender)
 from hgw_common.messaging.serializer import JSONSerializer
 
-# from hgw_common.utils import get_logger
 
-level = logging.DEBUG
-logger = logging.getLogger('sender')
-fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handlers = [logging.StreamHandler()]
-
+logger = logging.getLogger('hgw_common.sender')
 
 class GenericSender():
     """

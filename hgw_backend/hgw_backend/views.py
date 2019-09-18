@@ -15,6 +15,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import logging
+
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import Http404, HttpResponse
 from rest_framework import status
@@ -28,13 +30,13 @@ from hgw_common.messaging.sender import create_sender
 from hgw_common.messaging.serializer import RawSerializer
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
-from hgw_common.utils import create_broker_parameters_from_settings, get_logger
+from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.authorization import TokenHasResourceDetailedScope
 
 from .models import Source
 from .serializers import SourceSerializer
 
-logger = get_logger('hgw_backend')
+logger = logging.getLogger('hgw_backend.views')
 
 
 def home(request):

@@ -15,15 +15,16 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import logging
+
 from django.db import DatabaseError
 
-from hgw_common.utils import get_logger
 from hgw_common.utils.management import ConsumerCommand
 from hgw_frontend.models import Source
 from hgw_frontend.serializers import SourceSerializer
 from hgw_frontend.settings import KAFKA_SOURCE_NOTIFICATION_TOPIC
 
-logger = get_logger('source_notification_consumer')
+logger = logging.getLogger('hgw_frontend.source_notification_consumer')
 
 
 class Command(ConsumerCommand):

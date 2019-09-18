@@ -15,18 +15,19 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import copy
+import logging
 from datetime import datetime
 
 from django.db import models
 from django.utils.crypto import get_random_string
-from oauthlib.oauth2 import BackendApplicationClient, MissingTokenError, TokenExpiredError
-from requests_oauthlib import OAuth2Session
+from oauthlib.oauth2 import (BackendApplicationClient, MissingTokenError,
+                             TokenExpiredError)
 from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests_oauthlib import OAuth2Session
 
 from hgw_common.fields import JSONValidator
-from hgw_common.utils import get_logger
 
-logger = get_logger('hgw_common')
+logger = logging.getLogger('hgw_common.models')
 
 
 def generate_id():
