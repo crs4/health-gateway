@@ -68,6 +68,19 @@ class Source(models.Model):
         if res is not None:
             connector_created.send(sender=self.__class__, connector=connector)
         return res
+    
+    def update_connector(self, connector):
+        logger.debug("Updating connector")
+        res = self.content_object.update_connector(self, connector)
+        if res is not None:
+            connector_created.send(sender=self.__class__, connector=connector)
+        return res
+
+    def delete_connector(self, connector):
+        res = self.content_object.delete_connector(self, connector)
+        if res is not None:
+            connector_created.send(sender=self.__class__, connector=connector)
+        return res
 
 
 class CertificatesAuthentication(models.Model):
@@ -75,13 +88,23 @@ class CertificatesAuthentication(models.Model):
     cert = models.FileField(blank=False, null=False)
     key = models.FileField(blank=False, null=False)
 
-    def create_connector(self, source, connector):
-        return requests.post(
+    def call_source_endpoint(self, source, connector, action):
+        met = getattr(requests, action)
+        met(
             source.url,
             json=connector,
             verify=True,
             cert=(self.cert.file.name, self.key.file.name)
         )
+    
+    def create_connector(self, source, connector):
+        return self._call_source_endpoint(source, connector, 'post')
+
+    def update_connector(self, source, connector):
+        return self._call_source_endpoint(source, connector, 'put')
+    
+    def delete_connector(self, source, connector):
+        return self._call_source_endpoint(source, connector, 'delete')
 
     def __str__(self):
         try:
@@ -159,7 +182,7 @@ class OAuth2Authentication(models.Model):
 
         return oauth_session
 
-    def create_connector(self, source, connector, count=0):
+    def call_source_endpoint(self, source, connector, action, success_response_code, count=0):
         try:
             session = self._get_oauth2_session()
         except (ConnectionError, InvalidClientError, MissingTokenError) as exc:
@@ -167,35 +190,45 @@ class OAuth2Authentication(models.Model):
             res = None
         else:
             try:
-                logger.debug("Creating connector with data %s", connector)
-                res = session.post(source.url, json=connector)
-                logger.debug("Status code while opening connector: %s", res.status_code)
+                logger.debug("Call %s on connector with data %s", action, connector)
+                met = getattr(session, action)
+                res = met(source.url, json=connector)
+                logger.debug("Response was: %s", res.status_code)
                 if res.status_code == 401:
                     raise TokenExpiredError
             except TokenExpiredError:
                 if count == 2:
-                    logger.debug("Source returned 401 for the second time. Failing connector opening")
+                    logger.debug("Source returned 401 for the second time. Failing %s", action)
                     res = None
                 else:
                     logger.debug("Token for the source expired. Getting a new one")
                     AccessToken.objects.get(oauth2_authentication=self).delete()
                     res = self.create_connector(source, connector, count=count+1)
             except ConnectionError:
-                logger.debug("Connection error creating the connector")
+                logger.debug("Connection error performing connector's operation")
                 res = None
             except MissingTokenError:
                 logger.debug("Missing token for the source endpoint")
                 res = None
 
-        if res is not None and res.status_code == 201:
-            logger.debug("Connector created correctly")
+        if res is not None and res.status_code == success_response_code:
+            logger.debug("Operation successfull")
         elif res is not None:
-            logger.debug("Error opening connector: %s with status code: %s", res.content, res.status_code)
+            logger.debug("Error performing %s: %s with status code: %s", action, res.content, res.status_code)
             res = None
         else:
-            logger.debug("Error opening connector")
+            logger.debug("Error performing %s", action)
             res = None
         return res
+    
+    def create_connector(self, source, connector, count=0):
+        return self.call_source_endpoint(source, connector, 'post', 201, 0)
+    
+    def update_connector(self, source, connector):
+        return self.call_source_endpoint(source, connector, 'put', 200, 0)
+
+    def delete_connector(self, source, connector):
+        return self.call_source_endpoint(source, connector, 'delete', 200, 0)
 
     def __str__(self):
         try:
@@ -219,6 +252,7 @@ class FailedConnector(models.Model):
     SENDING_ERROR = 'SE'
     UNKNOWN_ERROR = 'UE'
     DATABASE_ERROR = 'DB'
+    WRONG_ACTION = 'WA'
 
     FAIL_REASON = ((JSON_DECODING, 'JSON_DECODING'),
                    (DECODING, 'DECODING'),
@@ -227,7 +261,8 @@ class FailedConnector(models.Model):
                    (WRONG_DATE_FORMAT, 'WRONG_DATE_FORMAT'),
                    (SENDING_ERROR, 'SENDING_ERROR'),
                    (UNKNOWN_ERROR, 'UNKNOWN_ERROR'),
-                   (DATABASE_ERROR, 'DATABASE_ERROR'))
+                   (DATABASE_ERROR, 'DATABASE_ERROR'),
+                   (WRONG_ACTION, 'WRONG_ACTION'))
 
     message = models.CharField(max_length=1500, blank=False, null=False)
     reason = models.CharField(max_length=2, choices=FAIL_REASON)
