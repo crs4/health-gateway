@@ -35,7 +35,7 @@ class TestNotification(TestCase):
     
     @classmethod
     def setUpClass(cls):
-        for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
+        for logger_name in ('create_connector_consumer.py', 'hgw_backend'):
             logger = logging.getLogger(logger_name)
             logger.setLevel(logging.CRITICAL)
         return super(TestNotification, cls).setUpClass()
