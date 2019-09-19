@@ -65,6 +65,7 @@ class Source(models.Model):
 
     def create_connector(self, connector):
         res = self.content_object.create_connector(self, connector)
+        print(res)
         if res is not None:
             connector_created.send(sender=self.__class__, connector=connector)
         return res
@@ -98,13 +99,13 @@ class CertificatesAuthentication(models.Model):
         )
     
     def create_connector(self, source, connector):
-        return self._call_source_endpoint(source, connector, 'post')
+        return self.call_source_endpoint(source, connector, 'post')
 
     def update_connector(self, source, connector):
-        return self._call_source_endpoint(source, connector, 'put')
+        return self.call_source_endpoint(source, connector, 'put')
     
     def delete_connector(self, source, connector):
-        return self._call_source_endpoint(source, connector, 'delete')
+        return self.call_source_endpoint(source, connector, 'delete')
 
     def __str__(self):
         try:
@@ -203,7 +204,7 @@ class OAuth2Authentication(models.Model):
                 else:
                     logger.debug("Token for the source expired. Getting a new one")
                     AccessToken.objects.get(oauth2_authentication=self).delete()
-                    res = self.create_connector(source, connector, count=count+1)
+                    res = self.call_source_endpoint(source, connector, action, success_response_code, count=count+1)
             except ConnectionError:
                 logger.debug("Connection error performing connector's operation")
                 res = None
@@ -221,14 +222,14 @@ class OAuth2Authentication(models.Model):
             res = None
         return res
     
-    def create_connector(self, source, connector, count=0):
-        return self.call_source_endpoint(source, connector, 'post', 201, 0)
+    def create_connector(self, source, connector):
+        return self.call_source_endpoint(source, connector, 'post', 201)
     
     def update_connector(self, source, connector):
-        return self.call_source_endpoint(source, connector, 'put', 200, 0)
+        return self.call_source_endpoint(source, connector, 'put', 200)
 
     def delete_connector(self, source, connector):
-        return self.call_source_endpoint(source, connector, 'delete', 200, 0)
+        return self.call_source_endpoint(source, connector, 'delete', 200)
 
     def __str__(self):
         try:

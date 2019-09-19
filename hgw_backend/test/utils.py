@@ -75,3 +75,31 @@ class MockSourceEndpointHandler(MockRequestHandler):
             payload = {}
             status_code = 404
         self._send_response(payload, status_code)
+    
+    def do_PUT(self):
+        if self._path_match(self.CONNECTORS_PATTERN):
+            data_string = self.rfile.read(int(self.headers['Content-Length']))
+            if EXPIRED_CONSENT_CHANNEL.encode('utf-8') in data_string or 'expired' in self.headers['Authorization']:
+                status_code = 401
+                payload = {'detail': 'Authentication credentials were not provided.'}
+            else:
+                payload = {}
+                status_code = 200
+        else:
+            payload = {}
+            status_code = 404
+        self._send_response(payload, status_code)
+    
+    def do_DELETE(self):
+        if self._path_match(self.CONNECTORS_PATTERN):
+            data_string = self.rfile.read(int(self.headers['Content-Length']))
+            if EXPIRED_CONSENT_CHANNEL.encode('utf-8') in data_string or 'expired' in self.headers['Authorization']:
+                status_code = 401
+                payload = {'detail': 'Authentication credentials were not provided.'}
+            else:
+                payload = {}
+                status_code = 200
+        else:
+            payload = {}
+            status_code = 404
+        self._send_response(payload, status_code)
