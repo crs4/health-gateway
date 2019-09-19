@@ -17,13 +17,15 @@
 
 import json
 import logging
+from datetime import datetime
 
 from hgw_common.messaging.sender import create_sender
 from hgw_common.models import FailedMessages
 from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.management import ConsumerCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination
-from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
+from hgw_frontend.settings import (DATETIME_FORMAT,
+                                   KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
 
 logger = logging.getLogger('hgw_frontend.consent_manager_notification_consumer')
@@ -138,17 +140,23 @@ class Command(ConsumerCommand):
                         retry = True
                 elif consent['status'] == 'AC' and channel.status in (Channel.ACTIVE, Channel.WAITING_SOURCE_NOTIFICATION):  # Consent changed
                     logger.debug('Consent has been changed in the Consent Manager. ')
-                    if channel.start_validity != consent['start_validity'] or channel.expire_validity != consent['expire_validity']:
-                        failure_reason = FAILED_REASON.INCONSISTENT_STATUS
-                        retry = False
-                    else:
+                    new_start_validity = datetime.strptime(consent['start_validity'], DATETIME_FORMAT)
+                    new_expire_validity = datetime.strptime(consent['expire_validity'], DATETIME_FORMAT)
+                    if channel.start_validity != new_start_validity or channel.expire_validity != new_expire_validity:
+                        logger.debug('Changing the channel accordingly')
                         channel.start_validity = consent['start_validity']
                         channel.expire_validity = consent['expire_validity']
                         channel.save()
-
+                        
                         failure_reason = self._notify(consent, ACTION.UPDATED)
                         if failure_reason is not None:
                             retry = True
+                    else:
+                        consent['expire_validity']
+                        logger.debug('Data from consent equal to the ones already stored. Not changing')
+                        failure_reason = FAILED_REASON.INCONSISTENT_STATUS
+                        retry = False
+
                 elif consent['status'] == 'RE' and channel.status in (Channel.ACTIVE, Channel.WAITING_SOURCE_NOTIFICATION):  # Consent revoked
                     logger.debug('Consent has been revoked in the Consent Manager. ')
                     channel.status = Channel.CONSENT_REVOKED

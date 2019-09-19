@@ -97,6 +97,8 @@ class TestChannelsAPI(TestCase):
             'channel_id': obj['fields']['channel_id'],
             'source': self.sources[obj['fields']['source']],
             'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+            'start_validity': obj['fields']['start_validity'],
+            'expire_validity': obj['fields']['expire_validity'],
             'destination_id':
             self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
                 'status': obj['fields']['status']
@@ -106,6 +108,8 @@ class TestChannelsAPI(TestCase):
             'channel_id': obj['fields']['channel_id'],
             'source': self.sources[obj['fields']['source']],
             'profile': self.profiles[self.flow_requests[obj['fields']['flow_request']]['profile']],
+            'start_validity': obj['fields']['start_validity'],
+            'expire_validity': obj['fields']['expire_validity'],
             'destination_id':
             self.destinations[self.flow_requests[obj['fields']['flow_request']]['destination']]['destination_id'],
                 'status': obj['fields']['status']
@@ -138,7 +142,7 @@ class TestChannelsAPI(TestCase):
                     if ch_fi['destination_id'] == DEST_1_ID]
         self.assertEqual(res.json(), expected)
         self.assertEqual(res['X-Total-Count'], str(len(expected)))
-
+        
     def test_get_db_error(self):
         """
         Tests getting channels error response in case of db error
@@ -218,7 +222,7 @@ class TestChannelsAPI(TestCase):
         res = self.client.get('/v1/channels/nh4P0hYo2SEIlE3alO6w3geTDzLTOl7b/', **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), target_channel)
-    
+
     def test_retrieve_channel_db_error(self):
         """
         Tests getting channels db error
@@ -286,8 +290,54 @@ class TestChannelsAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         expected = [ch_fi for ch_pk, ch_fi in self.active_flow_request_channels.items()
                     if ch_fi['destination_id'] == DEST_2_ID]
+        print(res.json())
+        print(expected)
         self.assertEqual(res.json(), expected)
         self.assertEqual(res['X-Total-Count'], str(len(expected)))
+        [{
+            'channel_id': 'fF4sG1fgIGY1JcdqRSz91LelfQ6rq7qx', 
+            'status': 'WS',
+            'destination_id': '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3', 
+            'source': {
+                'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT', 
+                'name': 'source_1', 
+                'profile': {
+                    'code': 'PROF_001', 
+                    'version': 'v0', 
+                    'payload': '[{"clinical_domain": "Laboratory"}]'
+                }
+            }, 
+            'profile': {
+                'code': 'PROF_001', 
+                'version': 'v0',
+                'payload': '[{"clinical_domain": "Laboratory"}]'
+            }, 
+            'start_validity': '2017-10-23T10:00:00+02:00', 
+            'expire_validity': '2018-10-23T10:00:00+02:00'
+            }, {
+                'channel_id': 'kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh', 
+                'status': 'AC', 'destination_id': '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3', 
+                'source': {'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS', 'name': 'source_2', 'profile': {'code': 'PROF_002', 'version': 'v0', 'payload': '[{"clinical_domain": "Radiology"}]'}}, 'profile': {'code': 'PROF_001', 'version': 'v0', 'payload': '[{"clinical_domain": "Laboratory"}]'}, 'start_validity': '2017-10-23T10:00:00+02:00', 'expire_validity': '2018-10-23T10:00:00+02:00'}]
+
+        [{
+            'channel_id': 'fF4sG1fgIGY1JcdqRSz91LelfQ6rq7qx', 
+            'status': 'WS',
+            'source': {
+                'source_id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT', 
+                'name': 'source_1', 
+                'profile': {
+                    'code': 'PROF_001', 
+                    'version': 'v0', 
+                    'payload': '[{"clinical_domain": "Laboratory"}]'
+                }
+            }, 
+            'profile': {
+                'code': 'PROF_001', 
+                'version': 'v0', 
+                'payload': '[{"clinical_domain": "Laboratory"}]'
+            }, 
+            'destination_id': '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3', 
+        }, {'channel_id': 'kZbMnNGmiNmGzdTJLpscLln1w1jx5tkh', 'source': {'source_id': 'TptQ5kPSNliFIOYyAB1tV5mt2PvwXsaS', 'name': 'source_2', 'profile': {'code': 'PROF_002', 'version': 'v0', 'payload': '[{"clinical_domain": "Radiology"}]'}}, 'profile': {'code': 'PROF_001', 'version': 'v0', 'payload': '[{"clinical_domain": "Laboratory"}]'}, 'destination_id': '6RtHuetJ44HKndsDHI5K9JUJxtg0vLJ3', 'status': 'AC'}]
 
     def test_get_by_flow_request_filter_by_status(self):
         """

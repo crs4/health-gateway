@@ -187,8 +187,8 @@
       "profile": 1,
       "destination": 1,
       "sources": [1],
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00",
       "person_id": "AAABBB12C34D567E"
     }
   },
@@ -202,8 +202,8 @@
       "profile": 1,
       "destination": 2,
       "sources": [1],
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00",
       "person_id": "AAABBB12C34D567E"
     }
   },
@@ -217,8 +217,8 @@
       "profile": 1,
       "destination": 2,
       "sources": [1],
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00",
       "person_id": "TEST_PERSON1_ID"
     }
   },
@@ -230,8 +230,8 @@
       "flow_request": 1,
       "source": 1,
       "status": "CR",
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00"
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00"
     }
   },
   {
@@ -242,8 +242,8 @@
       "flow_request": 1,
       "source": 2,
       "status": "AC",
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00"
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00"
     }
   },
   {
@@ -254,8 +254,8 @@
       "flow_request": 2,
       "source": 1,
       "status": "WS",
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00"
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00"
     }
   },
   {
@@ -266,8 +266,8 @@
       "flow_request": 2,
       "source": 2,
       "status": "AC",
-      "start_validity": "2017-10-23T10:00:00.000+02:00",
-      "expire_validity": "2018-10-23T10:00:00.000+02:00"
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2018-10-23T10:00:00+02:00"
     }
   },
   {
