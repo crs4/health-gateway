@@ -140,8 +140,10 @@ class Command(ConsumerCommand):
                         retry = True
                 elif consent['status'] == 'AC' and channel.status in (Channel.ACTIVE, Channel.WAITING_SOURCE_NOTIFICATION):  # Consent changed
                     logger.debug('Consent has been changed in the Consent Manager. ')
-                    new_start_validity = datetime.strptime(consent['start_validity'], DATETIME_FORMAT)
-                    new_expire_validity = datetime.strptime(consent['expire_validity'], DATETIME_FORMAT)
+                    new_start_validity = datetime.strptime(consent['start_validity'], DATETIME_FORMAT) \
+                        if consent['start_validity'] is not None else None
+                    new_expire_validity = datetime.strptime(consent['expire_validity'], DATETIME_FORMAT) \
+                        if consent['expire_validity'] is not None else None
                     if channel.start_validity != new_start_validity or channel.expire_validity != new_expire_validity:
                         logger.debug('Changing the channel accordingly')
                         channel.start_validity = consent['start_validity']

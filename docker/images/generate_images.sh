@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 DEV=$1
+NO_CACHE=$2
 if [ ! -d health_gateway ]; then
     cd ${DIR}/../../
     git archive --prefix=health_gateway/ -o ${DIR}/health_gateway.tar HEAD

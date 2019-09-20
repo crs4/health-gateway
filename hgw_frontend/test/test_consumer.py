@@ -466,7 +466,7 @@ class TestConsentConsumer(TestCase):
 
     def test_consent_changed(self):
         """
-        Test the channel update according to the consent
+        Test the channel update according to the consent.
         """
         self.base_consent.update({
             'consent_id': CORRECT_CONSENT_ID_AC,
@@ -506,6 +506,52 @@ class TestConsentConsumer(TestCase):
             self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
             self.assertEqual(channel.start_validity, new_start_validity)
             self.assertEqual(channel.expire_validity, new_expire_validity)
+
+            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+            self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                 self.out_message)
+            self.assertEqual(FailedMessages.objects.count(), 0)
+
+    def test_consent_changed_none_date(self):
+        """
+        Test the channel update according to the consent.
+        """
+        self.base_consent.update({
+            'consent_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': None,
+            'expire_validity': None,
+            'source': {
+                'id': SOURCE_2_ID,
+                'name': SOURCE_2_NAME
+            },
+        })
+
+        self.out_message.update({
+            'action': ACTION.UPDATED,
+            'channel_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': None,
+            'expire_validity': None,
+            'source_id': SOURCE_2_ID
+        })
+
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        self.assertEqual(channel.status, Channel.ACTIVE)
+        self.assertIsNotNone(channel.start_validity)
+        self.assertIsNotNone(channel.expire_validity)
+        
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.ACTIVE)
+            self.assertEqual(channel.source, Source.objects.get(source_id=self.base_consent['source']['id']))
+            self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=self.base_consent['profile']['code']))
+            self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
+            self.assertEqual(channel.start_validity, None)
+            self.assertEqual(channel.expire_validity, None)
 
             self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
             self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),

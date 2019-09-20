@@ -1,9 +1,9 @@
 # Base image for Django services
-FROM nginx:1.16.0-alpine
+FROM nginx:1.16.1-alpine
 LABEL maintainer="Vittorio Meloni <vittorio.meloni@crs4.it>"
 
 # # https://bugs.alpinelinux.org/issues/9110 is fixed since xmlsec 1.2.25-r4.
-# RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 # RUN echo "@edgecommunity http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 
 RUN apk update && apk add --no-cache gcc make python3 python3-dev py3-pip \
