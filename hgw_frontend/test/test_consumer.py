@@ -1,5 +1,5 @@
+from datetime import datetime
 import json
-import os
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
@@ -11,18 +11,20 @@ from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
 from hgw_frontend.management.commands.connector_notification_consumer import \
     Command as ConnectorNotificationCommand
 from hgw_frontend.management.commands.consent_manager_notification_consumer import (
-    FAILED_MESSAGE_TYPE, FAILED_REASON)
+    ACTION, FAILED_MESSAGE_TYPE, FAILED_REASON)
 from hgw_frontend.management.commands.consent_manager_notification_consumer import \
     Command as ConsentNotificationCommand
 from hgw_frontend.management.commands.source_notification_consumer import \
     Command as SourceNotificationCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Source
-from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
+from hgw_frontend.settings import (DATETIME_FORMAT,
+                                   KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONNECTOR_NOTIFICATION_TOPIC,
                                    KAFKA_SOURCE_NOTIFICATION_TOPIC)
 
-from . import (CORRECT_CONSENT_ID, DEST_1_ID, DEST_1_NAME, DEST_PUBLIC_KEY,
-               PERSON_ID, PROFILE_1, PROFILE_2, SOURCE_1_ID, SOURCE_1_NAME,
+from . import (CORRECT_CONSENT_ID_AC, CORRECT_CONSENT_ID_CR, DEST_1_ID,
+               DEST_1_NAME, DEST_PUBLIC_KEY, PERSON_ID, PROFILE_1, PROFILE_2,
+               SOURCE_1_ID, SOURCE_1_NAME, SOURCE_2_ID, SOURCE_2_NAME,
                SOURCE_3_ID, SOURCE_3_NAME)
 
 
@@ -36,6 +38,7 @@ def _get_db_error_mock():
     mock.objects.create = Mock(side_effect=DatabaseError)
     mock.objects.get_or_create = Mock(side_effect=DatabaseError)
     return mock
+
 
 class TestSourceConsumer(TestCase):
     """
@@ -265,8 +268,8 @@ class TestConsentConsumer(TestCase):
     fixtures = ['test_data.json']
 
     def setUp(self):
-        self.in_messages = [{
-            'consent_id': CORRECT_CONSENT_ID,
+        self.base_consent = {
+            'consent_id': CORRECT_CONSENT_ID_CR,
             'status': 'AC',
             'source': {
                 'id': SOURCE_1_ID,
@@ -278,11 +281,12 @@ class TestConsentConsumer(TestCase):
             },
             'person_id': PERSON_ID,
             'profile': PROFILE_1,
-            'start_validity': None,
-            'expire_validity': None
-        }]
-        self.out_messages = [{
-            'channel_id': CORRECT_CONSENT_ID,
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
+        }
+
+        self.out_message = {
+            'channel_id': CORRECT_CONSENT_ID_CR,
             'source_id': SOURCE_1_ID,
             'destination': {
                 'destination_id': DEST_1_ID,
@@ -290,9 +294,10 @@ class TestConsentConsumer(TestCase):
             },
             'profile': PROFILE_1,
             'person_id': PERSON_ID,
-            'start_validity': None,
-            'expire_validity': None
-        }]
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
+        }
+
         return super(TestConsentConsumer, self).setUp()
 
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, topic, json_enc=True, encoding='utf-8'):
@@ -302,34 +307,330 @@ class TestConsentConsumer(TestCase):
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 
-    def test_correct_notification(self):
-        self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
+    def test_consent_confirmed(self):
+        """
+        Test correct consent notification
+        """
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+        self.out_message.update({'action': ACTION.CREATED})
 
-        for consent in self.in_messages:
-            channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
-            self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+        start_validity = datetime.strptime(self.base_consent['start_validity'], DATETIME_FORMAT)
+        expire_validity = datetime.strptime(self.base_consent['expire_validity'], DATETIME_FORMAT)
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
-            for index, consent in enumerate(self.in_messages):
-                channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
-                self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
-                self.assertEqual(channel.source, Source.objects.get(source_id=consent['source']['id']))
-                self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=consent['profile']['code']))
-                self.assertEqual(channel.flow_request.person_id, consent['person_id'])
-                self.assertEqual(MockKafkaProducer().send.call_args_list[index][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
-                self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[index][1]['value'].decode('utf-8')),
-                                     self.out_messages[index])
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
+            self.assertEqual(channel.source, Source.objects.get(source_id=self.base_consent['source']['id']))
+            self.assertEqual(channel.start_validity, start_validity)
+            self.assertEqual(channel.expire_validity, expire_validity)
+            self.assertEqual(channel.start_validity, channel.flow_request.start_validity)
+            self.assertEqual(channel.expire_validity, channel.flow_request.expire_validity)
+            self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=self.base_consent['profile']['code']))
+            self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
+
+            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+            print(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')))
+            self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                 self.out_message)
             self.assertEqual(FailedMessages.objects.count(), 0)
+    
+    def test_consent_confirmed_change_date(self):
+        """
+        Test that the date of the confirmed consent differs from the original request (i.e., the flow request values)
+        """
+        self.base_consent.update({
+            'start_validity': '2018-10-23T10:00:00+02:00',
+            'expire_validity': '2019-10-23T10:00:00+02:00',      
+        })
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+        
+        self.out_message.update({
+            'action': ACTION.CREATED,
+            'start_validity': '2018-10-23T10:00:00+02:00',
+            'expire_validity': '2019-10-23T10:00:00+02:00'
+        })
+
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+        new_start_validity = datetime.strptime(self.base_consent['start_validity'], DATETIME_FORMAT)
+        new_expire_validity = datetime.strptime(self.base_consent['expire_validity'], DATETIME_FORMAT)
+        self.assertNotEqual(channel.start_validity, new_start_validity)
+        self.assertNotEqual(channel.expire_validity, new_expire_validity)
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
+            self.assertEqual(channel.source, Source.objects.get(source_id=self.base_consent['source']['id']))
+            self.assertEqual(channel.start_validity, new_start_validity)
+            self.assertEqual(channel.expire_validity, new_expire_validity)
+            self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=self.base_consent['profile']['code']))
+            self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
+
+            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+            self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                 self.out_message)
+            self.assertEqual(FailedMessages.objects.count(), 0)
+
+    def test_consent_confirmed_failure_because_of_inconsistent_status(self):
+        """
+        Test failure when confirming a consent which has not the right status
+        """
+
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        channel.status = Channel.CONSENT_REVOKED
+        channel.save()
+
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.CONSENT_REVOKED)
+            MockKafkaProducer().send.assert_not_called()
+
+        self.assertEqual(FailedMessages.objects.count(), 1)
+        message = FailedMessages.objects.first()
+        self.assertEqual(message.reason, FAILED_REASON.INCONSISTENT_STATUS)
+        self.assertEqual(message.retry, False)
+        self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
+
+    def test_consent_revoked(self):
+        """
+        Test correct revoke
+        """
+
+        for status in (Channel.ACTIVE, Channel.WAITING_SOURCE_NOTIFICATION):
+            self.base_consent.update({
+                'status': 'RE'
+            })
+            self.out_message.update({'action': ACTION.REVOKED})
+            self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                         KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            channel.status = status
+            channel.save()
+            with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                    patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+                ConsentNotificationCommand().handle()
+
+                channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+                self.assertEqual(channel.status, Channel.CONSENT_REVOKED)
+                self.assertEqual(channel.source, Source.objects.get(source_id=self.base_consent['source']['id']))
+                self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=self.base_consent['profile']['code']))
+                self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
+                self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+                self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                     self.out_message)
+                self.assertEqual(FailedMessages.objects.count(), 0)
+
+    def test_consent_revoked_failure_because_of_inconsistent_status(self):
+        """
+        Test failure when confirming a consent which has not the right status
+        """
+
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        channel.status = Channel.CONSENT_REQUESTED
+        channel.save()
+
+        self.base_consent.update({
+            'status': 'RE'
+        })
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+            MockKafkaProducer().send.assert_not_called()
+
+        self.assertEqual(FailedMessages.objects.count(), 1)
+        message = FailedMessages.objects.first()
+        self.assertEqual(message.reason, FAILED_REASON.INCONSISTENT_STATUS)
+        self.assertEqual(message.retry, False)
+        self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
+
+    def test_consent_changed(self):
+        """
+        Test the channel update according to the consent.
+        """
+        self.base_consent.update({
+            'consent_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': '2018-10-23T10:00:00+02:00',
+            'expire_validity': '2019-10-23T10:00:00+02:00',
+            'source': {
+                'id': SOURCE_2_ID,
+                'name': SOURCE_2_NAME
+            },
+        })
+
+        self.out_message.update({
+            'action': ACTION.UPDATED,
+            'channel_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': '2018-10-23T10:00:00+02:00',
+            'expire_validity': '2019-10-23T10:00:00+02:00',
+            'source_id': SOURCE_2_ID
+        })
+
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+        new_start_validity = datetime.strptime(self.base_consent['start_validity'], DATETIME_FORMAT)
+        new_expire_validity = datetime.strptime(self.base_consent['expire_validity'], DATETIME_FORMAT)
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        self.assertEqual(channel.status, Channel.ACTIVE)
+        self.assertNotEqual(channel.start_validity, new_start_validity)
+        self.assertNotEqual(channel.expire_validity, new_expire_validity)
+        
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.ACTIVE)
+            self.assertEqual(channel.source, Source.objects.get(source_id=self.base_consent['source']['id']))
+            self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=self.base_consent['profile']['code']))
+            self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
+            self.assertEqual(channel.start_validity, new_start_validity)
+            self.assertEqual(channel.expire_validity, new_expire_validity)
+
+            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+            self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                 self.out_message)
+            self.assertEqual(FailedMessages.objects.count(), 0)
+
+    def test_consent_changed_none_date(self):
+        """
+        Test the channel update according to the consent.
+        """
+        self.base_consent.update({
+            'consent_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': None,
+            'expire_validity': None,
+            'source': {
+                'id': SOURCE_2_ID,
+                'name': SOURCE_2_NAME
+            },
+        })
+
+        self.out_message.update({
+            'action': ACTION.UPDATED,
+            'channel_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': None,
+            'expire_validity': None,
+            'source_id': SOURCE_2_ID
+        })
+
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        self.assertEqual(channel.status, Channel.ACTIVE)
+        self.assertIsNotNone(channel.start_validity)
+        self.assertIsNotNone(channel.expire_validity)
+        
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.ACTIVE)
+            self.assertEqual(channel.source, Source.objects.get(source_id=self.base_consent['source']['id']))
+            self.assertEqual(channel.flow_request.profile, Profile.objects.get(code=self.base_consent['profile']['code']))
+            self.assertEqual(channel.flow_request.person_id, self.base_consent['person_id'])
+            self.assertEqual(channel.start_validity, None)
+            self.assertEqual(channel.expire_validity, None)
+
+            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CHANNEL_NOTIFICATION_TOPIC)
+            self.assertDictEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                 self.out_message)
+            self.assertEqual(FailedMessages.objects.count(), 0)
+
+    def test_consent_changed_failure_because_of_inconsistent_status(self):
+        """
+        Test failure when confirming a consent which has not the right status
+        """
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        channel.status = Channel.CONSENT_REVOKED
+        channel.save()
+
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.CONSENT_REVOKED)
+            MockKafkaProducer().send.assert_not_called()
+
+        self.assertEqual(FailedMessages.objects.count(), 1)
+        message = FailedMessages.objects.first()
+        self.assertEqual(message.reason, FAILED_REASON.INCONSISTENT_STATUS)
+        self.assertEqual(message.retry, False)
+        self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
+
+    def test_consent_changed_failure_because_of_no_changes(self):
+        """
+        Test failure when changing a channel but there's no differences with the old Channel
+        """
+        # Same data as the channel in the test_data
+        self.base_consent.update({
+            'consent_id': CORRECT_CONSENT_ID_AC,
+            'start_validity': '2017-10-23T10:00:00+02:00',
+            'expire_validity': '2018-10-23T10:00:00+02:00',
+            'source': {
+                'id': SOURCE_2_ID,
+                'name': SOURCE_2_NAME
+            },
+        })
+        
+        channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+        old_start_validity = channel.start_validity
+        old_expire_validity = channel.expire_validity        
+
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
+                                     KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
+
+        start_validity = datetime.strptime(self.base_consent['start_validity'], DATETIME_FORMAT)
+        expire_validity = datetime.strptime(self.base_consent['expire_validity'], DATETIME_FORMAT)
+
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
+            ConsentNotificationCommand().handle()
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.ACTIVE)
+            self.assertEqual(channel.start_validity, old_start_validity)
+            self.assertEqual(channel.expire_validity, old_expire_validity)
+            MockKafkaProducer().send.assert_not_called()
+
+            self.assertEqual(FailedMessages.objects.count(), 1)
+            message = FailedMessages.objects.first()
+            self.assertEqual(message.reason, FAILED_REASON.INCONSISTENT_STATUS)
+            self.assertEqual(message.retry, False)
+            self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
 
     def test_failure_because_of_wrong_input_structure(self):
         """
         Test that no action has been performed because the input message misses some needed key
         """
         messages = []
-        for key in self.in_messages[0]:
-            message = self.in_messages[0].copy()
+        for key in self.base_consent:
+            message = self.base_consent.copy()
             del message[key]
             messages.append(message)
 
@@ -339,9 +640,8 @@ class TestConsentConsumer(TestCase):
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
-            for consent in self.in_messages:
-                channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
-                self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
             MockKafkaProducer().send.assert_not_called()
             self.assertEqual(FailedMessages.objects.count(), len(messages))
             for message in FailedMessages.objects.all():
@@ -353,8 +653,8 @@ class TestConsentConsumer(TestCase):
         """
         Test that no action has been performed because the consent has not been found in the db
         """
-        self.in_messages[0]['consent_id'] = 'UNKNOWN'
-        self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
+        self.base_consent['consent_id'] = 'UNKNOWN'
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
@@ -366,62 +666,65 @@ class TestConsentConsumer(TestCase):
             self.assertEqual(message.reason, FAILED_REASON.UNKNOWN_CONSENT)
             self.assertEqual(message.retry, False)
             self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
-    
+
     def test_failure_because_of_different_person_id(self):
         """
         Test that no action have been performed becaue the consent has a different person id than the channel
         """
-        self.in_messages[0]['person_id'] = 'UNKNOWN'
-        self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
+        self.base_consent['person_id'] = 'UNKNOWN'
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
-            for consent in self.in_messages:
-                channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
-                self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+
             MockKafkaProducer().send.assert_not_called()
             self.assertEqual(FailedMessages.objects.count(), 1)
             message = FailedMessages.objects.first()
             self.assertEqual(message.reason, FAILED_REASON.MISMATCHING_PERSON)
             self.assertEqual(message.retry, False)
             self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
-    
+
     def test_failure_because_of_different_source(self):
         """
         Test that no action have been performed becaue the consent has a different person id than the channel
         """
-        self.in_messages[0]['source']['id'] = 'UNKNOWN'
-        self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
+        self.base_consent['source']['id'] = 'UNKNOWN'
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             ConsentNotificationCommand().handle()
-            for consent in self.in_messages:
-                channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
-                self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.CONSENT_REQUESTED)
+
             MockKafkaProducer().send.assert_not_called()
             self.assertEqual(FailedMessages.objects.count(), 1)
             message = FailedMessages.objects.first()
             self.assertEqual(message.reason, FAILED_REASON.MISMATCHING_SOURCE)
             self.assertEqual(message.retry, False)
             self.assertEqual(message.message_type, FAILED_MESSAGE_TYPE)
-    
+
     def test_failure_because_of_broker_connection_error(self):
         """
         Test that no action have been performed becaue the consent has a different person id than the channel
         """
-        self.set_mock_kafka_consumer(MockKafkaConsumer, self.in_messages,
+        self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
 
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
             ConsentNotificationCommand().handle()
-            for consent in self.in_messages:
-                channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
-                self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
-            self.assertEqual(FailedMessages.objects.count(), len(self.in_messages))
+
+            channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
+            self.assertEqual(channel.status, Channel.WAITING_SOURCE_NOTIFICATION)
+
+            self.assertEqual(FailedMessages.objects.count(), 1)
             message = FailedMessages.objects.first()
             self.assertEqual(message.reason, FAILED_REASON.FAILED_NOTIFICATION)
             self.assertEqual(message.retry, True)

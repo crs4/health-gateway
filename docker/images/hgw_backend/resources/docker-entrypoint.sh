@@ -62,7 +62,7 @@ if [ "$1" == "test" ]; then
 elif [ "$1" == "cleartokens" ]; then
     python manage.py cleartokens
 else 
-    echo "Starting kafka consumer"
+    echo "Starting create connector consumer"
     /launch-kafka.sh &
     if [ -d ${GUNICORN} ] || [ "${GUNICORN}" == "false" ] ; then
         envsubst '${HTTP_PORT} ${BASE_SERVICE_DIR}' < /etc/nginx/conf.d/nginx_https.template > /etc/nginx/conf.d/https.conf

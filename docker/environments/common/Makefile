@@ -25,29 +25,30 @@ rund:
 rund_with_spid:
 	docker-compose -f docker-compose-with-spid.yml -f docker-compose.override.yml up -d
 
-init_db:
-	cd ../../../utils && ./create_service_db.sh $(load_dev_data)
+clear_data:
+	rm -rf ./kafka-logs/* ./zookeeper/*
+	find ../../../ -name *.sqlite3 -delete
+	
+clear_data_run: clear_data run
 
-init_db_run: init_db run
+clear_data_rund: clear_data rund
 
-init_db_rund: init_db rund
+clear_data_run_with_spid: clear_data run_with_spid
 
-init_db_run_with_spid: init_db run_with_spid
+clear_data_rund_with_spid: clear_data rund_with_spid
 
-init_db_rund_with_spid: init_db rund_with_spid
+clear_data_run_with_tscns: clear_data run_with_tscns
 
-init_db_run_with_tscns: init_db run_with_tscns
+clear_data_rund_with_tscns: clear_data rund_with_tscns
 
-init_db_rund_with_tscns: init_db rund_with_tscns
+build_clear_data_run: build clear_data_run
 
-build_init_db_run: build init_db_run
+build_clear_data_rund: build clear_data_rund
 
-build_init_db_rund: build init_db_rund
+build_clear_data_run_with_spid: build clear_data_run_with_spid
 
-build_init_db_run_with_spid: build init_db_run_with_spid
+build_clear_data_rund_with_spid: build clear_data_rund_with_spid
 
-build_init_db_rund_with_spid: build init_db_rund_with_spid
+build_clear_data_run_with_tscns: build clear_data_run_with_tscns
 
-build_init_db_run_with_tscns: build init_db_run_with_tscns
-
-build_init_db_rund_with_tscns: build init_db_rund_with_tscns
+build_clear_data_rund_with_tscns: build clear_data_rund_with_tscns

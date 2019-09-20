@@ -29,8 +29,8 @@ from hgw_frontend.models import FlowRequest
 from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    HGW_BACKEND_CLIENT_ID)
 
-from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, CORRECT_CONSENT_ID,
-               CORRECT_CONSENT_ID2, PERSON_ID, PROFILES_DATA, SOURCES_DATA,
+from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, CORRECT_CONSENT_ID_AC,
+               CORRECT_CONSENT_ID_CR, PERSON_ID, PROFILES_DATA, SOURCES_DATA,
                WRONG_CONFIRM_ID, WRONG_CONFIRM_ID2, WRONG_CONSENT_ID,
                WRONG_CONSENT_ID2)
 
@@ -40,7 +40,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
     Consent manager mockup
     """
 
-    CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(CORRECT_CONSENT_ID, CORRECT_CONSENT_ID2))
+    CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(CORRECT_CONSENT_ID_AC, CORRECT_CONSENT_ID_CR))
     WRONG_CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(WRONG_CONSENT_ID, WRONG_CONSENT_ID2))
     CONSENTS_PATTERN = re.compile(r'/v1/consents/')
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
@@ -97,7 +97,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
             }
 
             consent_id = consent_search.groups()[0]
-            confirm_id = CORRECT_CONFIRM_ID if consent_search.groups()[0] == CORRECT_CONSENT_ID \
+            confirm_id = CORRECT_CONFIRM_ID if consent_search.groups()[0] == CORRECT_CONSENT_ID_AC \
                 else CORRECT_CONFIRM_ID2
 
             payload = {

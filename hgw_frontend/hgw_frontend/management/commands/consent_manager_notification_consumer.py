@@ -17,25 +17,37 @@
 
 import json
 import logging
+from datetime import datetime
 
 from hgw_common.messaging.sender import create_sender
 from hgw_common.models import FailedMessages
 from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.management import ConsumerCommand
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination
-from hgw_frontend.settings import (KAFKA_CHANNEL_NOTIFICATION_TOPIC,
+from hgw_frontend.settings import (DATETIME_FORMAT,
+                                   KAFKA_CHANNEL_NOTIFICATION_TOPIC,
                                    KAFKA_CONSENT_NOTIFICATION_TOPIC)
 
 logger = logging.getLogger('hgw_frontend.consent_manager_notification_consumer')
 
 
-class FAILED_REASON():
+class FAILED_REASON:
     FAILED_NOTIFICATION = 'FAILED_NOTIFICATION'
     INVALID_STRUCTURE = 'INVALID_STRUCTURE'
     JSON_DECODING = 'JSON_DECODING'
     UNKNOWN_CONSENT = 'UNKNOWN_CONSENT'
     MISMATCHING_PERSON = 'MISMATCHING_PERSON'
     MISMATCHING_SOURCE = 'MISMATCHING_SOURCE'
+    INCONSISTENT_STATUS = 'INCONSISTENT_STATUS'
+
+
+class ACTION:
+    """
+    The action performed to the channel
+    """
+    CREATED = 'CREATED'
+    UPDATED = 'UPDATED'
+    REVOKED = 'REVOKED'
 
 
 FAILED_MESSAGE_TYPE = 'CONSENT'
@@ -78,9 +90,32 @@ class Command(ConsumerCommand):
             logger.critical('The source id of the consent does not correspond to the Channel one')
             return FAILED_REASON.MISMATCHING_SOURCE
 
+    def _notify(self, consent, action):
+        destination = Destination.objects.get(destination_id=consent['destination']['id'])
+        channel = {
+            'channel_id': consent['consent_id'],
+            'action': action,
+            'source_id': consent['source']['id'],
+            'destination': {
+                'destination_id': destination.destination_id,
+                'kafka_public_key': destination.kafka_public_key
+            },
+            'profile': consent['profile'],
+            'person_id': consent['person_id'],
+            'start_validity': consent['start_validity'],
+            'expire_validity': consent['expire_validity']
+        }
+        notified = self.sender.send(self.sender_topic, channel)
+
+        if not notified:
+            failure_reason = FAILED_REASON.FAILED_NOTIFICATION
+            return failure_reason
+        else:
+            logger.info('Channel operation notified')
+
     def handle_message(self, message):
         logger.info('Found message for queue %s', message['queue'])
-        
+
         failure_reason = None
         retry = False
         if not message['success']:
@@ -93,34 +128,51 @@ class Command(ConsumerCommand):
             if failure_reason is None:
                 consent_confirmation = ConsentConfirmation.objects.get(consent_id=consent['consent_id'])
                 channel = consent_confirmation.channel
-                if channel.status == Channel.CONSENT_REQUESTED and consent['status'] == 'AC':
-                    logger.debug('Consent status is AC. Sending message to KAFKA')
+                if consent['status'] == 'AC' and channel.status == Channel.CONSENT_REQUESTED:  # Consent confirmed
+                    logger.debug('Consent has been given in the Consent Manager')
+                    channel.start_validity = consent['start_validity']
+                    channel.expire_validity = consent['expire_validity']
                     channel.status = Channel.WAITING_SOURCE_NOTIFICATION
                     channel.save()
 
-                    destination = Destination.objects.get(destination_id=consent['destination']['id'])
-                    channel = {
-                        'channel_id': consent['consent_id'],
-                        'source_id': consent['source']['id'],
-                        'destination': {
-                            'destination_id': destination.destination_id,
-                            'kafka_public_key': destination.kafka_public_key
-                        },
-                        'profile': consent['profile'],
-                        'person_id': consent['person_id'],
-                        'start_validity': consent['start_validity'],
-                        'expire_validity': consent['expire_validity']
-                    }
-
-                    notified = self.sender.send(self.sender_topic, channel)
-                    if not notified:
-                        failure_reason = FAILED_REASON.FAILED_NOTIFICATION
+                    failure_reason = self._notify(consent, ACTION.CREATED)
+                    if failure_reason is not None:
                         retry = True
-                    else:
-                        logger.info('Channel notified to backend')
+                elif consent['status'] == 'AC' and channel.status in (Channel.ACTIVE, Channel.WAITING_SOURCE_NOTIFICATION):  # Consent changed
+                    logger.debug('Consent has been changed in the Consent Manager. ')
+                    new_start_validity = datetime.strptime(consent['start_validity'], DATETIME_FORMAT) \
+                        if consent['start_validity'] is not None else None
+                    new_expire_validity = datetime.strptime(consent['expire_validity'], DATETIME_FORMAT) \
+                        if consent['expire_validity'] is not None else None
+                    if channel.start_validity != new_start_validity or channel.expire_validity != new_expire_validity:
+                        logger.debug('Changing the channel accordingly')
+                        channel.start_validity = consent['start_validity']
+                        channel.expire_validity = consent['expire_validity']
+                        channel.save()
                         
+                        failure_reason = self._notify(consent, ACTION.UPDATED)
+                        if failure_reason is not None:
+                            retry = True
+                    else:
+                        consent['expire_validity']
+                        logger.debug('Data from consent equal to the ones already stored. Not changing')
+                        failure_reason = FAILED_REASON.INCONSISTENT_STATUS
+                        retry = False
+
+                elif consent['status'] == 'RE' and channel.status in (Channel.ACTIVE, Channel.WAITING_SOURCE_NOTIFICATION):  # Consent revoked
+                    logger.debug('Consent has been revoked in the Consent Manager. ')
+                    channel.status = Channel.CONSENT_REVOKED
+                    channel.save()
+
+                    failure_reason = self._notify(consent, ACTION.REVOKED)
+                    if failure_reason is not None:
+                        retry = True
+                else:
+                    failure_reason = FAILED_REASON.INCONSISTENT_STATUS
+                    retry = False
+
         if failure_reason is not None:
-                        FailedMessages.objects.create(
+            FailedMessages.objects.create(
                 message_type=FAILED_MESSAGE_TYPE, message=json.dumps(message),
                 reason=failure_reason, retry=retry
             )

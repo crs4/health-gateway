@@ -98,7 +98,7 @@ class ChannelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Channel
-        fields = ('channel_id', 'status', 'destination_id', 'source', 'profile')
+        fields = ('channel_id', 'status', 'destination_id', 'source', 'profile', 'start_validity', 'expire_validity')
 
     @staticmethod
     def get_destination_id(obj):

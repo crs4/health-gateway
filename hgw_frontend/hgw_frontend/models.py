@@ -73,17 +73,22 @@ class Channel(models.Model):
     WAITING_SOURCE_NOTIFICATION = 'WS'
     # The source has been notified and the channel is active
     ACTIVE = 'AC'
+    # The person revoked the consent into the consent manager
+    CONSENT_REVOKED = 'CV'
 
     STATUS_CHOICES = (
         (CONSENT_REQUESTED, 'CONSENT_REQUESTED'),
         (WAITING_SOURCE_NOTIFICATION, 'WAITING_SOURCE_NOTIFICATION'),
-        (ACTIVE, 'ACTIVE')
+        (ACTIVE, 'ACTIVE'),
+        (CONSENT_REVOKED, 'CONSENT_REVOKED')
     )
 
     channel_id = models.CharField(max_length=32, blank=False)
     flow_request = models.ForeignKey(FlowRequest, null=False, on_delete=models.PROTECT)
     source = models.ForeignKey(Source, null=False, on_delete=models.PROTECT)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, blank=False)
+    start_validity = models.DateTimeField(null=True)
+    expire_validity = models.DateTimeField(null=True)
 
     def __str__(self):
         return "{}: {} - {} - {} - {}".format(self.channel_id, self.flow_request.person_id,

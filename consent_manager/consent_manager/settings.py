@@ -195,6 +195,7 @@ AUTH_PASSWORD_VALIDATORS = []
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 
 LANGUAGE_CODE = 'en-us'
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 TIME_ZONE = cfg['django']['timezone']
 USE_I18N = True
 USE_L10N = True

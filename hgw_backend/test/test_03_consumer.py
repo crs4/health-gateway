@@ -5,7 +5,7 @@ import os
 from django.test import TestCase
 from mock.mock import call, patch
 
-from hgw_backend.management.commands.kafka_consumer import Command
+from hgw_backend.management.commands.channel_consumer import Command
 from hgw_backend.models import FailedConnector, Source
 from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
@@ -30,15 +30,8 @@ DEST_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\n' \
 class TestConsumer(GenericTestCase):
     fixtures = ['test_data.json']
 
-    # @classmethod
-    # def setUpClass(cls):
-    #     super(TestConsumer, cls).setUpClass()
-    #     for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
-    #         logger = logging.getLogger(logger_name)
-    #         logger.setLevel(logging.CRITICAL)
-
     def setUp(self):
-        self.messages = [{
+        self.base_messages = [{
             'channel_id': 'KKa8QqqTBGePJStJpQMbspEvvV4LJJCY',
             'source_id': 'LD2j7v35BvUlzWDe8G89JGzz4SOincB7',
             'destination': {
@@ -53,7 +46,7 @@ class TestConsumer(GenericTestCase):
                 "payload": "{\"clinical_domain\": \"Laboratory\"}"
             },
             'person_id': 'AAAABBBBCCCCDDDD',
-            'start_validity': '2017-10-23T10:00:54.123000+02:00',
+            'start_validity': '2017-10-23T10:00:54+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
         }, {
             'channel_id': 'KKa8QqqTBGePJStJpQMbspEvvV4LJJCY',
@@ -71,6 +64,18 @@ class TestConsumer(GenericTestCase):
             'start_validity': None,
             'expire_validity': None
         }]
+    
+        self.create_messages = [m.copy() for m in self.base_messages]
+        for m in self.create_messages:
+            m.update({'action': 'CREATED'})
+        
+        self.update_messages = [m.copy() for m in self.base_messages]
+        for m in self.update_messages:
+            m.update({'action': 'UPDATED'})
+        
+        self.delete_messages = [m.copy() for m in self.base_messages]
+        for m in self.delete_messages:
+            m.update({'action': 'REVOKED'})
 
     def set_mock_kafka_consumer(self, mock_kc_klass, messages, json_enc=True, encoding='utf-8'):
         mock_kc_klass.FIRST = 0
@@ -81,18 +86,18 @@ class TestConsumer(GenericTestCase):
                                                  value=json.dumps(m).encode(encoding) if json_enc is True else m.encode('utf-8'))
                                   for i, m in enumerate(messages)}
 
-    def test_correct_message_send(self):
+    def test_correct_connector_creation(self):
         """
-        Test correct message send
+        Test correct connector creation
         """
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True) as mocked_create_connector:
-            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             Command().handle()
             self.assertEqual(FailedConnector.objects.count(), 0)
             calls = []
 
-            for m in self.messages:
+            for m in self.create_messages:
                 source_obj = Source.objects.get(source_id=m['source_id'])
                 connector = {
                     'profile': m['profile'],
@@ -104,7 +109,48 @@ class TestConsumer(GenericTestCase):
                 }
                 calls.append(call(source_obj, connector))
             mocked_create_connector.assert_has_calls(calls)
+        
+    def test_correct_connector_update(self):
+        """
+        Test correct connector update
+        """
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_backend.models.OAuth2Authentication.update_connector', return_value=True) as mocked_update_connector:
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.update_messages, True)
+            Command().handle()
+            self.assertEqual(FailedConnector.objects.count(), 0)
+            calls = []
 
+            for m in self.update_messages:
+                source_obj = Source.objects.get(source_id=m['source_id'])
+                connector = {
+                    'channel_id': m['channel_id'],
+                    'profile': m['profile'],
+                    'start_validity': m['start_validity'][:10] if m['start_validity'] is not None else None,
+                    'expire_validity': m['expire_validity'][:10] if m['expire_validity'] is not None else None
+                }
+                calls.append(call(source_obj, connector))
+            mocked_update_connector.assert_has_calls(calls)
+    
+    def test_correct_connector_delete(self):
+        """
+        Test correct connector delete
+        """
+        with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
+                patch('hgw_backend.models.OAuth2Authentication.delete_connector', return_value=True) as mocked_delete_connector:
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.delete_messages, True)
+            Command().handle()
+            self.assertEqual(FailedConnector.objects.count(), 0)
+            calls = []
+
+            for m in self.delete_messages:
+                source_obj = Source.objects.get(source_id=m['source_id'])
+                connector = {
+                    'channel_id': m['channel_id']
+                }
+                calls.append(call(source_obj, connector))
+            mocked_delete_connector.assert_has_calls(calls)
+    
     def test_message_failure_db_error(self):
         """
         Test correct message send
@@ -113,13 +159,13 @@ class TestConsumer(GenericTestCase):
         mock = self._get_db_error_mock()
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True) as mocked_create_connector, \
-                patch('hgw_backend.management.commands.kafka_consumer.Source', mock):
-            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+                patch('hgw_backend.management.commands.channel_consumer.Source', mock):
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             Command().handle()
             mocked_create_connector.assert_not_called()
-        self.assertEqual(FailedConnector.objects.count(), len(self.messages))
+        self.assertEqual(FailedConnector.objects.count(), len(self.create_messages))
         for index, failed in enumerate(FailedConnector.objects.all()):
-            self.assertEqual(json.loads(failed.message), self.messages[index])
+            self.assertEqual(json.loads(failed.message), self.create_messages[index])
             self.assertEqual(failed.reason, FailedConnector.DATABASE_ERROR)
             self.assertEqual(failed.retry, True)
 
@@ -128,11 +174,11 @@ class TestConsumer(GenericTestCase):
         Test failure sending message
         """
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer):
-            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             Command().handle()
             self.assertEqual(FailedConnector.objects.count(), 2)
             for index, failed in enumerate(FailedConnector.objects.all()):
-                self.assertEqual(json.loads(failed.message), self.messages[index])
+                self.assertEqual(json.loads(failed.message), self.create_messages[index])
                 self.assertEqual(failed.reason, FailedConnector.SENDING_ERROR)
                 self.assertEqual(failed.retry, True)
 
@@ -157,16 +203,17 @@ class TestConsumer(GenericTestCase):
         """
         Tests failure beacuse of incorrect message structure
         """
-        del self.messages[0]['channel_id']
+        del self.create_messages[0]['channel_id']
+        print(FailedConnector.objects.count())
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
-            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             command = Command()
             command.handle()
 
             self.assertEqual(FailedConnector.objects.count(), 1)
             f = FailedConnector.objects.first()
-            self.assertEqual(json.loads(f.message), self.messages[0])
+            self.assertEqual(json.loads(f.message), self.create_messages[0])
             self.assertEqual(f.reason, FailedConnector.WRONG_MESSAGE_STRUCTURE)
             self.assertEqual(f.retry, False)
 
@@ -174,16 +221,16 @@ class TestConsumer(GenericTestCase):
         """
         Tests failure beacuse of unknown source
         """
-        self.messages[0]['source_id'] = 'a' * 32  # generates an unknown source_id. 32 is the character length of a source_id
+        self.create_messages[0]['source_id'] = 'a' * 32  # generates an unknown source_id. 32 is the character length of a source_id
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
-            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             command = Command()
             command.handle()
 
             self.assertEqual(FailedConnector.objects.count(), 1)
             f = FailedConnector.objects.first()
-            self.assertEqual(json.loads(f.message), self.messages[0])
+            self.assertEqual(json.loads(f.message), self.create_messages[0])
             self.assertEqual(f.reason, FailedConnector.SOURCE_NOT_FOUND)
             self.assertEqual(f.retry, False)
 
@@ -205,11 +252,11 @@ class TestConsumer(GenericTestCase):
         """
         Tests failure beacuse of unicode decoding error. In this case the message won't be saved on db
         """
-        self.messages[0]['start_validity'] = 'WRONG_DATE'
-        self.messages[1]['expire_validity'] = 'WRONG_DATE'
+        self.create_messages[0]['start_validity'] = 'WRONG_DATE'
+        self.create_messages[1]['expire_validity'] = 'WRONG_DATE'
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True):
-            self.set_mock_kafka_consumer(MockKafkaConsumer, self.messages, True)
+            self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             command = Command()
             command.handle()
 
@@ -217,6 +264,6 @@ class TestConsumer(GenericTestCase):
             self.assertEqual(FailedConnector.objects.count(), 2)
             failed_connectors = FailedConnector.objects.all()
             for index, failed_connector in enumerate(failed_connectors):
-                self.assertEqual(json.loads(failed_connector.message), self.messages[index])
+                self.assertEqual(json.loads(failed_connector.message), self.create_messages[index])
                 self.assertEqual(failed_connector.reason, FailedConnector.WRONG_DATE_FORMAT)
                 self.assertEqual(failed_connector.retry, False)

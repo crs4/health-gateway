@@ -35,7 +35,7 @@ class GenericTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        for logger_name in ('backend_kafka_consumer', 'hgw_backend'):
+        for logger_name in ('channel_consumer', 'hgw_backend'):
             logger = logging.getLogger(logger_name)
             logger.setLevel(logging.CRITICAL)
         return super(GenericTestCase, cls).setUpClass()
