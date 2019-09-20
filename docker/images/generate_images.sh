@@ -27,7 +27,10 @@ function tag_new_version() {
     echo $LATEST_IMAGE_ID
     echo $VERSION_IMAGE_ID
     if [ "$LATEST_IMAGE_ID" != "$VERSION_IMAGE_ID" ]; then
-        LAST_NUM=${VERSION: -1}
+        IFS='.' # dot (.) is set as delimiter
+        read -ra VERSION_PART <<< "$VERSION" # str is read into an array as tokens separated by IFS
+        IFS=' ' # reset to default value after usage
+        LAST_NUM=${VERSION_PART[2]}
         docker tag crs4/$SERVICE:latest crs4/$SERVICE:1.0.$(($LAST_NUM + 1))
         echo "Tagged new version 1.0.$(($LAST_NUM + 1))"
         if [ "$DEV" != "dev" ]; then
