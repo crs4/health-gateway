@@ -73,7 +73,8 @@ class ConsentView(ViewSet):
         if self._sender is None:
             self._sender = create_sender(create_broker_parameters_from_settings())
         consent_serializer = ConsentSerializer(consent)
-        self._sender.send(KAFKA_NOTIFICATION_TOPIC, consent_serializer.data)
+        if self._sender.send(KAFKA_NOTIFICATION_TOPIC, consent_serializer.data):
+            logger.info('Action on consent notified correctly')
 
     def list(self, request):
         """

@@ -35,7 +35,7 @@ class TestNotification(TestCase):
     
     @classmethod
     def setUpClass(cls):
-        for logger_name in ('channel_operation_consumer.py', 'hgw_backend'):
+        for logger_name in ('channel_consumer.py', 'hgw_backend'):
             logger = logging.getLogger(logger_name)
             logger.setLevel(logging.CRITICAL)
         return super(TestNotification, cls).setUpClass()

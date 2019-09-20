@@ -5,7 +5,7 @@ import os
 from django.test import TestCase
 from mock.mock import call, patch
 
-from hgw_backend.management.commands.channel_operation_consumer import Command
+from hgw_backend.management.commands.channel_consumer import Command
 from hgw_backend.models import FailedConnector, Source
 from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_common.utils.mocks import MockKafkaConsumer, MockMessage
@@ -159,7 +159,7 @@ class TestConsumer(GenericTestCase):
         mock = self._get_db_error_mock()
         with patch('hgw_common.messaging.receiver.KafkaConsumer', MockKafkaConsumer), \
                 patch('hgw_backend.models.OAuth2Authentication.create_connector', return_value=True) as mocked_create_connector, \
-                patch('hgw_backend.management.commands.channel_operation_consumer.Source', mock):
+                patch('hgw_backend.management.commands.channel_consumer.Source', mock):
             self.set_mock_kafka_consumer(MockKafkaConsumer, self.create_messages, True)
             Command().handle()
             mocked_create_connector.assert_not_called()
