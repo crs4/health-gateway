@@ -264,17 +264,21 @@ class TestConnectorCreation(TestCase):
         Tests creation of new connector success when creating the first token
         """
         with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
-            auth = OAuth2Authentication.objects.first()
-            self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
-            source = self._get_source_from_auth_obj(auth)
-            res = source.create_connector(CONNECTOR)
-            token = AccessToken.objects.get(oauth2_authentication=auth)
-            self.assertIsNotNone(token)
-            self.assertIsNotNone(res)
-            MockKafkaProducer().send.assert_called_once()
-            self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-            self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                             {'channel_id': CONNECTOR['channel_id']})
+            for m in ('create_connector', 'update_connector', 'delete_connector'):
+                auth = OAuth2Authentication.objects.first()
+                self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
+                source = self._get_source_from_auth_obj(auth)
+                res = source.create_connector(CONNECTOR)
+                token = AccessToken.objects.get(oauth2_authentication=auth)
+                self.assertIsNotNone(token)
+                self.assertIsNotNone(res)
+                token.delete()
+                if m == 'create_connector':
+                    MockKafkaProducer().send.assert_called_once()
+                    self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+                    self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                    {'channel_id': CONNECTOR['channel_id']})
+                
 
     def test_oauth2_source_refresh_token_token_expired_exception(self):
         """
@@ -295,10 +299,13 @@ class TestConnectorCreation(TestCase):
                 self.assertNotEqual(AccessToken.objects.get(oauth2_authentication=auth).access_token,
                                     'expired')
                 self.assertIsNotNone(res)
-                MockKafkaProducer().send.assert_called_once()
-                self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-                self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                                {'channel_id': CONNECTOR['channel_id']})
+                if m == 'create_connector':
+                    MockKafkaProducer().send.assert_called_once()
+                    self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+                    self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                    {'channel_id': CONNECTOR['channel_id']})
+                else:
+                    MockKafkaProducer().send.assert_not_called()
 
     def test_oauth2_source_refresh_token_unauthorized_response(self):
         """
@@ -322,11 +329,13 @@ class TestConnectorCreation(TestCase):
                 self.assertNotEqual(AccessToken.objects.get(oauth2_authentication=auth).access_token,
                                     'expired')
                 self.assertIsNotNone(res)
-
-                MockKafkaProducer().send.assert_called_once()
-                self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
-                self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                                {'channel_id': CONNECTOR['channel_id']})
+                if m == 'create_connector':
+                    MockKafkaProducer().send.assert_called_once()
+                    self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
+                    self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                                    {'channel_id': CONNECTOR['channel_id']})
+                else:
+                    MockKafkaProducer().send.assert_not_called()
                 
                 # Restore the expire token for the next loop
                 token.access_token = 'expired'
@@ -348,3 +357,4 @@ class TestConnectorCreation(TestCase):
                 res = getattr(source, m)(EXPIRED_CONSENT_CHANNEL)
                 self.assertIsNone(res)
                 MockKafkaProducer().send.assert_not_called()
+                

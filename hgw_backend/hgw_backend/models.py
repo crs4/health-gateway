@@ -65,23 +65,15 @@ class Source(models.Model):
 
     def create_connector(self, connector):
         res = self.content_object.create_connector(self, connector)
-        print(res)
         if res is not None:
             connector_created.send(sender=self.__class__, connector=connector)
         return res
     
     def update_connector(self, connector):
-        logger.debug("Updating connector")
-        res = self.content_object.update_connector(self, connector)
-        if res is not None:
-            connector_created.send(sender=self.__class__, connector=connector)
-        return res
+        return self.content_object.update_connector(self, connector)
 
     def delete_connector(self, connector):
-        res = self.content_object.delete_connector(self, connector)
-        if res is not None:
-            connector_created.send(sender=self.__class__, connector=connector)
-        return res
+        return self.content_object.delete_connector(self, connector)
 
 
 class CertificatesAuthentication(models.Model):
