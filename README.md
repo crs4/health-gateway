@@ -29,3 +29,7 @@ To make the development environment work you need to add the following entries t
 * 127.0.0.1 hgwbackend
 * 127.0.0.1 hgwfrontend
 * 127.0.0.1 kafka
+
+## NB
+Install the 'keytool' package, which is part of the standard java distribution.
+Use 'hgwpwd' as a password for certificates.
