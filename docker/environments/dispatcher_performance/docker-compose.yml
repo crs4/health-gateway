@@ -2,7 +2,7 @@ version: '3.0'
 services:
   destination_mock:
     build:
-      context: ../../images/development/performance_test_endpoint
+      context: ../../images/performance_test_endpoint
     image: crs4/performance_test_endpoint
     depends_on:
       - kafka
@@ -19,7 +19,7 @@ services:
 
   source_mock:
     build:
-      context: ../../images/development/performance_test_endpoint
+      context: ../../images/performance_test_endpoint
     image: crs4/performance_test_endpoint
     environment:
       - MEAN_DOC_SIZE=${MEAN_DOC_SIZE:-100000}
@@ -43,7 +43,7 @@ services:
 
   hgw_frontend:
     build:
-      context: ../../images/development/hgw_frontend
+      context: ../../images/hgw_frontend
       args:
         HTTP_PORT: 8000
     image: crs4/hgw_frontend:development
@@ -70,7 +70,7 @@ services:
 
   hgw_backend:
     build:
-      context: ../../images/development/hgw_backend
+      context: ../../images/hgw_backend
       args:
         HTTP_PORT: 8003
     image: crs4/hgw_backend:development
@@ -101,7 +101,7 @@ services:
 
   consent_manager:
     build:
-      context: ../../images/development/consent_manager
+      context: ../../images/consent_manager
       args:
         HTTP_PORT: 8002
     image: crs4/consent_manager:development
@@ -154,7 +154,7 @@ services:
     command: kafka-server-start.sh config/server.properties
 
   hgw_dispatcher:
-    build: ../../images/development/hgw_dispatcher
+    build: ../../images/hgw_dispatcher
     image: crs4/hgw_dispatcher:development
     depends_on:
       - kafka

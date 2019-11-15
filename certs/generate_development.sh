@@ -42,6 +42,8 @@ fi
 
 ./generate_all.sh destinationmockup i2b2-destination source-endpoint-mockup integration-rest-destination
 
+cp -r web ca/
+
 ./generate_ts_cns_saml_certs.sh
 
 # Creates the hgwbackend client cert for the source_endpoint_mockup

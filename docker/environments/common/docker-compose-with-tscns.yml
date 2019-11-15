@@ -16,7 +16,7 @@ services:
   #         - tscns
           
   tscns:
-    image: crs4/tscns:3.3.3
+    image: crs4/tscns
     ports:
       - 443:443
     environment:
@@ -67,7 +67,7 @@ services:
       - ../../../certs/ca/kafka/certs/hgwfrontend/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/hgwfrontend/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
-      - /home/vitto/versioning/crs4/djangosaml2:/usr/lib/python3.6/site-packages/djangosaml2-0.16.10-py3.6.egg/
+      - ../../../djangosaml2:/usr/lib/python3.6/site-packages/djangosaml2-0.16.10-py3.6.egg/
     networks:
       default:
         aliases:
@@ -123,7 +123,7 @@ services:
       - ../../../certs/ca/kafka/certs/consentmanager/cert.pem:/container/client_certs/cert.pem
       - ../../../certs/ca/kafka/certs/consentmanager/key.pem:/container/client_certs/key.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem:/container/client_certs/kafka.chain.cert.pem
-      - /home/vitto/versioning/crs4/djangosaml2:/usr/lib/python3.6/site-packages/djangosaml2-0.17.2-py3.6.egg/
+      - ../../../djangosaml2:/usr/lib/python3.6/site-packages/djangosaml2-0.17.2-py3.6.egg/
 
     networks:
       default:

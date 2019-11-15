@@ -3,7 +3,7 @@ version: '3.0'
 services:
   i2b2_destination:
     build:
-      context: ../../images/development/destination_mockup
+      context: ../../images/destination_mockup
       args:
         HTTP_PORT: 8001
     image: crs4/destination_mockup:development
@@ -29,7 +29,7 @@ services:
       - ../../../destination_mockup/static/:/container/service/static
 
   source_endpoint_mockup:
-    build: ../../images/development/source_endpoint_mockup
+    build: ../../images/source_endpoint_mockup
     image: crs4/source_endpoint_mockup:development
     ports:
       - 8004:8004

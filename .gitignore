@@ -19,3 +19,4 @@ certs/ca/
 
 /* node */
 **/node_modules
+/djangosaml2/
