@@ -3,8 +3,9 @@
 function usage {
     echo "Creates certificates for CAs and for services. By default it creates web and kafka certs for consentmanager hgwfrontend hgwbackend. If you need other services specify them"
     echo "usage: ${0} [-s] [-h] [list of additional services]"
-    echo " -o       specify output dir. If not present it will use the current dir"
-    echo " -h       print this message"
+    echo " -o          specify output dir [with respect to certs]. If not present it will use the current dir"
+    echo " -c --clean  cleans the certificates folders forcibly"
+    echo " -h          print this message"
 }
 
 if [ $# -ge 1 ]; then
@@ -43,7 +44,12 @@ cd ../certs
 
 keytool 2>/dev/null || sudo apt install openjdk-13-jre-headless -y
 
-./generate_development.sh
+./generate_development.sh $OUTPUT_DIR
 
 mkdir -p ca/kafka/certs
 sudo cp -r kafka/certs/* ca/kafka/certs
+
+for TGT_HOST in consentmanager destinationmockup spid-testenv-identityserver spid-testenv-backoffice hgwbackend
+hgwfrontend kafka tscns; do
+    ping ${TGT_HOST} -c 1 2>&1 1>/dev/null || sudo bash -c 'echo "127.0.0.1 ${TGT_HOST}" >> /etc/hosts'
+done

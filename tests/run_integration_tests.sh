@@ -53,7 +53,7 @@ if [ $# -ge 1 ]; then
 fi
 
 DIR=$(pwd)
-INTEGRATION_DOCKER_DIR=${DIR}/../docker/environments/integration/
+INTEGRATION_DOCKER_DIR=${DIR}/../docker/environments/development/
 
 finish(){
     ret=$?

@@ -20,3 +20,6 @@ certs/ca/
 /* node */
 **/node_modules
 /djangosaml2/
+/certs/kafka/
+/certs/root/
+/certs/web/

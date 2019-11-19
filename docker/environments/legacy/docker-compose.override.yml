@@ -1,0 +1,51 @@
+version: '3.0'
+services:
+  destination_mockup:
+    build:
+      context: ../../images/destination_mockup
+      args:
+        HTTP_PORT: 8001
+    image: crs4/destination_mockup:development
+    depends_on:
+      - kafka
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
+    environment:
+      - HTTP_PORT=8001
+      - DJANGO_APP_NAME=destination_mockup
+      - TZ=CET
+    ports:
+      - 8001:8001
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../destination_mockup/:/container/service/
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
+      - ../../../certs/:/container/certs/
+
+  source_endpoint_mockup:
+    build: ../../images/source_endpoint_mockup
+    image: crs4/source_endpoint_mockup:development
+    ports:
+      - 8004:8004
+    environment:
+      - TZ=CET
+      - DJANGO_APP_NAME=source_endpoint
+      - HTTP_PORT=8004
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../examples/source_endpoint/:/container/service
+      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../certs/ca/web/certs/source-endpoint-mockup/:/container/web_certs/
+      - ../../../certs/:/container/certs/
+    networks:
+      default:
+        aliases:
+          - source-endpoint-mockup
+
+#  kafka:
+#    environment:
+#      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC:1:1:hgwbackend:hgwdispatcher

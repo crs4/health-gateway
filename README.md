@@ -27,9 +27,13 @@ To run the HGW follow this steps
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -  
             sudo add-apt-repository "deb https://download.docker.com/linux/ubuntu bionic stable"  
             sudo apt install docker-ce docker-ce-cli containerd.io docker-compose build-essential
-4. Move to `docker/environments/integration` directory and to run all the services launch
+4. Move to `docker/environments/development` directory and to run all the services launch
 
             make run_with_tscns
+            
+5. To stop the service run:
+
+            make down_with_tscns
 
 ## File host
 To make the development environment work you need to add the following entries to your file host:
@@ -41,7 +45,21 @@ To make the development environment work you need to add the following entries t
     127.0.0.1 hgwbackend
     127.0.0.1 hgwfrontend
     127.0.0.1 kafka
+    127.0.0.1 tscns
 
-## NB
-Install the 'keytool' package, which is part of the standard java distribution.
+
+## Interaction with local env
+To interact with the local environment, the endpoints are as it follows:
+
+    https://hgwfrontend:8000
+    https://consentmanager:8002
+    https://hgwbackend:8003
+   
+to use Postman, go to:
+    
+    File > Settings > General > SSL Certificate Verification
+    
+and turn it **OFF**
+    
+     
 

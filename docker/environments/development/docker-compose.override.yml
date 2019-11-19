@@ -1,14 +1,10 @@
 version: '3.0'
 services:
-  destination_mockup:
-    build:
-      context: ../../images/destination_mockup
-      args:
-        HTTP_PORT: 8001
-    image: crs4/destination_mockup:development
+  kafka_destination_mockup:
+    image: crs4/destination_mockup:latest
     depends_on:
       - kafka
-    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh", "kafka"]
     environment:
       - HTTP_PORT=8001
       - DJANGO_APP_NAME=destination_mockup
@@ -19,14 +15,37 @@ services:
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../destination_mockup/:/container/service/
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../destination_mockup/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
       - ../../../certs/:/container/certs/
 
+  rest_destination_mockup:
+    image: crs4/destination_mockup:latest
+    depends_on:
+      - kafka
+    entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/custom_entrypoint/wait-for-it.sh",
+      "hgw_frontend:8000", "--", "/docker-entrypoint.sh", "rest"]
+    environment:
+      - HTTP_PORT=8001
+      - DJANGO_APP_NAME=integration_rest_destination
+      - TZ=CET
+    ports:
+      - 8005:8001
+    volumes:
+      - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
+      - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
+      - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
+      - ../../../examples/integration_rest_destination/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
+      - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
+      - ../../../certs/:/container/certs/
+      - ../../../destination_mockup/destination_mockup/:/container/devservice/destination_mockup/
+      - ../../../destination_mockup/templates/:/container/devservice/destination_mockup/templates
+      - ../../../destination_mockup/static/:/container/devservice/static
+
   source_endpoint_mockup:
-    build: ../../images/source_endpoint_mockup
-    image: crs4/source_endpoint_mockup:development
+    image: crs4/source_endpoint_mockup:latest
     ports:
       - 8004:8004
     environment:
@@ -37,15 +56,13 @@ services:
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../examples/source_endpoint/:/container/service
-      - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
+      - ../../../examples/source_endpoint/:/container/devservice/
+      - ../../../hgw_common/hgw_common/:/container/devservice/hgw_common/
       - ../../../certs/ca/web/certs/source-endpoint-mockup/:/container/web_certs/
       - ../../../certs/:/container/certs/
+      - ../../../examples/source_endpoint/source_endpoint/fixtures/initial_data.json:/container/fixtures/development_data.json
+
     networks:
       default:
         aliases:
           - source-endpoint-mockup
-
-#  kafka:
-#    environment:
-#      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC:1:1:hgwbackend:hgwdispatcher
