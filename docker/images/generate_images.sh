@@ -60,8 +60,8 @@ done
 # docker build -t crs4/spid-testenv-backoffice:latest ${DIR}/spid_testenv_backoffice
 
 # # Create TS/CNS image
-# docker build -t crs4/tscns:latest ${DIR}/tscns
-# docker tag crs4/tscns:latest crs4/tscns:$VERSION
+docker build -t crs4/tscns:latest ${DIR}/tscns
+docker tag crs4/tscns:latest crs4/tscns:$VERSION
 
 # Create destination_mockup
 cp -r health_gateway/destination_mockup/ ${DIR}/destination_mockup/service
