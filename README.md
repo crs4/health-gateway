@@ -54,6 +54,7 @@ To interact with the local environment, the endpoints are as it follows:
     https://hgwfrontend:8000
     https://consentmanager:8002
     https://hgwbackend:8003
+    https://destinationmockup:8001
    
 to use Postman, go to:
     
