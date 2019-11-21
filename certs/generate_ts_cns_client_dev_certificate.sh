@@ -18,7 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-PASSKEY=hgwpwd
+CERT_PASSKEY=12345
+CA_PASSKEY=hgwpwd
 WEB_CA_CERT=ca/web/certs/ca/web.cert.pem
 WEB_CA_KEY=ca/web/certs/ca/web.key.pem
 ROOT_CA_CERT=ca/root/ca.cert.pem
@@ -41,20 +42,31 @@ function create_cert() {
     CLIENT_P12=${CLIENT_BASE_DIR}/cert.p12
 
     echo "/C=IT/GN=${NAME}/SN=${SURNAME}/CN=${ID}//0000000000000000.oXPnbQvnvQANlkxAg"
-    openssl genrsa -des3 -out ${CLIENT_KEY} 4096
-    openssl req -new -key ${CLIENT_KEY} -out ${CLIENT_CSR} \
+    openssl genrsa -des3 -passout pass:${CERT_PASSKEY} -out ${CLIENT_KEY} 4096
+    openssl req -new -key ${CLIENT_KEY} -out ${CLIENT_CSR} -passin pass:${CERT_PASSKEY} \
         -subj /C=IT/CN="\"${ID}\/0000000000000000.oXPnbQvnvQANlkxAg\""/GN=${NAME}/SN=${SURNAME}
 
     echo "Signing the client certificate with the CA key"
 
     openssl x509 -req -CA ${WEB_CA_CERT} -CAkey ${WEB_CA_KEY} -in ${CLIENT_CSR} -out ${CLIENT_CERT} -days 365 \
-        -CAcreateserial -passin pass:${PASSKEY}
-    openssl pkcs12 -export -out ${CLIENT_P12} -inkey ${CLIENT_KEY} -in ${CLIENT_CERT} -CAfile ${WEB_CA_KEY}
+        -CAcreateserial -passin pass:${CA_PASSKEY}
+    echo "Generating pkcs12"
+    openssl pkcs12 -export -out ${CLIENT_P12} -inkey ${CLIENT_KEY} -in ${CLIENT_CERT} -CAfile ${WEB_CA_KEY} -passin pass:${CERT_PASSKEY} \
+        -passout pass:${CERT_PASSKEY}
 
 }
-#create_cert "garibaldi" "Giuseppe" "Garibaldi" "GRBGPP87L04L741X"
+
+OUTDIR=$1
+NAME=$2
+SURNAME=$3
+FISCAL_CODE=$4
+
+create_cert $OUTDIR $NAME $SURNAME $FISCAL_CODE
 #create_cert "cesare" "Giulio" "Cesare" "CSRGGL44L13H501E"
 #create_cert "darco" "Giovanna" "D'Arco" "DRCGNN12A46A326K"
-
-create_cert $1 $2 $3 $4
-
+#create_cert "lucrezia" "Lucrezia" "Borgia" "BRGLRZ80D58H501Q"
+#create_cert "cristoforocolombo" "Cristoforo" "Colombo" "CLMCST42R12D969Z"
+#create_cert "fieramosca" "Ettore" "Fieramosca" "FRMTTR76M06B715E"
+#create_cert "cleopatra" "Filopatore" "Cleopatra" "FLPCPT69A65Z336P"
+#create_cert "marcopolo" "Marco" "Polo" "PLOMRC01P30L736Y"
+#create_cert "montessori" "Maria" "Montessori" "MNTMRA03M71C615V"
