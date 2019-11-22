@@ -40,7 +40,7 @@ for module in consent_manager hgw_frontend hgw_backend; do
     echo $'\n*********************'
     echo "Testing $module"
     cd $DIR/../${module}
-    ${PYTHON} manage.py test test/
+    ${PYTHON} manage.py test test/ || echo "At least one test FAILED"
 done
 
 cd $DIR/../hgw_common/hgw_common

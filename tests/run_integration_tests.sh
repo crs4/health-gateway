@@ -20,14 +20,17 @@
 #set -e
 
 PROGRAM_NAME=$0
-NO_SPID="false"
 SLEEP_TIME=5
 message_received=0
+SPID="true"
+TSCNS="false"
+
 
 function usage {
     echo "usage: ${PROGRAM_NAME} [-s] [-h]"
     echo " -s       specify the time to wait before publishing data/checking data received. Default ${SLEEP_TIME} seconds"
     echo " -n       it runs without spid containers. It means that the containers has to be run separately"
+    echo " -t       it runs with tscns"
     echo " -h       print this message"
 }
 
@@ -46,8 +49,13 @@ if [ $# -ge 1 ]; then
                 SLEEP_TIME=$2
                 ;;
 
+            -t)
+                TSCNS="true"
+                SPID="false"
+                ;;
+
             -n)
-                NO_SPID="true"
+                SPID="false"
                 ;;
     esac
 fi
@@ -58,10 +66,13 @@ INTEGRATION_DOCKER_DIR=${DIR}/../docker/environments/development/
 finish(){
     ret=$?
     cd ${INTEGRATION_DOCKER_DIR}
-    if [ "$NO_SPID" == "true" ]; then
-        make down
-    else
+    if [ "$SPID" == "true"  ]; then
         make down_with_spid
+        else if [ "$TSCNS" == "true" ]; then
+            make down_with_tscns
+        else
+            make down
+        fi
     fi
 
     if [ "$message_received" -eq 0 ]; then
@@ -75,12 +86,17 @@ finish(){
 trap finish EXIT
 
 prepare_docker(){
+    docker stop test_kafka
     cd ${INTEGRATION_DOCKER_DIR}
-    make down_with_spid  # This will work if the previous run was with or without spid
-    if [ "$NO_SPID" == "true" ]; then
-        make build_init_db_rund
-    else
+    make down_with_spid
+    make down_with_tscns  # These will work no matter what the previous run was
+    if [ "$SPID" == "true" ]; then
         make build_init_db_rund_with_spid
+    else if [ "$TSCNS" == "true" ]; then
+            make rund_with_tscns
+        else
+            make rund
+        fi
     fi
 }
 
@@ -141,7 +157,9 @@ check_message_received(){
 }
 
 prepare_docker
-check_identity_server_up
+if [ "$SPID" == "true" ]; then
+    check_identity_server_up
+fi
 #check_containers_up # does not seem to work well (especially on mac), anyway it is someway redundant
 run_unittest
 publish_data
