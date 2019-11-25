@@ -267,7 +267,7 @@ class ConfirmConsents extends React.Component {
         }).then((response) => {
             var url = new URL(window.location.href);
             var confirmId = url.searchParams.get("confirm_id");
-            const callback = `${this.props.callbackUrl}?success=false&status=aborted&confirm_id=${confirmId}`;
+            const callback = `${this.props.callbackUrl}?success=false&status=aborted&consent_confirm_id=${confirmId}`;
             this.props.notifier.success(`Consents aborted correctly. Redirecting in 2 seconds...`, () => {
                 window.location = callback});
         }).catch(() => {
