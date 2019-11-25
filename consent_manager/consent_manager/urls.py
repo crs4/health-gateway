@@ -36,6 +36,7 @@ urlpatterns = [
     path(r'oauth2/', include('oauth2_provider.urls')),
     path(r'protocol/', include('hgw_common.urls')),
     path(r'confirm_consents/', views.confirm_consent),
+    path(r'{}/consents/abort/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'abort'})),
     path(r'{}/consents/confirm/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'confirm'})),
     path(r'{}/consents/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke_list'}),
         name='consents_revoke'),

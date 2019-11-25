@@ -62,7 +62,8 @@ class ConfirmConsents extends React.Component {
             consents: arrayToObject(this.props.data, 'confirm_id',
                 { 'checked': false, 'start_date_disabled': false, 'expire_date_disabled': false }),
             sent: false,
-            modal: false
+            modal: false,
+            modal2: false
         };
     }
 
@@ -119,6 +120,7 @@ class ConfirmConsents extends React.Component {
                 )
             }
         }
+
         return (
             <form>
                 <DjangoCSRFToken />
@@ -143,12 +145,33 @@ class ConfirmConsents extends React.Component {
                         {rows}
                     </tbody>
                 </table>
-                <Button id='btn-confirm-consents'
-                    color='primary'
-                    onClick={this.toggle.bind(this)}
-                    disabled={!this.canSubmit()}>Accept Conditions for Selected Consent(s)</Button>
+                <div style={{ display: "flex"}}>
+                    <Button id='btn-abort-consents'
+                            style={{ marginLeft: "auto", float: "left", margin:10, padding: 10}}
+                            color='primary'
+                            onClick={this.toggle2.bind(this)}>
+                            Abort consent operations</Button>{'          '}
+                    <Button id='btn-confirm-consents'
+                            style={{ marginRight: "auto", float: "right", margin:10, padding: 10}}
+                            color='primary'
+                            onClick={this.toggle.bind(this)}
+                            disabled={!this.canSubmit()}>
+                            Accept Conditions for Selected Consent(s)</Button>
+                </div>
+
+                <Modal isOpen={this.state.modal2} toggle={this.toggle2.bind(this)}>
+                    <ModalHeader toggle={this.toggle2.bind(this)}></ModalHeader>
+                    <ModalBody>Are you sure you want to abort consent process?</ModalBody>
+                    <ModalFooter>
+                        <Button color="primary" id="btn-modal-abort-consents"
+                                onClick={this.sendAbort.bind(this)}>Yes, Abort.</Button>{' '}
+                        <Button color="secondary" id="btn-modal-cancel-consents"
+                                onClick={this.toggle2.bind(this)}>Cancel</Button>
+                    </ModalFooter>
+                </Modal>
+
                 <Modal isOpen={this.state.modal} toggle={this.toggle.bind(this)}>
-                    <ModalHeader toggle={this.toggle.bind(this)}>Are you sure?</ModalHeader>
+                    <ModalHeader toggle={this.toggle.bind(this)}></ModalHeader>
                     <ModalBody>
                         Are you sure you want to authorize data transfer to the destination from the selected
                         sources?
@@ -218,6 +241,42 @@ class ConfirmConsents extends React.Component {
         })
     }
 
+    toggle2() {
+        this.setState({
+            modal2: !this.state.modal2
+        })
+    }
+
+    sendAbort() {
+        this.toggle2();
+        let consentsData = {};
+        for (let [key, consent] of iterate(this.state.consents)) {
+            consentsData[key] = {
+                'start_validity': consent.start_date_disabled ? null : consent.start_validity,
+                'expire_validity': consent.expire_date_disabled ? null : consent.expire_validity
+            }
+        }
+
+        axios.post('/v1/consents/abort/', {
+                consents: consentsData,
+            }
+        , {
+            withCredentials: true,
+            xsrfCookieName: 'csrftoken',
+            xsrfHeaderName: 'X-CSRFToken'
+        }).then((response) => {
+            var url = new URL(window.location.href);
+            var confirmId = url.searchParams.get("confirm_id");
+            const callback = `${this.props.callbackUrl}?success=false&status=aborted&confirm_id=${confirmId}`;
+            this.props.notifier.success(`Consents aborted correctly. Redirecting in 2 seconds...`, () => {
+                window.location = callback});
+        }).catch(() => {
+            this.props.notifier.error('Errors while aborting consents.');
+        });
+    }
+
+
+
     sendConfirmed() {
         this.toggle();
         let consentsData = {};
@@ -239,7 +298,7 @@ class ConfirmConsents extends React.Component {
         }).then((response) => {
             const confirmedParams = response.data.confirmed.join('&consent_confirm_id=');
             const callback = `${this.props.callbackUrl}?success=true&consent_confirm_id=${confirmedParams}`;
-            this.props.notifier.success('Consents confirmed correctly. Redirecting in 2 seconds', () => {
+            this.props.notifier.success('Consents confirmed correctly. Redirecting in 2 seconds...', () => {
                 window.location = callback
             });
             this.setState({
@@ -247,7 +306,7 @@ class ConfirmConsents extends React.Component {
                 sent: true
             });
         }).catch(() => {
-            this.props.notifier.error('Erros while revoking consents');
+            this.props.notifier.error('Errors while revoking consents');
         });
     }
 }

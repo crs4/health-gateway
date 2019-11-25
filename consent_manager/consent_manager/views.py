@@ -300,6 +300,58 @@ class ConsentView(ViewSet):
 
         return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
 
+    def abort(self, request):
+        """
+        View to abort consents
+        """
+        logger.info('Received consent to abort request from user')
+        if 'consents' not in request.data:
+            logger.info('Missing the consents query params. Returning error')
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
+
+        consents = request.data['consents']
+        logger.info('Specified the following consents: %s', ', '.join(consents.keys()))
+
+        confirmed = []
+        failed = []
+        for confirm_id, consent_data in consents.items():
+            try:
+                confirmation_code = ConfirmationCode.objects.get(code=confirm_id)
+            except ConfirmationCode.DoesNotExist:
+                logger.info('Consent associated to confirm_id %s not found', confirm_id)
+                failed.append(confirm_id)
+            else:
+                if not confirmation_code.check_validity():
+                    logger.info('Confirmation expired')
+                    failed.append(confirm_id)
+                else:
+                    consent = confirmation_code.consent
+                    logger.info('consent_id is %s', consent.consent_id)
+                    if consent.status != Consent.PENDING:
+                        logger.info('consent not in PENDING http_status. Cannot abort it')
+                        failed.append(confirm_id)
+                    elif consent.person_id != self._get_person_id(request):
+                        logger.info('consent found but it does not belong to the logged user. Cannot abort it')
+                        failed.append(confirm_id)
+                    else:
+                        consent.status = Consent.NOT_VALID
+                        consent.confirmed = datetime.now()
+                        # if 'start_validity' in consent_data:
+                        #     consent.start_validity = consent_data['start_validity']
+                        # if 'expire_validity' in consent_data:
+                        #     consent.expire_validity = consent_data['expire_validity']
+                        consent.save()
+                        confirmed.append(confirm_id)
+                        logger.info('consent with id %s aborted', consent)
+
+                        try:
+                            self._send_changes(consent)
+                            logger.info("Consent creation notified correctly")
+                        except SendingError:
+                            # TODO: we should retry to send the frontend
+                            logger.error("It was impossible to send the message to the HGW Frontend")
+
+        return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
 
 @require_http_methods(["GET", "POST"])
 @login_required
