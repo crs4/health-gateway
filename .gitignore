@@ -15,11 +15,17 @@ nb-configuration.xml
 test-ws
 ${env.CATALINA_HOME}
 /source_frontend/target/
-certs/ca/
 
+#certificates
+certs/ca/
+/hgw_backend/media/
+
+# dependencies
 /* node */
 **/node_modules
 /djangosaml2/
-/certs/kafka/
-/certs/root/
-/certs/web/
+
+# logs
+**/kafka-logs/
+**/version-2/
+
