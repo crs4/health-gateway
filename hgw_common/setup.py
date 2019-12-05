@@ -21,7 +21,7 @@ setup(
     keywords='',
     packages=find_packages(exclude=['contrib', 'docs', 'test*']),
     install_requires=[
-        'Django==2.2.5',
+        'Django==2.2.8',
         'djangorestframework==3.10.3',
         'django-oauth-toolkit==0.12.0',
         'django-cors-middleware==1.3.1',
