@@ -1,8 +1,6 @@
 import json
 from json import JSONDecodeError
 
-from yaml.serializer import Serializer
-
 from hgw_common.messaging import SerializationError
 
 
