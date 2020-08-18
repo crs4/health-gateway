@@ -16,13 +16,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import json
 import logging
+from time import sleep
 
 from dateutil import parser
-from django.db import DatabaseError, transaction
+from django.db import transaction, Error, connection
 
 from hgw_backend.models import FailedConnector, Source
 from hgw_backend.settings import KAFKA_CHANNEL_NOTIFICATION_TOPIC
 from hgw_common.utils.management import ConsumerCommand
+
+from django.conf import settings
 
 logger = logging.getLogger('hgw_backend.channel_consumer')
 
@@ -72,16 +75,29 @@ class Command(ConsumerCommand):
                 return False
         return None
 
-    def _check_source(self, channel_data):
+    def _check_source(self, channel_data, attempt=1):
+        failure_reason = None
+        source = None
         try:
+            logger.debug('Trying to read data from db, attempt %s', attempt)
             source = Source.objects.get(source_id=channel_data['source_id'])
-        except DatabaseError:
-            logger.error('Error reading data from db')
-            return None, FailedConnector.DATABASE_ERROR
+            logger.debug("Retrieved Source object")
+        except Error:
+            retry_sleep = settings.DB_FAILURE_EXP_RETRY_BASE_PERIOD ** attempt
+            if retry_sleep < settings.DB_FAILURE_MAX_RETRY_WAIT:
+                logger.warning('Error reading data from db, trying again in %s seconds', retry_sleep)
+                sleep(retry_sleep)
+                logger.debug('Connection is in atomic block: %s', connection.in_atomic_block)
+                if not connection.in_atomic_block:
+                    connection.connect()
+                source, failure_reason = self._check_source(channel_data, attempt + 1)
+            else:
+                logger.error('Error reading data from db - giving up after %s failed attempts', attempt)
+                failure_reason = FailedConnector.DATABASE_ERROR
         except Source.DoesNotExist:
             logger.error('Source with id %s was not found in the db', channel_data['source_id'])
-            return None, FailedConnector.SOURCE_NOT_FOUND
-        return source, None
+            failure_reason = FailedConnector.SOURCE_NOT_FOUND
+        return source, failure_reason
 
     def _check_action(self, channel_data):
         return channel_data['action'] in (ACTION.CREATED, ACTION.UPDATED, ACTION.REVOKED)

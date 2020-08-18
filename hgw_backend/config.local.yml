@@ -7,6 +7,8 @@ django:
   database:
     engine: sqlite3
     name: ../hgw_backend_db.sqlite3
+    failure_exp_retry_base_period_sec: 2
+    failure_max_retry_wait: 5
 
 logging:
   level: DEBUG
@@ -14,6 +16,6 @@ logging:
 kafka:
   uri: kafka:9093
   ssl: true
-  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
-  client_cert: ../../certs/ca/kafka/certs/hgwbackend/cert.pem
-  client_key: ../../certs/ca/kafka/certs/hgwbackend/key.pem
+  ca_cert: ../../docker/kafkaclientcerts/kafka.chain.cert.pem
+  client_cert: ../../docker/kafkaclientcerts/cert.pem
+  client_key: ../../docker/kafkaclientcerts/key.pem

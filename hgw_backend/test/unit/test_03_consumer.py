@@ -31,6 +31,9 @@ class TestConsumer(GenericTestCase):
     fixtures = ['test_data.json']
 
     def setUp(self):
+        logger = logging.getLogger('hgw_backend_tests')
+        logger.warning("Logs related to Kafka errors can be safely ignored for this testSuite 03")
+
         self.base_messages = [{
             'channel_id': 'KKa8QqqTBGePJStJpQMbspEvvV4LJJCY',
             'source_id': 'LD2j7v35BvUlzWDe8G89JGzz4SOincB7',
