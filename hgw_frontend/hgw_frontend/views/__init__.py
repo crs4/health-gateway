@@ -16,7 +16,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-from .flow_requests import FlowRequestView, confirm_request, consents_confirmed
+from .flow_requests import FlowRequestView, confirm_request, consents_confirmed, abort_idp_login
 from .site import view_profile, api_root
 from .messages import Messages
 from .sources import Sources, Profiles

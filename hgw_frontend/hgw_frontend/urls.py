@@ -23,8 +23,9 @@ from rest_framework import routers
 
 from hgw_common.settings import VERSION_REGEX
 from hgw_frontend import settings
-from hgw_frontend.views import Profiles
-from .views import confirm_request, consents_confirmed, FlowRequestView, Messages, Sources, ChannelView
+from hgw_frontend.views import Profiles, confirm_request, consents_confirmed, FlowRequestView, Messages, Sources, \
+    ChannelView, abort_idp_login
+
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
@@ -37,6 +38,7 @@ urlpatterns = [
     path(r'protocol/', include('hgw_common.urls')),
     path(r'{}/flow_requests/confirm/'.format(VERSION_REGEX), confirm_request),
     path(r'{}/flow_requests/consents_confirmed/'.format(VERSION_REGEX), consents_confirmed),
+    path(r'{}/flow_requests/cancel/'.format(VERSION_REGEX), abort_idp_login),
     path(r'{}/flow_requests/search/'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'search'}),
         name='flow_requests_search'),
     path(r'{}/flow_requests/'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'list', 'post': 'create'}),
@@ -44,9 +46,10 @@ urlpatterns = [
     path(r'{}/flow_requests/<str:process_id>/'.format(VERSION_REGEX), FlowRequestView.as_view({'get': 'retrieve',
                                                                                                    'delete': 'delete'}),
         name='flow_requests_detail'),
-    path(r'{}/flow_requests/<str:process_id>/channels/'.format(VERSION_REGEX), 
-        FlowRequestView.as_view({'get': 'channels'}),
-        name='flow_requests_channels'),
+    path(r'{}/flow_requests/<str:process_id>/channels'.format(VERSION_REGEX),
+         FlowRequestView.as_view({'get': 'channels'}), name='flow_requests_channels'),
+    path(r'{}/flow_requests/<str:process_id>/channels/'.format(VERSION_REGEX),
+         FlowRequestView.as_view({'get': 'channels'}), name='flow_requests_channels'),
     path(r'{}/channels/search/'.format(VERSION_REGEX), ChannelView.as_view({'get': 'search'})),
     path(r'{}/channels/'.format(VERSION_REGEX), ChannelView.as_view({'get': 'list'})),
     path(r'{}/channels/<str:channel_id>/'.format(VERSION_REGEX), ChannelView.as_view({'get': 'retrieve'})),

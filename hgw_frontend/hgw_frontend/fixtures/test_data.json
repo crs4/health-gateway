@@ -230,6 +230,21 @@
       "process_id": "p_55555",
       "status": "PE",
       "profile": 2,
+      "destination": 1,
+      "sources": [1],
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2020-10-23T10:00:00+02:00",
+      "person_id": "AAABBB12C34D567E"
+    }
+  },
+  {
+    "model": "hgw_frontend.flowrequest",
+    "pk": 6,
+    "fields": {
+      "flow_id": "f_66666",
+      "process_id": "p_66666",
+      "status": "PE",
+      "profile": 2,
       "destination": 2,
       "sources": [1],
       "start_validity": "2017-10-23T10:00:00+02:00",

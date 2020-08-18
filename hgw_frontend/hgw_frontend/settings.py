@@ -33,7 +33,7 @@ def get_path(base_path, file_path):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # The order of the paths is important. We will give priority to the one in etc
-_CONF_FILES_PATH = ['/etc/hgw_service/hgw_frontend_config.yml', get_path(BASE_DIR, './config.yml')]
+_CONF_FILES_PATH = ['/etc/hgw_service/hgw_frontend_config.yml', get_path(BASE_DIR, 'config.local.yml')]
 
 cfg = None
 _conf_file = None
@@ -102,26 +102,26 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': LOG_LEVEL,
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'hgw_frontend': {
-            'handlers': ['console'],
-            'level': LOG_LEVEL,
-        },
-        'djangosaml2': {
-            'handlers': ['console'],
-            'level': LOG_LEVEL,
-        },
-    }
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'level': LOG_LEVEL,
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'loggers': {
+#         'hgw_frontend': {
+#             'handlers': ['console'],
+#             'level': LOG_LEVEL,
+#         },
+#         'djangosaml2': {
+#             'handlers': ['console'],
+#             'level': LOG_LEVEL,
+#         },
+#     }
+# }
 
 LOGGING = {
     'version': 1,
@@ -149,7 +149,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': LOG_LEVEL,
             'propagate': True
-        }
+        },
+        'djangosaml2': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+        },
     }
 }
 
@@ -222,7 +226,7 @@ STATICFILES_DIRS = (
     # ('hgw_frontend', os.path.abspath(os.path.join(BASE_DIR, '../static/'))),
 )
 LOGIN_URL = '/saml2/login/'
-# LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/'
 
 SESSION_COOKIE_NAME = 'hgw_frontend'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -249,6 +253,8 @@ else:
 SAML_AUTHN_CUSTOM_ARGS = {
     'attribute_consuming_service_index': '1'
 }
+
+SAML_ACS_FAILURE_RESPONSE_FUNCTION = 'hgw_frontend.views.site.saml_redirect_failures'
 
 # OAUTH2 CONFIGURATIONS
 FLOW_REQUESTS_SCOPES = {
@@ -338,3 +344,6 @@ if NOTIFICATION_TYPE == 'kafka':
     KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
     KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
     KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
+
+DB_FAILURE_EXP_RETRY_BASE_PERIOD = cfg['django']['database']['failure_exp_retry_base_period_sec']
+DB_FAILURE_MAX_RETRY_WAIT = cfg['django']['database']['failure_max_retry_wait']

@@ -76,14 +76,17 @@ class Channel(models.Model):
     # The person revoked the consent into the consent manager
     CONSENT_REVOKED = 'CV'
     # The person aborted the consent process
-    CONSENT_ABORTED = 'AB'
+    CONSENT_ABORTED = 'CA'
+    # The person aborted the identification process
+    IDP_ABORTED = 'IA'
 
     STATUS_CHOICES = (
         (CONSENT_REQUESTED, 'CONSENT_REQUESTED'),
         (WAITING_SOURCE_NOTIFICATION, 'WAITING_SOURCE_NOTIFICATION'),
         (ACTIVE, 'ACTIVE'),
         (CONSENT_REVOKED, 'CONSENT_REVOKED'),
-        (CONSENT_ABORTED, 'CONSENT_ABORTED')
+        (CONSENT_ABORTED, 'CONSENT_ABORTED'),
+        (IDP_ABORTED, 'IDP_ABORTED')
     )
 
     channel_id = models.CharField(max_length=32, blank=False)
@@ -130,7 +133,7 @@ class ConsentConfirmation(models.Model):
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
     consent_id = models.CharField(max_length=32, blank=False, null=False, unique=True)
     confirmation_id = models.CharField(max_length=32, blank=False, null=False)
-    destination_endpoint_callback_url = models.CharField(max_length=100, blank=False, null=False)
+    destination_endpoint_callback_url = models.CharField(max_length=2048, blank=False, null=False)
 
     def __unicode__(self):
         return 'Consent {} - Confirmation: {}'.format(self.consent_id, self.confirmation_id)
