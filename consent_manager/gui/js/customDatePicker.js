@@ -1,7 +1,11 @@
-import moment from 'moment';
 import React from 'react';
 import {Input, Label} from 'reactstrap'
-import DatePicker from 'react-datepicker';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+// These will be needed when setting locales
+// import it from "date-fns/locale/it";
+
+// registerLocale("it", it);
 
 class CustomDatePicker extends React.Component {
     render() {
@@ -25,6 +29,8 @@ class CustomDatePicker extends React.Component {
                     selected={this.props.selected}
                     onChange={this.props.onChangeDate}
                     onChangeRaw={(event) => {event.preventDefault();}}
+                    // locale="it"
+                    dateFormat="dd/MM/yyyy"
                 />
             </div>
         )

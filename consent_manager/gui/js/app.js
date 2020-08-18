@@ -16,20 +16,36 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import React from 'react';
+import DataProvider from './dataProvider';
+import {ConsentsController} from './consentReview';
+import Welcome from './welcome';
+import NotificationManager from './notificationManager';
 
-class Welcome extends React.Component {
+class App extends React.Component {
+    renderConsents(data) {
+        if (data === undefined) {
+            return <Welcome/>
+        }
+        else {
+            return (
+                <ConsentsController data={data} notifier={this.notifier}/>
+            )
+        }
+    }
+
+    componentDidMount() {
+        this.notifier = this.refs.notificationManager;
+    }
+
     render() {
         return (
             <div>
-                <h1>Consent Manager</h1>
-                <p className="lead">
-                    This is the Consent Manager. Here you can handle your consents: you can revoke
-                    consents and request to delete all data related to a consent already transferred.
-                    Login to start handling your consents
-                </p>
+                <DataProvider endpoint="/v1/consents/"
+                                 render={data => this.renderConsents(data)}/>
+                <NotificationManager ref="notificationManager"/>
             </div>
         )
     }
 }
 
-export default Welcome
+export default App;
