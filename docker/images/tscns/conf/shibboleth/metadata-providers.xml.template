@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- This file is an EXAMPLE metadata configuration file. -->
 <MetadataProvider id="ShibbolethMetadata" xsi:type="ChainingMetadataProvider"
                   xmlns="urn:mace:shibboleth:2.0:metadata"
                   xmlns:resource="urn:mace:shibboleth:2.0:resource"
@@ -11,10 +10,17 @@
                         urn:mace:shibboleth:2.0:security http://shibboleth.net/schema/idp/shibboleth-security.xsd
                         urn:oasis:names:tc:SAML:2.0:metadata http://docs.oasis-open.org/security/saml/v2.0/saml-schema-metadata-2.0.xsd">
 
-    <MetadataProvider id="RemoteMetadataHGW" xsi:type="FileBackedHTTPMetadataProvider"
+    <!--<MetadataProvider id="RemoteMetadataHGW" xsi:type="FileBackedHTTPMetadataProvider"
                       metadataURL="https://${HGW_FRONTEND_ADDR}/saml2/metadata"
-                      backingFile="/root/metadata/hgw-frontend-metadata.xml"/>
+                      backingFile="/root/metadata/hgw-frontend-metadata.xml"
+                      maxRefreshDelay="PT1M"/>
     <MetadataProvider id="RemoteMetadataCM" xsi:type="FileBackedHTTPMetadataProvider"
                       metadataURL="https://${CONSENT_MANAGER_ADDR}/saml2/metadata"
-                      backingFile="/root/metadata/consent-manager-metadata.xml"/>
+                      backingFile="/root/metadata/consent-manager-metadata.xml"
+                      maxRefreshDelay="PT1M"/>-->
+
+    <MetadataProvider id="LocalMetadataHGW" xsi:type="FilesystemMetadataProvider"
+                        metadataFile="/root/metadata/hgw-frontend-metadata.xml"/>
+    <MetadataProvider id="LocalMetadataCM" xsi:type="FilesystemMetadataProvider"
+                        metadataFile="/root/metadata/consent-manager-metadata.xml"/>
 </MetadataProvider>
