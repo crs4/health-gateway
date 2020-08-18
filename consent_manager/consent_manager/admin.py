@@ -15,17 +15,69 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db import models
+from martor.widgets import AdminMartorWidget
 
-from consent_manager.models import ConsentManagerUser, ConfirmationCode, Consent
+from consent_manager.models import ConsentManagerUser, ConfirmationCode, Consent, LegalNotice, LegalNoticeVersion
 
 
 class ConsentManagerUserAdmin(UserAdmin):
     pass
 
 
+class LegalNoticeAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': AdminMartorWidget},
+    }
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if request.method == 'GET':
+            obj.new_major = False
+            obj.change_comment = ''
+        return obj
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return []
+        else:
+            return ['current_version', 'destination']
+
+    def save_model(self, request, obj, form, change):
+        self._bump_version(obj, change)
+        super().save_model(request, obj, form, change)
+
+    @staticmethod
+    def _bump_version(obj, change):
+        """
+        :type obj: LegalNotice
+        :type change: bool
+        """
+        from consent_manager.models import LegalNoticeVersion
+        new_version = LegalNoticeVersion.objects.create(
+            **obj.__args_dict__()
+        )
+        if not change:
+            new_version.v_major = 0
+            new_version.v_minor = 0
+        else:
+            prev_version = obj.current_version
+            new_version.v_major = prev_version.v_major
+            if obj.new_major:
+                new_version.v_major += 1
+                new_version.v_minor = 0
+            else:
+                new_version.v_minor = prev_version.v_minor + 1
+        new_version.save()
+        obj.current_version = new_version
+
+
+
 admin.site.register(ConsentManagerUser, ConsentManagerUserAdmin)
 admin.site.register(Consent)
 admin.site.register(ConfirmationCode)
+
+admin.site.register(LegalNotice, LegalNoticeAdmin)
+admin.site.register(LegalNoticeVersion)

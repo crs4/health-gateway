@@ -34,7 +34,7 @@ def get_path(base_path, file_path):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # The order of the paths is important. We will give priority to the one in etc
-_CONF_FILES_PATH = ['/etc/hgw_service/consent_manager_config.yml', get_path(BASE_DIR, './config.yml')]
+_CONF_FILES_PATH = ['/etc/hgw_service/consent_manager_config.yml', get_path(BASE_DIR, 'config.local.yml')]
 
 cfg = None
 _conf_file = None
@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'hgw_common',
     'corsheaders',
     'webpack_loader',
+    'martor',
     'consent_manager',
     'gui'
 ]
@@ -316,3 +317,14 @@ if NOTIFICATION_TYPE == 'kafka':
     KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['ca_cert'])
     KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['client_cert'])
     KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['notification']['kafka']['client_key'])
+
+
+MARTOR_ENABLE_CONFIGS = {
+    'emoji': 'false',        # to enable/disable emoji icons.
+    'imgur': 'false',        # to enable/disable imgur/custom uploader.
+    'mention': 'false',     # to enable/disable mention
+    'jquery': 'true',       # to include/revoke jquery (require for admin default django)
+    'living': 'false',      # to enable/disable live updates in preview
+    'spellcheck': 'false',  # to enable/disable spellcheck in form textareas
+    'hljs': 'true',         # to enable/disable hljs highlighting in preview
+}

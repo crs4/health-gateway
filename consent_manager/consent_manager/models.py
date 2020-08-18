@@ -22,6 +22,7 @@ from datetime import timedelta
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from martor.models import MartorField
 from oauth2_provider.models import AbstractApplication
 
 from consent_manager.settings import DEFAULT_SCOPES, REQUEST_VALIDITY_SECONDS
@@ -52,13 +53,55 @@ class Consent(models.Model):
     destination = models.ForeignKey('Endpoint', on_delete=models.CASCADE, related_name='destination')
     person_id = models.CharField(max_length=20, blank=False, null=False)
     profile = models.ForeignKey('hgw_common.Profile', on_delete=models.CASCADE)
+    legal_notice_version = models.ForeignKey('LegalNoticeVersion', null=True, on_delete=models.DO_NOTHING)
     timestamp = models.DateTimeField(auto_now_add=True)
     confirmed = models.DateTimeField(null=True)
     start_validity = models.DateTimeField(null=True)
     expire_validity = models.DateTimeField(null=True)
 
     def __str__(self):
-        return 'Consent ID: {} - Person: {} - Status {}'.format(self.consent_id, self.person_id, self.status)
+        obfuscated_person = self.person_id
+        if obfuscated_person:
+            obfuscated_person = obfuscated_person[:3] + '*' * (len(obfuscated_person) - 6) + obfuscated_person[-3:]
+        return 'Consent ID: {} - Person: {} - Status {}'.format(self.consent_id, obfuscated_person, self.status)
+
+
+class LegalNotice(models.Model):
+    new_major = models.BooleanField(default=False)
+    current_version = models.ForeignKey('LegalNoticeVersion', on_delete=models.PROTECT, blank=True, null=True)
+    text = MartorField(null=False)
+    change_comment = models.CharField(max_length=200, blank=True)
+    destination = models.ForeignKey('Endpoint', on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return 'Dest: {} v{}.{} ({}) : {} '.format(
+            self.destination.name, self.current_version.v_major, self.current_version.v_minor,
+            self.current_version.creation_date.strftime("%d %b %Y - %H:%M"), self.change_comment)
+
+    def __args_dict__(self):
+        d = {
+            'text': self.text,
+            'change_comment': self.change_comment,
+            'destination': self.destination
+        }
+        if self.current_version_id is not None:
+            d['previous_version'] = self.current_version
+        return d
+
+
+class LegalNoticeVersion(models.Model):
+    previous_version = models.ForeignKey('LegalNoticeVersion', on_delete=models.DO_NOTHING, blank=True, null=True)
+    text = MartorField(null=False)
+    change_comment = models.CharField(max_length=200, blank=True)
+    destination = models.ForeignKey('Endpoint', on_delete=models.DO_NOTHING)
+    v_major = models.IntegerField(null=False, default=0)
+    v_minor = models.IntegerField(null=False, default=0)
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return 'Dest: {} v{}.{} ({}) : {} '.format(
+            self.destination.name, self.v_major, self.v_minor, self.creation_date.strftime("%d %b %Y - %H:%M"),
+            self.change_comment)
 
 
 # class ConsentHistory(models.Model):
@@ -105,7 +148,12 @@ class ConsentManagerUser(AbstractUser):
     fiscalNumber = models.CharField(max_length=16, blank=True, null=True)
 
     def __str__(self):
-        return self.fiscalNumber
+        obfuscated_person = self.fiscalNumber
+        if obfuscated_person:
+            obfuscated_person[3:-3] = '*' * (len(obfuscated_person) - 6)
+            return obfuscated_person
+        else:
+            return self.username
 
 
 class Endpoint(models.Model):

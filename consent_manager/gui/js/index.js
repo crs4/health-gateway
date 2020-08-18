@@ -16,36 +16,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import React from 'react';
-import DataProvider from './dataProvider';
-import {ConsentsController} from './consent';
-import Welcome from './welcome';
-import NotificationManager from './notificationManager';
+import ReactDOM from 'react-dom';
+import {BrowserRouter, Route, Switch} from 'react-router-dom';
+import App from './app';
+import Confirm from './consentConfirm';
+import 'react-datepicker/dist/react-datepicker.css';
 
-class App extends React.Component {
-    renderConsents(data) {
-        if (data === undefined) {
-            return <Welcome/>
-        }
-        else {
-            return (
-                <ConsentsController data={data} notifier={this.notifier}/>
-            )
-        }
-    }
+require('../assets/css/sandstone/bootstrap.min.css');
+require('../assets/css/custom.css');
+require('../assets/css/stack-table.scss');
 
-    componentDidMount() {
-        this.notifier = this.refs.notificationManager;
-    }
 
-    render() {
-        return (
-            <div>
-                <DataProvider endpoint="/v1/consents/"
-                              render={data => this.renderConsents(data)}/>
-                <NotificationManager ref="notificationManager"/>
-            </div>
-        )
-    }
-}
-
-export default App;
+const wrapper = document.getElementById("content");
+wrapper ? ReactDOM.render(
+    <BrowserRouter>
+        <Switch>
+            <Route exact path='/' component={App}/>
+            <Route path='/confirm_consents/' component={Confirm}/>
+        </Switch>
+    </BrowserRouter>, wrapper) : null;

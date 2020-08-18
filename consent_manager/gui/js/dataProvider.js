@@ -18,15 +18,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
-import qs from 'qs'
+import qs from 'qs';
 
 class DataProvider extends React.Component {
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
             data: [],
             loaded: false,
-            placeholder: "Loading..."
+            placeholder: props.placeholder!== undefined ? props.placeholder : "Loading..."
         };
     }
 
@@ -37,17 +37,16 @@ class DataProvider extends React.Component {
                return qs.stringify(params, {arrayFormat: 'repeat'})
             },
             withCredentials: true,
+            headers: {'Accept': this.props.accept !== undefined ? this.props.accept : 'application/json'}
         }).then((response) => {
             this.setState({data: response.data, loaded: true});
         }).catch((error) => {
             let data;
             if (error.response.status === 404) {
                 data = [];
-            }
-            else {
+            } else {
                 data = undefined;
             }
-            // this.setState({placeholder: "Something went wrong"});
             this.setState({data: data, loaded: true});
         });
     }
@@ -60,7 +59,9 @@ class DataProvider extends React.Component {
 
 DataProvider.propTypes = {
     endpoint: PropTypes.string,
-    render: PropTypes.func
+    accept: PropTypes.string,
+    render: PropTypes.func,
+    placeholder: PropTypes.string,
 };
 
 export default DataProvider;

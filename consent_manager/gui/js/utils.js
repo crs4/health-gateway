@@ -1,5 +1,3 @@
-import moment from "moment";
-
 /**
  * Create from an array of object a corresponding object where the key is the keyField paramater.
  * It is also possible to add other key => value items using the update paramater
@@ -38,15 +36,15 @@ export function copy(obj) {
 
 /**
  * Return a date object or null if the parameter in input is null
- * @param {Date} date 
+ * @param {String} dateISOString
  */
-export function getDate(date) {
-    return date == null ? null : moment(date);
+export function getDate(dateISOString) {
+    return dateISOString == null ? null : new Date(dateISOString);
 }
 /**
  * Return a string representation of a date object or null if the parameter in input is null
- * @param {Date} date 
+ * @param {String} dateISOString
  */
-export function getFormattedDate(date) {
-    return date == null ? null : moment(date).format('L')
+export function getFormattedDate(dateISOString) {
+    return dateISOString == null ? null : (new Date(dateISOString)).toLocaleDateString('it')
 }

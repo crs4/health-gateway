@@ -1,12 +1,11 @@
 //require our dependencies
-let path = require('path');
-let webpack = require('webpack');
-let BundleTracker = require('webpack-bundle-tracker');
+const path = require('path');
+const webpack = require('webpack');
+const BundleTracker = require('webpack-bundle-tracker');
 
 module.exports = {
-    mode: 'development',
     context: __dirname,
-    entry: './assets/js/index',
+    entry: './js/index',
     output: {
         path: path.resolve(__dirname, './assets/bundles/'),
         filename: 'webpack.js',

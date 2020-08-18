@@ -20,33 +20,36 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.contrib import admin
 
-from rest_framework import permissions
-
 from consent_manager import settings, views
 from gui import views as fr_views
 from hgw_common.settings import VERSION_REGEX
 
 
 urlpatterns = [
-    path(r'', fr_views.home),
-    path(r'login/', fr_views.perform_login),
-    path(r'logout/', fr_views.perform_logout),
-    path(r'admin/', admin.site.urls),
-    path(r'saml2/', include('djangosaml2.urls')),
-    path(r'oauth2/', include('oauth2_provider.urls')),
-    path(r'protocol/', include('hgw_common.urls')),
-    path(r'confirm_consents/', views.confirm_consent),
-    path(r'{}/consents/abort/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'abort'})),
-    path(r'{}/consents/confirm/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'confirm'})),
-    path(r'{}/consents/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke_list'}),
+    path('', fr_views.home),
+    path('login/', fr_views.perform_login),
+    path('logout/', fr_views.perform_logout),
+    path('admin/', admin.site.urls),
+    path('saml2/', include('djangosaml2.urls')),
+    path('oauth2/', include('oauth2_provider.urls')),
+    path('martor/', include('martor.urls')),
+    path('protocol/', include('hgw_common.urls')),
+    path('confirm_consents/', views.confirm_consent),
+    path('{}/consents/abort/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'abort'})),
+    path('{}/consents/confirm/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'confirm'})),
+    path('{}/consents/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke_list'}),
         name='consents_revoke'),
-    path(r'{}/consents/find/'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'find'}),
+    path('{}/consents/find/'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'find'}),
         name='consents_find'),
-    path(r'{}/consents/'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'list', 'post': 'create'}),
+    path('{}/consents/'.format(VERSION_REGEX), views.ConsentView.as_view({'get': 'list', 'post': 'create'}),
         name='consents'),
-    path(r'{}/consents/<str:consent_id>/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke'}),
+    path('{}/consents/<str:consent_id>/revoke/'.format(VERSION_REGEX), views.ConsentView.as_view({'post': 'revoke'}),
         name='consents_retrieve'),
-    path(r'{}/consents/<str:consent_id>/'.format(VERSION_REGEX),
+    path('{}/consents/<str:consent_id>/'.format(VERSION_REGEX),
         views.ConsentView.as_view({'get': 'retrieve', 'put': 'update'}),
         name='consents_retrieve'),
+    path('{}/legal-notices/<int:legal_notice_id>'.format(VERSION_REGEX), views.LegalNoticeView
+         .as_view({'get': 'get'})),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
