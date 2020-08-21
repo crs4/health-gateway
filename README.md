@@ -11,21 +11,56 @@ The development environment we'll run, with all the hgw services, one Destinatio
 To run the HGW follow this steps
 
 1. Clone the repository
-2. Create the development certs:
-    1. move into certs/ dir and then follow one of the two steps
-        1. METHOD 1: run the script `generate_development.sh`. This will create a ca/ directory with all the necessary files
-        2. METHOD 2: if you don't have bash (i.e., you're using Windows) you can build the docker images by running `docker build -t hgw_certs and .`
+2. Create the development certs move into certs/ dir and then follow one of the two steps
+    1. METHOD 1: run the script `generate_development.sh`. This will create a ca/ directory with all the necessary files
+    _Use 'hgwpwd' as a password for certificates._
+    2. METHOD 2: if you don't have bash (i.e., you're using Windows) you can build the docker images by running `docker build -t hgw_certs and .`
+3.
+    1. (optional) install virtualenvwrapper to manage python environments:
     
-3. Move to `docker/environments/integration` directory and launch `make_run_with_tscns` to run all the services
+            sudo apt install virtualenvwrapper  
+            mkvirtualenv <env_name> -p python3
+         
+    2. Install docker and generic dependencies
+    https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-using-the-repository
+     
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -  
+            sudo add-apt-repository "deb https://download.docker.com/linux/ubuntu bionic stable"  
+            sudo apt install docker-ce docker-ce-cli containerd.io docker-compose build-essential
+4. Move to `docker/environments/development` directory and to run all the services launch
+
+            make run_with_tscns
+            
+5. To stop the service run:
+
+            make down_with_tscns
 
 ## File host
-
 To make the development environment work you need to add the following entries to your file host:
 
-* 127.0.0.1 consentmanager
-* 127.0.0.1 destinationmockup
-* 127.0.0.1 spid-testenv-identityserver
-* 127.0.0.1 spid-testenv-backoffice
-* 127.0.0.1 hgwbackend
-* 127.0.0.1 hgwfrontend
-* 127.0.0.1 kafka
+    127.0.0.1 consentmanager
+    127.0.0.1 destinationmockup
+    127.0.0.1 spid-testenv-identityserver
+    127.0.0.1 spid-testenv-backoffice
+    127.0.0.1 hgwbackend
+    127.0.0.1 hgwfrontend
+    127.0.0.1 kafka
+    127.0.0.1 tscns
+
+
+## Interaction with local env
+To interact with the local environment, the endpoints are as it follows:
+
+    https://hgwfrontend:8000
+    https://consentmanager:8002
+    https://hgwbackend:8003
+    https://destinationmockup:8001
+   
+to use Postman, go to:
+    
+    File > Settings > General > SSL Certificate Verification
+    
+and turn it **OFF**
+    
+     
+

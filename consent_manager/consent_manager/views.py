@@ -22,23 +22,26 @@ import logging
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.http import Http404, HttpRequest
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django.views.decorators.http import require_http_methods
+from martor.utils import markdownify
 from rest_framework import status as http_status
-from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from consent_manager import serializers
-from consent_manager.models import ConfirmationCode, Consent
+from consent_manager.models import ConfirmationCode, Consent, LegalNoticeVersion
 from consent_manager.serializers import ConsentSerializer
 from consent_manager.settings import KAFKA_NOTIFICATION_TOPIC, USER_ID_FIELD
 from hgw_common.messaging.sender import SendingError, create_sender
 from hgw_common.utils import ERRORS, create_broker_parameters_from_settings
 from hgw_common.utils.authorization import \
     IsAuthenticatedOrTokenHasResourceDetailedScope
+
+TEXT_MARKDOWN = "text/markdown"
+TEXT_HTML = "text/html"
 
 logger = logging.getLogger('consent_manager.views')
 
@@ -99,6 +102,7 @@ class ConsentView(ViewSet):
                 'consent_id': consent['consent_id'],
                 'source': consent['source'],
                 'status': consent['status'],
+                'legal_notice_version': consent['legal_notice_version'],
                 'start_validity': consent['start_validity'],
                 'expire_validity': consent['expire_validity']
             })
@@ -121,7 +125,6 @@ class ConsentView(ViewSet):
             confirmation_code.save()
             res = {'confirm_id': confirmation_code.code,
                    'consent_id': consent.consent_id}
-
             return Response(res, status=http_status.HTTP_201_CREATED)
         return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
 
@@ -135,7 +138,7 @@ class ConsentView(ViewSet):
             logger.info('Consent is not ACTIVE. Not updated')
             return Response({'errors': ['wrong_consent_status']}, status=http_status.HTTP_400_BAD_REQUEST)
         elif consent.person_id != self._get_person_id(request):
-            logger.warning('Consent doesn\'t belong to the logged in person so it has not been changed')
+            logger.warning('Consent does not belong to the logged in person so it has not been changed')
             return Response({'errors': ['wrong_person']}, status=http_status.HTTP_400_BAD_REQUEST)
 
         logger.info('Update data: %s', request.data)
@@ -161,6 +164,7 @@ class ConsentView(ViewSet):
                 'consent_id': serializer.data['consent_id'],
                 'source': serializer.data['source'],
                 'status': serializer.data['status'],
+                'legal_notice_version': serializer.data['legal_notice_version'],
                 'start_validity': serializer.data['start_validity'],
                 'expire_validity': serializer.data['expire_validity']
             }
@@ -289,7 +293,7 @@ class ConsentView(ViewSet):
                             consent.expire_validity = consent_data['expire_validity']
                         consent.save()
                         confirmed.append(confirm_id)
-                        logger.info('consent with id %s confirmed', consent)
+                        logger.info('consent with id %s confirmed', consent.consent_id)
 
                         try:
                             self._send_changes(consent)
@@ -299,6 +303,94 @@ class ConsentView(ViewSet):
                             logger.error("It was impossible to send the message to the HGW Frontend")
 
         return Response({'confirmed': confirmed, 'failed': failed}, status=http_status.HTTP_200_OK)
+
+    def abort(self, request):
+        """
+        View to abort consents
+        """
+        logger.info('Received consent to abort request from user')
+        if 'consents' not in request.data:
+            logger.info('Missing the consents query params. Returning error')
+            return Response({'errors': [ERRORS.MISSING_PARAMETERS]}, http_status.HTTP_400_BAD_REQUEST)
+
+        consents = request.data['consents']
+        logger.info('Specified the following consents: %s', ', '.join(consents.keys()))
+
+        aborted = []
+        failed = []
+        for confirm_id, consent_data in consents.items():
+            try:
+                confirmation_code = ConfirmationCode.objects.get(code=confirm_id)
+            except ConfirmationCode.DoesNotExist:
+                logger.info('Consent associated to confirm_id %s not found', confirm_id)
+                failed.append(confirm_id)
+            else:
+                if not confirmation_code.check_validity():
+                    logger.info('Confirmation expired')
+                    failed.append(confirm_id)
+                else:
+                    consent = confirmation_code.consent
+                    logger.info('consent_id is %s', consent.consent_id)
+                    if consent.status != Consent.PENDING:
+                        logger.info('consent not in PENDING http_status. Cannot abort it')
+                        failed.append(confirm_id)
+                    elif consent.person_id != self._get_person_id(request):
+                        logger.info('consent found but it does not belong to the logged user. Cannot abort it')
+                        failed.append(confirm_id)
+                    else:
+                        consent.status = Consent.NOT_VALID
+                        consent.confirmed = datetime.now()
+                        consent.save()
+                        aborted.append(confirm_id)
+                        logger.info('Consent with id %s aborted', consent.consent_id)
+
+        return Response({'aborted': aborted, 'failed': failed}, status=http_status.HTTP_200_OK)
+
+
+class LegalNoticeView(ViewSet):
+    """
+    Viewset with REST function of /v1/legal-notice
+    """
+    permission_classes = (IsAuthenticatedOrTokenHasResourceDetailedScope,)
+    oauth_views = ['get']
+    required_scopes = ['consent']
+
+    def get(self, request, legal_notice_id):
+        """
+
+        :type request: HttpRequest
+        :type legal_notice_id: int
+        """
+        if 'Accept' in request.headers:
+            requested_formats_header = request.headers['Accept']
+            md_match = requested_formats_header.find(TEXT_MARKDOWN)
+            html_match = requested_formats_header.find(TEXT_HTML)
+            if md_match == -1 and html_match == -1:
+                return Response({'errors': ["Accept {} not supported".format(requested_formats_header)]},
+                                http_status.HTTP_406_NOT_ACCEPTABLE)
+            elif md_match == -1:
+                requested_format = TEXT_HTML
+            elif html_match == -1:
+                requested_format = TEXT_MARKDOWN
+            elif md_match < html_match:
+                requested_format = TEXT_MARKDOWN
+            else:
+                requested_format = TEXT_HTML
+        else:
+            logger.warning('Requested format missing, assuming text/html')
+            requested_format = TEXT_HTML
+
+        try:
+            legal_notice = LegalNoticeVersion.objects.get(id=legal_notice_id)
+        except LegalNoticeVersion.DoesNotExist as _:
+            return Response({'errors': [ERRORS.NOT_FOUND]}, http_status.HTTP_404_NOT_FOUND)
+
+        if requested_format == TEXT_HTML:
+            payload = markdownify(legal_notice.text)
+        else:
+            payload = legal_notice.text
+
+        return Response(payload, status=http_status.HTTP_200_OK, content_type=requested_format)
 
 
 @require_http_methods(["GET", "POST"])

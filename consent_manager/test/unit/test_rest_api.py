@@ -17,12 +17,14 @@
 
 import json
 import os
+from collections import OrderedDict
 from datetime import datetime, timedelta
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import DatabaseError
 from django.test import TestCase, client
-from mock import MagicMock, Mock, NonCallableMock, patch
+from martor.utils import markdownify
+from mock import Mock, NonCallableMock, patch
 
 from consent_manager import settings
 from consent_manager.models import ConfirmationCode, Consent, RESTClient
@@ -37,8 +39,19 @@ PERSON1_ID = 'AAABBB12C34D567E'
 PERSON2_ID = 'FFFGGG12H34I567G'
 
 
+def _get_serialized_data(consent_serializer):
+    serialized_data = {}
+    for k, v in consent_serializer.data.items():
+        if type(v) is OrderedDict:
+            serialized_data[k] = dict(v)
+        else:
+            serialized_data[k] = v
+    return serialized_data
+
+
 class TestAPI(TestCase):
     fixtures = ['test_data.json']
+    maxDiff = None
 
     def setUp(self):
         self.client = client.Client()
@@ -68,11 +81,14 @@ class TestAPI(TestCase):
             },
             'profile': self.profile,
             'person_id': PERSON1_ID,
+            'legal_notice_version': 4,
             'start_validity': '2017-10-23T10:00:54.123000+02:00',
             'expire_validity': '2018-10-23T10:00:00+02:00'
         }
 
         self.json_consent_data = json.dumps(self.consent_data)
+
+        self.legal_notice = "# Legal Notice\r\n\r\nNew legal notice\r\n\r\nthe lawyer"
 
     @staticmethod
     def _get_client_data(client_index=0):
@@ -129,6 +145,7 @@ class TestAPI(TestCase):
                     'status': 'PE',
                     'start_validity': '2017-10-23T10:00:54.123000+02:00',
                     'expire_validity': '2018-10-23T10:00:00+02:00',
+                    'legal_notice_version': 4,
                     'source': {
                         'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
                         'name': 'SOURCE_1'
@@ -138,11 +155,13 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/', **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()), 1)
-        self.assertListEqual(res.json(), [expected])
+        results = res.json()
+        for r in results:
+            self.assertEqual(dict(r), expected)
 
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(dict(res.json()), expected)
 
     def test_get_consents_db_error(self):
         """
@@ -178,6 +197,7 @@ class TestAPI(TestCase):
             },
             'consent_id': 'q18r2rpd1wUqQjAZPhh24zcN9KCePRyr',
             'person_id': PERSON1_ID,
+            'legal_notice_version': 4,
             'source': {
                 'id': 'iWWjKVje7Ss3M45oTNUpRV59ovVpl3xT',
                 'name': 'SOURCE_1'
@@ -188,11 +208,13 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/', **headers)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()), 1)
-        self.assertListEqual(res.json(), [expected])
+        results = res.json()
+        for r in results:
+            self.assertEqual(dict(r), expected)
 
         res = self.client.get('/v1/consents/q18r2rpd1wUqQjAZPhh24zcN9KCePRyr/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
     def test_get_consent_by_superclient_db_error(self):
         """
@@ -253,14 +275,14 @@ class TestAPI(TestCase):
             'status': 'PE',
             'consent_id': consent_id,
             'person_id': PERSON1_ID,
-
         })
 
         c = Consent.objects.get(consent_id=consent_id)
         serializer = ConsentSerializer(c)
         self.assertEqual(res.status_code, 201)
         self.assertEqual(set(res.json().keys()), {'consent_id', 'confirm_id'})
-        self.assertDictEqual(serializer.data, expected)
+        self.assertEqual(serializer.data['legal_notice_version'], expected['legal_notice_version'])
+        self.assertEqual(dict(serializer.data), expected)
 
     def test_add_db_error(self):
         """
@@ -295,7 +317,7 @@ class TestAPI(TestCase):
             self.assertEqual(res.status_code, 201)
             self.assertEqual(set(res.json().keys()), {'consent_id', 'confirm_id'})
 
-            self.assertDictEqual(serializer.data, expected)
+            self.assertEqual(dict(serializer.data), expected)
 
     def test_add_forbidden(self):
         """
@@ -353,7 +375,7 @@ class TestAPI(TestCase):
         }
 
         self.assertEqual(res.status_code, 400)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
         # Changing name, keeping the id
         self.consent_data['source'] = {
@@ -372,7 +394,7 @@ class TestAPI(TestCase):
         }
 
         self.assertEqual(res.status_code, 400)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
     def test_add_missing_fields(self):
         """
@@ -389,7 +411,7 @@ class TestAPI(TestCase):
             'person_id': ['This field is required.'],
             'destination': ['This field is required.']
         }
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
     def test_add_empty_fields(self):
         """
@@ -415,7 +437,7 @@ class TestAPI(TestCase):
         }
 
         self.assertEqual(res.status_code, 400)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
     def test_add_none_fields(self):
         """
@@ -442,7 +464,7 @@ class TestAPI(TestCase):
                     }
 
         self.assertEqual(res.status_code, 400)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
     def test_add_duplicated_consent_when_not_active(self):
         """
@@ -471,7 +493,7 @@ class TestAPI(TestCase):
         res = self._add_consent(self.json_consent_data)
         expected = {'generic_errors': [ERRORS.DUPLICATED]}
         self.assertEqual(res.status_code, 400)
-        self.assertDictEqual(res.json(), expected)
+        self.assertEqual(res.json(), expected)
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_modify(self, mocked_kafka_producer):
@@ -496,9 +518,10 @@ class TestAPI(TestCase):
         self.assertEqual(consent_serializer.data['start_validity'], updated_data['start_validity'])
         self.assertEqual(consent_serializer.data['expire_validity'], updated_data['expire_validity'])
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                             consent_serializer.data)
-    
+        serialized_data = _get_serialized_data(consent_serializer)
+        self.assertEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                             serialized_data)
+
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_modify_db_error(self, mocked_kafka_producer):
         res = self._add_consent(status=Consent.ACTIVE)
@@ -513,10 +536,10 @@ class TestAPI(TestCase):
         with patch('consent_manager.views.Consent', mock):
             self.client.login(username='duck', password='duck')
             res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
-                                content_type='application/json')
+                                  content_type='application/json')
             self.assertEqual(res.status_code, 500)
             self.assertEqual(res.json(), {'errors': [ERRORS.DB_ERROR]})
-            
+
     def test_modify_wrong_status(self):
         """
         Test consent modification failure when the client specifies a consent in the wrong status
@@ -623,7 +646,7 @@ class TestAPI(TestCase):
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_modify_forbidden(self):
         """
@@ -640,7 +663,7 @@ class TestAPI(TestCase):
         res = self.client.put('/v1/consents/{}/'.format(consent_id), data=json.dumps(updated_data),
                               content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_modify_not_found(self):
         """
@@ -672,8 +695,9 @@ class TestAPI(TestCase):
 
         self.assertEqual(consent.status, Consent.REVOKED)
         self.assertEqual(mocked_kafka_producer().send.call_args_list[0][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-        self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
-                             consent_serializer.data)
+        serialized_data = _get_serialized_data(consent_serializer)
+        self.assertEqual(json.loads(mocked_kafka_producer().send.call_args_list[0][1]['value'].decode('utf-8')),
+                             serialized_data)
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_revoke_db_error(self, mocked_kafka_producer):
@@ -739,7 +763,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id), data=json.dumps([consent_id]),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_revoke_forbidden(self):
         """
@@ -752,7 +776,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/{}/revoke/'.format(consent_id), data=json.dumps([consent_id]),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_revoke_not_found(self):
         """
@@ -788,14 +812,17 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['revoked'], consents)
         self.assertEqual(len(res.json()['failed']), 0)
+        kafka_mocked_data = [json.loads(x[1]['value'].decode('utf-8'))
+                             for x in mocked_kafka_producer().send.call_args_list]
         for index, consent in enumerate(consents):
             consent = Consent.objects.get(consent_id=consent)
             consent_serializer = ConsentSerializer(consent)
 
             self.assertEqual(consent.status, Consent.REVOKED)
-            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
-                                 consent_serializer.data)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0],
+                             settings.KAFKA_NOTIFICATION_TOPIC)
+            serialized_data = _get_serialized_data(consent_serializer)
+            self.assertIn(serialized_data, kafka_mocked_data)
 
     def test_revoke_list_missing_parameters(self):
         """
@@ -833,7 +860,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['revoked']), 0)
         self.assertEqual(len(res.json()['failed']), 3)
-        self.assertListEqual(res.json()['failed'], consents)
+        self.assertListEqual(sorted(res.json()['failed']), sorted(consents))
         for i, c in enumerate(consents):
             c = Consent.objects.get(consent_id=c)
             self.assertEqual(c.status, statuses[i])
@@ -879,7 +906,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps([consent_id]),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_revoke_list_forbidden(self):
         """
@@ -891,7 +918,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/revoke/', data=json.dumps([consent_id]),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_find_unauthorized(self):
         res = self._add_consent()
@@ -926,7 +953,7 @@ class TestAPI(TestCase):
         res = self.client.get('/v1/consents/find/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url),
                               **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_find_missing_parameters(self):
         self.client.login(username='duck', password='duck')
@@ -938,7 +965,7 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/consents/find/?confirm_id=unk')
         self.assertEqual(res.status_code, 404)
-        self.assertDictEqual(res.json(), {})
+        self.assertEqual(res.json(), {})
 
     def test_find(self):
         res = self._add_consent()
@@ -952,32 +979,14 @@ class TestAPI(TestCase):
         self.client.login(username='duck', password='duck')
         res = self.client.get('/v1/consents/find/?confirm_id={}'.format(confirm_id))
         self.assertEqual(res.status_code, 200)
-        self.assertDictEqual(res.json()[0], expected)
+        self.assertEqual(res.json()[0], expected)
 
     def _test_confirm(self, null_dates=False):
         """
         Support method that adds the consents and calls the confirmation REST endpoint.
         It returns the consents created and the response
         """
-        # First create some consents
-        consents = {}
-        for i in range(4):
-            data = self.consent_data.copy()
-            data['source'] = {
-                'id': 'source_{}_id'.format(i),
-                'name': 'source_{}_name'.format(i)
-            }
-            res = self._add_consent(data=json.dumps(data))
-            if null_dates is False:
-                consents[res.json()['confirm_id']] = {
-                    'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
-                    'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1)
-                }
-            else:
-                consents[res.json()['confirm_id']] = {
-                    'start_validity': None,
-                    'expire_validity': None
-                }
+        consents = self._gen_test_consents(null_dates)
 
         # Then, confirm them
         self.client.login(username='duck', password='duck')
@@ -996,15 +1005,19 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 4)
         self.assertEqual(len(res.json()['failed']), 0)
+        kafka_mocked_data = [json.loads(x[1]['value'].decode('utf-8'))
+                             for x in mocked_kafka_producer().send.call_args_list]
         for index, (confirm_id, consent_data) in enumerate(consents.items()):
             consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(consent_obj.status, Consent.ACTIVE)
             consent_serializer = ConsentSerializer(consent_obj)
             self.assertEqual(consent_serializer.data['start_validity'], consent_data['start_validity'])
             self.assertEqual(consent_serializer.data['expire_validity'], consent_data['expire_validity'])
-            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
-                                 consent_serializer.data)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0],
+                             settings.KAFKA_NOTIFICATION_TOPIC)
+            serialized_data = _get_serialized_data(consent_serializer)
+            self.assertIn(serialized_data, kafka_mocked_data)
+
 
     @patch('hgw_common.messaging.sender.KafkaProducer')
     def test_confirm_with_correct_notification_and_null_validity_dates(self, mocked_kafka_producer):
@@ -1016,6 +1029,10 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 4)
         self.assertEqual(len(res.json()['failed']), 0)
+
+        kafka_mocked_data = [json.loads(x[1]['value'].decode('utf-8'))
+                             for x in mocked_kafka_producer().send.call_args_list]
+
         for index, (confirm_id, consent_data) in enumerate(consents.items()):
             consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
             self.assertEqual(consent_obj.status, Consent.ACTIVE)
@@ -1023,9 +1040,10 @@ class TestAPI(TestCase):
             self.assertEqual(consent_serializer.data['start_validity'], None)
             self.assertEqual(consent_serializer.data['expire_validity'], None)
 
-            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0], settings.KAFKA_NOTIFICATION_TOPIC)
-            self.assertDictEqual(json.loads(mocked_kafka_producer().send.call_args_list[index][1]['value'].decode('utf-8')),
-                                 consent_serializer.data)
+            self.assertEqual(mocked_kafka_producer().send.call_args_list[index][0][0],
+                             settings.KAFKA_NOTIFICATION_TOPIC)
+            serialized_data = _get_serialized_data(consent_serializer)
+            self.assertIn(serialized_data, kafka_mocked_data)
 
     # def test_confirm_failed_notification(self):
     #     """
@@ -1054,7 +1072,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json')
         self.assertEqual(res.status_code, 401)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.NOT_AUTHENTICATED]})
 
     def test_confirm_forbidden(self):
         """
@@ -1067,7 +1085,7 @@ class TestAPI(TestCase):
         res = self.client.post('/v1/consents/confirm/', data=json.dumps({'consents': consent}),
                                content_type='application/json', **headers)
         self.assertEqual(res.status_code, 403)
-        self.assertDictEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
+        self.assertEqual(res.json(), {'errors': [ERRORS.FORBIDDEN]})
 
     def test_confirm_missing_parameters(self):
         """
@@ -1110,7 +1128,7 @@ class TestAPI(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(res.json()['confirmed']), 1)
         self.assertEqual(len(res.json()['failed']), 3)
-        self.assertListEqual(res.json()['failed'], confirm_ids[1:])
+        self.assertListEqual(sorted(res.json()['failed']), sorted(confirm_ids[1:]))
         statuses[0] = Consent.ACTIVE
         for i, confirm_id in enumerate(confirm_ids):
             c = ConfirmationCode.objects.get(code=confirm_id).consent
@@ -1188,54 +1206,78 @@ class TestAPI(TestCase):
             res = met('/confirm_consents/')
             self.assertEqual(res.status_code, 405)
 
-    # def test_confirm_missing_parameters(self):
-    #     """
-    #     Tests missing parameters when confirming consent
-    #     """
-    #     res = self._add_consent()
-    #     confirm_id = res.json()['confirm_id']
-    #     callback_url = 'http://127.0.0.1/'
-    #
-    #     self.client.login(username='duck', password='duck')
-    #     res = self.client.get('/confirm_consents/')
-    #     self.assertEqual(res.status_code, 400)
-    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
-    #
-    #     res = self.client.get('/confirm_consents/?confirm_id={}'.format(confirm_id))
-    #     self.assertEqual(res.status_code, 400)
-    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
-    #
-    #     res = self.client.get('/confirm_consents/?callback_url={}'.format(callback_url))
-    #     self.assertEqual(res.status_code, 400)
-    #     self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['MISSING_PARAM'])
-    #
-    # def test_confirm_valid(self):
-    #     """
-    #     Tests the valid confirmation. First, the user calls the confirmation page and gets an html page
-    #     with the form that shows all the consents. Then it posts the form and the consent is set to active.
-    #     """
-    #     res = self._add_consent()
-    #
-    #     confirm_id = res.json()['confirm_id']
-    #     callback_url = 'http://127.0.0.1/'
-    #
-    #     self.client.login(username='duck', password='duck')
-    #     res = self.client.get('/confirm_consents/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url))
-    #     self.assertEqual(res.status_code, 200)
-    #     self.assertEqual(res['Content-Type'], 'text/html; charset=utf-8')
-    #     cc = ConfirmationCode.objects.get(code=confirm_id)
-    #     consent = cc.consent
-    #     self.assertEqual(consent.status, Consent.PENDING)
-    #     self.assertIsNone(consent.confirmed)
-    #     post_data = {
-    #         'csrf_token': res.context['csrf_token'],
-    #         'confirm_id': res.context['consents'][0]['confirm_id'],
-    #         'callback_url': res.context['callback_url']
-    #     }
-    #     res = self.client.post('/confirm_consents/?confirm_id={}&callback_url={}'.format(confirm_id, callback_url),
-    #                            post_data)
-    #     self.assertRedirects(res, '{}?success=true&consent_confirm_id={}'.format(callback_url, confirm_id),
-    #                          fetch_redirect_response=False)
-    #     consent.refresh_from_db()
-    #     self.assertEqual(consent.status, Consent.ACTIVE)
-    #     self.assertIsNotNone(consent.confirmed)
+    def _gen_test_consents(self, null_dates=False):
+        consents = {}
+        for i in range(4):
+            data = self.consent_data.copy()
+            data['source'] = {
+                'id': 'source_{}_id'.format(i),
+                'name': 'source_{}_name'.format(i)
+            }
+            res = self._add_consent(data=json.dumps(data))
+
+            if null_dates is False:
+                consents[res.json()['confirm_id']] = {
+                    'start_validity': '2018-10-0{}T10:05:05.123000+02:00'.format(i + 1),
+                    'expire_validity': '2019-10-0{}T10:05:05.123000+02:00'.format(i + 1)
+                }
+            else:
+                consents[res.json()['confirm_id']] = {
+                    'start_validity': None,
+                    'expire_validity': None
+                }
+
+        return consents
+
+    def test_given_some_pending_consents_when_requesting_their_abortion_then_mark_them_as_not_valid(self):
+        """
+        Tests consent abortion
+        """
+        consents = self._gen_test_consents()
+
+        self.client.login(username='duck', password='duck')
+        data = {
+            'consents': consents
+        }
+        # Here we abort the just-created consents
+        res = self.client.post('/v1/consents/abort/', data=json.dumps(data), content_type='application/json')
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.json()['aborted']), 4)
+        self.assertEqual(len(res.json()['failed']), 0)
+        for index, (confirm_id, consent_data) in enumerate(consents.items()):
+            consent_obj = ConfirmationCode.objects.get(code=confirm_id).consent
+            self.assertEqual(consent_obj.status, Consent.NOT_VALID)
+
+    def test_given_valid_legal_notice_when_requesting_markdown_then_return_it(self):
+        self.client.login(username='duck', password='duck')
+        # Here we abort the just-created consents
+        res = self.client.get('/v1/legal-notices/4', HTTP_ACCEPT='text/markdown, application/json')
+        self.assertEqual(res.status_code, 200)
+        # the expected comes from the testing fixture
+        self.assertEqual(res.data, self.legal_notice)
+
+    def test_given_valid_legal_notice_when_requesting_html_then_return_it(self):
+        self.client.login(username='duck', password='duck')
+        # Here we abort the just-created consents
+        res = self.client.get('/v1/legal-notices/4', HTTP_ACCEPT='text/html, application/json')
+        self.assertEqual(res.status_code, 200)
+        # the expected comes from the testing fixture
+        self.assertEqual(res.data, markdownify(self.legal_notice))
+
+    def test_given_valid_legal_notice_when_requesting_json_then_return_406(self):
+        self.client.login(username='duck', password='duck')
+        # Here we abort the just-created consents
+        res = self.client.get('/v1/legal-notices/4', HTTP_ACCEPT='application/json')
+        self.assertEqual(res.status_code, 406)
+
+    def test_given_not_existing_legal_notice_when_requesting_markdown_then_return_404(self):
+        self.client.login(username='duck', password='duck')
+        # Here we abort the just-created consents
+        res = self.client.get('/v1/legal-notices/5', HTTP_ACCEPT='text/markdown, application/json')
+        self.assertEqual(res.status_code, 404)
+
+    def test_given_unauthorized_when_requesting_legal_notice_then_return_401(self):
+        # Here we abort the just-created consents
+        res = self.client.get('/v1/legal-notices/4', HTTP_ACCEPT='text/markdown, application/json')
+        self.assertEqual(res.status_code, 401)

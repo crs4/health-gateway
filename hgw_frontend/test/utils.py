@@ -30,9 +30,9 @@ from hgw_frontend.settings import (CONSENT_MANAGER_CLIENT_ID,
                                    HGW_BACKEND_CLIENT_ID)
 
 from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, CORRECT_CONSENT_ID_AC,
-               CORRECT_CONSENT_ID_CR, PERSON_ID, PROFILES_DATA, SOURCES_DATA,
+               CORRECT_CONSENT_ID_CR, PERSON_ID, PROFILES_DATA, SOURCES_DATA, ABORTED_CONSENT_ID, ABORTED_CONSENT_ID2,
                WRONG_CONFIRM_ID, WRONG_CONFIRM_ID2, WRONG_CONSENT_ID,
-               WRONG_CONSENT_ID2)
+               WRONG_CONSENT_ID2, ABORTED_CONFIRM_ID, ABORTED_CONFIRM_ID2)
 
 
 class MockConsentManagerRequestHandler(MockRequestHandler):
@@ -41,6 +41,7 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
     """
 
     CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(CORRECT_CONSENT_ID_AC, CORRECT_CONSENT_ID_CR))
+    ABORTED_CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(ABORTED_CONSENT_ID, ABORTED_CONSENT_ID2))
     WRONG_CONSENT_PATTERN = re.compile(r'/v1/consents/({}|{})/'.format(WRONG_CONSENT_ID, WRONG_CONSENT_ID2))
     CONSENTS_PATTERN = re.compile(r'/v1/consents/')
     OAUTH2_PATTERN = re.compile(r'/oauth2/token/')
@@ -129,7 +130,18 @@ class MockConsentManagerRequestHandler(MockRequestHandler):
                     "status": "PE"
                 }
             else:
-                payload = {}
+                consent_search = re.search(self.ABORTED_CONSENT_PATTERN, self.path)
+                if consent_search:
+                    consent_id = consent_search.groups()[0]
+                    confirm_id = ABORTED_CONFIRM_ID if consent_search.groups()[0] == ABORTED_CONSENT_ID else \
+                        ABORTED_CONFIRM_ID2
+                    payload = {
+                        "consent_id": consent_id,
+                        "confirm_id": confirm_id,
+                        "status": "NV"
+                    }
+                else:
+                    payload = {}
         return self._send_response(payload)
 
 

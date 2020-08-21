@@ -153,9 +153,73 @@
       "person_id": "AAABBB12C34D567E",
       "status": "PE",
       "timestamp": "2018-10-10T10:00:00+02:00",
+      "legal_notice_version_id": 4,
       "confirmed": null,
       "start_validity": "2017-10-23T10:00:54.123000+02:00",
       "expire_validity": "2018-10-23T10:00:00+02:00"
+    }
+  },
+  {
+    "model": "consent_manager.legalnotice",
+    "pk": 1,
+    "fields": {
+      "new_major": false,
+      "current_version": 4,
+      "text":"# Legal Notice\r\n\r\nNew legal notice\r\n\r\nthe lawyer",
+      "change_comment": "added signature",
+      "destination": "vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj"
+    }
+  },
+  {
+    "model":"consent_manager.legalnoticeversion",
+    "pk":1,
+    "fields":{
+      "previous_version":null,
+      "text":"Blank Text",
+      "change_comment":"blank text",
+      "destination":"vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj",
+      "v_major":0,
+      "v_minor":0,
+      "creation_date":"2020-04-06T14:07:53.838Z"
+    }
+  },
+  {
+    "model":"consent_manager.legalnoticeversion",
+    "pk":2,
+    "fields":{
+      "previous_version":1,
+      "text":"# Legal Notice\r\n\r\nlipsum",
+      "change_comment":"added text",
+      "destination":"vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj",
+      "v_major":0,
+      "v_minor":1,
+      "creation_date":"2020-04-06T14:09:32.119Z"
+    }
+  },
+  {
+    "model":"consent_manager.legalnoticeversion",
+    "pk":3,
+    "fields":{
+      "previous_version":2,
+      "text":"# Legal Notice\r\n\r\nNew legal notice",
+      "change_comment":"to prod!",
+      "destination":"vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj",
+      "v_major":1,
+      "v_minor":0,
+      "creation_date":"2020-04-06T14:09:51.309Z"
+    }
+  },
+  {
+    "model":"consent_manager.legalnoticeversion",
+    "pk":4,
+    "fields":{
+      "previous_version":3,
+      "text":"# Legal Notice\r\n\r\nNew legal notice\r\n\r\nthe lawyer",
+      "change_comment":"added signature",
+      "destination":"vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj",
+      "v_major":1,
+      "v_minor":1,
+      "creation_date":"2020-04-06T14:10:32.662Z"
     }
   }
 ]

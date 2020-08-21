@@ -223,6 +223,21 @@
     }
   },
   {
+    "model": "hgw_frontend.flowrequest",
+    "pk": 5,
+    "fields": {
+      "flow_id": "f_55555",
+      "process_id": "p_55555",
+      "status": "PE",
+      "profile": 2,
+      "destination": 2,
+      "sources": [1],
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2020-10-23T10:00:00+02:00",
+      "person_id": "AAABBB12C34D567E"
+    }
+  },
+  {
     "model": "hgw_frontend.channel",
     "pk": 1,
     "fields": {
@@ -271,6 +286,30 @@
     }
   },
   {
+    "model": "hgw_frontend.channel",
+    "pk": 5,
+    "fields": {
+      "channel_id": "muTEFwupGmDU1NyOwebNVwvtRslPfpWg",
+      "flow_request": 5,
+      "source": 1,
+      "status": "CR",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2020-10-23T10:00:00+02:00"
+    }
+  },
+  {
+    "model": "hgw_frontend.channel",
+    "pk": 6,
+    "fields": {
+      "channel_id": "PBY455NhH52FmD3SE6LKKZ1mH9cKpQts",
+      "flow_request": 5,
+      "source": 2,
+      "status": "CR",
+      "start_validity": "2017-10-23T10:00:00+02:00",
+      "expire_validity": "2020-10-23T10:00:00+02:00"
+    }
+  },
+  {
     "model": "hgw_frontend.consentconfirmation",
     "pk": 1,
     "fields": {
@@ -311,6 +350,28 @@
       "channel": 4,
       "consent_id": "consent2",
       "confirmation_id": "confirmed2",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 5,
+    "fields": {
+      "flow_request": 5,
+      "channel": 5,
+      "consent_id": "aborted",
+      "confirmation_id": "aborted_confirmed",
+      "destination_endpoint_callback_url": "http://localhost:8000"
+    }
+  },
+  {
+    "model": "hgw_frontend.consentconfirmation",
+    "pk": 6,
+    "fields": {
+      "flow_request": 5,
+      "channel": 6,
+      "consent_id": "aborted2",
+      "confirmation_id": "aborted_confirmed2",
       "destination_endpoint_callback_url": "http://localhost:8000"
     }
   }

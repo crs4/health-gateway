@@ -20,7 +20,7 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from consent_manager.models import Consent, Endpoint
+from consent_manager.models import Consent, Endpoint, LegalNoticeVersion, LegalNotice
 from hgw_common.models import Profile
 from hgw_common.serializers import ProfileSerializer
 from hgw_common.utils import ERRORS
@@ -90,9 +90,12 @@ class ConsentSerializer(serializers.ModelSerializer):
         p, _ = Profile.objects.get_or_create(**validated_data.get('profile'))
         s, _ = Endpoint.objects.get_or_create(**validated_data.get('source'))
         d, _ = Endpoint.objects.get_or_create(**validated_data.get('destination'))
+
         validated_data['profile'] = p
         validated_data['source'] = s
         validated_data['destination'] = d
+        validated_data['legal_notice_version'] = LegalNotice.objects.filter(destination=d).get().current_version
+
         cs = Consent.objects.create(**validated_data)
         return cs
 
@@ -122,28 +125,27 @@ class ConsentSerializer(serializers.ModelSerializer):
             return attrs
         try:
             s = Endpoint.objects.get(**attrs['source'])
-            d = Endpoint.objects.get(**attrs['destination'])
             p = Profile.objects.get(**attrs['profile'])
+            d = Endpoint.objects.get(**attrs['destination'])
+            if not LegalNotice.objects.filter(destination=d).exists():
+                raise ValidationError('Missing Legal Notice', code='legal_notice_not_found')
             consents = Consent.objects.filter(source=s, destination=d, profile=p, person_id=attrs['person_id'])
         except (Consent.DoesNotExist, Endpoint.DoesNotExist, Profile.DoesNotExist):
-            # If one among source, destination and profile doesn't exist it means that neither the consent exists
-            return attrs
-        else:
-            for c in consents:
-                if c.status == Consent.ACTIVE:
-                    raise ValidationError(ERRORS.DUPLICATED)
-                elif c.status == Consent.PENDING:
-                    c.status = Consent.NOT_VALID
-                    c.save()
+            # If any of the above is missing, the consent does not exist, so we can create a valid new one
             return attrs
 
-    # def get_validators(self):
-    #     return super(ConsentSerializer, self).get_validators() + [ConsentSerializerDuplicateValidator()]
+        for c in consents:
+            if c.status == Consent.ACTIVE:  # A duplicate exists so we keep the previous and raise
+                raise ValidationError(ERRORS.DUPLICATED)
+            elif c.status == Consent.PENDING:  # An old pending consent exists so we can invalidate it
+                c.status = Consent.NOT_VALID
+                c.save()
+        return attrs
 
     class Meta:
         model = Consent
-        fields = ('consent_id', 'status', 'source', 'destination', 'person_id',
-                  'profile', 'start_validity', 'expire_validity')
+        fields = ('consent_id', 'status', 'source', 'destination', 'person_id', 'profile', 'legal_notice_version',
+                  'start_validity', 'expire_validity')
         extra_kwargs = {
             'start_validity': {
                 'error_messages': {
@@ -154,3 +156,4 @@ class ConsentSerializer(serializers.ModelSerializer):
                     'invalid': 'invalid_date_format'}
             }
         }
+
