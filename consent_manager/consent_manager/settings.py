@@ -19,8 +19,10 @@
 import os
 import sys
 
+import saml2
 import yaml
 from django.conf.global_settings import LOGIN_REDIRECT_URL
+from saml2 import BINDING_HTTP_REDIRECT
 from yaml.error import YAMLError
 from yaml.scanner import ScannerError
 
@@ -136,6 +138,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': LOG_LEVEL,
             'propagate': True
+        },
+        'djangosaml2': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': True
         }
     }
 }
@@ -234,6 +241,7 @@ SAML_SP_KEY_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_key'])
 SAML_SP_CRT_PATH = get_path(BASE_CONF_DIR, cfg['saml']['sp_cert'])
 SAML_CONFIG = get_saml_config(ROOT_URL, SAML_SP_NAME, SAML_SP_KEY_PATH, SAML_SP_CRT_PATH, SAML_SERVICE,
                               SAML_IDP_URL)
+SAML_LOGOUT_REQUEST_PREFERRED_BINDING = saml2.BINDING_HTTP_REDIRECT
 if SAML_SERVICE == 'spid':
     SAML_ATTRIBUTE_MAPPING = {
         'spidCode': ('username',),
