@@ -35,7 +35,8 @@ RUN pip3 install Django==${DJANGO_VERSION} \
 	coverage \
 	psycopg2 \
 	urllib3==1.25.3 \
-	mysqlclient
+	mysqlclient \
+	pysaml2==4.6.0
 
 RUN git clone -b develop https://github.com/crs4/djangosaml2.git && cd djangosaml2 && python3 setup.py install
 
