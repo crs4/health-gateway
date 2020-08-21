@@ -47,6 +47,8 @@ fi
 
 envsubst '${HGW_FRONTEND_ADDR} ${CONSENT_MANAGER_ADDR}' < /opt/shibboleth-idp/conf/metadata-providers.xml.template > /opt/shibboleth-idp/conf/metadata-providers.xml
 envsubst '${SERVER_NAME}' < /etc/apache2/sites-available/shibboleth-virtual-host.conf.template > /etc/apache2/sites-available/shibboleth-virtual-host.conf
+envsubst '${HGW_FRONTEND_ADDR}' < /root/metadata/hgw-frontend-metadata.xml.template > /root/metadata/hgw-frontend-metadata.xml
+envsubst '${CONSENT_MANAGER_ADDR}' < /root/metadata/consent-manager-metadata.xml.template > /root/metadata/consent-manager-metadata.xml
 
 a2ensite shibboleth-virtual-host.conf
 apache2ctl start

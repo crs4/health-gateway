@@ -2,7 +2,7 @@ version: '3.0'
 services:
   destination_mock:
     build:
-      context: ../../images/development/performance_test_endpoint
+      context: ../../images/performance_test_endpoint
     image: crs4/performance_test_endpoint
     extra_hosts:
       - "kafka:${KAFKA_ADDRESS:-127.0.0.1}"
@@ -21,7 +21,7 @@ services:
 
   source_mock:
     build:
-      context: ../../images/development/performance_test_endpoint
+      context: ../../images/performance_test_endpoint
     image: crs4/performance_test_endpoint
     environment:
       - MEAN_DOC_SIZE=${MEAN_DOC_SIZE:-100000}

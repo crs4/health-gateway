@@ -37,8 +37,8 @@ idp.signing.cert= %{idp.home}/credentials/idp-signing.crt
 idp.encryption.optional= true
 idp.encryption.key= %{idp.home}/credentials/idp-encryption.key
 idp.encryption.cert= %{idp.home}/credentials/idp-encryption.crt
-#idp.encryption.key.2 = %{idp.home}/credentials/idp-encryption-old.key
-#idp.encryption.cert.2 = %{idp.home}/credentials/idp-encryption-old.crt
+idp.encryption.key.2 = %{idp.home}/credentials/idp-encryption-old.key
+idp.encryption.cert.2 = %{idp.home}/credentials/idp-encryption-old.crt
 
 # Sets the bean ID to use as a default security configuration set
 #idp.security.config = shibboleth.DefaultSecurityConfiguration
@@ -61,7 +61,7 @@ idp.encryption.cert= %{idp.home}/credentials/idp-encryption.crt
 
 # Configuration of client- and server-side storage plugins
 #idp.storage.cleanupInterval = PT10M
-#idp.storage.htmlLocalStorage = false
+#idp.storage.htmlLocalStorage = true
 
 # Set to true to expose more detailed errors in responses to SPs
 #idp.errors.detailed = false

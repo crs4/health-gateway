@@ -75,12 +75,15 @@ class Channel(models.Model):
     ACTIVE = 'AC'
     # The person revoked the consent into the consent manager
     CONSENT_REVOKED = 'CV'
+    # The person aborted the consent process
+    CONSENT_ABORTED = 'AB'
 
     STATUS_CHOICES = (
         (CONSENT_REQUESTED, 'CONSENT_REQUESTED'),
         (WAITING_SOURCE_NOTIFICATION, 'WAITING_SOURCE_NOTIFICATION'),
         (ACTIVE, 'ACTIVE'),
-        (CONSENT_REVOKED, 'CONSENT_REVOKED')
+        (CONSENT_REVOKED, 'CONSENT_REVOKED'),
+        (CONSENT_ABORTED, 'CONSENT_ABORTED')
     )
 
     channel_id = models.CharField(max_length=32, blank=False)
