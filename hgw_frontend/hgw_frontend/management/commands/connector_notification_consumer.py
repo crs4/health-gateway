@@ -18,6 +18,7 @@
 import logging
 
 from hgw_common.utils.management import ConsumerCommand
+from hgw_frontend.management.commands import db_safe
 from hgw_frontend.models import Channel, ConsentConfirmation
 from hgw_frontend.settings import KAFKA_CONNECTOR_NOTIFICATION_TOPIC
 
@@ -32,10 +33,11 @@ class Command(ConsumerCommand):
         self.topics = [KAFKA_CONNECTOR_NOTIFICATION_TOPIC]
         super(Command, self).__init__(*args, **kwargs)
 
+    @db_safe(ConsentConfirmation)
     def handle_message(self, message):
         logger.info('Found message for topic %s', message['queue'])
         if not message['success']:
-            logger.error("Errore reading the message")
+            logger.error("Error reading the message")
         else:       
             try:
                 connector_data = message['data']

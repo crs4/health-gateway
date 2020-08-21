@@ -1,13 +1,15 @@
 django:
   debug: true
   secret_key: 8m#4t%c_z1l7=gsfpf=han8ibdmd-+w1-05^&-+e4%)vwn2*7@
-  hostname: hgwfrontend
+  hostname: hgwfrontend,localhost
   port: 8000
   request_validity_seconds: 60
   timezone: Europe/Rome
   database:
     engine: sqlite3
     name: ../hgw_frontend_db.sqlite3
+    failure_exp_retry_base_period_sec: 2
+    failure_max_retry_wait: 5
 
 logging:
   level: DEBUG
@@ -16,8 +18,8 @@ saml:
   service: tscns
   idp_url: https://tscns/idp/shibboleth
   sp_name: HGW Frontend Service Provider
-  sp_cert: ../saml2/saml2.cert.pem
-  sp_key: ../saml2/saml2.key.pem
+  sp_cert: ../../docker/saml2certs/saml2.cert.pem
+  sp_key: ../../docker/saml2certs/saml2.key.pem
 
 consent_manager:
   uri: https://consentmanager:8002
@@ -31,7 +33,7 @@ hgw_backend:
 
 kafka:
   uri: kafka:9093
-  ssl: true
-  ca_cert: ../../certs/ca/kafka/certs/ca/kafka.chain.cert.pem
-  client_cert: ../../certs/ca/kafka/certs/hgwfrontend/cert.pem
-  client_key: ../../certs/ca/kafka/certs/hgwfrontend/key.pem
+  ssl: false
+  ca_cert: ../../docker/kafkaclientcerts/kafka.chain.cert.pem
+  client_cert: ../../docker/kafkaclientcerts/cert.pem
+  client_key: ../../docker/kafkaclientcerts/key.pem

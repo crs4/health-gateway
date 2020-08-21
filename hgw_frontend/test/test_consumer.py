@@ -281,8 +281,8 @@ class TestConsentConsumer(TestCase):
             },
             'person_id': PERSON_ID,
             'profile': PROFILE_1,
-            'start_validity': '2017-10-23T10:00:00+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00',
+            'start_validity': '2017-10-23T10:00:00+0200',
+            'expire_validity': '2018-10-23T10:00:00+0200',
         }
 
         self.out_message = {
@@ -294,8 +294,8 @@ class TestConsentConsumer(TestCase):
             },
             'profile': PROFILE_1,
             'person_id': PERSON_ID,
-            'start_validity': '2017-10-23T10:00:00+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00',
+            'start_validity': '2017-10-23T10:00:00+0200',
+            'expire_validity': '2018-10-23T10:00:00+0200',
         }
 
         return super(TestConsentConsumer, self).setUp()
@@ -344,16 +344,16 @@ class TestConsentConsumer(TestCase):
         Test that the date of the confirmed consent differs from the original request (i.e., the flow request values)
         """
         self.base_consent.update({
-            'start_validity': '2018-10-23T10:00:00+02:00',
-            'expire_validity': '2019-10-23T10:00:00+02:00',      
+            'start_validity': '2018-10-23T10:00:00+0200',
+            'expire_validity': '2019-10-23T10:00:00+0200',      
         })
         self.set_mock_kafka_consumer(MockKafkaConsumer, [self.base_consent],
                                      KAFKA_CHANNEL_NOTIFICATION_TOPIC, True)
         
         self.out_message.update({
             'action': ACTION.CREATED,
-            'start_validity': '2018-10-23T10:00:00+02:00',
-            'expire_validity': '2019-10-23T10:00:00+02:00'
+            'start_validity': '2018-10-23T10:00:00+0200',
+            'expire_validity': '2019-10-23T10:00:00+0200'
         })
 
         channel = ConsentConfirmation.objects.get(consent_id=self.base_consent['consent_id']).channel
@@ -470,8 +470,8 @@ class TestConsentConsumer(TestCase):
         """
         self.base_consent.update({
             'consent_id': CORRECT_CONSENT_ID_AC,
-            'start_validity': '2018-10-23T10:00:00+02:00',
-            'expire_validity': '2019-10-23T10:00:00+02:00',
+            'start_validity': '2018-10-23T10:00:00+0200',
+            'expire_validity': '2019-10-23T10:00:00+0200',
             'source': {
                 'id': SOURCE_2_ID,
                 'name': SOURCE_2_NAME
@@ -481,8 +481,8 @@ class TestConsentConsumer(TestCase):
         self.out_message.update({
             'action': ACTION.UPDATED,
             'channel_id': CORRECT_CONSENT_ID_AC,
-            'start_validity': '2018-10-23T10:00:00+02:00',
-            'expire_validity': '2019-10-23T10:00:00+02:00',
+            'start_validity': '2018-10-23T10:00:00+0200',
+            'expire_validity': '2019-10-23T10:00:00+0200',
             'source_id': SOURCE_2_ID
         })
 
@@ -590,8 +590,8 @@ class TestConsentConsumer(TestCase):
         # Same data as the channel in the test_data
         self.base_consent.update({
             'consent_id': CORRECT_CONSENT_ID_AC,
-            'start_validity': '2017-10-23T10:00:00+02:00',
-            'expire_validity': '2018-10-23T10:00:00+02:00',
+            'start_validity': '2017-10-23T10:00:00+0200',
+            'expire_validity': '2018-10-23T10:00:00+0200',
             'source': {
                 'id': SOURCE_2_ID,
                 'name': SOURCE_2_NAME

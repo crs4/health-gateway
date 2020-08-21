@@ -23,6 +23,7 @@ from hgw_common.messaging.sender import create_sender
 from hgw_common.models import FailedMessages
 from hgw_common.utils import create_broker_parameters_from_settings
 from hgw_common.utils.management import ConsumerCommand
+from hgw_frontend.management.commands import db_safe
 from hgw_frontend.models import Channel, ConsentConfirmation, Destination
 from hgw_frontend.settings import (DATETIME_FORMAT,
                                    KAFKA_CHANNEL_NOTIFICATION_TOPIC,
@@ -63,7 +64,7 @@ class Command(ConsumerCommand):
         self.sender = create_sender(create_broker_parameters_from_settings())
         super(Command, self).__init__(*args, **kwargs)
 
-    def _validate_consent(self, consent):
+    def _validate_consent(self, consent, attempt=1):
         expected_keys = (
             'consent_id', 'person_id', 'status',
             'source', 'destination', 'profile',
@@ -78,6 +79,7 @@ class Command(ConsumerCommand):
             return FAILED_REASON.INVALID_STRUCTURE
 
         try:
+            logger.debug('Retrieving consent information')
             channel = ConsentConfirmation.objects.get(consent_id=consent['consent_id']).channel
         except ConsentConfirmation.DoesNotExist:
             logger.error('Cannot find the corresponding consent inside the db')
@@ -113,6 +115,7 @@ class Command(ConsumerCommand):
         else:
             logger.info('Channel operation notified')
 
+    @db_safe(ConsentConfirmation)
     def handle_message(self, message):
         logger.info('Found message for queue %s', message['queue'])
 

@@ -23,10 +23,14 @@ CORRECT_CONSENT_ID_CR = 'consent' # correct consent in status CR
 CORRECT_CONSENT_ID_AC = 'consent2' # correct consent in status AC
 WRONG_CONSENT_ID = 'wrong_consent'
 WRONG_CONSENT_ID2 = 'wrong_consent2'
+ABORTED_CONSENT_ID = 'aborted'
+ABORTED_CONSENT_ID2 = 'aborted2'
 CORRECT_CONFIRM_ID = 'confirmed'
 CORRECT_CONFIRM_ID2 = 'confirmed2'
 WRONG_CONFIRM_ID = 'wrong_confirmed'
 WRONG_CONFIRM_ID2 = 'wrong_confirmed2'
+ABORTED_CONFIRM_ID = 'aborted_confirmed'
+ABORTED_CONFIRM_ID2 = 'aborted_confirmed2'
 PERSON_ID = 'AAABBB12C34D567E'
 
 PROFILE_1 = {

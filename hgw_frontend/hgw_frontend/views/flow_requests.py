@@ -178,9 +178,9 @@ class FlowRequestView(ViewSet):
         if 'status' in request.GET:
             if request.GET['status'] not in list(zip(*Channel.STATUS_CHOICES))[0]:
                 return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
-            channels = Channel.objects.filter(flow_request=flow_request, status=request.GET['status'])
+            channels = flow_request.channel_set.filter(status=request.GET['status'])
         else:
-            channels = Channel.objects.filter(flow_request=flow_request)
+            channels = flow_request.channel_set
         count = channels.count()
         if count == 0:
             raise Http404
@@ -309,20 +309,26 @@ def _ask_consent(request, flow_request, destination_callback_url):
                                        consent_callback_url))
 
 
-def _confirm(request, consent_confirm_id):
+def _confirm(consent_confirm_id):
+    result = False
     try:
         logger.debug("Getting consent from Consent Manager")
         consent_confirmation, consent = _get_consent(consent_confirm_id)
         logger.debug("Found consent")
     except UnknownConsentConfirmation:
-        return False
+        return result
 
+    flow_request = consent_confirmation.flow_request
     if consent['status'] == 'AC':
-        flow_request = consent_confirmation.flow_request
+        logger.debug("Consent Accepted")
         flow_request.status = FlowRequest.ACTIVE
         flow_request.save()
-        return True
-    return False
+        result = True
+    if consent['status'] == 'NV':
+        logger.debug("Consent Invalid, it must have been Aborted")
+        flow_request.status = FlowRequest.DELETE_REQUESTED
+        flow_request.save()
+    return result
 
 
 @require_GET
@@ -330,6 +336,12 @@ def _confirm(request, consent_confirm_id):
 def consents_confirmed(request):
     consent_confirm_ids = request.GET.getlist('consent_confirm_id')
     success = json.loads(request.GET['success'])
+    if 'status' in request.GET:
+        state = request.GET['status']
+    else:
+        state = 'failed'
+    reason = None
+
     flow_requests = FlowRequest.objects.filter(consentconfirmation__confirmation_id__in=consent_confirm_ids) \
         .distinct()
     if flow_requests.count() != 1:
@@ -337,13 +349,30 @@ def consents_confirmed(request):
     flow_request = flow_requests[0]
     logger.debug("Flow request found")
     callback = flow_request.consentconfirmation_set.all()[0].destination_endpoint_callback_url
-    done = False
-    if success:
+
+    output_success = False
+    if success or state == 'aborted':
         for consent_confirm_id in consent_confirm_ids:
             logger.debug("Checking consents")
-            done = _confirm(request, consent_confirm_id)
-    return HttpResponseRedirect('{}?process_id={}&success={}'.format(
-        callback, flow_request.process_id, json.dumps(done)))
+            # This looks naive, but we just want to switch to true if we did something at least on one consent
+            if _confirm(consent_confirm_id):
+                output_success = True
+                state = 'ok'
+
+    if state == 'aborted':
+        reason = 'consent_rejected'
+        for ch in Channel.objects.filter(flow_request=flow_request).all():
+            logger.debug("Marking channels as aborted")
+            ch.status = Channel.CONSENT_ABORTED
+            ch.save()
+
+    target_url = '{}?process_id={}&success={}&status={}'.format(
+        callback, flow_request.process_id, json.dumps(output_success), state)
+
+    if reason:
+        target_url += '&reason={}'.format(reason)
+
+    return HttpResponseRedirect(target_url)
 
 
 @require_GET
@@ -383,3 +412,39 @@ def confirm_request(request):
                         return HttpResponseRedirect(fr_callback_url)
                     else:
                         return HttpResponseBadRequest(ERRORS_MESSAGE['INVALID_FR_STATUS'])
+
+
+def _interrupt_flow_request_at_idp_step(fr_confirm_code, callback, status_type='aborted', reason='idp_auth_cancelled'):
+    cc = ConfirmationCode.objects.get(code=fr_confirm_code)
+
+    flow_request = cc.flow_request
+
+    flow_request.status = FlowRequest.DELETE_REQUESTED
+    flow_request.save()
+
+    if flow_request.channel_set.all().count() > 0:
+        for ch in flow_request.channel_set.all():
+            logger.debug("Marking channels as aborted")
+            ch.status = Channel.IDP_ABORTED
+            ch.save()
+    else:
+        for source in flow_request.sources.all():
+            Channel.objects.create(channel_id=get_random_string(32), flow_request=flow_request,
+                                   source=source, status=Channel.IDP_ABORTED)
+
+    output_success = False
+
+    logger.debug('Redirecting to the original callback url: %s', callback)
+
+    target_url = '{}?process_id={}&success={}&status={}'.format(
+        callback, cc.flow_request.process_id, json.dumps(output_success), status_type)
+
+    if reason:
+        target_url += '&reason={}'.format(reason)
+
+    return HttpResponseRedirect(target_url)
+
+
+@require_GET
+def abort_idp_login(request, *args, **kwargs):
+    return _interrupt_flow_request_at_idp_step(request.GET['confirm_id'], request.GET['callback_url'])
