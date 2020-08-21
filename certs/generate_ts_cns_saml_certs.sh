@@ -34,6 +34,7 @@ INT_CHAIN_CERT=${INT_BASE_DIR}/certs/ca/${INT_NAME}.chain.cert.pem
 
 CERTS_DIR=${INT_BASE_DIR}/certs/${SERVICE_NAME}
 mkdir -p ${CERTS_DIR}
+mkdir -p ${INT_BASE_DIR}/csr
 
 for k in signing encryption backchannel; do
     CSR_FILE=${INT_BASE_DIR}/csr/${SERVICE_NAME}.${k}.csr.pem

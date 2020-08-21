@@ -30,7 +30,7 @@ def get_path(base_path, file_path):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # The order of the paths is important. We will give priority to the one in etc
-_CONF_FILES_PATH = ['/etc/hgw_service/hgw_backend_config.yml', get_path(BASE_DIR, './config.yml')]
+_CONF_FILES_PATH = ['/etc/hgw_service/hgw_backend_config.yml', get_path(BASE_DIR, './config.local.yml')]
 
 cfg = None
 _conf_file = None
@@ -239,3 +239,6 @@ KAFKA_SSL = cfg['kafka']['ssl']
 KAFKA_CA_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['ca_cert'])
 KAFKA_CLIENT_CERT = get_path(BASE_CONF_DIR, cfg['kafka']['client_cert'])
 KAFKA_CLIENT_KEY = get_path(BASE_CONF_DIR, cfg['kafka']['client_key'])
+
+DB_FAILURE_EXP_RETRY_BASE_PERIOD = cfg['django']['database']['failure_exp_retry_base_period_sec']
+DB_FAILURE_MAX_RETRY_WAIT = cfg['django']['database']['failure_max_retry_wait']

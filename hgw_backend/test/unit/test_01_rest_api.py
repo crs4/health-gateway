@@ -119,7 +119,7 @@ class TestSourcesAPI(GenericTestCase):
 
     def setUp(self):
         super(TestSourcesAPI, self).setUp()
-        with open(os.path.abspath(os.path.join(BASE_DIR, '../hgw_backend/fixtures/test_data.json'))) as fixtures_file:
+        with open(os.path.abspath(os.path.join(BASE_DIR, '../../hgw_backend/fixtures/test_data.json'))) as fixtures_file:
             self.fixtures = json.load(fixtures_file)
         self.profiles = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_common.profile']
         self.sources = [obj['fields'] for obj in self.fixtures if obj['model'] == 'hgw_backend.source']

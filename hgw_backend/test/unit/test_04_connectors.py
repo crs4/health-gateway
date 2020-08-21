@@ -2,18 +2,17 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from test.utils import EXPIRED_CONSENT_CHANNEL, MockSourceEndpointHandler
 
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, client
-from mock import MagicMock, patch
+from django.test import TestCase
+from mock import patch
 from mock.mock import call
 
-from hgw_backend.models import (AccessToken, FailedConnector,
-                                OAuth2Authentication, Source)
+from hgw_backend.models import (AccessToken, OAuth2Authentication, Source)
 from hgw_backend.settings import KAFKA_CONNECTOR_NOTIFICATION_TOPIC
-from hgw_common.utils.mocks import (MockMessage, start_mock_server,
-                                    stop_mock_server)
+from hgw_common.utils.mocks import (start_mock_server, stop_mock_server)
+
+from test.utils import EXPIRED_CONSENT_CHANNEL, MockSourceEndpointHandler
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -78,8 +77,11 @@ class TestConnectorCreation(TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestConnectorCreation, cls).setUpClass()
-        logger = logging.getLogger('hgw_backend')
+        logger = logging.getLogger('hgw_backend_tests')
+        logger.warning("Logs related to Kafka errors can be safely ignored for this testSuite 04")
+        logger.warning("This test suite verifies lots of error, so limiting log to CRITICAL")
         logger.setLevel(logging.CRITICAL)
+
         cls.oauth_thread, cls.oauth_server = start_mock_server('certs', MockSourceEndpointHandler, OAUTH_SOURCE_PORT)
         cls.cert_thread, cls.cert_server = start_mock_server('certs', MockSourceEndpointHandler, CERT_SOURCE_PORT)
 
@@ -94,18 +96,9 @@ class TestConnectorCreation(TestCase):
         content_type = ContentType.objects.get_for_model(auth)
         return Source.objects.get(content_type=content_type, object_id=auth.id)
 
-    @staticmethod
-    def configure_mock_kafka_consumer(mock_kc_klass, n_messages=1):
-        mock_kc_klass.FIRST = 0
-        mock_kc_klass.END = n_messages
-        mock_kc_klass.MESSAGES = {i: MockMessage(key='09876'.encode('utf-8'), offset=i,
-                                                 topic='vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj'.encode('utf-8'),
-                                                 value=json.dumps(CHANNEL_MESSAGE).encode('utf-8')) for i in
-                                  range(mock_kc_klass.FIRST, mock_kc_klass.END)}
-
     def test_oauth2_source_fails_connector_unreachable(self):
         """
-        Tests creation of new connector failure because of source endpoint unreachable whne calling /v1/connectors
+        Tests creation of new connector failure because of source endpoint unreachable when calling /v1/connectors
         """
         with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
@@ -115,7 +108,6 @@ class TestConnectorCreation(TestCase):
                 res = getattr(auth, m)(source, CONNECTOR)
                 self.assertIsNone(res)
                 MockKafkaProducer().send.assert_not_called()
-            
 
     def test_oauth2_source_fails_wrong_connector_url(self):
         """
@@ -132,7 +124,7 @@ class TestConnectorCreation(TestCase):
 
     def test_oauth2_source_fails_oauth2_unreachable(self):
         """
-        Tests creation of new connector failure because of source enpoint unreachable when calling /oauth2/token
+        Tests creation of new connector failure because of source endpoint unreachable when calling /oauth2/token
         """
 
         with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
@@ -147,7 +139,7 @@ class TestConnectorCreation(TestCase):
 
     def test_oauth2_source_fails_wrong_oauth2_url(self):
         """
-        Tests creation of new connector failure because of source enpoint wrong oauth2 url
+        Tests creation of new connector failure because of source endpoint wrong oauth2 url
         """
         with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
             auth = OAuth2Authentication.objects.first()
@@ -263,8 +255,8 @@ class TestConnectorCreation(TestCase):
         """
         Tests creation of new connector success when creating the first token
         """
-        with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
-            for m in ('create_connector', 'update_connector', 'delete_connector'):
+        for m in ('create_connector', 'update_connector', 'delete_connector'):
+            with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
                 auth = OAuth2Authentication.objects.first()
                 self.assertRaises(AccessToken.DoesNotExist, AccessToken.objects.get, oauth2_authentication=auth)
                 source = self._get_source_from_auth_obj(auth)
@@ -278,7 +270,6 @@ class TestConnectorCreation(TestCase):
                     self.assertEqual(MockKafkaProducer().send.call_args_list[0][0][0], KAFKA_CONNECTOR_NOTIFICATION_TOPIC)
                     self.assertEqual(json.loads(MockKafkaProducer().send.call_args_list[0][1]['value'].decode('utf-8')),
                                     {'channel_id': CONNECTOR['channel_id']})
-                
 
     def test_oauth2_source_refresh_token_token_expired_exception(self):
         """
@@ -321,7 +312,6 @@ class TestConnectorCreation(TestCase):
         for m in ('create_connector', 'update_connector', 'delete_connector'):
             with patch('hgw_common.messaging.sender.KafkaProducer') as MockKafkaProducer:
                 # Create an expired token in the db
-
                 res = getattr(source, m)(CONNECTOR)
                 # Get again the token and check it changed the value
                 token = AccessToken.objects.get(oauth2_authentication=auth)
@@ -336,12 +326,12 @@ class TestConnectorCreation(TestCase):
                                     {'channel_id': CONNECTOR['channel_id']})
                 else:
                     MockKafkaProducer().send.assert_not_called()
-                
+
                 # Restore the expire token for the next loop
                 token.access_token = 'expired'
                 token.expires_at = datetime.now() - timedelta(seconds=3600)
                 token.save()
-            
+
         calls.append(call(KAFKA_CONNECTOR_NOTIFICATION_TOPIC, value={'channel_id': CONNECTOR['channel_id']}))
 
     def test_max_retries_on_401(self):

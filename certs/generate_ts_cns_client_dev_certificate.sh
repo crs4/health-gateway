@@ -52,7 +52,9 @@ function create_cert() {
     openssl pkcs12 -export -out ${CLIENT_P12} -inkey ${CLIENT_KEY} -in ${CLIENT_CERT} -CAfile ${WEB_CA_KEY}
 
 }
-create_cert "garibaldi" "Giuseppe" "Garibaldi" "GRBGPP87L04L741X"
-create_cert "cesare" "Giulio" "Cesare" "CSRGGL44L13H501E"
-create_cert "darco" "Giovanna" "D'Arco" "DRCGNN12A46A326K"
+#create_cert "garibaldi" "Giuseppe" "Garibaldi" "GRBGPP87L04L741X"
+#create_cert "cesare" "Giulio" "Cesare" "CSRGGL44L13H501E"
+#create_cert "darco" "Giovanna" "D'Arco" "DRCGNN12A46A326K"
+
+create_cert $1 $2 $3 $4
 

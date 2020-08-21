@@ -1,7 +1,6 @@
 version: '3.0'
-
 services:
-  i2b2_destination:
+  destination_mockup:
     build:
       context: ../../images/destination_mockup
       args:
@@ -12,7 +11,7 @@ services:
     entrypoint: ["/custom_entrypoint/wait-for-it.sh", "kafka:9093", "--", "/docker-entrypoint.sh"]
     environment:
       - HTTP_PORT=8001
-      - DJANGO_APP_NAME=i2b2_destination
+      - DJANGO_APP_NAME=destination_mockup
       - TZ=CET
     ports:
       - 8001:8001
@@ -20,13 +19,10 @@ services:
       - ../../../certs/ca/root/ca.cert.pem:/cacerts/ca.cert.pem
       - ../../../certs/ca/web/certs/ca/web.cert.pem:/cacerts/web.cert.pem
       - ../../../certs/ca/kafka/certs/ca/kafka.cert.pem:/cacerts/kafka.cert.pem
-      - ../../../examples/i2b2_destination/:/container/service/
+      - ../../../destination_mockup/:/container/service/
       - ../../../hgw_common/hgw_common/:/container/service/hgw_common/
-      - ../../../certs/ca/web/certs/i2b2-destination:/container/web_certs/
+      - ../../../certs/ca/web/certs/destinationmockup/:/container/web_certs/
       - ../../../certs/:/container/certs/
-      - ../../../destination_mockup/destination_mockup/:/container/service/destination_mockup/
-      - ../../../destination_mockup/templates/:/container/service/destination_mockup/templates
-      - ../../../destination_mockup/static/:/container/service/static
 
   source_endpoint_mockup:
     build: ../../images/source_endpoint_mockup
@@ -50,10 +46,6 @@ services:
         aliases:
           - source-endpoint-mockup
 
-  hgw_frontend:
-    volumes:
-      - ../../../examples/fixtures/hgw_frontend/:/container/fixtures/
-
-  kafka:
-    environment:
-      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,xi5lxbtFDNwOLzLnpjidfteZE8WmwCuM:1:1:hgwdispatcher:i2b2-destination
+#  kafka:
+#    environment:
+#      - KAFKA_CREATE_TOPICS=channel_notification:1:1:hgwfrontend:hgwbackend,xaxAXkxi6Yw0KrpeBI5Ips7nVUDNozc7:1:1:source-endpoint-mockup:hgwdispatcher,vnTuqCY3muHipTSan6Xdctj2Y0vUOVkj:1:1:hgwdispatcher:destinationmockup,6IB70r5JwtxBh1lMj7rXatTGBgrOz6NC:1:1:hgwbackend:hgwdispatcher

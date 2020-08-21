@@ -171,7 +171,7 @@ class TestHGWFrontendAPI(TestCase):
     def test_init_fixtures(self):
         self.assertEqual(RESTClient.objects.all().count(), 4)
         self.assertEqual(Destination.objects.all().count(), 2)
-        self.assertEqual(FlowRequest.objects.all().count(), 3)
+        self.assertEqual(FlowRequest.objects.all().count(), 4)
 
     def test_create_oauth2_token(self):
         """

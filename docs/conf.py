@@ -1,4 +1,4 @@
-comunque è l'ultima volta che lo faccio notare# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Health Gateway documentation build configuration file, created by
 # sphinx-quickstart on Tue Oct  3 11:03:55 2017.

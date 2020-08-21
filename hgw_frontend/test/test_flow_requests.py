@@ -37,7 +37,7 @@ from hgw_frontend.settings import CONSENT_MANAGER_CONFIRMATION_PAGE
 
 from . import (CORRECT_CONFIRM_ID, CORRECT_CONFIRM_ID2, DEST_1_ID, DEST_1_NAME,
                DEST_PUBLIC_KEY, DISPATCHER_NAME, PERSON_ID, POWERLESS_NAME,
-               SOURCE_1_ID, SOURCE_1_NAME, WRONG_CONFIRM_ID)
+               SOURCE_1_ID, SOURCE_1_NAME, WRONG_CONFIRM_ID, ABORTED_CONFIRM_ID)
 from .utils import MockBackendRequestHandler, MockConsentManagerRequestHandler, get_db_error_mock
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -195,7 +195,7 @@ class TestFlowRequestAPI(TestCase):
         headers = self._get_oauth_header(client_name=DISPATCHER_NAME)
         res = self.client.get('/v1/flow_requests/', **headers)
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res['X-Total-Count'], '3')
+        self.assertEqual(res['X-Total-Count'], '4')
 
     def test_get_one_flow_requests_as_super_client(self):
         """
@@ -289,7 +289,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(flow_request['flow_id'], self.flow_request['flow_id'])
         self.assertEqual(flow_request['status'], 'PE')
         self.assertDictEqual(flow_request['profile'], self.flow_request['profile'])
-        self.assertEqual(FlowRequest.objects.all().count(), 4)
+        self.assertEqual(FlowRequest.objects.all().count(), 5)
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
         flow_request_sources = FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.all()
@@ -334,7 +334,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(flow_request['flow_id'], self.flow_request['flow_id'])
         self.assertEqual(flow_request['status'], 'PE')
         self.assertDictEqual(flow_request['profile'], self.flow_request['profile'])
-        self.assertEqual(FlowRequest.objects.all().count(), 4)
+        self.assertEqual(FlowRequest.objects.all().count(), 5)
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).sources.count(), 1)
@@ -362,7 +362,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(flow_request['flow_id'], self.flow_request['flow_id'])
         self.assertEqual(flow_request['status'], 'PE')
         self.assertEqual(flow_request['profile'], None)
-        self.assertEqual(FlowRequest.objects.count(), 4)
+        self.assertEqual(FlowRequest.objects.count(), 5)
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
 
@@ -383,7 +383,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(flow_request['flow_id'], self.flow_request['flow_id'])
         self.assertEqual(flow_request['status'], 'PE')
         self.assertEqual(flow_request['profile'], None)
-        self.assertEqual(FlowRequest.objects.all().count(), 4)
+        self.assertEqual(FlowRequest.objects.all().count(), 5)
         self.assertEqual(ConfirmationCode.objects.all().count(), 1)
         self.assertEqual(FlowRequest.objects.get(flow_id=flow_request['flow_id']).destination, destination)
 
@@ -488,7 +488,7 @@ class TestFlowRequestAPI(TestCase):
         self.assertNotEqual(res_flow_request['process_id'], flow_request['process_id'])
         self.assertEqual(res_flow_request['status'], 'PE')
         self.assertDictEqual(res_flow_request['profile'], flow_request['profile'])
-        self.assertEqual(FlowRequest.objects.all().count(), 4)
+        self.assertEqual(FlowRequest.objects.all().count(), 5)
 
     @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
     @patch('hgw_frontend.views.flow_requests.HGW_BACKEND_URI', HGW_BACKEND_URI)
@@ -679,7 +679,7 @@ class TestFlowRequestAPI(TestCase):
     def test_confirm_fail_consent_oauth_token(self):
         """
         Tests that, if an error occurs when getting the token from consent (i.e., wrong oauth2 client parameters) the client is 
-        redirected to callback_url with  an appropiate error message
+        redirected to callback_url with an appropriate error message
         """
         # First perform an add request that creates the flow request with status 'PENDING'
         res = self._add_flow_request()
@@ -786,7 +786,7 @@ class TestFlowRequestAPI(TestCase):
         res = self.client.get(
             '/v1/flow_requests/consents_confirmed/?success=true&consent_confirm_id={}'.format(CORRECT_CONFIRM_ID))
 
-        redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
+        redirect_url = '{}?process_id={}&status=ok&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
         flow_request = c.flow_request
@@ -833,7 +833,7 @@ class TestFlowRequestAPI(TestCase):
             self.assertEqual(c.flow_request.status, FlowRequest.ACTIVE)
             self.assertEqual(c.channel.status, Channel.CONSENT_REQUESTED)
 
-        redirect_url = '{}?process_id={}&success=true'.format(c.destination_endpoint_callback_url,
+        redirect_url = '{}?process_id={}&status=ok&success=true'.format(c.destination_endpoint_callback_url,
                                                               c.flow_request.process_id)
         self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
 
@@ -850,14 +850,36 @@ class TestFlowRequestAPI(TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.content.decode('utf-8'), ERRORS_MESSAGE['INVALID_DATA'])
 
-    # def test_delete_flow_requests(self):
-    #     headers = self._get_oauth_header()
+    @patch('hgw_frontend.views.flow_requests.CONSENT_MANAGER_URI', CONSENT_MANAGER_URI)
+    def test_aborted_consent_confirms_request(self):
 
-    #     res = self.client.delete('/v1/flow_requests/p_11111/', **headers)
-    #     self.assertEqual(res.status_code, 202)
-    #     self.assertTrue('confirm_id' in res.json())
-    #     self.assertEqual(FlowRequest.objects.all().count(), 3)
-    #     self.assertEqual(FlowRequest.objects.get(process_id='p_11111').status, FlowRequest.DELETE_REQUESTED)
+        self.client.login(username='duck', password='duck')
+
+        c = ConsentConfirmation.objects.get(confirmation_id=ABORTED_CONFIRM_ID)
+        c.channel.status = Channel.CONSENT_REQUESTED
+        c.channel.save()
+
+        res = self.client.get(
+            '/v1/flow_requests/consents_confirmed/?success=false&status=aborted&consent_confirm_id={}'.format(
+                ABORTED_CONFIRM_ID))
+        self.assertEqual(res.status_code, 302)
+
+        c = ConsentConfirmation.objects.get(confirmation_id=ABORTED_CONFIRM_ID)
+        self.assertEqual(c.flow_request.status, FlowRequest.DELETE_REQUESTED)
+        self.assertEqual(c.channel.status, Channel.CONSENT_ABORTED)
+
+        redirect_url = '{}?process_id={}&status=aborted&success=false'.format(c.destination_endpoint_callback_url,
+                                                                        c.flow_request.process_id)
+        self.assertRedirects(res, redirect_url, fetch_redirect_response=False)
+
+    def test_delete_flow_requests(self):
+        headers = self._get_oauth_header()
+
+        res = self.client.delete('/v1/flow_requests/p_11111/', **headers)
+        self.assertEqual(res.status_code, 202)
+        self.assertTrue('confirm_id' in res.json())
+        self.assertEqual(FlowRequest.objects.all().count(), 4)
+        self.assertEqual(FlowRequest.objects.get(process_id='p_11111').status, FlowRequest.DELETE_REQUESTED)
 
     # def test_confirm_delete_flow_requests(self):
     #     headers = self._get_oauth_header()
