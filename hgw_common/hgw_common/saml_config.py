@@ -102,8 +102,8 @@ def get_saml_config(root_url, sp_name, sp_key_file, sp_cert_file, saml_service, 
                     # url and binding to the single logout service view
                     # do not change the binding or service name
                     'single_logout_service': [
-                        (urljoin(root_url, '/saml2/ls/'), saml2.BINDING_HTTP_REDIRECT),
                         (urljoin(root_url, '/saml2/ls/post/'), saml2.BINDING_HTTP_POST),
+                        (urljoin(root_url, '/saml2/ls/'), saml2.BINDING_HTTP_REDIRECT),
                     ],
                 },
 

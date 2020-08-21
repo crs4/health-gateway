@@ -7,6 +7,8 @@
 *.iml
 *.sqlite3
 *.pyc
+__pycache__
+*.egg-info
 */docs/_build/
 *_build
 *.netbeans_automatic_build
